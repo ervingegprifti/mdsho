@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The non-UI Windows services (processes, shell links, package, startup task, screens, clipboard, Store launcher,
+       log files) behind the interfaces in MDSHO.Common. No WPF windows here: UI stays in MDSHO.App.
+       The versioned Windows TFM gives the WinRT APIs (StartupTask, Package, Launcher). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- WFO0003: WinForms DPI analyzer; DPI is set in the app's app.manifest. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MDSHO.Common\MDSHO.Common.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,14 @@
+{
+  "solution": {
+    "path": "MDSHO.slnx",
+    "projects": [
+      "src\\MDSHO.App\\MDSHO.App.csproj",
+      "src\\MDSHO.Common\\MDSHO.Common.csproj",
+      "src\\MDSHO.Core\\MDSHO.Core.csproj",
+      "src\\MDSHO.Data\\MDSHO.Data.csproj",
+      "src\\MDSHO.Infrastructure\\MDSHO.Infrastructure.csproj",
+      "src\\MDSHO.ViewModels\\MDSHO.ViewModels.csproj",
+      "tests\\MDSHO.Tests\\MDSHO.Tests.csproj"
+    ]
+  }
+}

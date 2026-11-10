@@ -1,0 +1,114 @@
+﻿<Window x:Class="MDSHO.RunCommandExamplesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewmodels="clr-namespace:MDSHO.ViewModels;assembly=MDSHO.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=viewmodels:RunCommandViewModel}"
+        Title="Examples"
+        Width="460"
+        Height="520"
+        MinWidth="360"
+        MinHeight="360"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        ShowInTaskbar="False"
+        Background="#FFF4F3ED"
+        BorderBrush="#FFB9B39F"
+        BorderThickness="1"
+        UseLayoutRounding="True">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="32" ResizeBorderThickness="5" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <Style x:Key="StyleTitleBarButton" TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#FF333333"/>
+            <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border BorderThickness="0" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#FFCDC7B4" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#FFBDB6A0" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!--Title bar: title and close (no Cancel button: X and Esc close the popup)-->
+        <Border x:Name="TitleBar" Grid.Row="0" Background="#FFDFDACB">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="TextTitle" Grid.Column="0" Text="Examples" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"/>
+                <Button x:Name="ButtonClose" Grid.Column="1" Style="{StaticResource StyleTitleBarButton}" Content="{Binding Icons.Times}" ToolTip="Close" AutomationProperties.Name="Close"/>
+            </Grid>
+        </Border>
+
+        <!--Body: grouped list, then what the selected example does-->
+        <Grid x:Name="Body" Grid.Row="1" Background="#FFF4F3ED">
+            <Grid Margin="14,10,14,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <ListBox x:Name="ListExamples" Grid.Row="0" DisplayMemberPath="Name" Padding="2" IsSynchronizedWithCurrentItem="False">
+                    <ListBox.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="#FF555555" Margin="2,6,0,2"/>
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                        </GroupStyle>
+                    </ListBox.GroupStyle>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="{x:Type ListBoxItem}">
+                            <Setter Property="Padding" Value="14,2,2,2"/>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+                <TextBlock x:Name="TextDescription" Grid.Row="1" Margin="0,10,0,0" TextWrapping="Wrap" Foreground="#FF333333"
+                           Text="Pick an example to see what it does."/>
+                <TextBlock x:Name="TextRuns" Grid.Row="2" Margin="0,4,0,0" TextWrapping="Wrap" FontFamily="Consolas" Foreground="#FF666666"/>
+            </Grid>
+        </Grid>
+
+        <!--Footer: Use only-->
+        <Border x:Name="Footer" Grid.Row="2" Background="#FFDFDACB">
+            <Grid Margin="14,12">
+                <Button x:Name="ButtonUse" HorizontalAlignment="Right" Style="{StaticResource StyleDarkButton}" Content="Use" IsDefault="True" IsEnabled="False"/>
+            </Grid>
+        </Border>
+    </Grid>
+
+</Window>

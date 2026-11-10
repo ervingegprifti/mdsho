@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   style="isolation:isolate"
+   viewBox="0 0 16 16"
+   width="16"
+   height="16"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <clipPath
+       id="_clipPath_teUdbOq61KgOwrQVypF2T51jISQcQdhB">
+      <rect
+         width="16"
+         height="16"
+         id="rect1" />
+    </clipPath>
+  </defs>
+  <path
+     id="path1"
+     style="fill:#1a1a1a;stroke-width:0"
+     d="M 8.234539,0.9870388 8.0234185,3.000233 A 5,5 0 0 0 3.0068523,7.7383202 5,5 0 0 0 6.9826624,12.894871 L 6.7714396,14.910016 7.765461,15.012961 7.9765815,12.999767 A 5,5 0 0 0 12.993148,8.2616798 5,5 0 0 0 9.0173376,3.1051289 L 9.2285604,1.0899841 Z M 8.2093438,4.0054819 A 3.9999998,3.9999998 0 0 1 11.994518,8.2093438 3.9999998,3.9999998 0 0 1 7.7906562,11.994518 3.9999998,3.9999998 0 0 1 4.0054819,7.7906562 3.9999998,3.9999998 0 0 1 8.2093438,4.0054819 Z" />
+</svg>

@@ -1,0 +1,26 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # MDSHO.Cli.slnf excludes the MSIX packaging project (MDSHO.Package.wapproj),
+      # which the dotnet CLI cannot build.
+      - run: dotnet restore MDSHO.Cli.slnf
+
+      - run: dotnet build MDSHO.Cli.slnf -c Release --no-restore
+
+      # The opt-in real-database test is skipped unless its environment variable is set.
+      - run: dotnet test MDSHO.Cli.slnf -c Release --no-build

@@ -1,0 +1,202 @@
+﻿<Window x:Class="MDSHO.RunCommandWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewmodels="clr-namespace:MDSHO.ViewModels;assembly=MDSHO.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=viewmodels:RunCommandViewModel}"
+        Title="Run Command"
+        Width="560"
+        Height="580"
+        MinWidth="420"
+        MinHeight="500"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        Topmost="True"
+        ShowInTaskbar="True"
+        Background="#FFF4F3ED"
+        BorderBrush="#FFB9B39F"
+        BorderThickness="1"
+        UseLayoutRounding="True">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="32" ResizeBorderThickness="5" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <Style x:Key="StyleTitleBarButton" TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#FF333333"/>
+            <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border BorderThickness="0" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#FFCDC7B4" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#FFBDB6A0" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="StyleSecondaryButton" TargetType="{x:Type Button}" BasedOn="{StaticResource StyleDarkButton}">
+            <Setter Property="Background" Value="#FFA09A88"/>
+        </Style>
+        <Style x:Key="StyleFieldLabel" TargetType="{x:Type TextBlock}">
+            <Setter Property="Margin" Value="0,8,0,3"/>
+            <Setter Property="Foreground" Value="#FF333333"/>
+        </Style>
+        <Style x:Key="StyleBrowseButton" TargetType="{x:Type Button}">
+            <Setter Property="Margin" Value="6,0,0,0"/>
+            <Setter Property="Padding" Value="10,2"/>
+            <Setter Property="MinWidth" Value="80"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid x:Name="RootGrid">
+        <Grid.RowDefinitions>
+            <!--Title bar-->
+            <RowDefinition Height="Auto"/>
+            <!--Body-->
+            <RowDefinition Height="*"/>
+            <!--Footer-->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!--Title bar: title, examples (wizard), maximise, close-->
+        <Border x:Name="TitleBar" Grid.Row="0" Background="#FFDFDACB">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="TextTitleIcon" Text="{Binding Icons.Run}" FontFamily="{StaticResource IconFont}" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"/>
+                    <TextBlock x:Name="TextTitle" Text="Run Command" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"/>
+                </StackPanel>
+                <Button x:Name="ButtonExamples" Grid.Column="1" Style="{StaticResource StyleTitleBarButton}" Content="{Binding Icons.Wizard}" ToolTip="Examples" AutomationProperties.Name="Examples"/>
+                <Button x:Name="ButtonMaximize" Grid.Column="2" Style="{StaticResource StyleTitleBarButton}" FontFamily="Segoe MDL2 Assets" FontSize="10" Content="&#xE922;" ToolTip="Maximize" AutomationProperties.Name="{Binding ToolTip, RelativeSource={RelativeSource Self}}"/>
+                <Button x:Name="ButtonClose" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" Content="{Binding Icons.Times}" ToolTip="Close" AutomationProperties.Name="Close"/>
+            </Grid>
+        </Border>
+
+        <!--Body-->
+        <Grid x:Name="Body" Grid.Row="1" Background="#FFF4F3ED">
+            <Grid x:Name="BodyContent" Margin="40,20,40,20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*" MinHeight="60"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Style="{StaticResource StyleFieldLabel}" Text="Program"/>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ComboBox x:Name="ComboProgram" Grid.Column="0"
+                              IsEditable="True"
+                              ItemsSource="{Binding Programs}"
+                              TextSearch.TextPath="FileName"
+                              Text="{Binding Program, UpdateSourceTrigger=PropertyChanged}"
+                              Padding="4,3">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding FileName}"/>
+                                    <TextBlock Text="{Binding FriendlyName}" Foreground="Gray" Margin="10,0,0,0"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button x:Name="ButtonBrowseProgram" Grid.Column="1" Style="{StaticResource StyleBrowseButton}" Content="Browse..."/>
+                </Grid>
+
+                <TextBlock Grid.Row="2" Style="{StaticResource StyleFieldLabel}" Text="Working folder (optional)"/>
+                <Grid Grid.Row="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="TextWorkingFolder" Grid.Column="0" Padding="2,3" VerticalContentAlignment="Center"
+                             Text="{Binding WorkingFolder, UpdateSourceTrigger=PropertyChanged}"/>
+                    <Button x:Name="ButtonBrowseFolder" Grid.Column="1" Style="{StaticResource StyleBrowseButton}" Content="Browse..."/>
+                </Grid>
+
+                <TextBlock Grid.Row="4" Style="{StaticResource StyleFieldLabel}" Text="Arguments (one command per line)"/>
+                <TextBox x:Name="TextArguments" Grid.Row="5"
+                         AcceptsReturn="True"
+                         AcceptsTab="False"
+                         TextWrapping="NoWrap"
+                         FontFamily="Consolas"
+                         FontSize="13"
+                         Padding="2"
+                         VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Auto"
+                         Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <CheckBox x:Name="CheckKeepOpen" Grid.Row="6" Margin="0,10,0,0"
+                          Content="Keep window open after it runs"
+                          IsChecked="{Binding KeepWindowOpen}"
+                          IsEnabled="{Binding IsKeepOpenEnabled}"/>
+                <CheckBox x:Name="CheckRunAsAdmin" Grid.Row="7" Margin="0,6,0,0"
+                          Content="Run as administrator"
+                          IsChecked="{Binding RunAsAdministrator}"/>
+
+                <TextBlock Grid.Row="8" Style="{StaticResource StyleFieldLabel}" Margin="0,12,0,3" Text="Will run as"/>
+                <TextBox x:Name="TextPreview" Grid.Row="9"
+                         IsReadOnly="True"
+                         TextWrapping="Wrap"
+                         MinLines="1"
+                         MaxLines="4"
+                         FontFamily="Consolas"
+                         FontSize="13"
+                         Padding="2"
+                         Background="#FFEAE7DC"
+                         VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Disabled"
+                         Text="{Binding Preview, Mode=OneWay}"/>
+            </Grid>
+        </Grid>
+
+        <!--Footer: Test run on the left, Save and Cancel on the right-->
+        <Border x:Name="Footer" Grid.Row="2" Background="#FFDFDACB">
+            <Grid Margin="40,30">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="ButtonTestRun" Grid.Column="0" Style="{StaticResource StyleSecondaryButton}" Content="&#x25B6; Test run" ToolTip="Runs what is on screen now, without saving"/>
+                <Button x:Name="ButtonSave" Grid.Column="2" Style="{StaticResource StyleDarkButton}" Content="Save" IsDefault="True" Margin="0,0,8,0"/>
+                <Button x:Name="ButtonCancel" Grid.Column="3" Style="{StaticResource StyleSecondaryButton}" Content="Cancel" IsCancel="True"/>
+            </Grid>
+        </Border>
+    </Grid>
+
+</Window>

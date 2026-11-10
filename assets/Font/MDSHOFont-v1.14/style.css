@@ -1,0 +1,255 @@
+@font-face {
+  font-family: 'MDSHOFont';
+  src:  url('fonts/MDSHOFont.eot?b6b6nf');
+  src:  url('fonts/MDSHOFont.eot?b6b6nf#iefix') format('embedded-opentype'),
+    url('fonts/MDSHOFont.ttf?b6b6nf') format('truetype'),
+    url('fonts/MDSHOFont.woff?b6b6nf') format('woff'),
+    url('fonts/MDSHOFont.svg?b6b6nf#MDSHOFont') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+i {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'MDSHOFont' !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.mdshofont_mdsho_s:before {
+  content: "\e900";
+}
+.mdshofont_mdsho_o:before {
+  content: "\e901";
+}
+.mdshofont_times_s:before {
+  content: "\e902";
+}
+.mdshofont_times_o:before {
+  content: "\e903";
+}
+.mdshofont_rename_s:before {
+  content: "\e904";
+}
+.mdshofont_rename_o:before {
+  content: "\e905";
+}
+.mdshofont_settings_s:before {
+  content: "\e906";
+}
+.mdshofont_settings_o:before {
+  content: "\e907";
+}
+.mdshofont_clone_s:before {
+  content: "\e908";
+}
+.mdshofont_clone_o:before {
+  content: "\e909";
+}
+.mdshofont_clones_s:before {
+  content: "\e90a";
+}
+.mdshofont_clones_o:before {
+  content: "\e90b";
+}
+.mdshofont_dock_left_s:before {
+  content: "\e90c";
+}
+.mdshofont_dock_left_o:before {
+  content: "\e90d";
+}
+.mdshofont_dock_top_s:before {
+  content: "\e90e";
+}
+.mdshofont_dock_top_o:before {
+  content: "\e90f";
+}
+.mdshofont_dock_right_s:before {
+  content: "\e910";
+}
+.mdshofont_dock_right_o:before {
+  content: "\e911";
+}
+.mdshofont_dock_bottom_s:before {
+  content: "\e912";
+}
+.mdshofont_dock_bottom_o:before {
+  content: "\e913";
+}
+.mdshofont_shortcuts_s:before {
+  content: "\e914";
+}
+.mdshofont_shortcuts_o:before {
+  content: "\e915";
+}
+.mdshofont_shortcut_s:before {
+  content: "\e916";
+}
+.mdshofont_shortcut_o:before {
+  content: "\e917";
+}
+.mdshofont_minus_s:before {
+  content: "\e918";
+}
+.mdshofont_minus_o:before {
+  content: "\e919";
+}
+.mdshofont_plus_s:before {
+  content: "\e91a";
+}
+.mdshofont_plus_o:before {
+  content: "\e91b";
+}
+.mdshofont_delete_s:before {
+  content: "\e91c";
+}
+.mdshofont_delete_o:before {
+  content: "\e91d";
+}
+.mdshofont_cut_s:before {
+  content: "\e91e";
+}
+.mdshofont_cut_o:before {
+  content: "\e91f";
+}
+.mdshofont_copy_s:before {
+  content: "\e920";
+}
+.mdshofont_copy_o:before {
+  content: "\e921";
+}
+.mdshofont_paste_s:before {
+  content: "\e922";
+}
+.mdshofont_paste_o:before {
+  content: "\e923";
+}
+.mdshofont_asc_s:before {
+  content: "\e924";
+}
+.mdshofont_asc_o:before {
+  content: "\e925";
+}
+.mdshofont_desc_s:before {
+  content: "\e926";
+}
+.mdshofont_desc_o:before {
+  content: "\e927";
+}
+.mdshofont_theme_s:before {
+  content: "\e928";
+}
+.mdshofont_theme_o:before {
+  content: "\e929";
+}
+.mdshofont_info_s:before {
+  content: "\e92a";
+}
+.mdshofont_info_o:before {
+  content: "\e92b";
+}
+.mdshofont_warning_s:before {
+  content: "\e92c";
+}
+.mdshofont_warning_o:before {
+  content: "\e92d";
+}
+.mdshofont_desktop_s:before {
+  content: "\e92e";
+}
+.mdshofont_desktop_o:before {
+  content: "\e92f";
+}
+.mdshofont_control_s:before {
+  content: "\e930";
+}
+.mdshofont_control_o:before {
+  content: "\e931";
+}
+.mdshofont_brush_s:before {
+  content: "\e932";
+}
+.mdshofont_brush_o:before {
+  content: "\e933";
+}
+.mdshofont_send_s:before {
+  content: "\e934";
+}
+.mdshofont_send_o:before {
+  content: "\e935";
+}
+.mdshofont_key_s:before {
+  content: "\e936";
+}
+.mdshofont_key_o:before {
+  content: "\e937";
+}
+.mdshofont_database_s:before {
+  content: "\e938";
+}
+.mdshofont_database_o:before {
+  content: "\e939";
+}
+.mdshofont_command_s:before {
+  content: "\e93a";
+}
+.mdshofont_command_o:before {
+  content: "\e93b";
+}
+.mdshofont_bookmark_s:before {
+  content: "\e93c";
+}
+.mdshofont_bookmark_o:before {
+  content: "\e93d";
+}
+.mdshofont_share_s:before {
+  content: "\e93e";
+}
+.mdshofont_share_o:before {
+  content: "\e93f";
+}
+.mdshofont_star_s:before {
+  content: "\e940";
+}
+.mdshofont_star_o:before {
+  content: "\e941";
+}
+.mdshofont_shield_s:before {
+  content: "\e942";
+}
+.mdshofont_shield_o:before {
+  content: "\e943";
+}
+.mdshofont_folder_s:before {
+  content: "\e944";
+}
+.mdshofont_folder_o:before {
+  content: "\e945";
+}
+.mdshofont_globe_s:before {
+  content: "\e946";
+}
+.mdshofont_globe_o:before {
+  content: "\e947";
+}
+.mdshofont_run_s:before {
+  content: "\e948";
+}
+.mdshofont_run_o:before {
+  content: "\e949";
+}
+.mdshofont_wizard_s:before {
+  content: "\e94a";
+}
+.mdshofont_wizard_o:before {
+  content: "\e94b";
+}

@@ -1,0 +1,658 @@
+﻿<Window x:Class="MDSHO.DesktopWindowView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        xmlns:local="clr-namespace:MDSHO"
+        xmlns:viewmodels="clr-namespace:MDSHO.ViewModels;assembly=MDSHO.ViewModels"
+        xmlns:converters="clr-namespace:MDSHO.Converters"
+        xmlns:dd="urn:gong-wpf-dragdrop"
+        xmlns:controls="clr-namespace:MDSHO.Controls"
+        Left="{Binding Left, Mode=TwoWay}"
+        Width="{Binding Width, Mode=TwoWay}"
+        Top="{Binding Top, Mode=TwoWay}"
+        Height="{Binding Height, Mode=TwoWay}"
+        ShowInTaskbar="False"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        WindowStartupLocation="Manual"
+        WindowState="Normal"
+        Background="#01000000"
+        Focusable="True">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0" ResizeBorderThickness="5" />
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary>
+                    <converters:ShortcutBackgroundConverter x:Key="ShortcutBackgroundConverter"/>
+                    <converters:HOverShortcutBackgroundConverter x:Key="HOverShortcutBackgroundConverter"/>
+                    <converters:ShortcutToolTipConverter x:Key="ShortcutToolTipConverter"/>
+                    <converters:ShortcutIconGlyphConverter x:Key="ShortcutIconGlyphConverter"/>
+                    <!-- Square corners when docked, otherwise the radius in ConverterParameter. -->
+                    <converters:DockedCornerRadiusConverter x:Key="DockedCornerRadius"/>
+                    <!-- View model colours are "#AARRGGBB" text. -->
+                    <converters:HexToBrushConverter x:Key="HexToBrush"/>
+                    <Style x:Key="StyleHeaderButton" TargetType="{x:Type Button}">
+                        <Setter Property="Background" Value="{x:Null}"/>
+                        <Setter Property="BorderBrush" Value="{x:Null}"/>
+                        <Setter Property="Foreground" Value="{Binding Appearance.TitleTextColor, Converter={StaticResource HexToBrush}}"/>
+                        <Setter Property="FontFamily" Value="{StaticResource  IconFont}"/>
+                        <Setter Property="FontSize" Value="16"/>
+                        <Setter Property="Width" Value="32"/>
+                        <Setter Property="Height" Value="32"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border BorderThickness="0" Background="{TemplateBinding Background}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{Binding Appearance.TitleBackgroundColor, Converter={StaticResource HexToBrush}}" />
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="{Binding Appearance.TitleBackgroundColor, Converter={StaticResource HexToBrush}}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style x:Key="StyleHeaderMostRightButton" TargetType="{x:Type Button}">
+                        <Setter Property="Background" Value="{x:Null}"/>
+                        <Setter Property="BorderBrush" Value="{x:Null}"/>
+                        <Setter Property="Foreground" Value="{Binding Appearance.TitleTextColor, Converter={StaticResource HexToBrush}}"/>
+                        <Setter Property="FontFamily" Value="{StaticResource  IconFont}"/>
+                        <Setter Property="FontSize" Value="16"/>
+                        <Setter Property="Width" Value="32"/>
+                        <Setter Property="Height" Value="32"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border BorderThickness="0" Background="{TemplateBinding Background}" CornerRadius="{Binding IsDocked, Converter={StaticResource DockedCornerRadius}, ConverterParameter='0,5,0,0'}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{Binding Appearance.TitleBackgroundColor, Converter={StaticResource HexToBrush}}" />
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="{Binding Appearance.TitleBackgroundColor, Converter={StaticResource HexToBrush}}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style x:Key="StyleButtonShortcut" TargetType="Button">
+                        <Setter Property="ToolTip" Value="{Binding Path=ToolTipText, Converter={StaticResource ShortcutToolTipConverter}}"/>
+                        <Setter Property="Margin" Value="0,1,0,1"/>
+                        <Setter Property="Background">
+                            <Setter.Value>
+                                <MultiBinding Converter="{StaticResource ShortcutBackgroundConverter}">
+                                    <Binding Path="DataContext.Appearance.TextColor" RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType=Window}"/>
+                                    <Binding Path="IsSelected" />
+                                </MultiBinding>
+                            </Setter.Value>
+                        </Setter>
+                        <Setter Property="OverridesDefaultStyle" Value="True"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Name="border" BorderThickness="0" Padding="4,2" BorderBrush="Transparent" CornerRadius="4" Background="{TemplateBinding Background}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="border" Property="Background"
+                                                    Value="{Binding Path=DataContext.Appearance.TextColor,
+                                                                    Converter={StaticResource HOverShortcutBackgroundConverter},
+                                                                    RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Window}}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style x:Key="StyleFooterMostLeftButton" TargetType="{x:Type Button}">
+                        <Setter Property="Background" Value="{x:Null}"/>
+                        <Setter Property="BorderBrush" Value="{x:Null}"/>
+                        <Setter Property="Foreground" Value="{Binding Appearance.TextColor, Converter={StaticResource HexToBrush}}"/>
+                        <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+                        <Setter Property="FontSize" Value="16"/>
+                        <Setter Property="Width" Value="32"/>
+                        <Setter Property="Height" Value="32"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border BorderThickness="0" Background="{TemplateBinding Background}" CornerRadius="{Binding IsDocked, Converter={StaticResource DockedCornerRadius}, ConverterParameter='0,0,0,5'}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{Binding Appearance.BackgroundColor, Converter={StaticResource HexToBrush}}" />
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="{Binding Appearance.BackgroundColor, Converter={StaticResource HexToBrush}}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style x:Key="StyleFooterButtonPRO" TargetType="{x:Type Button}">
+                        <Setter Property="Background" Value="{x:Null}"/>
+                        <Setter Property="BorderBrush" Value="{x:Null}"/>
+                        <Setter Property="Foreground" Value="{Binding Appearance.TextColor, Converter={StaticResource HexToBrush}}"/>
+                        <Setter Property="Height" Value="32"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border BorderThickness="0" Background="{TemplateBinding Background}" Padding="10,0,10,0">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{Binding Appearance.BackgroundColor, Converter={StaticResource HexToBrush}}" />
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="{Binding Appearance.BackgroundColor, Converter={StaticResource HexToBrush}}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid d:DataContext="{d:DesignInstance Type=viewmodels:DesktopWindowViewModel}">
+        <Grid.RowDefinitions>
+            <!--Header-->
+            <RowDefinition Height="Auto"/>
+            <!--Body-->
+            <RowDefinition Height="*"/>
+            <!--Footer-->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!--Header-->
+        <!--https://chriscavanagh.wordpress.com/2008/10/03/wpf-easy-rounded-corners-for-anything/-->
+        <Border x:Name="BorderHeaderRoundedCorners" Grid.Row="0" Grid.Column="0"
+            BorderThickness="1,1,1,0"
+            CornerRadius="{Binding IsDocked, Converter={StaticResource DockedCornerRadius}, ConverterParameter='5,5,0,0'}"
+            BorderBrush="{Binding Appearance.BorderColor, Converter={StaticResource HexToBrush}}"
+            Background="{Binding Appearance.TitleBackgroundColor, Converter={StaticResource HexToBrush}}">
+            <ContentControl x:Name="ContentControlHeader">
+                <Grid x:Name="GridHeader" Grid.Row="0" Grid.Column="0" Height="32" Background="#01000000">
+                    <!--Header Menu-->
+                    <Grid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem x:Name="MenuItemHeaderCloneThisWindowToAllScreens" Header="Clone this Window to all screens" Visibility="{Binding ShowCloneWindow, Converter={StaticResource BoolToVisibility}}">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.Clones}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem x:Name="MenuItemHeaderRenameWindowTitle" Header="Rename Window Title">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.Rename}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <Separator/>
+                            <MenuItem x:Name="MenuItemHeaderNewWindow" Header="New Window">
+                                <MenuItem.Icon>
+                                    <TextBlock  Text="{Binding Appearance.Icons.Plus}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <Separator/>
+                            <MenuItem x:Name="MenuItemHeaderDockWindowLeft" Header="Dock Window Left">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.DockLeft}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem x:Name="MenuItemHeaderDockWindowRight" Header="Dock Window Right">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.DockRight}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <Separator x:Name="SeparatorHeaderCloseDelete"/>
+                            <MenuItem x:Name="MenuItemHeaderCloseWindow" Header="Close this Clone" Command="{Binding CloseWindowCommand}" Visibility="{Binding ShowCloseWindow, Converter={StaticResource BoolToVisibility}}">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.Times}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem x:Name="MenuItemHeaderDeleteWindow" Header="Delete Window">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.Delete}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <Separator/>
+                            <MenuItem x:Name="MenuItemHeaderExportData" Header="Export data...">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.Send}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem x:Name="MenuItemHeaderImportData" Header="Import data...">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.Database}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem x:Name="MenuItemHeaderBrowseAppData" Header="Browse app data">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.Folder}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <Separator/>
+                            <MenuItem x:Name="MenuItemHeaderRate" Header="Rate...">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.Star}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem x:Name="MenuItemHeaderShare" Header="Share...">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.Share}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem x:Name="MenuItemHeaderAboutWindow" Header="About">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.Info}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem x:Name="MenuItemHeaderExitApplication" Header="Exit Application">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.Times}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </ContextMenu>
+                    </Grid.ContextMenu>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <!--Header Icon-->
+                        <ColumnDefinition Width="Auto"/>
+                        <!--Header Title-->
+                        <ColumnDefinition Width="*"/>
+                        <!--Header Buttons-->
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!--Header Icon-->
+                    <TextBlock x:Name="TextBlockHeaderIcon" Grid.Row="0" Grid.Column="0"
+                        Text="{Binding Appearance.Icons.MDSHO}"
+                        Foreground="{Binding Appearance.TitleTextColor, Converter={StaticResource HexToBrush}}"
+                        FontFamily="{StaticResource IconFont}"
+                        FontSize="16"
+                        Margin="0"
+                        Padding="8"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"/>
+                    <!--Header Title-->
+                    <controls:EditableTextBlock x:Name="EditableTextBlockHeaderTitle" Grid.Row="0" Grid.Column="1"
+                        Text="{Binding TitleDisplay}"
+                        EditText="{Binding TitleEditText, UpdateSourceTrigger=PropertyChanged}"
+                        IsEditing="{Binding IsEditingTitle, Mode=OneWay}"
+                        CommitCommand="{Binding CommitEditTitleCommand}"
+                        CancelCommand="{Binding CancelEditTitleCommand}"
+                        Foreground="{Binding Appearance.TitleTextColor, Converter={StaticResource HexToBrush}}"
+                        EditPadding="1"
+                        VerticalAlignment="Center"/>
+                    <!--Header Buttons-->
+                    <Button x:Name="ButtonHeaderDockWindowLeft" Grid.Row="0" Grid.Column="2"
+                        Content="{Binding Appearance.Icons.DockLeft}"
+                        Style="{StaticResource StyleHeaderButton}"
+                        ToolTip="Dock Window Left"
+                        AutomationProperties.Name="Dock Window Left" />
+                    <Button x:Name="ButtonHeaderDockWindowRight" Grid.Row="0" Grid.Column="3"
+                        Content="{Binding Appearance.Icons.DockRight}"
+                        Style="{StaticResource StyleHeaderButton}"
+                        ToolTip="Dock Window Right"
+                        AutomationProperties.Name="Dock Window Right" />
+                    <Button x:Name="ButtonHeaderCloneThisWindowToAllScreens" Grid.Row="0" Grid.Column="4"
+                        Content="{Binding Appearance.Icons.Clones}"
+                        Style="{StaticResource StyleHeaderMostRightButton}"
+                        Visibility="{Binding ShowCloneWindow, Converter={StaticResource BoolToVisibility}}"
+                        ToolTip="Clone this Window to all screens"
+                        AutomationProperties.Name="Clone this Window to all screens" />
+                    <Button x:Name="ButtonHeaderCloseWindow" Grid.Row="0" Grid.Column="4"
+                        Content="{Binding Appearance.Icons.Times}"
+                        Style="{StaticResource StyleHeaderMostRightButton}"
+                        Command="{Binding CloseWindowCommand}"
+                        Visibility="{Binding ShowCloseWindow, Converter={StaticResource BoolToVisibility}}"
+                        ToolTip="Close this Clone"
+                        AutomationProperties.Name="Close this Clone" />
+                </Grid>
+            </ContentControl>
+        </Border>
+
+        <!--Body-->
+        <!--https://chriscavanagh.wordpress.com/2008/10/03/wpf-easy-rounded-corners-for-anything/-->
+        <Border x:Name="BorderBodyRoundedCorners" Grid.Row="1" Grid.Column="0"
+            BorderThickness="1,0,1,0"
+            BorderBrush="{Binding Appearance.BorderColor, Converter={StaticResource HexToBrush}}"
+            Background="{Binding Appearance.BackgroundColor, Converter={StaticResource HexToBrush}}">
+            <Grid x:Name="GridBody" Grid.Row="1" Grid.Column="0" Margin="0,0,0,0">
+                <!--For the drag & drop to work make shure there is a backgrownd specified in the control expecting drag & drop. Transparent willl do.-->
+                <!--For external files drag & drop to work make shure Visual Studio is not run as Administrator.-->
+                <TreeView x:Name="TreeViewShortcuts"
+                    dd:DragDrop.IsDragSource="True"
+                    dd:DragDrop.IsDropTarget="True"
+                    AllowDrop="True"
+                    ItemsSource="{Binding RootShortcuts}"
+                    BorderThickness="0"
+                    BorderBrush="{x:Null}"
+                    Background="Transparent"
+                    Margin="0"
+                    Padding="0,5,0,5"
+                    ScrollViewer.CanContentScroll="True"
+                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <!--Look the gong-wpf-dragdrop-file-sample-main example-->
+
+                    <TreeView.Resources>
+                        <!--https://stackoverflow.com/questions/17814308/treeview-shows-blue-for-selected-item-->
+                        <!--Active selected item background color-->
+                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="Transparent" />
+                        <!--Inactive selected item background color-->
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Transparent" />
+                    </TreeView.Resources>
+
+                    <!--The context menu of treeview-->
+                    <TreeView.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="New Group" Command="{Binding NewGroupShortcutCommand}">
+                                <MenuItem.Icon>
+                                    <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Plus}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="{Binding AppViewModel.NewCommandMenuItemHeader}" Command="{Binding NewProcessCommandShortcutCommand}">
+                                <MenuItem.Icon>
+                                    <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Plus}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <Separator/>
+                            <MenuItem Header="Paste" Command="{Binding PasteShortcutCommand}">
+                                <MenuItem.Icon>
+                                    <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Paste}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </ContextMenu>
+                    </TreeView.ContextMenu>
+
+                    <!--The style for the treeview items-->
+                    <TreeView.ItemContainerStyle>
+                        <Style TargetType="{x:Type TreeViewItem}">
+                            <Setter Property="IsExpanded" Value="{Binding IsGroupExpanded, Mode=TwoWay}" />
+                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                        </Style>
+                    </TreeView.ItemContainerStyle>
+
+                    <TreeView.ItemTemplate>
+                        <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                            <Button x:Name="ButtonShortcut"
+                                AutomationProperties.Name="{Binding Name}"
+                                Click="ButtonShortcut_Click"
+                                MouseDoubleClick="ButtonShortcut_MouseDoubleClick"
+                                Style="{StaticResource StyleButtonShortcut}">
+                                <Button.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="New Group" Command="{Binding NewGroupShortcutCommand}" Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Plus}"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="{Binding AppViewModel.NewCommandMenuItemHeader}" Command="{Binding NewProcessCommandShortcutCommand}" Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Plus}"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <Separator Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}"/>
+                                        <MenuItem Header="Mark">
+                                            <MenuItem.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel Margin="0,0,0,0" Background="#FFEEEEEE" Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </MenuItem.ItemsPanel>
+                                            <MenuItem.ItemContainerStyle>
+                                                <Style TargetType="MenuItem">
+                                                    <Setter Property="Command" Value="{Binding MarkShortcutCommand}"/>
+                                                    <Setter Property="CommandParameter" Value="{Binding Tag, RelativeSource={RelativeSource Self}}"/>
+                                                    <Setter Property="Width" Value="23"/>
+                                                    <Setter Property="BorderThickness" Value="1"/>
+                                                    <Setter Property="BorderBrush" Value="LightGray"/>
+                                                    <Setter Property="Margin" Value="1"/>
+                                                </Style>
+                                            </MenuItem.ItemContainerStyle>
+                                            <MenuItem.Icon>
+                                                <TextBlock Foreground="{Binding MarkColor, Converter={StaticResource HexToBrush}}" Visibility="{Binding ShowMark, Converter={StaticResource BoolToVisibility}}" Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Bookmark}"/>
+                                            </MenuItem.Icon>
+                                            <MenuItem Tag="" ToolTip="No mark" AutomationProperties.Name="No mark">
+                                                <MenuItem.Icon>
+                                                    <TextBlock Text=""/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Tag="#FFFF0000" ToolTip="Red mark" AutomationProperties.Name="Red mark">
+                                                <MenuItem.Icon>
+                                                    <TextBlock Foreground="#FFFF0000" Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Bookmark}"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Tag="#FFFFA500" ToolTip="Orange mark" AutomationProperties.Name="Orange mark">
+                                                <MenuItem.Icon>
+                                                    <TextBlock Foreground="#FFFFA500" Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Bookmark}"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Tag="#FFFFFF00" ToolTip="Yellow mark" AutomationProperties.Name="Yellow mark">
+                                                <MenuItem.Icon>
+                                                    <TextBlock Foreground="#FFFFFF00" Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Bookmark}"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Tag="#FFADFF2F" ToolTip="Green yellow mark" AutomationProperties.Name="Green yellow mark">
+                                                <MenuItem.Icon>
+                                                    <TextBlock Foreground="#FFADFF2F" Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Bookmark}"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Tag="#FF008000" ToolTip="Green mark" AutomationProperties.Name="Green mark">
+                                                <MenuItem.Icon>
+                                                    <TextBlock Foreground="#FF008000" Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Bookmark}"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Tag="#FF00FFFF" ToolTip="Cyan mark" AutomationProperties.Name="Cyan mark">
+                                                <MenuItem.Icon>
+                                                    <TextBlock Foreground="#FF00FFFF" Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Bookmark}"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Tag="#FF0000FF" ToolTip="Blue mark" AutomationProperties.Name="Blue mark">
+                                                <MenuItem.Icon>
+                                                    <TextBlock Foreground="#FF0000FF" Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Bookmark}"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Tag="#FF8A2BE2" ToolTip="Blue violet mark" AutomationProperties.Name="Blue violet mark">
+                                                <MenuItem.Icon>
+                                                    <TextBlock Foreground="#FF8A2BE2" Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Bookmark}"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Tag="#FFFFFFFF" ToolTip="White mark" AutomationProperties.Name="White mark">
+                                                <MenuItem.Icon>
+                                                    <TextBlock Foreground="#FFFFFFFF" Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Bookmark}"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Tag="#FF000000" ToolTip="Black mark" AutomationProperties.Name="Black mark">
+                                                <MenuItem.Icon>
+                                                    <TextBlock Foreground="#FF000000" Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Bookmark}"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                        </MenuItem>
+                                        <Separator/>
+                                        <MenuItem Header="Rename" Command="{Binding RenameCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Rename}"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="Set Name the same as Target" Command="{Binding SetNameTheSameAsTargetCommand}" Visibility="{Binding ShowSetNameTheSameAsTarget, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
+                                        <MenuItem Header="Copy Target to Memory" Command="{Binding CopyTargetToMemoryCommand}" Visibility="{Binding ShowCopyTargetToMemory, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
+                                        <Separator/>
+                                        <MenuItem Header="Set Run Command..." Visibility="{Binding ShowCommand, Converter={StaticResource BoolToVisibility}}" Command="{Binding SetRunCommandCommand}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Run}"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <Separator Visibility="{Binding ShowCommand, Converter={StaticResource BoolToVisibility}}" />
+                                        <MenuItem Header="Cut" Command="{Binding CutShortcutCommand}">
+						                    <MenuItem.Icon>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Cut}"/>
+						                    </MenuItem.Icon>
+					                    </MenuItem>
+                                        <MenuItem Header="Copy" Command="{Binding CopyShortcutCommand}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Copy}"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="Paste" Command="{Binding PasteShortcutCommand}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Paste}"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <Separator/>
+                                        <MenuItem Header="Delete" Command="{Binding DeleteShortcutCommand}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Delete}"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                                <Grid x:Name="GridShortcut" Margin="0,2,2,2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <!--This is used to display the group icon-->
+                                    <TextBlock Grid.Row="0" Grid.Column="0"
+				                        Text="{Binding DataContext.Appearance.Icons.Shortcuts, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+				                        Visibility="{Binding ShowGroup, Converter={StaticResource BoolToVisibility}}"
+				                        Foreground="{Binding DataContext.Appearance.TextColor, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}, Converter={StaticResource HexToBrush}}"
+				                        FontFamily="{StaticResource IconFont}"
+				                        FontSize="16"
+				                        Width="16"
+				                        Margin="1,0,5,0"
+				                        VerticalAlignment="Center" />
+                                    <!--This is used to display the shortcut icon-->
+                                    <TextBlock Grid.Row="0" Grid.Column="0"
+				                        Visibility="{Binding ShowShortcut, Converter={StaticResource BoolToVisibility}}"
+				                        Foreground="{Binding DataContext.Appearance.TextColor, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}, Converter={StaticResource HexToBrush}}"
+				                        FontFamily="{StaticResource IconFont}"
+				                        FontSize="16"
+				                        Width="16"
+				                        Margin="1,0,5,0"
+				                        VerticalAlignment="Center">
+                                        <!--The glyph shows the kind of target: folder, web link, file or missing (solid or outline set)-->
+                                        <TextBlock.Text>
+                                            <MultiBinding Converter="{StaticResource ShortcutIconGlyphConverter}">
+                                                <Binding Path="TargetKind" />
+                                                <Binding Path="DataContext.Appearance.Icons" RelativeSource="{RelativeSource FindAncestor, AncestorType=Window}" />
+                                                <Binding Path="DataContext.Appearance.Icons.SolidIcons" RelativeSource="{RelativeSource FindAncestor, AncestorType=Window}" />
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                    <TextBlock Grid.Row="0" Grid.Column="0"
+				                        Text="{Binding DataContext.Appearance.Icons.Run, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+				                        Visibility="{Binding ShowCommand, Converter={StaticResource BoolToVisibility}}"
+				                        Foreground="{Binding DataContext.Appearance.TextColor, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}, Converter={StaticResource HexToBrush}}"
+				                        FontFamily="{StaticResource IconFont}"
+				                        FontSize="16"
+				                        Width="16"
+				                        Margin="1,0,5,0"
+				                        VerticalAlignment="Center" />
+                                    <!--This is to display the name-->
+                                    <controls:EditableTextBlock Grid.Row="0" Grid.Column="1"
+					                    Text="{Binding Name}"
+					                    EditText="{Binding EditText, UpdateSourceTrigger=PropertyChanged}"
+					                    IsEditing="{Binding IsEditing, Mode=OneWay}"
+					                    CommitCommand="{Binding CommitEditCommand}"
+					                    CancelCommand="{Binding CancelEditCommand}"
+					                    Foreground="{Binding DataContext.Appearance.TextColor, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}, Converter={StaticResource HexToBrush}}"
+					                    Padding="2,0,0,0"
+					                    EditPadding="3,0,3,0"
+					                    VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="2"
+				                        Text="{Binding DataContext.Appearance.Icons.Bookmark, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+				                        Visibility="{Binding ShowMark, Converter={StaticResource BoolToVisibility}}"
+				                        Foreground="{Binding MarkColor, Converter={StaticResource HexToBrush}}"
+				                        FontFamily="{StaticResource IconFont}"
+				                        FontSize="16"
+				                        Width="16"
+				                        Margin="5,0,0,0"
+				                        VerticalAlignment="Center" />
+                                    <Border Grid.Row="0" Grid.Column="3" Background="Orange" CornerRadius="4" Padding="4,0,4,0" Margin="5,0,0,0" Visibility="{Binding ShowPRO, Converter={StaticResource BoolToVisibility}}">
+                                        <TextBlock x:Name="TextBlockPRO" Text="PRO" Foreground="Black" />
+                                    </Border>
+                                </Grid>
+                            </Button>
+                        </HierarchicalDataTemplate>
+                    </TreeView.ItemTemplate>
+                </TreeView>
+                <TextBlock Grid.Row="1" Grid.Column="0"
+                    Text="Drag files/folders here!"
+                    Visibility="{Binding ShowDragItemsHereInfo, Converter={StaticResource BoolToVisibility}}"
+                    Foreground="{Binding Appearance.TextColor, Converter={StaticResource HexToBrush}}"
+                    FontFamily="{StaticResource IconFont}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!--Footer-->
+        <!--https://chriscavanagh.wordpress.com/2008/10/03/wpf-easy-rounded-corners-for-anything/-->
+        <Border x:Name="BorderFooterRoundedCorners" Grid.Row="2" Grid.Column="0"
+            BorderThickness="1,0,1,1"
+            CornerRadius="{Binding IsDocked, Converter={StaticResource DockedCornerRadius}, ConverterParameter='0,0,5,5'}"
+            BorderBrush="{Binding Appearance.BorderColor, Converter={StaticResource HexToBrush}}"
+            Background="{Binding Appearance.BackgroundColor, Converter={StaticResource HexToBrush}}">
+            <Grid x:Name="GridFooter" Grid.Row="2" Grid.Column="0" Height="32">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="ButtonFooterSettings" Grid.Row="0" Grid.Column="0"
+                    Content="{Binding Appearance.Icons.Settings}"
+                    ToolTip="Settings"
+                    AutomationProperties.Name="Settings"
+                    Style="{StaticResource StyleFooterMostLeftButton}" />
+                <Button x:Name="ButtonFooterPRO" Grid.Row="0" Grid.Column="1"
+                    Style="{StaticResource StyleFooterButtonPRO}"
+                    AutomationProperties.Name="PRO features"
+                    Visibility="{Binding AppViewModel.ShowPRO, Converter={StaticResource BoolToVisibility}}">
+                    <Border Background="Orange" CornerRadius="4" Padding="4,0,4,0">
+                        <TextBlock Text="PRO" Foreground="Black" />
+                    </Border>
+                </Button>
+            </Grid>
+        </Border>
+    </Grid>
+
+</Window>

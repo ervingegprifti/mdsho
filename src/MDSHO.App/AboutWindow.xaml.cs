@@ -1,0 +1,72 @@
+﻿using System;
+using System.Reflection;
+using System.Windows;
+
+namespace MDSHO {
+  /// <summary>
+  /// Interaction logic for AboutWindow.xaml
+  /// </summary>
+  public partial class AboutWindow : Window {
+    /// <summary>Icon glyphs for the Rate / Share links: always solid, the About window has no per-window Solid icons setting.</summary>
+    public static ViewModels.IconGlyphs Icons { get; } = new ViewModels.IconGlyphs(true);
+
+    private readonly Common.StoreActions storeActions;
+    private readonly Common.IShellLauncher shell;
+
+    /// <summary>Creates the About dialog over the current app services.</summary>
+    public AboutWindow() : this(Helpers.AppServices.Current.StoreActions, Helpers.AppServices.Current.Shell) { }
+
+    /// <summary>
+    /// Draws the window icon (the info glyph) from <paramref name="icons"/>: the set of the window whose title menu opened
+    /// About, or the first window's set when it was opened from the tray. Until then the icon is solid.
+    /// </summary>
+    public void UseIcons(ViewModels.IconGlyphs icons) {
+      this.Icon = Helpers.GlyphIcon.Create((icons ?? new ViewModels.IconGlyphs(true)).Info);
+    }
+
+    /// <summary>Creates the About dialog and fills in the version number.</summary>
+    public AboutWindow(Common.StoreActions storeActions, Common.IShellLauncher shell) {
+      this.storeActions = storeActions;
+      this.shell = shell;
+      InitializeComponent();
+      SetTitle();
+      UseIcons(null);
+
+      try {
+        string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        LabelVersion.Content = version;
+      } catch (Exception ex) {
+        ErrorDialog.ShowDialog(ex);
+      }
+
+      // Link addresses live in one place (AppConstants).
+      HyperlinkProject.NavigateUri = new Uri(Common.AppConstants.ProjectUrl);
+      HyperlinkPrivacyPolicy.NavigateUri = new Uri(Common.AppConstants.PrivacyPolicyUrl);
+      HyperlinkTermsAndConditions.NavigateUri = new Uri(Common.AppConstants.TermsUrl);
+
+      // Events
+      HyperlinkProject.RequestNavigate += Hyperlink_RequestNavigate;
+      HyperlinkPrivacyPolicy.RequestNavigate += Hyperlink_RequestNavigate;
+      HyperlinkTermsAndConditions.RequestNavigate += Hyperlink_RequestNavigate;
+      HyperlinkRate.Click += (s, e) => _ = this.storeActions.RateAsync();
+      HyperlinkShare.Click += (s, e) => _ = this.storeActions.ShareAsync();
+      // Third-party notice links are wired in the ItemsControl template (AboutWindow.xaml).
+    }
+
+    private void SetTitle() {
+#if DEBUG
+      this.Title += " DEBUG";
+#endif
+    }
+
+    private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e) {
+      try {
+        // https://github.com/dotnet/runtime/issues/17938
+        this.shell.OpenUrl(e.Uri.AbsoluteUri);
+        e.Handled = true;
+      } catch (Exception ex) {
+        ErrorDialog.ShowDialog(ex);
+      }
+    }
+  }
+}

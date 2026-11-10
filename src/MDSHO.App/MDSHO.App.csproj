@@ -1,0 +1,67 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <AssemblyName>MDSHO</AssemblyName>
+    <RootNamespace>MDSHO</RootNamespace>
+    <Nullable>disable</Nullable>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>True</UseWindowsForms>
+    <Description>MDSHO (Multi Desktop Shortcut Organizer)</Description>
+    <Platforms>x64</Platforms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- WFO0003: WinForms DPI analyzer; DPI is intentionally set in app.manifest (PerMonitorV2) for WPF. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+    <!-- MSIX packaging (src\MDSHO.Package, WAPP) builds this project with RuntimeIdentifier=win-x64 (RuntimeIdentifiers
+         is set for every project in Directory.Build.props). Only when a RuntimeIdentifier is set (the package build) is the
+         app self-contained, so the .NET runtime ships inside the MSIX; plain Debug/CLI builds and the test project stay
+         framework-dependent. -->
+    <SelfContained Condition="'$(RuntimeIdentifier)' != ''">true</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\Fonts\MDSHOFont.ttf" />
+    <None Remove="Resources\logo.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="gong-wpf-dragdrop" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="PixiEditor.ColorPicker" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MDSHO.Common\MDSHO.Common.csproj" />
+    <ProjectReference Include="..\MDSHO.Core\MDSHO.Core.csproj" />
+    <ProjectReference Include="..\MDSHO.Data\MDSHO.Data.csproj" />
+    <ProjectReference Include="..\MDSHO.Infrastructure\MDSHO.Infrastructure.csproj" />
+    <ProjectReference Include="..\MDSHO.ViewModels\MDSHO.ViewModels.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\Fonts\MDSHOFont.ttf" />
+    <Resource Include="Resources\logo.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

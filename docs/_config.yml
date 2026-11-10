@@ -1,0 +1,7 @@
+# GitHub Pages settings for the MDSHO docs (published from the /docs folder of the main branch).
+title: MDSHO
+description: Custom button panels for Windows. Free, open source, on the Microsoft Store.
+url: https://ervingegprifti.github.io
+baseurl: /mdsho
+theme: jekyll-theme-primer
+markdown: kramdown

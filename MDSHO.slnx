@@ -1,0 +1,24 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/MDSHO.App/MDSHO.App.csproj">
+      <Platform Project="x64" />
+    </Project>
+    <Project Path="src/MDSHO.Common/MDSHO.Common.csproj" />
+    <Project Path="src/MDSHO.Core/MDSHO.Core.csproj" />
+    <Project Path="src/MDSHO.Data/MDSHO.Data.csproj" />
+    <Project Path="src/MDSHO.Infrastructure/MDSHO.Infrastructure.csproj" />
+    <Project Path="src/MDSHO.Package/MDSHO.Package.wapproj" Type="c7167f0d-bc9f-4e6e-afe1-012c56b48db5">
+      <Platform Project="x64" />
+      <Build />
+      <Deploy />
+    </Project>
+    <Project Path="src/MDSHO.ViewModels/MDSHO.ViewModels.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MDSHO.Tests/MDSHO.Tests.csproj" />
+  </Folder>
+</Solution>
