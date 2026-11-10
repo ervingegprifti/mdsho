@@ -35,9 +35,18 @@ namespace MDSHO
     /// </summary>
     public AppViewModel DataContext { get; set; }
 
+    /// <summary>
+    /// False only in the test host: WPF raises OnStartup as soon as the dispatcher runs, even without Application.Run, and
+    /// the real startup must never run inside the tests (it would rename and open the real app data and replace the test services).
+    /// </summary>
+    public static bool StartupEnabled { get; set; } = true;
+
     /// <summary>Starts MDSHO: makes sure only one copy runs, upgrades the database, opens every saved window and creates the tray icon.</summary>
     protected override void OnStartup(StartupEventArgs e) {
       base.OnStartup(e);
+      if (!StartupEnabled) {
+        return;
+      }
       try {
         // Events
         UnhandledExceptionsEvents();

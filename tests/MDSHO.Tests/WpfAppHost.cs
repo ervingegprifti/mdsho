@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -29,6 +29,8 @@ namespace MDSHO.Tests {
               // Relative pack URIs (e.g. resources/logo.ico) resolve against the entry assembly, which is the test host here.
               typeof(Application).GetField("_resourceAssembly", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
                 .SetValue(null, typeof(App).Assembly);
+              // The real startup (single instance lock, real app data, real log) must never run in the tests.
+              App.StartupEnabled = false;
               Application app = Application.Current ?? new App();
               app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
               ((App)app).InitializeComponent();
