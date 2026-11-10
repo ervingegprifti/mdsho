@@ -1,4 +1,4 @@
----
+﻿---
 title: Building MDSHO
 permalink: /building/
 ---
@@ -14,8 +14,8 @@ package to install without the Microsoft Store ("sideloading"). All paths are re
 - **Visual Studio 2026** with these workloads:
   - **.NET desktop development**;
   - **Windows application development** with the **MSIX Packaging Tools** component (needed only for the package).
-- The **.NET 10 SDK** version pinned in `global.json` (Visual Studio installs a matching one; newer feature bands also
-  work).
+- The **.NET 10 SDK** version pinned in `global.json`, exactly (`rollForward` is `disable`). The SDK decides which .NET
+  and WPF runtime the app ships, and the third-party notices list that runtime's version, so every build uses the same SDK.
 - A **Windows SDK** (10.0.19041 or later), installed with the workloads above.
 
 Only the .NET SDK is needed to build and test from the command line. Visual Studio is needed to build the MSIX package.

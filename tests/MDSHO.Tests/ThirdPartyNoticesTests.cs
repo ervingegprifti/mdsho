@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -121,6 +121,19 @@ namespace MDSHO.Tests {
         .Where(s => s.EndsWith("(not shipped)", StringComparison.Ordinal))
         .ToList();
       Assert.True(stale.Count == 0, string.Join(Environment.NewLine, stale));
+    }
+
+    /// <summary>
+    /// The .NET and WPF runtime versions in the notices come from the SDK that builds the app. global.json must pin that
+    /// SDK exactly, or GitHub Actions installs a newer one and ships a newer runtime than the notices list.
+    /// </summary>
+    [Fact]
+    public void Global_json_pins_the_exact_sdk_so_the_runtime_in_the_notices_is_what_ships() {
+      using (JsonDocument doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(RepoRoot(), "global.json")))) {
+        JsonElement sdk = doc.RootElement.GetProperty("sdk");
+        Assert.Matches(@"^\d+\.\d+\.\d+$", sdk.GetProperty("version").GetString());
+        Assert.Equal("disable", sdk.GetProperty("rollForward").GetString());
+      }
     }
 
     [Fact]
