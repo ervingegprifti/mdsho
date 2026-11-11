@@ -43,6 +43,12 @@ namespace MDSHO {
       this.ButtonCancel.Click += (s, e) => Close();
       this.PreviewKeyDown += Window_PreviewKeyDown;
       this.StateChanged += (s, e) => UpdateMaximizeButton();
+      // Every outer margin of the fields and of the bottom bar equals the button height, like in Settings and the Note window.
+      this.ButtonSave.SizeChanged += (s, e) => {
+        Thickness margin = new Thickness(this.ButtonSave.ActualHeight);
+        this.BodyContent.Margin = margin;
+        this.FooterContent.Margin = margin;
+      };
     }
 
     /// <summary>True when the user saved; false after Cancel, X or Esc.</summary>

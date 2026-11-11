@@ -98,7 +98,7 @@
 
         <!--Body-->
         <Grid x:Name="Body" Grid.Row="1" Background="#FFF4F3ED">
-            <Grid x:Name="BodyContent" Margin="40,20,40,20">
+            <Grid x:Name="BodyContent" Margin="26">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -184,8 +184,9 @@
         </Grid>
 
         <!--Footer: Test run on the left, Save and Cancel on the right-->
+        <!--Every outer margin of the fields and of the bottom bar equals the button height (set in code from the real button)-->
         <Border x:Name="Footer" Grid.Row="2" Background="#FFDFDACB">
-            <Grid Margin="40,30">
+            <Grid x:Name="FooterContent" Margin="26">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>

@@ -118,7 +118,7 @@ namespace MDSHO.Tests {
     // ---- Roomy margins and the run icon (like the About window) ----
 
     [Fact]
-    public void Body_has_40_pixel_side_margins_and_roomier_top_and_bottom() {
+    public void Every_outer_margin_of_the_fields_is_the_button_height() {
       WithCommand("cmd.exe", "", f => {
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
         Shown(window, () => {
@@ -126,29 +126,31 @@ namespace MDSHO.Tests {
           ComboBox program = Named<ComboBox>(window, "ComboProgram");
           Button browse = Named<Button>(window, "ButtonBrowseProgram");
           TextBox preview = Named<TextBox>(window, "TextPreview");
-          Assert.Equal(40, program.TranslatePoint(new Point(0, 0), body).X, 1);
-          Assert.Equal(body.ActualWidth - 40, browse.TranslatePoint(new Point(browse.ActualWidth, 0), body).X, 1);
-          Assert.Equal(body.ActualWidth - 40, preview.TranslatePoint(new Point(preview.ActualWidth, 0), body).X, 1);
-          Assert.Equal(20, body.ActualHeight - preview.TranslatePoint(new Point(0, preview.ActualHeight), body).Y, 1);
-          FrameworkElement firstLabel = Named<FrameworkElement>(window, "BodyContent");
-          Assert.Equal(new Thickness(40, 20, 40, 20), ((FrameworkElement)firstLabel).Margin);
+          double h = Named<Button>(window, "ButtonSave").ActualHeight;
+          Assert.True(h > 10, "Button height " + h);
+          Assert.Equal(new Thickness(h), Named<FrameworkElement>(window, "BodyContent").Margin);
+          Assert.Equal(h, program.TranslatePoint(new Point(0, 0), body).X, 1);
+          Assert.Equal(body.ActualWidth - h, browse.TranslatePoint(new Point(browse.ActualWidth, 0), body).X, 1);
+          Assert.Equal(body.ActualWidth - h, preview.TranslatePoint(new Point(preview.ActualWidth, 0), body).X, 1);
+          Assert.Equal(h, body.ActualHeight - preview.TranslatePoint(new Point(0, preview.ActualHeight), body).Y, 1);
         });
       });
     }
 
     [Fact]
-    public void Footer_has_30_pixels_above_and_below_and_40_at_the_sides() {
+    public void Every_outer_margin_of_the_bottom_bar_is_the_button_height() {
       WithCommand("cmd.exe", "", f => {
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
         Shown(window, () => {
           FrameworkElement footer = Named<FrameworkElement>(window, "Footer");
           Button test = Named<Button>(window, "ButtonTestRun");
           Button cancel = Named<Button>(window, "ButtonCancel");
+          double h = Named<Button>(window, "ButtonSave").ActualHeight;
           Point testTopLeft = test.TranslatePoint(new Point(0, 0), footer);
-          Assert.Equal(40, testTopLeft.X, 1);
-          Assert.Equal(30, testTopLeft.Y, 1);
-          Assert.Equal(footer.ActualHeight - 30, testTopLeft.Y + test.ActualHeight, 1);
-          Assert.Equal(footer.ActualWidth - 40, cancel.TranslatePoint(new Point(cancel.ActualWidth, 0), footer).X, 1);
+          Assert.Equal(h, testTopLeft.X, 1);
+          Assert.Equal(h, testTopLeft.Y, 1);
+          Assert.Equal(footer.ActualHeight - h, testTopLeft.Y + test.ActualHeight, 1);
+          Assert.Equal(footer.ActualWidth - h, cancel.TranslatePoint(new Point(cancel.ActualWidth, 0), footer).X, 1);
         });
       });
     }
