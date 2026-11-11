@@ -30,6 +30,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - Database version 6: the buttons' unused `Notes` column is renamed to `Comment`, for the new button comments. The
   database is backed up first, as with every upgrade. Exports now call the field `comment`; exports from older versions
   still import. The windows' `Notes` column is unchanged.
+- Database version 7: the buttons table gets `IsNote` and `NoteText` for note buttons (backed up first). Exports carry
+  them; exports from older versions still import, as normal buttons.
 
 ## [1.1.5]
 

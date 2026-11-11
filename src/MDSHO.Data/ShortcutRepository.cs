@@ -7,22 +7,22 @@ namespace MDSHO.Data {
   internal sealed class ShortcutRepository : RepositoryBase, IShortcutRepository {
     /// <summary>Column list for SELECTs: the database column ParentMDSHOWindowID is exposed as the property ParentWindowID.</summary>
     internal const string SelectColumns = @"ID, ParentShortcutID, ParentMDSHOWindowID AS ParentWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded,
-      Comment, IsMarked, MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder";
+      Comment, IsMarked, MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText";
 
     private const string InsertSql = @"
       INSERT INTO Shortcuts (
         ID, ParentShortcutID, ParentMDSHOWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded, Comment, IsMarked,
-        MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder)
+        MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText)
       VALUES (
         NULLIF(@ID, 0), @ParentShortcutID, @ParentWindowID, @Name, @Target, @Ext, @Guid, @IsGroup, @IsGroupExpanded, @Comment, @IsMarked,
-        @MarkColor, @Position, @IsProcessCommand, @ProcessFileName, @ProcessArguments, @ProcessRunAsAdmin, COALESCE(@ProcessWorkingFolder, ''))";
+        @MarkColor, @Position, @IsProcessCommand, @ProcessFileName, @ProcessArguments, @ProcessRunAsAdmin, COALESCE(@ProcessWorkingFolder, ''), @IsNote, COALESCE(@NoteText, ''))";
 
     private const string UpdateSql = @"
       UPDATE Shortcuts SET
         ParentShortcutID = @ParentShortcutID, ParentMDSHOWindowID = @ParentWindowID, Name = @Name, Target = @Target,
         Ext = @Ext, Guid = @Guid, IsGroup = @IsGroup, IsGroupExpanded = @IsGroupExpanded, Comment = @Comment, IsMarked = @IsMarked,
         MarkColor = @MarkColor, Position = @Position, IsProcessCommand = @IsProcessCommand, ProcessFileName = @ProcessFileName,
-        ProcessArguments = @ProcessArguments, ProcessRunAsAdmin = @ProcessRunAsAdmin,
+        ProcessArguments = @ProcessArguments, ProcessRunAsAdmin = @ProcessRunAsAdmin, IsNote = @IsNote, NoteText = COALESCE(@NoteText, ''),
         ProcessWorkingFolder = COALESCE(@ProcessWorkingFolder, '')
       WHERE ID = @ID";
 
@@ -70,7 +70,7 @@ namespace MDSHO.Data {
           template.IsGroup, template.IsGroupExpanded, template.Comment, template.IsMarked, template.MarkColor,
           GetMaxPosition(template.ParentShortcutID, template.ParentWindowID) + 1,
           template.IsProcessCommand, template.ProcessFileName, template.ProcessArguments,
-          template.ProcessRunAsAdmin, template.ProcessWorkingFolder);
+          template.ProcessRunAsAdmin, template.ProcessWorkingFolder, template.IsNote, template.NoteText);
         return Get(Add(copy));
       });
     }

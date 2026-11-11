@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 6**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 7**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -81,6 +81,8 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `ProcessArguments` | TEXT | NOT NULL | | Arguments of a run command, exactly as typed (one command per line; `{}` is replaced by the group value). |
 | `ProcessRunAsAdmin` | INTEGER | NOT NULL | `0` | `1` = the run command starts as administrator (after the Windows prompt). Added in version 4. |
 | `ProcessWorkingFolder` | TEXT | NOT NULL | `''` | Folder the run command starts in; empty = none. Added in version 4. |
+| `IsNote` | INTEGER | NOT NULL | `0` | `1` = a note button (its text is `NoteText`; no shortcut file). Added in version 7. |
+| `NoteText` | TEXT | NOT NULL | `''` | The text of a note button; empty for other buttons. Added in version 7. |
 
 ## Keys and relationships
 
@@ -114,6 +116,7 @@ that worked.
 | 4 | 1.1.5 | `Shortcuts.ProcessRunAsAdmin` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.ProcessWorkingFolder` (`TEXT NOT NULL DEFAULT ''`) for the Run command window. |
 | 5 | 1.1.5 | `RoundedCorners` dropped from `MDSHOWindows` and `MDSHOWindowClones` (corners now follow the docked state). Uses `ALTER TABLE ... DROP COLUMN`, so no rows, IDs, indexes or foreign keys change. |
 | 6 | 1.1.6 | `Shortcuts.Notes` renamed to `Comment` (`ALTER TABLE ... RENAME COLUMN`; the text, rows, indexes and foreign keys stay). `MDSHOWindows.Notes` is unchanged. Exports made before this still import: their `notes` becomes the comment. |
+| 7 | 1.1.6 | `Shortcuts.IsNote` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.NoteText` (`TEXT NOT NULL DEFAULT ''`) for note buttons. Exports made before this still import, as normal buttons. |
 
 ### Backup before an upgrade
 

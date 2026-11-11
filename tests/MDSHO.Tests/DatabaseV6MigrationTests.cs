@@ -56,16 +56,10 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Version_is_6_and_the_last_migration_is_6() {
-      Assert.Equal(6, AppConstants.DatabaseVersion);
-      Assert.Equal(6, SchemaManager.Migrations.Last().Version);
-    }
-
-    [Fact]
-    public void V5_database_migrates_to_6_renaming_Shortcuts_Notes_to_Comment_and_keeping_the_text() {
+    public void V5_database_migrates_past_6_renaming_Shortcuts_Notes_to_Comment_and_keeping_the_text() {
       BuildV5Db();
       DataStore.Upgrade();
-      Assert.Equal(6, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(0, Columns("Shortcuts", "Notes"));
       Assert.Equal(1, Columns("Shortcuts", "Comment"));
       Assert.Equal("group comment", db.ScalarText("SELECT Comment FROM Shortcuts WHERE ID = 1"));
@@ -94,9 +88,9 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Fresh_database_is_version_6_with_Shortcuts_Comment_and_MDSHOWindows_Notes() {
+    public void Fresh_database_has_Shortcuts_Comment_and_MDSHOWindows_Notes() {
       db = new TempDb();
-      Assert.Equal(6, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(1, Columns("Shortcuts", "Comment"));
       Assert.Equal(0, Columns("Shortcuts", "Notes"));
       Assert.Equal(1, Columns("MDSHOWindows", "Notes"));

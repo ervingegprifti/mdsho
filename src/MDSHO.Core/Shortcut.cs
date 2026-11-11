@@ -49,6 +49,10 @@ namespace MDSHO.Core {
     public long ProcessRunAsAdmin { get; set; }
     /// <summary>Folder the run command starts in; empty = none (also empty when an older export file has no value).</summary>
     public string ProcessWorkingFolder { get; set; } = "";
+    /// <summary>1 when the button is a note (its text is <see cref="NoteText"/>), otherwise 0 (also 0 when an older export file has no value).</summary>
+    public long IsNote { get; set; }
+    /// <summary>The text of a note button; empty for other buttons (also empty when an older export file has no value).</summary>
+    public string NoteText { get; set; } = "";
     /// <summary>
     /// Children shortcuts.
     /// </summary>
@@ -59,11 +63,11 @@ namespace MDSHO.Core {
     public Shortcut() { }
 
     /// <summary>Creates a shortcut record (the first overload gets a new ID from the database, the second keeps the given ID).</summary>
-    public Shortcut(long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid, long isGroup, long isGroupExpanded, string comment, long isMarked, string markColor, long position, long isProcessCommand, string processFileName, string processArguments, long processRunAsAdmin = 0, string processWorkingFolder = "") :
-      this (id: 0, parentShortcutID, parentWindowID, name, target, ext, guid, isGroup, isGroupExpanded, comment, isMarked, markColor, position, isProcessCommand, processFileName, processArguments, processRunAsAdmin, processWorkingFolder) { }
+    public Shortcut(long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid, long isGroup, long isGroupExpanded, string comment, long isMarked, string markColor, long position, long isProcessCommand, string processFileName, string processArguments, long processRunAsAdmin = 0, string processWorkingFolder = "", long isNote = 0, string noteText = "") :
+      this (id: 0, parentShortcutID, parentWindowID, name, target, ext, guid, isGroup, isGroupExpanded, comment, isMarked, markColor, position, isProcessCommand, processFileName, processArguments, processRunAsAdmin, processWorkingFolder, isNote, noteText) { }
 
     /// <summary>Creates a shortcut record (the first overload gets a new ID from the database, the second keeps the given ID).</summary>
-    public Shortcut(long id, long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid, long isGroup, long isGroupExpanded, string comment, long isMarked, string markColor, long position, long isProcessCommand, string processFileName, string processArguments, long processRunAsAdmin = 0, string processWorkingFolder = "") {
+    public Shortcut(long id, long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid, long isGroup, long isGroupExpanded, string comment, long isMarked, string markColor, long position, long isProcessCommand, string processFileName, string processArguments, long processRunAsAdmin = 0, string processWorkingFolder = "", long isNote = 0, string noteText = "") {
       this.ID = id;
       this.ParentShortcutID = parentShortcutID;
       this.ParentWindowID = parentWindowID;
@@ -82,6 +86,8 @@ namespace MDSHO.Core {
       this.ProcessArguments = processArguments;
       this.ProcessRunAsAdmin = processRunAsAdmin;
       this.ProcessWorkingFolder = processWorkingFolder;
+      this.IsNote = isNote;
+      this.NoteText = noteText ?? "";
     }
   }
 

@@ -66,6 +66,8 @@ namespace MDSHO.Data {
           ProcessArguments TEXT NOT NULL,
           ProcessRunAsAdmin INTEGER NOT NULL DEFAULT 0,
           ProcessWorkingFolder TEXT NOT NULL DEFAULT '',
+          IsNote INTEGER NOT NULL DEFAULT 0,
+          NoteText TEXT NOT NULL DEFAULT '',
           FOREIGN KEY(ParentShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE,
           FOREIGN KEY(ParentMDSHOWindowID) REFERENCES MDSHOWindows(ID) ON DELETE CASCADE);
 
@@ -166,6 +168,14 @@ namespace MDSHO.Data {
         // RENAME COLUMN (SQLite 3.25+) keeps the rows, the text, indexes and foreign keys.
         if (ColumnExists(conn, "Shortcuts", "Notes") && !ColumnExists(conn, "Shortcuts", "Comment")) {
           Execute(conn, "ALTER TABLE Shortcuts RENAME COLUMN Notes TO Comment;");
+        }
+      }),
+      new DbMigration(7, "Note buttons: Shortcuts.IsNote and Shortcuts.NoteText", conn => {
+        if (!ColumnExists(conn, "Shortcuts", "IsNote")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN IsNote INTEGER NOT NULL DEFAULT 0;");
+        }
+        if (!ColumnExists(conn, "Shortcuts", "NoteText")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN NoteText TEXT NOT NULL DEFAULT '';");
         }
       })
     };
