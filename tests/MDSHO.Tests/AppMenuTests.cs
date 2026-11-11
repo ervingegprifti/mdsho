@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using MDSHO.Common;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -61,8 +62,44 @@ namespace MDSHO.Tests {
     [Fact]
     public void Tray_menu_has_no_rate_share_and_no_product_name() {
       Assert.Equal(new[] {
-        "New Window", "Find Windows", "Start with Windows", "Export data...", "Import data...", "Browse app data", "About", "Exit Application"
+        "New Window", "Find MDSHO Lost Windows", "Find Other Lost Windows", "Start with Windows", "Export data...", "Import data...", "Browse app data", "About", "Exit Application"
       }, TrayTexts());
+    }
+
+    private sealed class FakeOtherWindows : IOtherWindowsService {
+      public List<OtherWindow> Windows { get; } = new List<OtherWindow>();
+      public List<IntPtr> Moved { get; } = new List<IntPtr>();
+      public IList<OtherWindow> List() { return Windows; }
+      public bool MoveTo(OtherWindow window, ScreenRect bounds) { Moved.Add(window.Handle); return true; }
+    }
+
+    [Fact]
+    public void Tray_find_other_lost_windows_moves_the_lost_windows_and_says_how_many() {
+      Action<string, string> oldShow = MDSHO.ViewModels.Dialogs.ShowMessage;
+      List<string> shown = new List<string>();
+      try {
+        using (FakeAppServices services = new FakeAppServices()) {
+          FakeOtherWindows windows = new FakeOtherWindows();
+          windows.Windows.Add(new OtherWindow((IntPtr)11, "Lost", new ScreenRect(-32000, -32000, 800, 600), false));
+          windows.Windows.Add(new OtherWindow((IntPtr)12, "Also lost", new ScreenRect(-32000, -32000, 640, 480), false));
+          services.Services.OtherWindows = windows;
+          MDSHO.ViewModels.Dialogs.ShowMessage = (message, caption) => shown.Add(caption + "|" + message);
+          OnStaThread(() => {
+            using (System.Windows.Forms.ContextMenuStrip menu = App.CreateTrayMenu(null)) {
+              menu.Items.Cast<System.Windows.Forms.ToolStripItem>().Single(i => i.Text == "Find Other Lost Windows").PerformClick();
+            }
+          });
+          Assert.Equal(new[] { (IntPtr)11, (IntPtr)12 }, windows.Moved);
+        }
+      } finally {
+        MDSHO.ViewModels.Dialogs.ShowMessage = oldShow;
+      }
+      Assert.Equal(new[] { "Find Other Lost Windows|Moved 2 windows to this screen." }, shown);
+    }
+
+    [Fact]
+    public void The_app_services_use_the_real_other_windows_service_by_default() {
+      Assert.IsType<MDSHO.Infrastructure.OtherWindowsService>(MDSHO.Helpers.AppServices.Defaults().OtherWindows);
     }
 
     [Fact]

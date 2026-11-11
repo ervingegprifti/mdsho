@@ -64,7 +64,7 @@ namespace MDSHO.ViewModels {
     /// <summary>Icon font character for Wizard, used for the Examples button of the Run Command window (added in font v1.14).</summary>
     public string Wizard { get { return this.SolidIcons ? UnicodeText.FromHex("e94a") : UnicodeText.FromHex("e94b"); } }
 
-    /// <summary>The desktop icon (Find Windows in the tray menu).</summary>
+    /// <summary>The desktop icon (Find MDSHO Lost Windows and Find Other Lost Windows in the tray menu).</summary>
     public string Desktop { get { return this.SolidIcons ? UnicodeText.FromHex("e92e") : UnicodeText.FromHex("e92f"); } }
 
     /// <summary>Icon font character for Info, used for the About window and the About menu items.</summary>

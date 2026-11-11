@@ -1,4 +1,4 @@
-using MDSHO.Common;
+﻿using MDSHO.Common;
 using MDSHO.Infrastructure;
 using MDSHO.ViewModels;
 
@@ -31,6 +31,8 @@ namespace MDSHO.Helpers {
     public IShellLinkWriter LinkWriter { get; set; }
     /// <summary>Rate / Share MDSHO.</summary>
     public StoreActions StoreActions { get; set; }
+    /// <summary>The windows of other apps, for "Find Other Lost Windows".</summary>
+    public IOtherWindowsService OtherWindows { get; set; } = new OtherWindowsService();
 
     /// <summary>Creates the set from its services.</summary>
     public AppServices(IShellLauncher shell, IPackageIdentity package, IAppDataLocator appData, IAutoStartService autoStart,

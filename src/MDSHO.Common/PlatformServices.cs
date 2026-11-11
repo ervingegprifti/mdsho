@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -41,6 +41,8 @@ namespace MDSHO.Common {
     ScreenInfo PrimaryScreen();
     /// <summary>The screen a window (by its handle) is mostly on.</summary>
     ScreenInfo ScreenFromHandle(IntPtr windowHandle);
+    /// <summary>The screen the mouse pointer is on.</summary>
+    ScreenInfo ScreenAtCursor();
   }
 
   /// <summary>The Windows clipboard.</summary>

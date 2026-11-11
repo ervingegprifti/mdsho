@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -36,6 +36,11 @@ namespace MDSHO.Infrastructure {
     }
 
     /// <summary>Describes one screen: bounds and working area in pixels, its scale and whether it is the primary one.</summary>
+    /// <summary>The screen the mouse pointer is on.</summary>
+    public ScreenInfo ScreenAtCursor() {
+      return ToScreenInfo(Screen.FromPoint(Cursor.Position));
+    }
+
     private static ScreenInfo ToScreenInfo(Screen screen) {
       System.Drawing.Rectangle b = screen.Bounds;
       System.Drawing.Rectangle w = screen.WorkingArea;
