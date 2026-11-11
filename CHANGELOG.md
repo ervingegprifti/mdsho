@@ -24,7 +24,9 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   a group) creates one and opens the Note window. Opening a note (double-click, or single click when that is set) opens
   the Note window to read and edit its text (several notes can be open side by side; the text fills the window and scrolls sideways instead of wrapping); its tooltip shows the first 10 lines. Note windows remember their place, size and state: notes that were open come back
   where they were after MDSHO or Windows restarts (unsaved typing is saved at exit), a note opens again where it was last,
-  and a place that is off every screen moves to the middle of the main screen. A note's right-click menu has **Edit
+  and a place that is off every screen moves to the middle of the main screen. The Note window has pin (keep on top of
+  other apps, off for new notes and remembered per note), save and close in its title bar and no bottom bar: Save (also
+  Ctrl+Enter or Ctrl+S) is greyed out while there is nothing to save and keeps the note open; X or Esc close without saving. A note's right-click menu has **Edit
   note...** and **Copy note text** (puts the whole note on the clipboard). Notes can be renamed, marked,
   moved, copied, exported and imported like other buttons, and need no shortcut file. They use the text-box glyph
   until the icon font gets a dedicated note glyph.

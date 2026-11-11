@@ -58,6 +58,9 @@ namespace MDSHO {
         this.Height = 520;
       }
       UseEditorLayout();
+      if (kind == TextKind.Note) {
+        UseNoteTitleBar();
+      }
 
       // The title icon, the close button and the window icon follow the window's solid or outline setting while open.
       IconGlyphs icons = shortcut.OwningWindow?.Appearance?.Icons ?? new IconGlyphs(true);
@@ -69,6 +72,11 @@ namespace MDSHO {
       this.ButtonClose.Click += (s, e) => Close();
       this.ButtonCancel.Click += (s, e) => Close();
       this.ButtonSave.Click += (s, e) => Save();
+      this.ButtonTitleSave.Click += (s, e) => SaveNoteKeepOpen();
+      this.ButtonPin.Click += (s, e) => {
+        SetPinned(!this.Topmost);
+        SaveNotePlace();
+      };
       this.PreviewKeyDown += Window_PreviewKeyDown;
       this.Loaded += (s, e) => {
         this.TextComment.Focus();
@@ -154,6 +162,7 @@ namespace MDSHO {
       this.Top = place.Top;
       this.Width = Math.Max(this.MinWidth, place.Width);
       this.Height = Math.Max(this.MinHeight, place.Height);
+      SetPinned(place.IsTopmost);
       this.savedState = place.State == NoteWindowPlace.Maximized ? WindowState.Maximized
         : place.State == NoteWindowPlace.Minimized ? WindowState.Minimized : WindowState.Normal;
       EventHandler placeOnHandle = null;
@@ -218,7 +227,7 @@ namespace MDSHO {
         : this.WindowState == WindowState.Minimized ? NoteWindowPlace.Minimized : NoteWindowPlace.Normal;
       try {
         DataStore.NoteWindows.Save(new NoteWindowPlace(this.shortcut.ID, (long)Math.Round(normal.X), (long)Math.Round(normal.Y),
-          (long)Math.Round(normal.Width), (long)Math.Round(normal.Height), state, isOpen));
+          (long)Math.Round(normal.Width), (long)Math.Round(normal.Height), state, isOpen) { IsTopmost = this.Topmost });
       } catch (Exception ex) {
         // A place that can't be saved must never break the note window.
         AppLog.Warning(ex, "Could not save the place of a note window");
@@ -280,6 +289,49 @@ namespace MDSHO {
     }
 
     /// <summary>
+    /// A note has pin (keep on top), save and close in its title bar and no bottom bar, so the text gets the whole window.
+    /// Save is greyed out while there is nothing to save and keeps the window open; X and Esc close without saving.
+    /// </summary>
+    private void UseNoteTitleBar() {
+      this.Footer.Visibility = Visibility.Collapsed;
+      this.ButtonPin.Visibility = Visibility.Visible;
+      this.ButtonTitleSave.Visibility = Visibility.Visible;
+      this.ButtonClose.ToolTip = "Close without saving (Esc)";
+      System.Windows.Automation.AutomationProperties.SetName(this.ButtonClose, "Close without saving");
+      SetPinned(false);
+      this.TextComment.TextChanged += (s, e) => UpdateTitleSave();
+      UpdateTitleSave();
+    }
+
+    /// <summary>Pins the window on top of other apps, or not; the pin button shows a filled pin while pinned.</summary>
+    private void SetPinned(bool pinned) {
+      this.Topmost = pinned;
+      this.ButtonPin.Content = pinned ? "\uE841" : "\uE718";
+      if (pinned) {
+        this.ButtonPin.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xCD, 0xC7, 0xB4));
+      } else {
+        this.ButtonPin.ClearValue(BackgroundProperty);
+      }
+    }
+
+    // Save is active only when the text differs from the saved note.
+    private void UpdateTitleSave() {
+      this.ButtonTitleSave.IsEnabled = TextToSave() != (this.shortcut.NoteText ?? "");
+    }
+
+    private string TextToSave() {
+      string text = this.TextComment.Text ?? "";
+      return string.IsNullOrWhiteSpace(text) ? "" : text;
+    }
+
+    // Saves the note and keeps its window open (the title-bar Save, Ctrl+Enter and Ctrl+S).
+    private void SaveNoteKeepOpen() {
+      this.shortcut.NoteText = TextToSave();
+      this.Saved = true;
+      UpdateTitleSave();
+    }
+
+    /// <summary>
     /// The look of the Note and Comment windows: the editor fills the body (window colour, no border, 10 px padding, no
     /// word wrap, both scroll bars), with the hint in the bottom bar on the left. Every outer margin of the bottom bar
     /// equals the height of the Save button.
@@ -321,6 +373,10 @@ namespace MDSHO {
       if (e.Key == Key.Escape) {
         e.Handled = true;
         Close();
+      } else if (this.kind == TextKind.Note && (e.Key == Key.Enter || e.Key == Key.S) && (KeyboardModifiers() & ModifierKeys.Control) == ModifierKeys.Control) {
+        // A note is saved and stays open.
+        e.Handled = true;
+        SaveNoteKeepOpen();
       } else if (e.Key == Key.Enter && (KeyboardModifiers() & ModifierKeys.Control) == ModifierKeys.Control) {
         e.Handled = true;
         Save();

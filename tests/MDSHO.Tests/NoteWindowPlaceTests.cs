@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -157,6 +157,32 @@ namespace MDSHO.Tests {
         } finally {
           TextEditWindow.MainWorkArea = null;
         }
+      });
+    }
+
+    [Fact]
+    public void A_new_note_window_is_not_on_top_and_the_pin_keeps_it_on_top_and_is_saved() {
+      WithNote(f => {
+        TextEditWindow window = Open(f.Note);
+        Assert.False(window.Topmost);
+        Button pin = (Button)window.FindName("ButtonPin");
+        pin.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, pin));
+        WpfAppHost.Pump();
+        Assert.True(window.Topmost);
+        Assert.True(DataStore.NoteWindows.Get(f.Note.ID).IsTopmost);
+        pin.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, pin));
+        WpfAppHost.Pump();
+        Assert.False(window.Topmost);
+        Assert.False(DataStore.NoteWindows.Get(f.Note.ID).IsTopmost);
+      });
+    }
+
+    [Fact]
+    public void A_pinned_note_opens_pinned() {
+      WithNote(f => {
+        DataStore.NoteWindows.Save(new NoteWindowPlace(f.Note.ID, -9200, -9100, 720, 610, NoteWindowPlace.Normal, isOpen: true) { IsTopmost = true });
+        TextEditWindow window = Open(f.Note);
+        Assert.True(window.Topmost);
       });
     }
 
