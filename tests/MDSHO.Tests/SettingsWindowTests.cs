@@ -315,14 +315,15 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Content_has_30_pixels_above_and_below_and_the_apply_button_is_a_bit_larger() {
+    public void Content_starts_one_apply_button_height_from_the_top_and_the_apply_button_is_a_bit_larger() {
       WithSettings((window, w) => {
         FrameworkElement body = Named<FrameworkElement>(window, "PanelBody");
-        Assert.Equal(new Thickness(40, 30, 40, 30), body.Margin);
+        Button apply = Named<Button>(window, "ButtonApply");
+        double h = apply.ActualHeight;
+        Assert.Equal(new Thickness(h), body.Margin);
         ScrollViewer scroll = Named<ScrollViewer>(window, "ScrollBody");
         Label heading = WpfAppHost.VisualDescendants<Label>(body).First();
-        Assert.Equal(30.0, heading.TranslatePoint(new Point(0, 0), scroll).Y, 0.5); // half a pixel for layout rounding at 125 % scaling
-        Button apply = Named<Button>(window, "ButtonApply");
+        Assert.Equal(h, heading.TranslatePoint(new Point(0, 0), scroll).Y, 0.5); // half a pixel for layout rounding at 125 % scaling
         Assert.Equal(new Thickness(22, 5, 22, 5), apply.Padding);
         System.Windows.Controls.Border chrome = WpfAppHost.VisualDescendants<System.Windows.Controls.Border>(apply).First();
         Assert.Equal(new Thickness(22, 5, 22, 5), chrome.Padding);
@@ -330,22 +331,29 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Content_has_40_pixel_margins_and_the_footer_has_30_40_padding() {
+    public void Every_outer_margin_of_the_content_and_the_apply_bar_is_the_apply_button_height() {
       WithSettings((window, w) => {
         FrameworkElement client = (FrameworkElement)VisualTreeHelper.GetChild(window, 0);
         FrameworkElement body = Named<FrameworkElement>(window, "PanelBody");
-        Point topLeft = body.TranslatePoint(new Point(0, 0), client);
-        Assert.Equal(40, topLeft.X, 1);
-        Assert.Equal(client.ActualWidth - 40, topLeft.X + body.ActualWidth, 1);
-        // The palette reaches the right margin; the heading text starts at the left margin.
-        FrameworkElement palette = Named<FrameworkElement>(window, "PanelPalette");
-        Assert.Equal(client.ActualWidth - 40, palette.TranslatePoint(new Point(palette.ActualWidth, 0), client).X, 1);
-        FrameworkElement footer = Named<FrameworkElement>(window, "Footer");
         Button apply = Named<Button>(window, "ButtonApply");
+        double h = apply.ActualHeight;
+        Assert.True(h > 10, "Apply height " + h);
+        Point topLeft = body.TranslatePoint(new Point(0, 0), client);
+        Assert.Equal(h, topLeft.X, 1);
+        Assert.Equal(h, topLeft.Y, 1);
+        Assert.Equal(client.ActualWidth - h, topLeft.X + body.ActualWidth, 1);
+        // The palette reaches the right margin.
+        FrameworkElement palette = Named<FrameworkElement>(window, "PanelPalette");
+        Assert.Equal(client.ActualWidth - h, palette.TranslatePoint(new Point(palette.ActualWidth, 0), client).X, 1);
+        // The window is just tall enough that the content's bottom margin is the button height too.
+        FrameworkElement footer = Named<FrameworkElement>(window, "Footer");
+        double footerTop = footer.TranslatePoint(new Point(0, 0), client).Y;
+        Assert.Equal(footerTop - h, topLeft.Y + body.ActualHeight, 1.5);
         Point applyTopLeft = apply.TranslatePoint(new Point(0, 0), footer);
-        Assert.Equal(30, applyTopLeft.Y, 1);
-        Assert.Equal(footer.ActualHeight - 30, applyTopLeft.Y + apply.ActualHeight, 1);
-        Assert.Equal(footer.ActualWidth - 40, applyTopLeft.X + apply.ActualWidth, 1);
+        Assert.Equal(h, applyTopLeft.Y, 1);
+        Assert.Equal(footer.ActualHeight - h, applyTopLeft.Y + apply.ActualHeight, 1);
+        Assert.Equal(footer.ActualWidth - h, applyTopLeft.X + apply.ActualWidth, 1);
+        Assert.Equal(537, window.Height);
       });
     }
 

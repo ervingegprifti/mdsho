@@ -10,7 +10,7 @@
         xmlns:converters="clr-namespace:MDSHO.Converters"
         Title="Settings"
         Width="660"
-        Height="560"
+        Height="537"
         ResizeMode="NoResize"
         Topmost="True"
         Background="#FFF4F3ED"
@@ -119,7 +119,7 @@
         </Grid.RowDefinitions>
 
         <ScrollViewer x:Name="ScrollBody" Grid.Row="0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="PanelBody" Orientation="Vertical" Margin="40,30,40,30">
+            <StackPanel x:Name="PanelBody" Orientation="Vertical" Margin="26">
                 <Label Content="Window appearance" Style="{StaticResource StyleSettingsCategory}"/>
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -268,8 +268,9 @@
             </StackPanel>
         </ScrollViewer>
 
+        <!--Every outer margin of the content and of the Apply bar equals the Apply button height (set in code from the real button)-->
         <Border x:Name="Footer" Grid.Row="1" Background="#DFDACB">
-            <Grid Margin="40,30,40,30">
+            <Grid x:Name="FooterContent" Margin="26">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>

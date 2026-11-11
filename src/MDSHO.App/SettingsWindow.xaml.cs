@@ -28,6 +28,12 @@ namespace MDSHO {
     /// <summary>Creates the Settings dialog for a window and remembers the current settings so Cancel can restore them.</summary>
     public SettingsWindow(DesktopWindowViewModel desktopWindow) {
       InitializeComponent();
+      // Every outer margin of the content and of the Apply bar equals the Apply button height, like in the Note window.
+      this.ButtonApply.SizeChanged += (s, e) => {
+        Thickness margin = new Thickness(this.ButtonApply.ActualHeight);
+        this.PanelBody.Margin = margin;
+        this.FooterContent.Margin = margin;
+      };
       SetTitle();
 
       this.DataContext = desktopWindow;
