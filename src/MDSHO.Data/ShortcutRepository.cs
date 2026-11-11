@@ -92,6 +92,12 @@ namespace MDSHO.Data {
         isGroup: 0, isGroupExpanded: 0, comment: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
         isProcessCommand: 1, processFileName: "", processArguments: ""));
     }
+
+    public Shortcut CreateNote(long? parentShortcutID, long? parentWindowID) {
+      return Append(new Shortcut(parentShortcutID, parentWindowID, "New note", "", "", Identifiers.NewGuid(),
+        isGroup: 0, isGroupExpanded: 0, comment: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
+        isProcessCommand: 0, processFileName: "", processArguments: "", isNote: 1, noteText: ""));
+    }
     #endregion CREATE
 
     #region UPDATE / DELETE
@@ -126,6 +132,9 @@ namespace MDSHO.Data {
     }
     public void UpdateComment(long id, string comment) {
       Run("UPDATE Shortcuts SET Comment = @comment WHERE ID = @id;", new { id, comment = comment ?? "" });
+    }
+    public void UpdateNoteText(long id, string noteText) {
+      Run("UPDATE Shortcuts SET NoteText = @noteText WHERE ID = @id;", new { id, noteText = noteText ?? "" });
     }
     public void UpdatePosition(long id, long position) {
       Run("UPDATE Shortcuts SET Position = @position WHERE ID = @id;", new { id, position });

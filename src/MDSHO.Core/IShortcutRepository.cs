@@ -29,6 +29,8 @@ namespace MDSHO.Core {
     Shortcut Create(long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid);
     /// <summary>Appends a new run-command shortcut named "New command".</summary>
     Shortcut CreateProcessCommand(long? parentShortcutID, long? parentWindowID);
+    /// <summary>Appends a new empty note named "New note".</summary>
+    Shortcut CreateNote(long? parentShortcutID, long? parentWindowID);
     /// <summary>Writes every column of the row.</summary>
     void Update(Shortcut shortcut);
     /// <summary>Deletes the shortcut; its descendants are deleted by the database (cascade).</summary>
@@ -50,6 +52,8 @@ namespace MDSHO.Core {
     void UpdateMarkColor(long id, string markColor);
     /// <summary>Saves the comment.</summary>
     void UpdateComment(long id, string comment);
+    /// <summary>Saves the text of a note.</summary>
+    void UpdateNoteText(long id, string noteText);
     /// <summary>Saves the order among the siblings.</summary>
     void UpdatePosition(long id, long position);
     /// <summary>Sets Position to the index in the list (0, 1, 2, ...) in one transaction: either all positions change or none.</summary>

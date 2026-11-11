@@ -169,13 +169,13 @@ namespace MDSHO.Tests {
     }
 
     private static void PressKey(Window window, Key key, ModifierKeys modifiers = ModifierKeys.None) {
-      CommentWindow.KeyboardModifiers = () => modifiers;
+      TextEditWindow.KeyboardModifiers = () => modifiers;
       try {
         KeyEventArgs args = new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(window), 0, key) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
         window.RaiseEvent(args);
         WpfAppHost.Pump();
       } finally {
-        CommentWindow.KeyboardModifiers = () => Keyboard.Modifiers;
+        TextEditWindow.KeyboardModifiers = () => Keyboard.Modifiers;
       }
     }
 
@@ -183,7 +183,7 @@ namespace MDSHO.Tests {
     public void The_window_shows_the_button_name_and_its_comment() {
       WithButtons(f => {
         f.Command.Comment = "Call Anna first.";
-        CommentWindow window = new CommentWindow(f.Command);
+        TextEditWindow window = TextEditWindow.ForComment(f.Command);
         Shown(window, () => {
           Assert.Equal("Comment: Ping SRV01", Named<TextBlock>(window, "TextTitle").Text);
           Assert.Equal("Comment: Ping SRV01", window.Title);
@@ -199,7 +199,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void Save_stores_the_comment_and_closes() {
       WithButtons(f => {
-        CommentWindow window = new CommentWindow(f.Command);
+        TextEditWindow window = TextEditWindow.ForComment(f.Command);
         Shown(window, () => {
           Named<TextBox>(window, "TextComment").Text = "line 1\r\nline 2";
           Click(Named<Button>(window, "ButtonSave"));
@@ -214,7 +214,7 @@ namespace MDSHO.Tests {
     public void Saving_only_spaces_clears_the_comment() {
       WithButtons(f => {
         f.Command.Comment = "old";
-        CommentWindow window = new CommentWindow(f.Command);
+        TextEditWindow window = TextEditWindow.ForComment(f.Command);
         Shown(window, () => {
           Named<TextBox>(window, "TextComment").Text = "   \r\n ";
           Click(Named<Button>(window, "ButtonSave"));
@@ -229,7 +229,7 @@ namespace MDSHO.Tests {
       foreach (string way in new[] { "ButtonCancel", "ButtonClose", "Escape" }) {
         WithButtons(f => {
           f.Command.Comment = "old";
-          CommentWindow window = new CommentWindow(f.Command);
+          TextEditWindow window = TextEditWindow.ForComment(f.Command);
           Shown(window, () => {
             Named<TextBox>(window, "TextComment").Text = "changed";
             if (way == "Escape") {
@@ -248,7 +248,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void Ctrl_Enter_saves_and_plain_Enter_does_not() {
       WithButtons(f => {
-        CommentWindow window = new CommentWindow(f.Command);
+        TextEditWindow window = TextEditWindow.ForComment(f.Command);
         Shown(window, () => {
           Named<TextBox>(window, "TextComment").Text = "typed";
           PressKey(window, Key.Enter);
@@ -264,7 +264,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void The_window_icon_follows_the_solid_or_outline_setting() {
       WithButtons(f => {
-        CommentWindow window = new CommentWindow(f.Command);
+        TextEditWindow window = TextEditWindow.ForComment(f.Command);
         Shown(window, () => {
           Assert.Equal(f.Command.OwningWindow.Appearance.Icons.Info, GlyphIcon.GlyphOf(window.Icon));
         });

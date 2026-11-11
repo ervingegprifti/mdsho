@@ -20,6 +20,12 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   several lines (Save or Ctrl+Enter saves; Cancel, the X button or Esc close without saving). The comment shows in the
   button's tooltip below the target or command line, cut after 10 lines, and a small "i" marker after the name shows
   which buttons have one. A comment of only spaces counts as none.
+- **Note buttons**, a third kind of button next to shortcuts and run commands: **New note** (right-click empty space or
+  a group) creates one and opens the Note window. Opening a note (double-click, or single click when that is set) opens
+  the Note window to read and edit its text; its tooltip shows the first 10 lines. A note's right-click menu has **Edit
+  note...** and **Copy note text** (puts the whole note on the clipboard). Notes can be renamed, commented, marked,
+  moved, copied, exported and imported like other buttons, and need no shortcut file. They use the text-box glyph
+  until the icon font gets a dedicated note glyph.
 
 ### Changed
 

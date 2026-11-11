@@ -37,6 +37,8 @@ namespace MDSHO.ViewModels {
     Command,
     /// <summary>A group of shortcuts.</summary>
     Group,
+    /// <summary>A note button: its text is the note.</summary>
+    Note,
     /// <summary>A file or folder path that does not exist (any more).</summary>
     Missing
   }
@@ -101,12 +103,19 @@ namespace MDSHO.ViewModels {
         if (!this.HasComment) {
           return null;
         }
-        string[] lines = this.comment.Trim().Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
-        if (lines.Length <= CommentPreviewLines) {
-          return string.Join(Environment.NewLine, lines);
-        }
-        return string.Join(Environment.NewLine, lines.Take(CommentPreviewLines)) + Environment.NewLine + "…";
+        return Preview(this.comment);
       }
+    }
+    /// <summary>At most <see cref="CommentPreviewLines"/> lines of a text, then "…"; null for a text of only spaces.</summary>
+    private static string Preview(string text) {
+      if (string.IsNullOrWhiteSpace(text)) {
+        return null;
+      }
+      string[] lines = text.Trim().Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+      if (lines.Length <= CommentPreviewLines) {
+        return string.Join(Environment.NewLine, lines);
+      }
+      return string.Join(Environment.NewLine, lines.Take(CommentPreviewLines)) + Environment.NewLine + "…";
     }
     /// <summary>True when the tooltip has something to show: the target or command line, or the comment.</summary>
     public bool HasToolTip => !string.IsNullOrEmpty(this.ToolTipText) || this.HasComment;
@@ -121,6 +130,11 @@ namespace MDSHO.ViewModels {
     private string markColor;
     private long position;
     private bool isProcessCommand;
+    private bool isNote;
+    /// <summary>The text of a note button (empty for other buttons).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ToolTipText))]
+    private string noteText;
     /// <summary>Program run by a command shortcut.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Target), nameof(ResolvedProcessArguments), nameof(ToolTipText))]
@@ -196,6 +210,7 @@ namespace MDSHO.ViewModels {
     public ShortcutTargetKind TargetKind {
       get {
         if (this.isGroup) { return ShortcutTargetKind.Group; }
+        if (this.isNote) { return ShortcutTargetKind.Note; }
         if (this.isProcessCommand) { return ShortcutTargetKind.Command; }
         if (this.IsWebAddress) { return ShortcutTargetKind.WebLink; }
         return this.pathKind;
@@ -219,7 +234,7 @@ namespace MDSHO.ViewModels {
     // A result for an older target is dropped.
     private void UpdateTargetKind(bool refresh) {
       string path = this.target;
-      if (this.isGroup || this.isProcessCommand || string.IsNullOrWhiteSpace(path) || this.IsWebAddress) {
+      if (this.isGroup || this.isProcessCommand || this.isNote || string.IsNullOrWhiteSpace(path) || this.IsWebAddress) {
         ++this.targetCheckVersion;
         SetPathKind(ShortcutTargetKind.File);
         return;
@@ -312,6 +327,8 @@ namespace MDSHO.ViewModels {
     public static Action<ShortcutViewModel, bool> OpenRunCommandEditor { get; set; }
     /// <summary>Opens the Comment window for a button or group (set by the app; tests replace it).</summary>
     public static Action<ShortcutViewModel> OpenCommentEditor { get; set; }
+    /// <summary>Opens the Note window for a note button (set by the app; tests replace it).</summary>
+    public static Action<ShortcutViewModel> OpenNoteEditor { get; set; }
     /// <summary>The Windows error code when the user answers No to the administrator (UAC) prompt.</summary>
     public const int ErrorCancelled = 1223;
     /// <summary>
@@ -382,10 +399,13 @@ namespace MDSHO.ViewModels {
     }
     /// <summary>
     /// The tooltip: for a run command the command line that will run (program, quoted when it contains a space, then the
-    /// resolved arguments); for anything else the target.
+    /// resolved arguments); for a note the first lines of the note; for anything else the target.
     /// </summary>
     public string ToolTipText {
       get {
+        if (this.isNote) {
+          return Preview(this.noteText);
+        }
         if (!this.isProcessCommand || this.isGroup) {
           return this.Target;
         }
@@ -444,17 +464,21 @@ namespace MDSHO.ViewModels {
     public long Position { get { return this.position; } set { this.position = value; } }
     /// <summary>True when the shortcut runs a command.</summary>
     public bool IsProcessCommand { get { return this.isProcessCommand; } set { this.isProcessCommand = value; } }
+    /// <summary>True for a note button.</summary>
+    public bool IsNote { get { return this.isNote; } }
     /// <summary>The shortcuts inside a group (empty for a normal shortcut).</summary>
     public ObservableCollection<ShortcutViewModel> Children { get { return shortcuts; } set { shortcuts = value; } }
     // Shown or hidden (the views turn these into Visibility).
     /// <summary>True for a group.</summary>
     public bool ShowGroup => this.isGroup;
     /// <summary>True for a normal shortcut.</summary>
-    public bool ShowSetNameTheSameAsTarget => !this.isGroup;
+    public bool ShowSetNameTheSameAsTarget => !this.isGroup && !this.isNote;
     /// <summary>True for a normal shortcut.</summary>
-    public bool ShowCopyTargetToMemory => !this.isGroup;
+    public bool ShowCopyTargetToMemory => !this.isGroup && !this.isNote;
     /// <summary>True for a file, folder or web link shortcut (not for groups and commands).</summary>
-    public bool ShowShortcut => !this.isGroup && !this.isProcessCommand;
+    public bool ShowShortcut => !this.isGroup && !this.isProcessCommand && !this.isNote;
+    /// <summary>True for a note button.</summary>
+    public bool ShowNote => !this.isGroup && this.isNote;
     /// <summary>True when the shortcut is marked.</summary>
     public bool ShowMark => this.isMarked;
     /// <summary>True for a command shortcut.</summary>
@@ -469,7 +493,7 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "") {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "") {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -489,6 +513,8 @@ namespace MDSHO.ViewModels {
       this.processArguments = processArguments;
       this.processRunAsAdmin = processRunAsAdmin;
       this.processWorkingFolder = processWorkingFolder ?? "";
+      this.isNote = isNote;
+      this.noteText = noteText ?? "";
       UpdateTargetKind(false);
       // Events.
       this.PropertyChanged += ShortcutViewModel_PropertyChanged;
@@ -531,6 +557,8 @@ namespace MDSHO.ViewModels {
         DataStore.Shortcuts.UpdateMarkColor(this.ID, this.MarkColor);
       } else if (e.PropertyName == nameof(this.Comment)) {
         DataStore.Shortcuts.UpdateComment(this.ID, this.Comment ?? "");
+      } else if (e.PropertyName == nameof(this.NoteText)) {
+        DataStore.Shortcuts.UpdateNoteText(this.ID, this.NoteText ?? "");
       } else if (e.PropertyName == nameof(this.ToolTipText)) {
         OnPropertyChanged(nameof(this.HasToolTip));
         OnPropertyChanged(nameof(this.ShowCommentDivider));
@@ -580,6 +608,27 @@ namespace MDSHO.ViewModels {
       parentShortcut.Children.Add(shortcut);
       // A new command opens the Run Command window; on Cancel the new command stays.
       OpenRunCommandEditor?.Invoke(shortcut, true);
+    }
+    /// <summary>Adds a new note inside this group and opens the Note window; on Cancel the new note stays.</summary>
+    [RelayCommand(CanExecute = nameof(CanExecuteNewProcessCommandShortcut))]
+    private void NewNoteShortcut() {
+      ShortcutViewModel note = ViewModelFactory.NewNoteShortcut(this.AppViewModel, this, null);
+      this.Children.Add(note);
+      OpenNoteEditor?.Invoke(note);
+    }
+    /// <summary>Opens the Note window for this note.</summary>
+    [RelayCommand]
+    private void EditNote() {
+      if (this.isNote) {
+        OpenNoteEditor?.Invoke(this);
+      }
+    }
+    /// <summary>Puts the whole note on the clipboard.</summary>
+    [RelayCommand]
+    private void CopyNoteText() {
+      if (this.isNote) {
+        CopyText(this.NoteText ?? "");
+      }
     }
     /// <summary>Opens the Comment window for this button or group.</summary>
     [RelayCommand]
@@ -698,6 +747,11 @@ namespace MDSHO.ViewModels {
     /// <summary>Opens the shortcut or runs the command, optionally elevated; shows a message when Windows cannot open it.</summary>
     public void RunShortcut(bool runAsAdministrator) {
       if (this.IsEditing) {
+        return;
+      }
+      if (this.isNote) {
+        // A note runs nothing: opening it shows the note.
+        OpenNoteEditor?.Invoke(this);
         return;
       }
       // The target may have been deleted or restored since the icon was drawn.

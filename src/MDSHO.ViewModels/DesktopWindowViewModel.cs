@@ -288,6 +288,14 @@ namespace MDSHO.ViewModels {
       // A new command opens the Run Command window; on Cancel the new command stays.
       ShortcutViewModel.OpenRunCommandEditor?.Invoke(shortcut, true);
     }
+    /// <summary>Adds a new note at the window root and opens the Note window; on Cancel the new note stays.</summary>
+    [RelayCommand]
+    private void NewNoteShortcut() {
+      DesktopWindowViewModel shortcutParentWindow = this.IsClone ? this.ParentWindow : this;
+      ShortcutViewModel note = ViewModelFactory.NewNoteShortcut(this.AppViewModel, null, shortcutParentWindow);
+      shortcutParentWindow.RootShortcuts.Add(note);
+      ShortcutViewModel.OpenNoteEditor?.Invoke(note);
+    }
     /// <summary>Pastes the cut or copied shortcut at the window root.</summary>
     [RelayCommand(CanExecute = nameof(CanExecutePasteShortcut))]
     private void PasteShortcut() {

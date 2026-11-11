@@ -266,9 +266,9 @@ namespace MDSHO.Tests {
     public void Command_properties_keep_the_names_the_views_bind_to() {
       string[] Commands(Type t) => t.GetProperties().Where(p => typeof(ICommand).IsAssignableFrom(p.PropertyType)).Select(p => p.Name).OrderBy(n => n).ToArray();
       Assert.Equal(new[] { "BeginEditTitleCommand", "CancelEditTitleCommand", "CloseWindowCommand", "CommitEditTitleCommand",
-        "NewGroupShortcutCommand", "NewProcessCommandShortcutCommand", "PasteShortcutCommand" }, Commands(typeof(DesktopWindowViewModel)));
-      Assert.Equal(new[] { "CancelEditCommand", "CommitEditCommand", "CopyShortcutCommand", "CopyTargetToMemoryCommand", "CutShortcutCommand",
-        "DeleteShortcutCommand", "EditCommentCommand", "MarkShortcutCommand", "NewGroupShortcutCommand", "NewProcessCommandShortcutCommand", "PasteShortcutCommand",
+        "NewGroupShortcutCommand", "NewNoteShortcutCommand", "NewProcessCommandShortcutCommand", "PasteShortcutCommand" }, Commands(typeof(DesktopWindowViewModel)));
+      Assert.Equal(new[] { "CancelEditCommand", "CommitEditCommand", "CopyNoteTextCommand", "CopyShortcutCommand", "CopyTargetToMemoryCommand", "CutShortcutCommand",
+        "DeleteShortcutCommand", "EditCommentCommand", "EditNoteCommand", "MarkShortcutCommand", "NewGroupShortcutCommand", "NewNoteShortcutCommand", "NewProcessCommandShortcutCommand", "PasteShortcutCommand",
         "RenameCommand", "SetNameTheSameAsTargetCommand", "SetRunCommandCommand" }, Commands(typeof(ShortcutViewModel)));
       Assert.Equal(new[] { "TestRunCommand" }, Commands(typeof(RunCommandViewModel)));
     }

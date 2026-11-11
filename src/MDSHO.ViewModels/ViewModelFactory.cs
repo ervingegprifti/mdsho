@@ -100,7 +100,9 @@ namespace MDSHO.ViewModels {
         processFileName: shortcutRecord.ProcessFileName,
         processArguments: shortcutRecord.ProcessArguments,
         processRunAsAdmin: Convert.ToBoolean(shortcutRecord.ProcessRunAsAdmin),
-        processWorkingFolder: shortcutRecord.ProcessWorkingFolder);
+        processWorkingFolder: shortcutRecord.ProcessWorkingFolder,
+        isNote: Convert.ToBoolean(shortcutRecord.IsNote),
+        noteText: shortcutRecord.NoteText);
       foreach (Shortcut childRecord in shortcutRecord.Shortcuts) {
         ShortcutViewModel child = ShortcutToViewModel(appViewModel: appViewModel, parentShortcut: shortcut, shortcutRecord: childRecord);
         shortcut.Children.Add(child);
@@ -212,10 +214,13 @@ namespace MDSHO.ViewModels {
         processFileName: shortcut.ProcessFileName,
         processArguments: shortcut.ProcessArguments,
         processRunAsAdmin: Convert.ToInt64(shortcut.ProcessRunAsAdmin),
-        processWorkingFolder: shortcut.ProcessWorkingFolder);
+        processWorkingFolder: shortcut.ProcessWorkingFolder,
+        isNote: Convert.ToInt64(shortcut.IsNote),
+        noteText: shortcut.NoteText ?? "");
       Shortcut savedRecord = DataStore.Shortcuts.Append(template);
       // Copy the physical file after the insert, so a failed insert (rollback) never leaves an orphan file behind.
-      if (!shortcut.IsGroup && !shortcut.IsProcessCommand) {
+      // Notes, groups and run commands have no shortcut file.
+      if (!shortcut.IsGroup && !shortcut.IsProcessCommand && !shortcut.IsNote) {
         string shortcutPath = Paths.GetShortcutFilePath(shortcut.Guid, shortcut.Ext);
         if (System.IO.File.Exists(shortcutPath)) {
           string copyPath = Paths.GetShortcutFilePath(savedRecord.Guid, savedRecord.Ext);
@@ -280,6 +285,12 @@ namespace MDSHO.ViewModels {
       Shortcut shortcutRecord = DataStore.Shortcuts.CreateProcessCommand(parentShortcutID, parentWindowID);
       ShortcutViewModel shortcut = ShortcutToViewModel(appViewModel, parentShortcut, shortcutRecord);
       return shortcut;
+    }
+    /// <summary>Creates a new empty note named "New note" under a group or a window (exactly one of the two).</summary>
+    public static ShortcutViewModel NewNoteShortcut(AppViewModel appViewModel, ShortcutViewModel parentShortcut, DesktopWindowViewModel parentWindow) {
+      RequireOneParent(parentShortcut, parentWindow);
+      Shortcut shortcutRecord = DataStore.Shortcuts.CreateNote(parentShortcut?.ID, parentWindow?.ID);
+      return ShortcutToViewModel(appViewModel, parentShortcut, shortcutRecord);
     }
     #endregion NEW
 
