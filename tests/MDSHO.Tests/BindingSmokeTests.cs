@@ -140,8 +140,8 @@ namespace MDSHO.Tests {
                 Pump();
               }
               Assert.True(VisualDescendants<TreeViewItem>(tree).Count() >= 8, "the whole shortcut tree should be rendered");
-              // Rate / Share moved to the About window and the title menu: the footer keeps only the settings gear (windows and clones).
-              Assert.NotNull(view.FindName("ButtonFooterSettings"));
+              // Rate / Share moved to the About window and the title menu; the settings gear is in the title bar (windows and clones).
+              Assert.NotNull(view.FindName("ButtonHeaderSettings"));
               Assert.Null(view.FindName("ButtonRateAndReview"));
               Assert.Null(view.FindName("ButtonShare"));
               // Context menus bind separately from the window's visual tree.

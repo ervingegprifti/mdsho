@@ -25,25 +25,6 @@ namespace MDSHO.ViewModels {
         return copiedShortcut != null;
       }
     }
-    /// <summary>Always false: all features are free until a professional licence exists.</summary>
-    public bool Trial {
-      get {
-        return false;
-      }
-    }
-    /// <summary>True only in a trial, to show the PRO badge.</summary>
-    public bool ShowPRO => this.Trial;
-    // Commands
-    /// <summary>Text of the New Command menu item (carries a PRO suffix in a trial).</summary>
-    public string NewCommandMenuItemHeader {
-      get {
-        if (this.Trial) {
-          return "New command (PRO)";
-        } else {
-          return "New command";
-        }
-      }
-    }
     /// <summary>All real windows (not clones); each one holds its own clones.</summary>
     public ObservableCollection<DesktopWindowViewModel> Windows { get; set; } = new ObservableCollection<DesktopWindowViewModel>();
     #endregion PROPERTIES

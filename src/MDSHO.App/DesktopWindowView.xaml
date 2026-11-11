@@ -142,57 +142,6 @@
                             </Setter.Value>
                         </Setter>
                     </Style>
-                    <Style x:Key="StyleFooterMostLeftButton" TargetType="{x:Type Button}">
-                        <Setter Property="Background" Value="{x:Null}"/>
-                        <Setter Property="BorderBrush" Value="{x:Null}"/>
-                        <Setter Property="Foreground" Value="{Binding Appearance.TextColor, Converter={StaticResource HexToBrush}}"/>
-                        <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
-                        <Setter Property="FontSize" Value="16"/>
-                        <Setter Property="Width" Value="32"/>
-                        <Setter Property="Height" Value="32"/>
-                        <Setter Property="Cursor" Value="Hand"/>
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="Button">
-                                    <Border BorderThickness="0" Background="{TemplateBinding Background}" CornerRadius="{Binding IsDocked, Converter={StaticResource DockedCornerRadius}, ConverterParameter='0,0,0,5'}">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{Binding Appearance.BackgroundColor, Converter={StaticResource HexToBrush}}" />
-                                        </Trigger>
-                                        <Trigger Property="IsPressed" Value="True">
-                                            <Setter Property="Background" Value="{Binding Appearance.BackgroundColor, Converter={StaticResource HexToBrush}}" />
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                    <Style x:Key="StyleFooterButtonPRO" TargetType="{x:Type Button}">
-                        <Setter Property="Background" Value="{x:Null}"/>
-                        <Setter Property="BorderBrush" Value="{x:Null}"/>
-                        <Setter Property="Foreground" Value="{Binding Appearance.TextColor, Converter={StaticResource HexToBrush}}"/>
-                        <Setter Property="Height" Value="32"/>
-                        <Setter Property="Cursor" Value="Hand"/>
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="Button">
-                                    <Border BorderThickness="0" Background="{TemplateBinding Background}" Padding="10,0,10,0">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{Binding Appearance.BackgroundColor, Converter={StaticResource HexToBrush}}" />
-                                        </Trigger>
-                                        <Trigger Property="IsPressed" Value="True">
-                                            <Setter Property="Background" Value="{Binding Appearance.BackgroundColor, Converter={StaticResource HexToBrush}}" />
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -202,10 +151,8 @@
         <Grid.RowDefinitions>
             <!--Header-->
             <RowDefinition Height="Auto"/>
-            <!--Body-->
+            <!--Body (fills the rest: there is no bottom bar)-->
             <RowDefinition Height="*"/>
-            <!--Footer-->
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
@@ -313,6 +260,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!--Header Icon-->
@@ -336,23 +284,28 @@
                         EditPadding="1"
                         VerticalAlignment="Center"/>
                     <!--Header Buttons-->
-                    <Button x:Name="ButtonHeaderDockWindowLeft" Grid.Row="0" Grid.Column="2"
+                    <Button x:Name="ButtonHeaderSettings" Grid.Row="0" Grid.Column="2"
+                        Content="{Binding Appearance.Icons.Settings}"
+                        Style="{StaticResource StyleHeaderButton}"
+                        ToolTip="Settings"
+                        AutomationProperties.Name="Settings" />
+                    <Button x:Name="ButtonHeaderDockWindowLeft" Grid.Row="0" Grid.Column="3"
                         Content="{Binding Appearance.Icons.DockLeft}"
                         Style="{StaticResource StyleHeaderButton}"
                         ToolTip="Dock window left"
                         AutomationProperties.Name="Dock window left" />
-                    <Button x:Name="ButtonHeaderDockWindowRight" Grid.Row="0" Grid.Column="3"
+                    <Button x:Name="ButtonHeaderDockWindowRight" Grid.Row="0" Grid.Column="4"
                         Content="{Binding Appearance.Icons.DockRight}"
                         Style="{StaticResource StyleHeaderButton}"
                         ToolTip="Dock window right"
                         AutomationProperties.Name="Dock window right" />
-                    <Button x:Name="ButtonHeaderCloneThisWindowToAllScreens" Grid.Row="0" Grid.Column="4"
+                    <Button x:Name="ButtonHeaderCloneThisWindowToAllScreens" Grid.Row="0" Grid.Column="5"
                         Content="{Binding Appearance.Icons.Clones}"
                         Style="{StaticResource StyleHeaderMostRightButton}"
                         Visibility="{Binding ShowCloneWindow, Converter={StaticResource BoolToVisibility}}"
                         ToolTip="Clone this window to all screens"
                         AutomationProperties.Name="Clone this window to all screens" />
-                    <Button x:Name="ButtonHeaderCloseWindow" Grid.Row="0" Grid.Column="4"
+                    <Button x:Name="ButtonHeaderCloseWindow" Grid.Row="0" Grid.Column="5"
                         Content="{Binding Appearance.Icons.Times}"
                         Style="{StaticResource StyleHeaderMostRightButton}"
                         Command="{Binding CloseWindowCommand}"
@@ -366,7 +319,8 @@
         <!--Body-->
         <!--https://chriscavanagh.wordpress.com/2008/10/03/wpf-easy-rounded-corners-for-anything/-->
         <Border x:Name="BorderBodyRoundedCorners" Grid.Row="1" Grid.Column="0"
-            BorderThickness="1,0,1,0"
+            BorderThickness="1,0,1,1"
+            CornerRadius="{Binding IsDocked, Converter={StaticResource DockedCornerRadius}, ConverterParameter='0,0,5,5'}"
             BorderBrush="{Binding Appearance.BorderColor, Converter={StaticResource HexToBrush}}"
             Background="{Binding Appearance.BackgroundColor, Converter={StaticResource HexToBrush}}">
             <Grid x:Name="GridBody" Grid.Row="1" Grid.Column="0" Margin="0,0,0,0">
@@ -403,7 +357,7 @@
                                     <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Plus}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="{Binding AppViewModel.NewCommandMenuItemHeader}" Command="{Binding NewProcessCommandShortcutCommand}">
+                            <MenuItem Header="New command" Command="{Binding NewProcessCommandShortcutCommand}">
                                 <MenuItem.Icon>
                                     <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Plus}"/>
                                 </MenuItem.Icon>
@@ -444,7 +398,7 @@
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Plus}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="{Binding AppViewModel.NewCommandMenuItemHeader}" Command="{Binding NewProcessCommandShortcutCommand}" Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}">
+                                        <MenuItem Header="New command" Command="{Binding NewProcessCommandShortcutCommand}" Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Plus}"/>
                                             </MenuItem.Icon>
@@ -674,9 +628,6 @@
 				                        Margin="5,0,0,0"
 				                        VerticalAlignment="Center" />
                                     </StackPanel>
-                                    <Border Grid.Row="0" Grid.Column="3" Background="Orange" CornerRadius="4" Padding="4,0,4,0" Margin="5,0,0,0" Visibility="{Binding ShowPRO, Converter={StaticResource BoolToVisibility}}">
-                                        <TextBlock x:Name="TextBlockPRO" Text="PRO" Foreground="Black" />
-                                    </Border>
                                 </Grid>
                             </Button>
                         </HierarchicalDataTemplate>
@@ -692,37 +643,6 @@
             </Grid>
         </Border>
 
-        <!--Footer-->
-        <!--https://chriscavanagh.wordpress.com/2008/10/03/wpf-easy-rounded-corners-for-anything/-->
-        <Border x:Name="BorderFooterRoundedCorners" Grid.Row="2" Grid.Column="0"
-            BorderThickness="1,0,1,1"
-            CornerRadius="{Binding IsDocked, Converter={StaticResource DockedCornerRadius}, ConverterParameter='0,0,5,5'}"
-            BorderBrush="{Binding Appearance.BorderColor, Converter={StaticResource HexToBrush}}"
-            Background="{Binding Appearance.BackgroundColor, Converter={StaticResource HexToBrush}}">
-            <Grid x:Name="GridFooter" Grid.Row="2" Grid.Column="0" Height="32">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Button x:Name="ButtonFooterSettings" Grid.Row="0" Grid.Column="0"
-                    Content="{Binding Appearance.Icons.Settings}"
-                    ToolTip="Settings"
-                    AutomationProperties.Name="Settings"
-                    Style="{StaticResource StyleFooterMostLeftButton}" />
-                <Button x:Name="ButtonFooterPRO" Grid.Row="0" Grid.Column="1"
-                    Style="{StaticResource StyleFooterButtonPRO}"
-                    AutomationProperties.Name="PRO features"
-                    Visibility="{Binding AppViewModel.ShowPRO, Converter={StaticResource BoolToVisibility}}">
-                    <Border Background="Orange" CornerRadius="4" Padding="4,0,4,0">
-                        <TextBlock Text="PRO" Foreground="Black" />
-                    </Border>
-                </Button>
-            </Grid>
-        </Border>
     </Grid>
 
 </Window>

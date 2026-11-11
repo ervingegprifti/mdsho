@@ -74,14 +74,12 @@ namespace MDSHO {
       this.MenuItemHeaderDeleteWindow.Click += MenuItemHeaderDeleteWindow_Click;
       this.MenuItemHeaderExitApplication.Click += MenuItemHeaderExitApplication_Click;
       // Header Controls
+      this.ButtonHeaderSettings.Click += ButtonHeaderSettings_Click;
       this.ButtonHeaderDockWindowLeft.Click += ButtonHeaderDockWindowLeft_Click;
       this.ButtonHeaderDockWindowRight.Click += ButtonHeaderDockWindowRight_Click;
       this.ButtonHeaderCloneThisWindowToAllScreens.Click += ButtonHeaderCloneThisWindowToAllScreens_Click;
       // Body Controls.
 
-			// Footer Controls.
-			this.ButtonFooterSettings.Click += ButtonFooterSettings_Click;
-      this.ButtonFooterPRO.Click += ButtonFooterPRO_Click;
 		}
 
 
@@ -200,12 +198,8 @@ namespace MDSHO {
 				ErrorDialog.ShowDialog(ex);
 			}
 		}
-		// Footer
-		private void ButtonFooterSettings_Click(object sender, RoutedEventArgs e) {
+		private void ButtonHeaderSettings_Click(object sender, RoutedEventArgs e) {
 			ShowSettingsWindow();
-		}
-		private void ButtonFooterPRO_Click(object sender, RoutedEventArgs e) {
-			MessageBox.Show("PRO features will be freely available until Professional License implementation.", "Professional license", MessageBoxButton.OK, MessageBoxImage.Information);
 		}
 		#endregion CONTROL EVENTS
 
@@ -338,12 +332,15 @@ namespace MDSHO {
 
 
 		#region FUNCTIONS
+		/// <summary>Shows the Settings window modally. Tests replace it so no modal window blocks them.</summary>
+		public static Func<Window, bool?> ShowSettingsDialog = w => w.ShowDialog();
+
 		private void ShowSettingsWindow() {
 			try {
 				DesktopWindowViewModel desktopWindow = (DesktopWindowViewModel)this.DataContext;
 				SettingsWindow settingsWindow = new SettingsWindow(desktopWindow);
 				settingsWindow.PositionRelativeToParent(this);
-				settingsWindow.ShowDialog();
+				ShowSettingsDialog(settingsWindow);
 			} catch (Exception ex) {
 				ErrorDialog.ShowDialog(ex);
 			}

@@ -183,13 +183,13 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Unused_footer_button_styles_are_gone() {
+    public void Footer_button_styles_are_gone() {
       Assert.Null(typeof(DesktopWindowViewModel).GetProperty("FooterMostRightButtonCornerRadius"));
       WithTitleMenu((menu, view) => {
-        FrameworkElement footer = (FrameworkElement)view.FindName("ButtonFooterSettings");
-        Assert.Null(footer.TryFindResource("StyleFooterButton"));
-        Assert.Null(footer.TryFindResource("StyleFooterMostRightButton"));
-        Assert.NotNull(footer.TryFindResource("StyleFooterButtonPRO"));
+        Assert.Null(view.TryFindResource("StyleFooterButton"));
+        Assert.Null(view.TryFindResource("StyleFooterMostRightButton"));
+        Assert.Null(view.TryFindResource("StyleFooterMostLeftButton"));
+        Assert.Null(view.TryFindResource("StyleFooterButtonPRO"));
       });
     }
 

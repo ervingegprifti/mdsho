@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -55,7 +55,6 @@ namespace MDSHO.Tests {
       Assert.False(file.ShowMark);
       Assert.True(command.ShowCommand);
       Assert.False(command.ShowShortcut);
-      Assert.False(new AppViewModel().ShowPRO);
     }
 
     [Fact]
@@ -142,16 +141,14 @@ namespace MDSHO.Tests {
             WpfAppHost.Pump();
             Assert.False(w.IsDocked);
             Assert.Equal(new CornerRadius(5, 5, 0, 0), Named<Border>(view, "BorderHeaderRoundedCorners").CornerRadius);
-            Assert.Equal(new CornerRadius(0, 0, 5, 5), Named<Border>(view, "BorderFooterRoundedCorners").CornerRadius);
+            Assert.Equal(new CornerRadius(0, 0, 5, 5), Named<Border>(view, "BorderBodyRoundedCorners").CornerRadius);
             Assert.Equal(new CornerRadius(0, 5, 0, 0), ButtonCorners(Named<Button>(view, "ButtonHeaderCloneThisWindowToAllScreens")));
-            Assert.Equal(new CornerRadius(0, 0, 0, 5), ButtonCorners(Named<Button>(view, "ButtonFooterSettings")));
 
             w.ApplyDock(-10000, -10000, 500);
             WpfAppHost.Pump();
             Assert.Equal(new CornerRadius(0), Named<Border>(view, "BorderHeaderRoundedCorners").CornerRadius);
-            Assert.Equal(new CornerRadius(0), Named<Border>(view, "BorderFooterRoundedCorners").CornerRadius);
+            Assert.Equal(new CornerRadius(0), Named<Border>(view, "BorderBodyRoundedCorners").CornerRadius);
             Assert.Equal(new CornerRadius(0), ButtonCorners(Named<Button>(view, "ButtonHeaderCloneThisWindowToAllScreens")));
-            Assert.Equal(new CornerRadius(0), ButtonCorners(Named<Button>(view, "ButtonFooterSettings")));
           } finally {
             view.Close();
           }
@@ -225,10 +222,10 @@ namespace MDSHO.Tests {
           try {
             WpfAppHost.Pump();
             Border header = Named<Border>(view, "BorderHeaderRoundedCorners");
-            Border footer = Named<Border>(view, "BorderFooterRoundedCorners");
+            Border body = Named<Border>(view, "BorderBodyRoundedCorners");
             Assert.Equal(Color.FromArgb(0xFF, 0x10, 0x20, 0x30), ((SolidColorBrush)header.BorderBrush).Color);
             Assert.Equal(Color.FromArgb(0xCC, 0x40, 0x50, 0x60), ((SolidColorBrush)header.Background).Color);
-            Assert.Equal(Color.FromArgb(0x99, 0x70, 0x80, 0x90), ((SolidColorBrush)footer.Background).Color);
+            Assert.Equal(Color.FromArgb(0x99, 0x70, 0x80, 0x90), ((SolidColorBrush)body.Background).Color);
             w.Appearance.BorderColor = "#FF0000FF";
             WpfAppHost.Pump();
             Assert.Equal(Color.FromArgb(0xFF, 0, 0, 0xFF), ((SolidColorBrush)header.BorderBrush).Color);

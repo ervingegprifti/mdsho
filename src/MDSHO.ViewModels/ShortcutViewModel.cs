@@ -492,8 +492,6 @@ namespace MDSHO.ViewModels {
     public bool ShowMark => this.isMarked;
     /// <summary>True for a command shortcut.</summary>
     public bool ShowCommand => !this.isGroup && this.isProcessCommand;
-    /// <summary>True for a command shortcut in a trial, to show the PRO badge.</summary>
-    public bool ShowPRO => !this.isGroup && this.isProcessCommand && this.AppViewModel.ShowPRO;
     /// <summary>True for a group (only groups can get new items).</summary>
     public bool ShowNewShortcut => this.isGroup;
     // Commands: generated from the [RelayCommand] methods below (NewGroupShortcutCommand, NewProcessCommandShortcutCommand,
