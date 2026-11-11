@@ -37,7 +37,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - The Settings window has tighter, even margins: every outer margin of the content and of the Apply bar equals the
   Apply button height, and the window is 537 pixels high (was 560). The Run command window follows the same rule: every
   outer margin of its fields and of its bottom bar equals the button height, and the About and error windows use the
-  same 26 px around their content.
+  same 26 px around their content. The About window opens tall enough to show every third-party notice without
+  scrolling (never taller than the screen) and can be resized; a smaller window scrolls the notices.
 - The Examples list of the Run command window has the same look as the Note window, shows what an example does and the
   command it runs when you hover it (instead of below the list), and opens centred on the Run command window at 80 % of
   its size.

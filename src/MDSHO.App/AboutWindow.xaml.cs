@@ -32,6 +32,17 @@ namespace MDSHO {
       this.storeActions = storeActions;
       this.shell = shell;
       InitializeComponent();
+      // Opens just tall enough to show every third-party notice without scrolling, but never taller than the screen.
+      // After that the size is the user's: the window can be resized, and a smaller window scrolls the notices.
+      this.MaxHeight = SystemParameters.WorkArea.Height;
+      this.ContentRendered += (s, e) => {
+        // Rounded up by two pixels: layout rounding can leave the list a fraction taller than its area, which would show
+        // a scroll bar with nothing to scroll.
+        double height = Math.Min(Math.Ceiling(this.ActualHeight) + 2, SystemParameters.WorkArea.Height);
+        this.SizeToContent = SizeToContent.Manual;
+        this.MaxHeight = double.PositiveInfinity;
+        this.Height = height;
+      };
       SetTitle();
       UseIcons(null);
 

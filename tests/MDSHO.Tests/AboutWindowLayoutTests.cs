@@ -109,11 +109,28 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Window_is_720_wide_600_high_and_not_resizable() {
+    public void Window_is_720_wide_resizable_and_opens_tall_enough_to_show_every_notice() {
       WithAboutWindow(window => {
         Assert.Equal(720, window.Width);
-        Assert.Equal(600, window.Height);
-        Assert.Equal(ResizeMode.NoResize, window.ResizeMode);
+        Assert.Equal(ResizeMode.CanResize, window.ResizeMode);
+        Assert.True(window.MinWidth >= 400 && window.MinHeight >= 300, "Min size " + window.MinWidth + " x " + window.MinHeight);
+        window.UpdateLayout();
+        ScrollViewer scroll = NoticesScroll(window);
+        WpfAppHost.Pump();
+        Assert.Equal(Visibility.Collapsed, scroll.ComputedVerticalScrollBarVisibility);
+        // Never taller than the screen's work area.
+        Assert.True(window.ActualHeight <= SystemParameters.WorkArea.Height + 1, "Height " + window.ActualHeight + " is above the work area " + SystemParameters.WorkArea.Height);
+      });
+    }
+
+    [Fact]
+    public void Made_smaller_by_hand_the_notices_scroll() {
+      WithAboutWindow(window => {
+        window.Height = 420;
+        window.UpdateLayout();
+        WpfAppHost.Pump();
+        ScrollViewer scroll = NoticesScroll(window);
+        Assert.True(scroll.ScrollableHeight > 0, "The shorter window does not scroll its notices.");
       });
     }
 
@@ -181,6 +198,9 @@ namespace MDSHO.Tests {
     [Fact]
     public void The_last_notice_ends_one_outer_margin_above_the_bottom_when_scrolled_down() {
       WithAboutWindow(window => {
+        // Made smaller by hand, so the notices really scroll.
+        window.Height = 420;
+        window.UpdateLayout();
         ItemsControl items = (ItemsControl)window.FindName("ItemsThirdPartyNotices");
         ScrollViewer scroll = NoticesScroll(window);
         scroll.ScrollToBottom();

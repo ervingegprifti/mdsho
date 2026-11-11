@@ -7,8 +7,10 @@
         mc:Ignorable="d"
         Title="About"
         Width="720"
-        Height="600"
-        ResizeMode="NoResize"
+        SizeToContent="Height"
+        MinWidth="520"
+        MinHeight="360"
+        ResizeMode="CanResize"
         Topmost="True"
         WindowStartupLocation="CenterScreen"
         Background="#FFF4F3ED">
