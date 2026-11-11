@@ -25,6 +25,8 @@ namespace MDSHO {
     /// <summary>Creates the Settings dialog for a panel window and remembers the current settings so closing without Apply restores them.</summary>
     public SettingsWindow(DesktopWindowViewModel desktopWindow) {
       Init(desktopWindow, desktopWindow.Appearance.Icons);
+      this.ButtonDefaultColours.Visibility = Visibility.Visible;
+      this.ButtonDefaultColours.Click += (s, e) => desktopWindow.Appearance.ResetColorsToDefaults();
       // Store old settings.
       string oldBorderColor = desktopWindow.Appearance.BorderColor;
       string oldBackgroundColor = desktopWindow.Appearance.BackgroundColor;

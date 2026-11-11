@@ -278,7 +278,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <!--Note colours only: back to the default colours (saved with Apply)-->
+                <!--Back to the default colours of a new panel, or of a note (saved with Apply)-->
                 <Button x:Name="ButtonDefaultColours" Grid.Column="0" HorizontalAlignment="Left"
                     Style="{StaticResource StyleDarkButton}" Background="#FFA09A88"
                     Padding="22,5"

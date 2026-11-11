@@ -63,6 +63,15 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
 
+    /// <summary>Puts the five colours back to those of a new window (Default colours in the Settings window).</summary>
+    public void ResetColorsToDefaults() {
+      this.BorderColor = MDSHO.Common.AppConstants.DefaultWindowBorderColor;
+      this.BackgroundColor = MDSHO.Common.AppConstants.DefaultWindowBackgroundColor;
+      this.TextColor = MDSHO.Common.AppConstants.DefaultWindowTextColor;
+      this.TitleBackgroundColor = MDSHO.Common.AppConstants.DefaultWindowTitleBackgroundColor;
+      this.TitleTextColor = MDSHO.Common.AppConstants.DefaultWindowTitleTextColor;
+    }
+
     /// <summary>Creates the settings from the stored values.</summary>
     public DesktopWindowAppearance(AppViewModel appViewModel, long parentWindowID, string title, string borderColor, string backgroundColor, string textColor, string titleBackgroundColor, string titleTextColor, string notes, bool solidIcons, bool singleClickToOpen) {
       this.AppViewModel = appViewModel;

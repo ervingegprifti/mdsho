@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using MDSHO.Common;
 using MDSHO.Core;
@@ -87,11 +87,11 @@ namespace MDSHO.Data {
           width: AppConstants.InitialWindowWidth,
           height: AppConstants.InitialWindowHeight,
           solidIcons: true,
-          borderColor: "#FF000000",
-          backgroundColor: "#99000000",
-          textColor: "#FFFFFFFF",
-          titleBackgroundColor: "#CC000000",
-          titleTextColor: "#FFFFFFFF",
+          borderColor: AppConstants.DefaultWindowBorderColor,
+          backgroundColor: AppConstants.DefaultWindowBackgroundColor,
+          textColor: AppConstants.DefaultWindowTextColor,
+          titleBackgroundColor: AppConstants.DefaultWindowTitleBackgroundColor,
+          titleTextColor: AppConstants.DefaultWindowTitleTextColor,
           notes: "Notes for this window.",
           singleClickToOpen: false);
         return Get(Add(window));

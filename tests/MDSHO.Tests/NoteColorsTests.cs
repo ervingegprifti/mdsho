@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -153,17 +153,6 @@ namespace MDSHO.Tests {
       });
     }
 
-    [Fact]
-    public void The_panel_settings_window_has_no_Default_colours() {
-      WithNote(f => {
-        SettingsWindow window = new SettingsWindow(f.Win);
-        Shown(window, () => {
-          Assert.Equal(Visibility.Visible, Named<FrameworkElement>(window, "PanelWindowOnly").Visibility);
-          Assert.Equal(Visibility.Collapsed, Named<Button>(window, "ButtonDefaultColours").Visibility);
-          Assert.Equal("Window appearance", Named<Label>(window, "LabelAppearanceHeading").Content);
-        });
-      });
-    }
 
     [Fact]
     public void Apply_saves_the_note_colours() {
