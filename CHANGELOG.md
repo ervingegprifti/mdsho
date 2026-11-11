@@ -32,7 +32,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - The tray menu item **Find Windows** is now called **Find MDSHO lost windows**; it works as before.
 - The Settings window has tighter, even margins: every outer margin of the content and of the Apply bar equals the
   Apply button height, and the window is 537 pixels high (was 560). The Run command window follows the same rule: every
-  outer margin of its fields and of its bottom bar equals the button height.
+  outer margin of its fields and of its bottom bar equals the button height, and the About window uses the same 26 px
+  around its content.
 - Menus, buttons, labels and window titles use sentence case, as in Windows 11: only the first word and names start
   with a capital letter ("New window", "Set run command...", "Single click to open", "Run command"). New groups and
   run commands are named "New group" and "New command"; existing buttons keep their names.

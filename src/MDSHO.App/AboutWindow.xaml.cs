@@ -7,6 +7,9 @@ namespace MDSHO {
   /// Interaction logic for AboutWindow.xaml
   /// </summary>
   public partial class AboutWindow : Window {
+    /// <summary>The outer margin around the content (26 px): the button height the other windows use as their margin, though About has no buttons.</summary>
+    public const double OuterMargin = 26;
+
     /// <summary>Icon glyphs for the Rate / Share links: always solid, the About window has no per-window Solid icons setting.</summary>
     public static ViewModels.IconGlyphs Icons { get; } = new ViewModels.IconGlyphs(true);
 

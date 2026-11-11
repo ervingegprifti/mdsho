@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -151,28 +151,60 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Content_has_a_40_pixel_left_margin() {
+    public void The_outer_margin_is_26_pixels_like_the_button_height_in_the_other_windows() {
+      Assert.Equal(26, AboutWindow.OuterMargin);
+    }
+
+    [Fact]
+    public void Content_has_the_outer_margin_on_the_left() {
       WithAboutWindow(window => {
         Visual client = (Visual)VisualTreeHelper.GetChild(window, 0);
-        Assert.Equal(40, X(LabelRows(window)[0].Label, client), 1);
-        Assert.Equal(40, X((FrameworkElement)window.FindName("TextCopyright"), client), 1);
-        Assert.Equal(40, X((FrameworkElement)window.FindName("LabelThirdPartyTitle"), client), 1);
-        Assert.Equal(40, X((FrameworkElement)window.FindName("ItemsThirdPartyNotices"), client), 1);
+        double m = AboutWindow.OuterMargin;
+        Assert.Equal(m, X(LabelRows(window)[0].Label, client), 1);
+        Assert.Equal(m, X((FrameworkElement)window.FindName("TextCopyright"), client), 1);
+        Assert.Equal(m, X((FrameworkElement)window.FindName("LabelThirdPartyTitle"), client), 1);
+        Assert.Equal(m, X((FrameworkElement)window.FindName("ItemsThirdPartyNotices"), client), 1);
       });
     }
 
     [Fact]
-    public void Third_party_list_has_a_40_pixel_right_margin_like_the_left() {
+    public void The_title_starts_one_outer_margin_from_the_top() {
+      WithAboutWindow(window => {
+        Visual client = (Visual)VisualTreeHelper.GetChild(window, 0);
+        StackPanel about = (StackPanel)window.FindName("PanelAbout");
+        Label title = about.Children.OfType<Label>().First();
+        Assert.Equal(AboutWindow.OuterMargin, title.TranslatePoint(new Point(0, 0), (UIElement)client).Y, 1);
+        Assert.Equal(AboutWindow.OuterMargin, X(title, client), 1);
+      });
+    }
+
+    [Fact]
+    public void The_last_notice_ends_one_outer_margin_above_the_bottom_when_scrolled_down() {
       WithAboutWindow(window => {
         ItemsControl items = (ItemsControl)window.FindName("ItemsThirdPartyNotices");
-        Assert.Equal(new Thickness(40, 0, 40, 0), items.Margin);
-        // Every notice line, also the widest, ends at least 40 px before the visible right edge of the list.
+        ScrollViewer scroll = NoticesScroll(window);
+        scroll.ScrollToBottom();
+        window.UpdateLayout();
+        WpfAppHost.Pump();
+        TextBlock last = WpfAppHost.VisualDescendants<TextBlock>(items.ItemContainerGenerator.ContainerFromIndex(items.Items.Count - 1)).First();
+        double bottom = last.TranslatePoint(new Point(0, last.ActualHeight), scroll).Y;
+        Assert.Equal(AboutWindow.OuterMargin, scroll.ActualHeight - bottom, 1);
+      });
+    }
+
+    [Fact]
+    public void Third_party_list_has_the_outer_margin_on_the_right_like_the_left() {
+      WithAboutWindow(window => {
+        double m = AboutWindow.OuterMargin;
+        ItemsControl items = (ItemsControl)window.FindName("ItemsThirdPartyNotices");
+        Assert.Equal(new Thickness(m, 0, m, 0), items.Margin);
+        // Every notice line, also the widest, ends at least one outer margin before the visible right edge of the list.
         ScrollViewer scroll = NoticesScroll(window);
         for (int i = 0; i < items.Items.Count; i++) {
           TextBlock line = WpfAppHost.VisualDescendants<TextBlock>(items.ItemContainerGenerator.ContainerFromIndex(i)).First();
           double right = line.TranslatePoint(new Point(line.DesiredSize.Width, 0), scroll).X;
-          Assert.True(right <= scroll.ViewportWidth - 40 + 0.5,
-            $"{ThirdPartyNotices.All[i].Name} ends at {right:0.#}, less than 40 px from the right edge {scroll.ViewportWidth:0.#}.");
+          Assert.True(right <= scroll.ViewportWidth - m + 0.5,
+            $"{ThirdPartyNotices.All[i].Name} ends at {right:0.#}, less than {m} px from the right edge {scroll.ViewportWidth:0.#}.");
         }
       });
     }

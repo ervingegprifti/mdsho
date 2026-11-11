@@ -50,13 +50,13 @@
         <StackPanel x:Name="PanelAbout" Grid.Row="0" Orientation="Vertical" Background="White">
             <Label Content="MDSHO (Multi Desktop Shortcut Organizer)"
                 HorizontalAlignment="Left"
-                Margin="40,20,40,10"
+                Margin="26,26,26,10"
                 Padding="0"
                 FontWeight="Bold"
                 FontSize="14" />
 
             <!--Label rows: names in an Auto column, values in one column next to it-->
-            <Grid x:Name="GridAboutLabels" Margin="40,0,40,0">
+            <Grid x:Name="GridAboutLabels" Margin="26,0,26,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -120,17 +120,19 @@
             </Grid>
 
             <!--Copy Right, left-aligned at the label indent-->
-            <TextBlock x:Name="TextCopyright" Text="{x:Static local:ThirdPartyNotices.Copyright}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Left" HorizontalAlignment="Left" Margin="40,20,40,20" />
+            <TextBlock x:Name="TextCopyright" Text="{x:Static local:ThirdPartyNotices.Copyright}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Left" HorizontalAlignment="Left" Margin="26,20,26,20" />
 
             <!--Third Party heading: stays put, only the list below scrolls-->
-            <Label x:Name="LabelThirdPartyTitle" Content="Third-party notices" FontSize="14" FontWeight="Bold" Padding="0" HorizontalAlignment="Left" Margin="40,0,40,10" />
+            <Label x:Name="LabelThirdPartyTitle" Content="Third-party notices" FontSize="14" FontWeight="Bold" Padding="0" HorizontalAlignment="Left" Margin="26,0,26,10" />
         </StackPanel>
 
         <!--Third Party list: one line per entry, never wraps; a longer future line gets a horizontal scroll bar.
-            The window is 720 wide so the longest entry (Windows SDK for .NET) fits with 40 px on both sides next to the vertical scroll bar.-->
-        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="0,10,0,10">
+            The window is 720 wide so the longest entry (Windows SDK for .NET) fits next to the vertical scroll bar.
+            Outer margins are 26 px (AboutWindow.OuterMargin), the button height the other windows use; the bottom padding of 20
+            plus the 6 px under each line puts the last line 26 px above the bottom.-->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="0,10,0,20">
             <!--Entries come from ThirdPartyNotices.All (kept in sync with the shipped packages by ThirdPartyNoticesTests)-->
-            <ItemsControl x:Name="ItemsThirdPartyNotices" ItemsSource="{x:Static local:ThirdPartyNotices.All}" Focusable="False" Margin="40,0,40,0">
+            <ItemsControl x:Name="ItemsThirdPartyNotices" ItemsSource="{x:Static local:ThirdPartyNotices.All}" Focusable="False" Margin="26,0,26,0">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type local:ThirdPartyNotice}">
                         <!--Name (bold) version, License link (licence type), Project link; the inlines touch so no extra spaces appear-->
