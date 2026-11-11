@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Media;
 using MDSHO.Core;
 using MDSHO.Data;
 using MDSHO.Helpers;
@@ -308,6 +309,79 @@ namespace MDSHO.Tests {
         Assert.Equal("new text", note.NoteText);
         Assert.Equal("", note.Comment ?? "");
         Assert.Equal("new text", Stored(note.ID).NoteText);
+      });
+    }
+
+    // ---- Note window layout ----
+
+    private static Rect BoundsIn(FrameworkElement element, Visual relativeTo) {
+      return element.TransformToAncestor(relativeTo).TransformBounds(new Rect(0, 0, element.ActualWidth, element.ActualHeight));
+    }
+
+    [Fact]
+    public void The_note_editor_fills_the_body_with_the_window_colour_padding_and_both_scroll_bars() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        TextEditWindow window = TextEditWindow.ForNote(note);
+        Shown(window, () => {
+          window.UpdateLayout();
+          TextBox editor = Named<TextBox>(window, "TextComment");
+          FrameworkElement body = Named<FrameworkElement>(window, "Body");
+          Rect e = BoundsIn(editor, body);
+          Assert.Equal(0, e.X, 1);
+          Assert.Equal(0, e.Y, 1);
+          Assert.Equal(body.ActualWidth, e.Width, 1);
+          Assert.Equal(body.ActualHeight, e.Height, 1);
+          Assert.Equal(((SolidColorBrush)window.Background).Color, Assert.IsType<SolidColorBrush>(editor.Background).Color);
+          Assert.Equal(new Thickness(0), editor.BorderThickness);
+          Assert.Equal(new Thickness(10), editor.Padding);
+          Assert.Equal(TextWrapping.NoWrap, editor.TextWrapping);
+          Assert.Equal(ScrollBarVisibility.Visible, editor.HorizontalScrollBarVisibility);
+          Assert.Equal(ScrollBarVisibility.Visible, editor.VerticalScrollBarVisibility);
+        });
+      });
+    }
+
+    [Fact]
+    public void The_note_hint_sits_in_the_bottom_bar_and_every_outer_margin_there_is_the_button_height() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        TextEditWindow window = TextEditWindow.ForNote(note);
+        Shown(window, () => {
+          window.UpdateLayout();
+          FrameworkElement footer = Named<FrameworkElement>(window, "Footer");
+          Button save = Named<Button>(window, "ButtonSave");
+          Button cancel = Named<Button>(window, "ButtonCancel");
+          TextBlock hint = Named<TextBlock>(window, "TextFooterHint");
+          double h = save.ActualHeight;
+          Assert.True(h > 10, "Button height " + h);
+          Rect s = BoundsIn(save, footer);
+          Rect c = BoundsIn(cancel, footer);
+          Rect t = BoundsIn(hint, footer);
+          Assert.Equal(h, s.Top, 1);
+          Assert.Equal(h, footer.ActualHeight - s.Bottom, 1);
+          Assert.Equal(h, footer.ActualWidth - c.Right, 1);
+          Assert.Equal(h, t.Left, 1);
+          Assert.Equal(footer.ActualHeight / 2, t.Top + t.Height / 2, 1);
+          Assert.Equal(Visibility.Visible, hint.Visibility);
+          Assert.Equal("Ctrl+Enter saves. Esc closes without saving.", hint.Text);
+          Assert.Equal(Visibility.Collapsed, Named<TextBlock>(window, "TextHint").Visibility);
+        });
+      });
+    }
+
+    [Fact]
+    public void The_comment_window_keeps_its_layout() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        TextEditWindow window = TextEditWindow.ForComment(f.Group);
+        Shown(window, () => {
+          TextBox editor = Named<TextBox>(window, "TextComment");
+          Assert.Equal(TextWrapping.Wrap, editor.TextWrapping);
+          Assert.Equal(Visibility.Visible, Named<TextBlock>(window, "TextHint").Visibility);
+          Assert.Equal(Visibility.Collapsed, Named<TextBlock>(window, "TextFooterHint").Visibility);
+          Assert.Equal(40, BoundsIn(editor, Named<FrameworkElement>(window, "Body")).X, 1);
+        });
       });
     }
 

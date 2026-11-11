@@ -1,4 +1,4 @@
-<Window x:Class="MDSHO.TextEditWindow"
+﻿<Window x:Class="MDSHO.TextEditWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Comment"
@@ -78,9 +78,9 @@
             </Grid>
         </Border>
 
-        <!--Body: the comment text-->
+        <!--Body: the text (a comment has margins around a framed box; a note fills the body, see TextEditWindow.UseNoteLayout)-->
         <Grid x:Name="Body" Grid.Row="1" Background="#FFF4F3ED">
-            <Grid Margin="40,24,40,20">
+            <Grid x:Name="BodyContent" Margin="40,24,40,20">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
@@ -97,12 +97,20 @@
             </Grid>
         </Grid>
 
-        <!--Footer: Save and Cancel on the right-->
+        <!--Footer: the note hint on the left (notes only), Save and Cancel on the right-->
         <Border x:Name="Footer" Grid.Row="2" Background="#FFDFDACB">
-            <StackPanel Margin="40,30" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Grid x:Name="FooterContent" Margin="40,30">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="TextFooterHint" Grid.Column="0" VerticalAlignment="Center" Foreground="#FF555555" Visibility="Collapsed"
+                           TextTrimming="CharacterEllipsis" Text="Ctrl+Enter saves. Esc closes without saving."/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="ButtonSave" Style="{StaticResource StyleDarkButton}" Content="Save" Margin="0,0,8,0"/>
                 <Button x:Name="ButtonCancel" Style="{StaticResource StyleSecondaryButton}" Content="Cancel" IsCancel="True"/>
             </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </Window>

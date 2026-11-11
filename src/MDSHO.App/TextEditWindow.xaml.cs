@@ -48,9 +48,7 @@ namespace MDSHO {
       this.TextComment.Text = (kind == TextKind.Note ? shortcut.NoteText : shortcut.Comment) ?? "";
       System.Windows.Automation.AutomationProperties.SetName(this.TextComment, kind == TextKind.Note ? "Note" : "Comment");
       if (kind == TextKind.Note) {
-        // A note is the main content, so its window is bigger.
-        this.Width = 640;
-        this.Height = 520;
+        UseNoteLayout();
       }
 
       // The title icon, the close button and the window icon follow the window's solid or outline setting while open.
@@ -133,6 +131,27 @@ namespace MDSHO {
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
       }
+    }
+
+    /// <summary>
+    /// A note is the main content: a bigger window whose editor fills the body (window colour, no border, 10 px padding,
+    /// no word wrap, both scroll bars), with the hint in the bottom bar on the left. Every outer margin of the bottom bar
+    /// equals the height of the Save button.
+    /// </summary>
+    private void UseNoteLayout() {
+      this.Width = 640;
+      this.Height = 520;
+      this.BodyContent.Margin = new Thickness(0);
+      this.TextComment.Background = this.Background;
+      this.TextComment.BorderThickness = new Thickness(0);
+      this.TextComment.Padding = new Thickness(10);
+      this.TextComment.TextWrapping = TextWrapping.NoWrap;
+      this.TextComment.HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Visible;
+      this.TextComment.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Visible;
+      this.TextHint.Visibility = Visibility.Collapsed;
+      this.TextFooterHint.Visibility = Visibility.Visible;
+      this.TextFooterHint.Margin = new Thickness(0, 0, 16, 0);
+      this.ButtonSave.SizeChanged += (s, e) => this.FooterContent.Margin = new Thickness(this.ButtonSave.ActualHeight);
     }
 
     private void ShowIcons(IconGlyphs icons) {
