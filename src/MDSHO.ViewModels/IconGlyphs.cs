@@ -10,7 +10,7 @@ namespace MDSHO.ViewModels {
     [NotifyPropertyChangedFor(nameof(MDSHO), nameof(Times), nameof(Rename), nameof(Settings), nameof(Clones), nameof(DockLeft),
       nameof(DockRight), nameof(Shortcuts), nameof(Shortcut), nameof(Plus), nameof(Delete), nameof(Cut), nameof(Copy),
       nameof(Paste), nameof(Send), nameof(Database), nameof(Command), nameof(Bookmark), nameof(Share), nameof(Star),
-      nameof(Folder), nameof(Globe), nameof(Warning), nameof(Run), nameof(Wizard), nameof(Info), nameof(Desktop))]
+      nameof(Folder), nameof(Globe), nameof(Warning), nameof(Run), nameof(Wizard), nameof(Info), nameof(Desktop), nameof(Brush))]
     private bool solidIcons;
 
     /// <summary>Icon font character of the MDSHO logo.</summary>
@@ -63,6 +63,9 @@ namespace MDSHO.ViewModels {
     public string Run { get { return this.SolidIcons ? UnicodeText.FromHex("e948") : UnicodeText.FromHex("e949"); } }
     /// <summary>Icon font character for Wizard, used for the Examples button of the Run Command window (added in font v1.14).</summary>
     public string Wizard { get { return this.SolidIcons ? UnicodeText.FromHex("e94a") : UnicodeText.FromHex("e94b"); } }
+
+    /// <summary>The brush icon (the colours button of a Note window and the Note colours window).</summary>
+    public string Brush { get { return this.SolidIcons ? UnicodeText.FromHex("e932") : UnicodeText.FromHex("e933"); } }
 
     /// <summary>The desktop icon (Find MDSHO lost windows and Find other lost windows in the tray menu).</summary>
     public string Desktop { get { return this.SolidIcons ? UnicodeText.FromHex("e92e") : UnicodeText.FromHex("e92f"); } }

@@ -120,7 +120,7 @@
 
         <ScrollViewer x:Name="ScrollBody" Grid.Row="0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="PanelBody" Orientation="Vertical" Margin="26">
-                <Label Content="Window appearance" Style="{StaticResource StyleSettingsCategory}"/>
+                <Label x:Name="LabelAppearanceHeading" Content="Window appearance" Style="{StaticResource StyleSettingsCategory}"/>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <!--Colour buttons-->
@@ -176,6 +176,8 @@
                             </StackPanel>
                         </ListBoxItem>
                     </ListBox>
+                        <!--Panel windows only: hidden (and unbound) when the window edits a note's colours-->
+                        <StackPanel x:Name="PanelWindowOnly" Orientation="Vertical">
                         <Label Content="Icons appearance" Margin="0,14,0,10" Style="{StaticResource StyleSettingsCategory}"/>
                         <StackPanel Orientation="Vertical" Style="{StaticResource StylePropertyContainer}">
                             <RadioButton Content="Solid icons" Margin="0,0,0,5"
@@ -187,6 +189,7 @@
                         <Label Content="Other" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
                         <StackPanel Orientation="Vertical" Style="{StaticResource StylePropertyContainer}">
                             <CheckBox x:Name="CheckSingleClickToOpen" Content="Single click to open" IsChecked="{Binding Appearance.SingleClickToOpen}" />
+                        </StackPanel>
                         </StackPanel>
                     </StackPanel>
 
@@ -275,6 +278,12 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
+                <!--Note colours only: back to the default colours (saved with Apply)-->
+                <Button x:Name="ButtonDefaultColours" Grid.Column="0" HorizontalAlignment="Left"
+                    Style="{StaticResource StyleDarkButton}" Background="#FFA09A88"
+                    Padding="22,5"
+                    Content="Default colours"
+                    Visibility="Collapsed"/>
                 <Button x:Name="ButtonApply" Grid.Column="1"
                     Style="{StaticResource StyleDarkButton}"
                     Padding="22,5"

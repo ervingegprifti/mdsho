@@ -102,7 +102,9 @@ namespace MDSHO.ViewModels {
         processRunAsAdmin: Convert.ToBoolean(shortcutRecord.ProcessRunAsAdmin),
         processWorkingFolder: shortcutRecord.ProcessWorkingFolder,
         isNote: Convert.ToBoolean(shortcutRecord.IsNote),
-        noteText: shortcutRecord.NoteText);
+        noteText: shortcutRecord.NoteText,
+        noteColors: new NoteColors(shortcutRecord.NoteBorderColor, shortcutRecord.NoteTitleBackgroundColor, shortcutRecord.NoteTitleTextColor,
+          shortcutRecord.NoteBackgroundColor, shortcutRecord.NoteTextColor));
       foreach (Shortcut childRecord in shortcutRecord.Shortcuts) {
         ShortcutViewModel child = ShortcutToViewModel(appViewModel: appViewModel, parentShortcut: shortcut, shortcutRecord: childRecord);
         shortcut.Children.Add(child);
@@ -217,6 +219,12 @@ namespace MDSHO.ViewModels {
         processWorkingFolder: shortcut.ProcessWorkingFolder,
         isNote: Convert.ToInt64(shortcut.IsNote),
         noteText: shortcut.NoteText ?? "");
+      var colors = shortcut.NoteColors.Stored;
+      template.NoteBorderColor = colors.Border;
+      template.NoteTitleBackgroundColor = colors.TitleBackground;
+      template.NoteTitleTextColor = colors.TitleText;
+      template.NoteBackgroundColor = colors.Background;
+      template.NoteTextColor = colors.Text;
       Shortcut savedRecord = DataStore.Shortcuts.Append(template);
       // Copy the physical file after the insert, so a failed insert (rollback) never leaves an orphan file behind.
       // Notes, groups and run commands have no shortcut file.

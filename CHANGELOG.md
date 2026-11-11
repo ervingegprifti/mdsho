@@ -26,7 +26,10 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   where they were after MDSHO or Windows restarts (unsaved typing is saved at exit), a note opens again where it was last,
   and a place that is off every screen moves to the middle of the main screen. The Note window has pin (keep on top of
   other apps, off for new notes and remembered per note), save and close in its title bar and no bottom bar: Save (also
-  Ctrl+Enter or Ctrl+S) is greyed out while there is nothing to save and keeps the note open; X or Esc close without saving. A note's right-click menu has **Edit
+  Ctrl+Enter or Ctrl+S) is greyed out while there is nothing to save and keeps the note open; X or Esc close without saving.
+  The colours button (brush) in its title bar opens **Note colours**: the Settings window with only the five colours
+  (border, title background, title text, background, text), the palette, **Default colours** and Apply. The note's window
+  follows the colours live; they are saved on Apply and kept with the note (exported, imported and copied with it). A note's right-click menu has **Edit
   note...** and **Copy note text** (puts the whole note on the clipboard). Notes can be renamed, marked,
   moved, copied, exported and imported like other buttons, and need no shortcut file. They use the text-box glyph
   until the icon font gets a dedicated note glyph.

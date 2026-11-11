@@ -468,6 +468,13 @@ namespace MDSHO.ViewModels {
     public bool IsProcessCommand { get { return this.isProcessCommand; } set { this.isProcessCommand = value; } }
     /// <summary>True for a note button.</summary>
     public bool IsNote { get { return this.isNote; } }
+    /// <summary>The colours of the note's window (all defaults for other buttons).</summary>
+    public NoteColors NoteColors { get; }
+    /// <summary>Saves the colours of the note's window (a default colour is saved as empty).</summary>
+    public void SaveNoteColors() {
+      var stored = this.NoteColors.Stored;
+      DataStore.Shortcuts.UpdateNoteColors(this.ID, stored.Border, stored.TitleBackground, stored.TitleText, stored.Background, stored.Text);
+    }
     /// <summary>The shortcuts inside a group (empty for a normal shortcut).</summary>
     public ObservableCollection<ShortcutViewModel> Children { get { return shortcuts; } set { shortcuts = value; } }
     // Shown or hidden (the views turn these into Visibility).
@@ -495,7 +502,7 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "") {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null) {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -517,6 +524,7 @@ namespace MDSHO.ViewModels {
       this.processWorkingFolder = processWorkingFolder ?? "";
       this.isNote = isNote;
       this.noteText = noteText ?? "";
+      this.NoteColors = noteColors ?? new NoteColors();
       UpdateTargetKind(false);
       // Events.
       this.PropertyChanged += ShortcutViewModel_PropertyChanged;

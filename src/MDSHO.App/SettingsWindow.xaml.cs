@@ -15,18 +15,70 @@ namespace MDSHO {
   /// </summary>
   public partial class SettingsWindow : Window {
     private bool closeWithoutSavingNewSettings = true;
-    // Old settings.
-    private string oldBorderColor;
-    private string oldBackgroundColor;
-    private string oldTextColor;
-    private string oldTitleBackgroundColor;
-    private string oldTitleTextColor;
-    private bool oldSolidIcons;
-    private bool oldSingleClickToOpen;
-    private readonly IconGlyphs icons;
+    private IconGlyphs icons;
+    // The window icon's glyph: the gear for a panel, the brush for a note.
+    private Func<IconGlyphs, string> iconGlyph = g => g.Settings;
+    // Puts back what was there when the window opened (closed without Apply), and saves the new values (Apply).
+    private Action revert = () => { };
+    private Action save = () => { };
 
-    /// <summary>Creates the Settings dialog for a window and remembers the current settings so Cancel can restore them.</summary>
+    /// <summary>Creates the Settings dialog for a panel window and remembers the current settings so closing without Apply restores them.</summary>
     public SettingsWindow(DesktopWindowViewModel desktopWindow) {
+      Init(desktopWindow, desktopWindow.Appearance.Icons);
+      // Store old settings.
+      string oldBorderColor = desktopWindow.Appearance.BorderColor;
+      string oldBackgroundColor = desktopWindow.Appearance.BackgroundColor;
+      string oldTextColor = desktopWindow.Appearance.TextColor;
+      string oldTitleBackgroundColor = desktopWindow.Appearance.TitleBackgroundColor;
+      string oldTitleTextColor = desktopWindow.Appearance.TitleTextColor;
+      bool oldSolidIcons = desktopWindow.Appearance.SolidIcons;
+      bool oldSingleClickToOpen = desktopWindow.Appearance.SingleClickToOpen;
+      this.revert = () => {
+        // These properties are not saved in DesktopWindowViewModel as they might change too many times.
+        desktopWindow.Appearance.BorderColor = oldBorderColor;
+        desktopWindow.Appearance.BackgroundColor = oldBackgroundColor;
+        desktopWindow.Appearance.TextColor = oldTextColor;
+        desktopWindow.Appearance.TitleBackgroundColor = oldTitleBackgroundColor;
+        desktopWindow.Appearance.TitleTextColor = oldTitleTextColor;
+        // These properties are saved in DesktopWindowViewModel.
+        desktopWindow.Appearance.SolidIcons = oldSolidIcons;
+        desktopWindow.Appearance.SingleClickToOpen = oldSingleClickToOpen;
+      };
+      this.save = () => {
+        // These properties are not saved in DesktopWindowViewModel as they might change too many times.
+        long windowID = (desktopWindow.IsClone) ? desktopWindow.ParentWindow.ID : desktopWindow.ID;
+        DataStore.Windows.UpdateBorderColor(windowID, desktopWindow.Appearance.BorderColor);
+        DataStore.Windows.UpdateBackgroundColor(windowID, desktopWindow.Appearance.BackgroundColor);
+        DataStore.Windows.UpdateTextColor(windowID, desktopWindow.Appearance.TextColor);
+        DataStore.Windows.UpdateTitleBackgroundColor(windowID, desktopWindow.Appearance.TitleBackgroundColor);
+        DataStore.Windows.UpdateTitleTextColor(windowID, desktopWindow.Appearance.TitleTextColor);
+        // SolidIcons and SingleClickToOpen are saved in DesktopWindowViewModel.
+      };
+    }
+
+    /// <summary>
+    /// Creates the window as "Note colours" for a note: only the five colours and the palette, with Default colours next to
+    /// Apply. Changes show live on the note's window; closing without Apply puts the old colours back.
+    /// </summary>
+    public SettingsWindow(ShortcutViewModel note) {
+      this.iconGlyph = g => g.Brush;
+      Init(new NoteColorsTarget(note), note.OwningWindow?.Appearance?.Icons ?? new IconGlyphs(true));
+      this.Title = "Note colours: " + note.Name;
+      SetTitle();
+      this.LabelAppearanceHeading.Content = "Note colours";
+      // Icons appearance and Single click to open belong to panels: hidden, and unbound so nothing looks for them on a note.
+      this.PanelWindowOnly.DataContext = null;
+      this.PanelWindowOnly.Visibility = Visibility.Collapsed;
+      this.ButtonDefaultColours.Visibility = Visibility.Visible;
+      this.ButtonDefaultColours.Click += (s, e) => note.NoteColors.ResetToDefaults();
+      NoteColors c = note.NoteColors;
+      (string border, string titleBackground, string titleText, string background, string text) old =
+        (c.BorderColor, c.TitleBackgroundColor, c.TitleTextColor, c.BackgroundColor, c.TextColor);
+      this.revert = () => c.Load(old.border, old.titleBackground, old.titleText, old.background, old.text);
+      this.save = () => note.SaveNoteColors();
+    }
+
+    private void Init(object dataContext, IconGlyphs iconGlyphs) {
       InitializeComponent();
       // Every outer margin of the content and of the Apply bar equals the Apply button height, like in the Note window.
       this.ButtonApply.SizeChanged += (s, e) => {
@@ -34,23 +86,16 @@ namespace MDSHO {
         this.PanelBody.Margin = margin;
         this.FooterContent.Margin = margin;
       };
-      SetTitle();
+      if (dataContext is DesktopWindowViewModel) {
+        SetTitle();
+      }
 
-      this.DataContext = desktopWindow;
-      // The window icon is the gear of this window's icon set and changes as soon as Solid/Outlined is toggled here.
-      this.icons = desktopWindow.Appearance.Icons;
-      this.Icon = GlyphIcon.Create(this.icons.Settings);
+      this.DataContext = dataContext;
+      // The window icon is the gear (or brush) of this window's icon set and changes as soon as Solid/Outlined is toggled.
+      this.icons = iconGlyphs;
+      this.Icon = GlyphIcon.Create(this.iconGlyph(this.icons));
       this.icons.PropertyChanged += Icons_PropertyChanged;
       this.Closed += (s, e) => this.icons.PropertyChanged -= Icons_PropertyChanged;
-
-      // Store old settings.
-      oldBorderColor = desktopWindow.Appearance.BorderColor;
-      oldBackgroundColor = desktopWindow.Appearance.BackgroundColor;
-      oldTextColor = desktopWindow.Appearance.TextColor;
-      oldTitleBackgroundColor = desktopWindow.Appearance.TitleBackgroundColor;
-      oldTitleTextColor = desktopWindow.Appearance.TitleTextColor;
-      oldSolidIcons = desktopWindow.Appearance.SolidIcons;
-      oldSingleClickToOpen = desktopWindow.Appearance.SingleClickToOpen;
 
       // Window Events.
       this.Closing += MainWindow_Closing;
@@ -87,18 +132,7 @@ namespace MDSHO {
     private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
       if (closeWithoutSavingNewSettings) {
         // Restore old settings.
-        DesktopWindowViewModel desktopWindow = GetThisWindowDataContext();
-        if (desktopWindow != null) {
-          // These properties are not saved in DesktopWindowViewModel as they might change too many times.
-          desktopWindow.Appearance.BorderColor = oldBorderColor;
-          desktopWindow.Appearance.BackgroundColor = oldBackgroundColor;
-          desktopWindow.Appearance.TextColor = oldTextColor;
-          desktopWindow.Appearance.TitleBackgroundColor = oldTitleBackgroundColor;
-          desktopWindow.Appearance.TitleTextColor = oldTitleTextColor;
-          // These properties are saved in DesktopWindowViewModel.
-          desktopWindow.Appearance.SolidIcons = oldSolidIcons;
-          desktopWindow.Appearance.SingleClickToOpen = oldSingleClickToOpen;
-        }
+        this.revert();
       }
     }
 #endregion WINDOW EVENTS
@@ -106,25 +140,13 @@ namespace MDSHO {
 
 #region CONTROL EVENTS
     private void ButtonApply_Click(object sender, RoutedEventArgs e) {
-      DesktopWindowViewModel desktopWindow = GetThisWindowDataContext();
-      if (desktopWindow != null) {
-        // These properties are not saved in DesktopWindowViewModel as they might change too many times.
-        long windowID = (desktopWindow.IsClone) ? desktopWindow.ParentWindow.ID : desktopWindow.ID;
-        DataStore.Windows.UpdateBorderColor(windowID, desktopWindow.Appearance.BorderColor);
-        DataStore.Windows.UpdateBackgroundColor(windowID, desktopWindow.Appearance.BackgroundColor);
-        DataStore.Windows.UpdateTextColor(windowID, desktopWindow.Appearance.TextColor);
-        DataStore.Windows.UpdateTitleBackgroundColor(windowID, desktopWindow.Appearance.TitleBackgroundColor);
-        DataStore.Windows.UpdateTitleTextColor(windowID, desktopWindow.Appearance.TitleTextColor);
-        // These properties are saved in DesktopWindowViewModel. No need for them to be saved here.
-        // SolidIcons
-        // SingleClickToOpen
-      }
+      this.save();
       closeWithoutSavingNewSettings = false;
       this.Close();
     }
     private void Icons_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e) {
-      if (e.PropertyName == nameof(IconGlyphs.Settings)) {
-        this.Icon = GlyphIcon.Create(this.icons.Settings);
+      if (e.PropertyName == nameof(IconGlyphs.Settings) || e.PropertyName == nameof(IconGlyphs.Brush)) {
+        this.Icon = GlyphIcon.Create(this.iconGlyph(this.icons));
       }
     }
 
@@ -228,13 +250,6 @@ namespace MDSHO {
       return ((TextBlock)((Panel)item.Content).Children[1]).Text;
     }
 
-    private DesktopWindowViewModel GetThisWindowDataContext() {
-      DesktopWindowViewModel desktopWindow = null;
-      if (this.DataContext != null && this.DataContext is DesktopWindowViewModel) {
-        desktopWindow = (DesktopWindowViewModel)this.DataContext;
-      }
-      return desktopWindow;
-    }
 #endregion FUNCTIONS
   }
 

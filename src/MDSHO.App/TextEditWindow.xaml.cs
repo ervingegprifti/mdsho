@@ -294,6 +294,8 @@ namespace MDSHO {
     /// </summary>
     private void UseNoteTitleBar() {
       this.Footer.Visibility = Visibility.Collapsed;
+      this.ButtonColors.Visibility = Visibility.Visible;
+      this.ButtonColors.Click += (s, e) => ShowNoteColours();
       this.ButtonPin.Visibility = Visibility.Visible;
       this.ButtonTitleSave.Visibility = Visibility.Visible;
       this.ButtonClose.ToolTip = "Close without saving (Esc)";
@@ -301,6 +303,39 @@ namespace MDSHO {
       SetPinned(false);
       this.TextComment.TextChanged += (s, e) => UpdateTitleSave();
       UpdateTitleSave();
+      UseNoteColours();
+    }
+
+    /// <summary>The window follows the note's five colours live: border, title bar, title text and buttons, background, text.</summary>
+    private void UseNoteColours() {
+      NoteColors colors = this.shortcut.NoteColors;
+      Converters.HexToBrushConverter toBrush = new Converters.HexToBrushConverter();
+      System.Windows.Data.Binding Bind(string path) {
+        return new System.Windows.Data.Binding(path) { Source = colors, Converter = toBrush };
+      }
+      SetBinding(BorderBrushProperty, Bind(nameof(NoteColors.BorderColor)));
+      this.TitleBar.SetBinding(System.Windows.Controls.Border.BackgroundProperty, Bind(nameof(NoteColors.TitleBackgroundColor)));
+      this.TextTitle.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
+      this.TextTitleIcon.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonColors, this.ButtonPin, this.ButtonTitleSave, this.ButtonClose }) {
+        button.SetBinding(ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
+      }
+      SetBinding(BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
+      this.Body.SetBinding(System.Windows.Controls.Panel.BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
+      this.TextComment.SetBinding(System.Windows.Controls.Control.BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
+      this.TextComment.SetBinding(System.Windows.Controls.Control.ForegroundProperty, Bind(nameof(NoteColors.TextColor)));
+      this.TextComment.SetBinding(System.Windows.Controls.Primitives.TextBoxBase.CaretBrushProperty, Bind(nameof(NoteColors.TextColor)));
+    }
+
+    // Opens the Settings window as "Note colours" over this note; the window follows the colours while they change.
+    private void ShowNoteColours() {
+      try {
+        SettingsWindow colours = new SettingsWindow(this.shortcut);
+        DialogPlacement.CenterOnScreenOf(colours, this);
+        colours.ShowDialog();
+      } catch (Exception ex) {
+        ErrorDialog.ShowDialog(ex);
+      }
     }
 
     /// <summary>Pins the window on top of other apps, or not; the pin button shows a filled pin while pinned.</summary>
@@ -308,7 +343,8 @@ namespace MDSHO {
       this.Topmost = pinned;
       this.ButtonPin.Content = pinned ? "\uE841" : "\uE718";
       if (pinned) {
-        this.ButtonPin.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xCD, 0xC7, 0xB4));
+        // A shade, so the pinned look works on any title bar colour.
+        this.ButtonPin.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0, 0, 0));
       } else {
         this.ButtonPin.ClearValue(BackgroundProperty);
       }
@@ -354,6 +390,7 @@ namespace MDSHO {
       string glyph = this.kind == TextKind.Note ? icons.Rename : icons.Info;
       this.TextTitleIcon.Text = glyph;
       this.ButtonClose.Content = icons.Times;
+      this.ButtonColors.Content = icons.Brush;
       this.Icon = GlyphIcon.Create(glyph);
     }
 

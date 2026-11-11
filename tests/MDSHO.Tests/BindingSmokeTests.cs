@@ -185,6 +185,22 @@ namespace MDSHO.Tests {
             examples.Close();
             runWindow.Close();
             Pump();
+            // A note: its Note window and the Settings window as "Note colours" (only the colours are bound there).
+            Action<ShortcutViewModel> oldNoteEditor = ShortcutViewModel.OpenNoteEditor;
+            ShortcutViewModel.OpenNoteEditor = s => { };
+            try {
+              appVm.Windows[0].NewNoteShortcutCommand.Execute(null);
+            } finally {
+              ShortcutViewModel.OpenNoteEditor = oldNoteEditor;
+            }
+            ShortcutViewModel note = appVm.Windows[0].RootShortcuts.Last();
+            TextEditWindow noteWindow = TextEditWindow.ForNote(note);
+            ShowOffScreen(noteWindow);
+            SettingsWindow noteColours = new SettingsWindow(note);
+            ShowOffScreen(noteColours);
+            noteColours.Close();
+            noteWindow.Close();
+            Pump();
             foreach (Window view in windows) {
               view.Close();
             }
