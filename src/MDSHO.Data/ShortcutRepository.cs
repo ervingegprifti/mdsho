@@ -124,6 +124,9 @@ namespace MDSHO.Data {
     public void UpdateMarkColor(long id, string markColor) {
       Run("UPDATE Shortcuts SET MarkColor = @markColor WHERE ID = @id;", new { id, markColor });
     }
+    public void UpdateComment(long id, string comment) {
+      Run("UPDATE Shortcuts SET Comment = @comment WHERE ID = @id;", new { id, comment = comment ?? "" });
+    }
     public void UpdatePosition(long id, long position) {
       Run("UPDATE Shortcuts SET Position = @position WHERE ID = @id;", new { id, position });
     }

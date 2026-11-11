@@ -72,7 +72,7 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `Guid` | TEXT | NOT NULL | | Unique name (without extension) of the button's shortcut file in the shortcuts folder. |
 | `IsGroup` | INTEGER | NOT NULL | | `1` for a group. |
 | `IsGroupExpanded` | INTEGER | NOT NULL | | `1` when the group is open. |
-| `Comment` | TEXT | NOT NULL | | The button's comment (empty = no comment). Called `Notes` before database version 6. |
+| `Comment` | TEXT | NOT NULL | | The button's comment, edited with **Comment...** and shown in its tooltip (empty = no comment). Called `Notes` before database version 6. |
 | `IsMarked` | INTEGER | NOT NULL | | `1` when the button is marked with a color. |
 | `MarkColor` | TEXT | NOT NULL | | The mark color. |
 | `Position` | INTEGER | NOT NULL | | Order among buttons with the same parent, from 0. |

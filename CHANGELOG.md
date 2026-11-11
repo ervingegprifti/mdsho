@@ -16,6 +16,11 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   windows on other virtual desktops and MDSHO's own windows are left alone; windows that Windows doesn't let MDSHO move
   (for example apps running as administrator) are counted as skipped.
 
+- **Comments** on buttons and groups: right-click → **Comment...** opens the Comment window to write a comment of
+  several lines (Save or Ctrl+Enter saves; Cancel, the X button or Esc close without saving). The comment shows in the
+  button's tooltip below the target or command line, cut after 10 lines, and a small "i" marker after the name shows
+  which buttons have one. A comment of only spaces counts as none.
+
 ### Changed
 
 - The tray menu item **Find Windows** is now called **Find MDSHO lost windows**; it works as before.

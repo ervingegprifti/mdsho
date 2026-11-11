@@ -87,9 +87,31 @@ namespace MDSHO.ViewModels {
     /// <summary>True while the item is selected in the tree.</summary>
     [ObservableProperty]
     private bool isSelected;
-    /// <summary>The comment on the shortcut.</summary>
+    /// <summary>The comment on the shortcut, edited in the Comment window and shown in the tooltip.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasComment), nameof(CommentPreview), nameof(HasToolTip), nameof(ShowCommentDivider))]
     private string comment;
+    /// <summary>True when the comment has more than spaces and new lines; the view then shows the comment marker.</summary>
+    public bool HasComment => !string.IsNullOrWhiteSpace(this.comment);
+    /// <summary>How many comment lines the tooltip shows; more are cut and marked with "…".</summary>
+    public const int CommentPreviewLines = 10;
+    /// <summary>The comment for the tooltip: at most <see cref="CommentPreviewLines"/> lines, then "…"; null without a comment.</summary>
+    public string CommentPreview {
+      get {
+        if (!this.HasComment) {
+          return null;
+        }
+        string[] lines = this.comment.Trim().Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+        if (lines.Length <= CommentPreviewLines) {
+          return string.Join(Environment.NewLine, lines);
+        }
+        return string.Join(Environment.NewLine, lines.Take(CommentPreviewLines)) + Environment.NewLine + "…";
+      }
+    }
+    /// <summary>True when the tooltip has something to show: the target or command line, or the comment.</summary>
+    public bool HasToolTip => !string.IsNullOrEmpty(this.ToolTipText) || this.HasComment;
+    /// <summary>True when the tooltip shows both the target or command line and the comment, with a divider between them.</summary>
+    public bool ShowCommentDivider => !string.IsNullOrEmpty(this.ToolTipText) && this.HasComment;
     /// <summary>True when the shortcut carries a colour mark.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowMark))]
@@ -288,6 +310,8 @@ namespace MDSHO.ViewModels {
     /// opens) in tests unless a test sets it.
     /// </summary>
     public static Action<ShortcutViewModel, bool> OpenRunCommandEditor { get; set; }
+    /// <summary>Opens the Comment window for a button or group (set by the app; tests replace it).</summary>
+    public static Action<ShortcutViewModel> OpenCommentEditor { get; set; }
     /// <summary>The Windows error code when the user answers No to the administrator (UAC) prompt.</summary>
     public const int ErrorCancelled = 1223;
     /// <summary>
@@ -505,6 +529,11 @@ namespace MDSHO.ViewModels {
         DataStore.Shortcuts.UpdateIsMarked(this.ID, this.IsMarked);
       } else if (e.PropertyName == nameof(this.MarkColor)) {
         DataStore.Shortcuts.UpdateMarkColor(this.ID, this.MarkColor);
+      } else if (e.PropertyName == nameof(this.Comment)) {
+        DataStore.Shortcuts.UpdateComment(this.ID, this.Comment ?? "");
+      } else if (e.PropertyName == nameof(this.ToolTipText)) {
+        OnPropertyChanged(nameof(this.HasToolTip));
+        OnPropertyChanged(nameof(this.ShowCommentDivider));
       }
       // MessageBox.Show($"Property '{e.PropertyName}' Changed"); // Debug.
     }
@@ -551,6 +580,11 @@ namespace MDSHO.ViewModels {
       parentShortcut.Children.Add(shortcut);
       // A new command opens the Run Command window; on Cancel the new command stays.
       OpenRunCommandEditor?.Invoke(shortcut, true);
+    }
+    /// <summary>Opens the Comment window for this button or group.</summary>
+    [RelayCommand]
+    private void EditComment() {
+      OpenCommentEditor?.Invoke(this);
     }
     /// <summary>Opens the Run Command window for this run command.</summary>
     [RelayCommand]

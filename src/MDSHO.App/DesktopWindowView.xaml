@@ -31,7 +31,6 @@
                 <ResourceDictionary>
                     <converters:ShortcutBackgroundConverter x:Key="ShortcutBackgroundConverter"/>
                     <converters:HOverShortcutBackgroundConverter x:Key="HOverShortcutBackgroundConverter"/>
-                    <converters:ShortcutToolTipConverter x:Key="ShortcutToolTipConverter"/>
                     <converters:ShortcutIconGlyphConverter x:Key="ShortcutIconGlyphConverter"/>
                     <!-- Square corners when docked, otherwise the radius in ConverterParameter. -->
                     <converters:DockedCornerRadiusConverter x:Key="DockedCornerRadius"/>
@@ -91,8 +90,30 @@
                             </Setter.Value>
                         </Setter>
                     </Style>
+                    <ToolTip x:Key="ShortcutToolTip" x:Shared="False">
+                        <StackPanel MaxWidth="420">
+                            <TextBlock Text="{Binding ToolTipText}" TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ToolTipText}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding ToolTipText}" Value="">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <Separator Margin="0,4" Visibility="{Binding ShowCommentDivider, Converter={StaticResource BoolToVisibility}}"/>
+                            <TextBlock Text="{Binding CommentPreview}" TextWrapping="Wrap" Visibility="{Binding HasComment, Converter={StaticResource BoolToVisibility}}"/>
+                        </StackPanel>
+                    </ToolTip>
                     <Style x:Key="StyleButtonShortcut" TargetType="Button">
-                        <Setter Property="ToolTip" Value="{Binding Path=ToolTipText, Converter={StaticResource ShortcutToolTipConverter}}"/>
+                        <!--The tooltip: the target or command line, then the comment below a divider (cut after 10 lines)-->
+                        <Setter Property="ToolTip" Value="{StaticResource ShortcutToolTip}"/>
+                        <Setter Property="ToolTipService.IsEnabled" Value="{Binding HasToolTip}"/>
                         <Setter Property="Margin" Value="0,1,0,1"/>
                         <Setter Property="Background">
                             <Setter.Value>
@@ -507,6 +528,11 @@
                                         </MenuItem>
                                         <MenuItem Header="Set name the same as target" Command="{Binding SetNameTheSameAsTargetCommand}" Visibility="{Binding ShowSetNameTheSameAsTarget, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
                                         <MenuItem Header="Copy target to memory" Command="{Binding CopyTargetToMemoryCommand}" Visibility="{Binding ShowCopyTargetToMemory, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
+                                        <MenuItem Header="Comment..." Command="{Binding EditCommentCommand}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Info}"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
                                         <Separator/>
                                         <MenuItem Header="Set run command..." Visibility="{Binding ShowCommand, Converter={StaticResource BoolToVisibility}}" Command="{Binding SetRunCommandCommand}">
                                             <MenuItem.Icon>
@@ -595,7 +621,19 @@
 					                    Padding="2,0,0,0"
 					                    EditPadding="3,0,3,0"
 					                    VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="2"
+                                    <!--The comment marker: shows which buttons have a comment (the comment is in the tooltip)-->
+                                    <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal">
+                                    <TextBlock x:Name="TextCommentMarker"
+				                        Text="{Binding DataContext.Appearance.Icons.Info, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+				                        Visibility="{Binding HasComment, Converter={StaticResource BoolToVisibility}}"
+				                        Foreground="{Binding DataContext.Appearance.TextColor, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}, Converter={StaticResource HexToBrush}}"
+				                        Opacity="0.6"
+				                        FontFamily="{StaticResource IconFont}"
+				                        FontSize="12"
+				                        Margin="5,0,0,0"
+				                        VerticalAlignment="Center"
+				                        AutomationProperties.Name="Has a comment" />
+                                    <TextBlock
 				                        Text="{Binding DataContext.Appearance.Icons.Bookmark, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
 				                        Visibility="{Binding ShowMark, Converter={StaticResource BoolToVisibility}}"
 				                        Foreground="{Binding MarkColor, Converter={StaticResource HexToBrush}}"
@@ -604,6 +642,7 @@
 				                        Width="16"
 				                        Margin="5,0,0,0"
 				                        VerticalAlignment="Center" />
+                                    </StackPanel>
                                     <Border Grid.Row="0" Grid.Column="3" Background="Orange" CornerRadius="4" Padding="4,0,4,0" Margin="5,0,0,0" Visibility="{Binding ShowPRO, Converter={StaticResource BoolToVisibility}}">
                                         <TextBlock x:Name="TextBlockPRO" Text="PRO" Foreground="Black" />
                                     </Border>

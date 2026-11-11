@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Windows.Controls;
 using MDSHO.Data;
 using MDSHO.ViewModels;
@@ -38,7 +38,11 @@ namespace MDSHO.Tests {
               TreeViewItem item = WpfAppHost.VisualDescendants<TreeViewItem>(tree)
                 .Single(i => i.DataContext is ShortcutViewModel s && s.Name == name);
               Button button = WpfAppHost.VisualDescendants<Button>(item).First(b => b.DataContext == item.DataContext);
-              return button.ToolTip;
+              // The tooltip is a panel: its first line is the command line (the comment, if any, follows below a divider).
+              ToolTip tip = Assert.IsType<ToolTip>(button.ToolTip);
+              StackPanel panel = Assert.IsType<StackPanel>(tip.Content);
+              panel.DataContext = button.DataContext;
+              return panel.Children.OfType<TextBlock>().First().Text;
             };
 
             Assert.Equal("cmd.exe /K ping SRV01", toolTipOf("Ping"));

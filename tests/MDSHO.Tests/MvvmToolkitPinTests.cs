@@ -155,7 +155,10 @@ namespace MDSHO.Tests {
       s.IsSelected = true;
       s.EditText = "e";
       s.Target = "https://example.com/";
-      Assert.Equal(new[] { nameof(s.Comment), nameof(s.IsSelected), nameof(s.EditText), nameof(s.Target) }, raised.Take(4));
+      string[] watched = { nameof(s.Comment), nameof(s.IsSelected), nameof(s.EditText), nameof(s.Target) };
+      Assert.Equal(watched, raised.Where(watched.Contains).Take(4));
+      // A comment also refreshes what the view shows from it.
+      Assert.Contains(nameof(s.HasComment), raised);
     }
 
     [Fact]
@@ -265,7 +268,7 @@ namespace MDSHO.Tests {
       Assert.Equal(new[] { "BeginEditTitleCommand", "CancelEditTitleCommand", "CloseWindowCommand", "CommitEditTitleCommand",
         "NewGroupShortcutCommand", "NewProcessCommandShortcutCommand", "PasteShortcutCommand" }, Commands(typeof(DesktopWindowViewModel)));
       Assert.Equal(new[] { "CancelEditCommand", "CommitEditCommand", "CopyShortcutCommand", "CopyTargetToMemoryCommand", "CutShortcutCommand",
-        "DeleteShortcutCommand", "MarkShortcutCommand", "NewGroupShortcutCommand", "NewProcessCommandShortcutCommand", "PasteShortcutCommand",
+        "DeleteShortcutCommand", "EditCommentCommand", "MarkShortcutCommand", "NewGroupShortcutCommand", "NewProcessCommandShortcutCommand", "PasteShortcutCommand",
         "RenameCommand", "SetNameTheSameAsTargetCommand", "SetRunCommandCommand" }, Commands(typeof(ShortcutViewModel)));
       Assert.Equal(new[] { "TestRunCommand" }, Commands(typeof(RunCommandViewModel)));
     }
