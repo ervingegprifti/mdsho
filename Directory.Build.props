@@ -10,9 +10,9 @@
     <Company>Ervin Gegprifti</Company>
     <Product>MDSHO</Product>
     <Copyright>Copyright (c) Ervin Gegprifti</Copyright>
-    <!-- Semantic version (Major.Minor.Patch). AssemblyVersion/FileVersion become 1.2.2.0.
+    <!-- Semantic version (Major.Minor.Patch). AssemblyVersion/FileVersion become 1.2.3.0.
          Keep src\MDSHO.Package\Package.appxmanifest Identity Version in sync as Major.Minor.Patch.0 (the 4th part is reserved by the Store). -->
-    <Version>1.2.2</Version>
+    <Version>1.2.3</Version>
     <!-- The MSIX package build (WAPP) builds the app and its project references with RuntimeIdentifier=win-x64,
          so restore must produce that target for every project. Restore-only: plain builds stay RID-neutral. -->
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
