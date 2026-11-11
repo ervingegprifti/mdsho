@@ -501,17 +501,57 @@ namespace MDSHO.Tests {
       });
     }
 
+    /// <summary>The texts of an example's tooltip (what it does, then the command), read from its list item.</summary>
+    internal static string[] ExampleToolTipTexts(ListBox list, RunCommandExample example) {
+      list.ScrollIntoView(example);
+      list.UpdateLayout();
+      WpfAppHost.Pump();
+      ListBoxItem item = (ListBoxItem)list.ItemContainerGenerator.ContainerFromItem(example);
+      ToolTip tip = Assert.IsType<ToolTip>(item.ToolTip);
+      StackPanel panel = Assert.IsType<StackPanel>(tip.Content);
+      panel.DataContext = example;
+      return panel.Children.OfType<TextBlock>().Select(t => t.Text).ToArray();
+    }
+
     [Fact]
-    public void Selecting_an_example_shows_its_description_and_command() {
+    public void Hovering_an_example_shows_its_description_and_command() {
       WithCommand("cmd.exe", "", f => {
         RunCommandExamplesWindow window = new RunCommandExamplesWindow(new RunCommandViewModel(f.Command, true));
         Shown(window, () => {
           ListBox list = Named<ListBox>(window, "ListExamples");
           RunCommandExample ping = RunCommandExamples.All.Single(e => e.Name == "Ping a computer");
-          list.SelectedItem = ping;
-          WpfAppHost.Pump();
-          Assert.Equal(ping.Description, Named<TextBlock>(window, "TextDescription").Text);
-          Assert.Equal("Runs: cmd.exe /K ping {}", Named<TextBlock>(window, "TextRuns").Text);
+          Assert.Equal(new[] { ping.Description, "Runs: cmd.exe /K ping {}" }, ExampleToolTipTexts(list, ping));
+          // The bottom bar has no description and no hint any more: only Use.
+          Assert.Null(window.FindName("TextDescription"));
+          Assert.Null(window.FindName("TextRuns"));
+        });
+      });
+    }
+
+    [Fact]
+    public void The_examples_list_has_the_note_look_and_the_use_bar_the_button_height_as_margins() {
+      WithCommand("cmd.exe", "", f => {
+        RunCommandExamplesWindow window = new RunCommandExamplesWindow(new RunCommandViewModel(f.Command, true));
+        Shown(window, () => {
+          window.UpdateLayout();
+          ListBox list = Named<ListBox>(window, "ListExamples");
+          FrameworkElement body = Named<FrameworkElement>(window, "Body");
+          Rect l = list.TransformToAncestor(body).TransformBounds(new Rect(0, 0, list.ActualWidth, list.ActualHeight));
+          Assert.Equal(0, l.X, 1);
+          Assert.Equal(0, l.Y, 1);
+          Assert.Equal(body.ActualWidth, l.Width, 1);
+          Assert.Equal(body.ActualHeight, l.Height, 1);
+          Assert.Equal(((SolidColorBrush)window.Background).Color, Assert.IsType<SolidColorBrush>(list.Background).Color);
+          Assert.Equal(new Thickness(0), list.BorderThickness);
+          Assert.Equal(new Thickness(10), list.Padding);
+          FrameworkElement footer = Named<FrameworkElement>(window, "Footer");
+          Button use = Named<Button>(window, "ButtonUse");
+          double h = use.ActualHeight;
+          Assert.True(h > 10, "Use height " + h);
+          Point useTopLeft = use.TranslatePoint(new Point(0, 0), footer);
+          Assert.Equal(h, useTopLeft.Y, 1);
+          Assert.Equal(footer.ActualHeight - h, useTopLeft.Y + use.ActualHeight, 1);
+          Assert.Equal(footer.ActualWidth - h, useTopLeft.X + use.ActualWidth, 1);
         });
       });
     }
@@ -694,19 +734,42 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Examples_window_opens_centred_on_the_run_command_windows_screen() {
+    public void Examples_window_opens_centred_on_the_run_command_window_at_70_percent_of_its_size() {
       WithCommand("cmd.exe", "/K ping {}", f => {
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
-        List<Window> asked = new List<Window>();
-        Shown(window, () => WithScreen(LeftScreen150, asked, () => {
+        Shown(window, () => {
+          window.Left = -9000;
+          window.Top = -8000;
+          window.Width = 560;
+          window.Height = 580;
+          window.UpdateLayout();
           RunCommandExamplesWindow examples = window.CreateExamples();
           Assert.Same(window, examples.Owner);
           Assert.Equal(WindowStartupLocation.Manual, examples.WindowStartupLocation);
-          Assert.Equal(-2000 + (2000 - examples.Width) / 2, examples.Left, 6);
-          Assert.Equal(40 + (1160 - examples.Height) / 2, examples.Top, 6);
+          Assert.Equal(560 * 0.7, examples.Width, 1);
+          Assert.Equal(580 * 0.7, examples.Height, 1);
+          Assert.Equal(-9000 + (560 - examples.Width) / 2, examples.Left, 1);
+          Assert.Equal(-8000 + (580 - examples.Height) / 2, examples.Top, 1);
           examples.Close();
-        }));
-        Assert.Equal(new Window[] { window }, asked);
+        });
+      });
+    }
+
+    [Fact]
+    public void Examples_window_never_gets_smaller_than_its_minimum() {
+      WithCommand("cmd.exe", "/K ping {}", f => {
+        RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
+        Shown(window, () => {
+          window.Left = -9000;
+          window.Top = -8000;
+          window.Width = window.MinWidth;
+          window.Height = window.MinHeight;
+          window.UpdateLayout();
+          RunCommandExamplesWindow examples = window.CreateExamples();
+          Assert.True(examples.Width >= examples.MinWidth, "Width " + examples.Width);
+          Assert.True(examples.Height >= examples.MinHeight, "Height " + examples.Height);
+          examples.Close();
+        });
       });
     }
 
@@ -777,13 +840,20 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Examples_window_is_placed_in_physical_pixels_on_the_run_command_windows_screen() {
+    public void Examples_window_is_placed_in_physical_pixels_centred_on_the_run_command_window() {
       WithCommand("cmd.exe", "/K ping {}", f => {
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
         Shown(window, () => WithFakeHandles(fake => WithScreen(LeftScreen150, new List<Window>(), () => {
+          // The owner's handle is on the 150 % screen, in physical pixels.
+          fake.Rects[window] = new Rect(-1800, 200, 840, 870);
           RunCommandExamplesWindow examples = window.CreateExamples();
+          Assert.Empty(fake.Moves);
+          // Creating the handle (as ShowDialog does, before the window appears) moves it through the handle.
           new System.Windows.Interop.WindowInteropHelper(examples).EnsureHandle();
-          AssertPlacedInPhysicalPixels(fake, examples);
+          Assert.NotEmpty(fake.Moves);
+          Rect final = fake.Rects[examples];
+          Assert.InRange(final.X + final.Width / 2 - (-1800 + 840 / 2.0), -1, 1); // handles move in whole pixels
+          Assert.InRange(final.Y + final.Height / 2 - (200 + 870 / 2.0), -1, 1);
           examples.Close();
         })));
       });

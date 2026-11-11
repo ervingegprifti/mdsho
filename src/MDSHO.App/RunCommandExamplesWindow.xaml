@@ -73,15 +73,11 @@
             </Grid>
         </Border>
 
-        <!--Body: grouped list, then what the selected example does-->
+        <!--Body: the grouped list fills it, with the look of the Note window's editor (window colour, no border, 10 px padding).
+            What an example does and the command it runs show in its tooltip.-->
         <Grid x:Name="Body" Grid.Row="1" Background="#FFF4F3ED">
-            <Grid Margin="14,10,14,10">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <ListBox x:Name="ListExamples" Grid.Row="0" DisplayMemberPath="Name" Padding="2" IsSynchronizedWithCurrentItem="False">
+            <Grid x:Name="BodyContent">
+                <ListBox x:Name="ListExamples" DisplayMemberPath="Name" Padding="10" BorderThickness="0" Background="#FFF4F3ED" IsSynchronizedWithCurrentItem="False">
                     <ListBox.GroupStyle>
                         <GroupStyle>
                             <GroupStyle.HeaderTemplate>
@@ -94,18 +90,25 @@
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="{x:Type ListBoxItem}">
                             <Setter Property="Padding" Value="14,2,2,2"/>
+                            <Setter Property="ToolTip">
+                                <Setter.Value>
+                                    <ToolTip>
+                                        <StackPanel MaxWidth="320">
+                                            <TextBlock Text="{Binding Description}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding RunsText}" TextWrapping="Wrap" FontFamily="Consolas" Foreground="#FF666666" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </ToolTip>
+                                </Setter.Value>
+                            </Setter>
                         </Style>
                     </ListBox.ItemContainerStyle>
                 </ListBox>
-                <TextBlock x:Name="TextDescription" Grid.Row="1" Margin="0,10,0,0" TextWrapping="Wrap" Foreground="#FF333333"
-                           Text="Pick an example to see what it does."/>
-                <TextBlock x:Name="TextRuns" Grid.Row="2" Margin="0,4,0,0" TextWrapping="Wrap" FontFamily="Consolas" Foreground="#FF666666"/>
             </Grid>
         </Grid>
 
-        <!--Footer: Use only-->
+        <!--Footer: Use only; every outer margin equals the button height (set in code from the real button)-->
         <Border x:Name="Footer" Grid.Row="2" Background="#FFDFDACB">
-            <Grid Margin="14,12">
+            <Grid x:Name="FooterContent" Margin="26">
                 <Button x:Name="ButtonUse" HorizontalAlignment="Right" Style="{StaticResource StyleDarkButton}" Content="Use" IsDefault="True" IsEnabled="False"/>
             </Grid>
         </Border>

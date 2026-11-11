@@ -36,14 +36,13 @@ namespace MDSHO {
           Close();
         }
       };
+      // Every outer margin of the bottom bar equals the button height, like the other windows.
+      this.ButtonUse.SizeChanged += (s, e) => this.FooterContent.Margin = new Thickness(this.ButtonUse.ActualHeight);
       ShowSelected();
     }
 
     private void ShowSelected() {
-      RunCommandExample example = this.ListExamples.SelectedItem as RunCommandExample;
-      this.ButtonUse.IsEnabled = example != null;
-      this.TextDescription.Text = example == null ? "Pick an example to see what it does." : example.Description;
-      this.TextRuns.Text = example == null ? "" : example.RunsText;
+      this.ButtonUse.IsEnabled = this.ListExamples.SelectedItem is RunCommandExample;
     }
 
     private void UseSelected() {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -54,6 +54,57 @@ namespace MDSHO.Helpers {
       };
       dialog.ContentRendered += (s, e) => opening = false;
       dialog.Closed += (s, e) => opening = false;
+    }
+
+    /// <summary>
+    /// Makes <paramref name="owner"/> the dialog's owner and places the dialog centred on the owner window, at
+    /// <paramref name="sizeRatio"/> of the owner's width and height (never below the dialog's minimum size). The owner must
+    /// have been shown.
+    /// </summary>
+    /// <remarks>
+    /// Like <see cref="CenterOnScreenOf"/>, Left/Top are only a first guess in DIPs; once the dialog has its handle it is
+    /// centred on the owner's handle in physical pixels, which is right on any monitor scale and also when the owner is maximized.
+    /// </remarks>
+    public static void CenterOnWindow(Window dialog, Window owner, double sizeRatio) {
+      dialog.Owner = owner;
+      dialog.WindowStartupLocation = WindowStartupLocation.Manual;
+      double width = Math.Max(dialog.MinWidth, owner.ActualWidth * sizeRatio);
+      double height = Math.Max(dialog.MinHeight, owner.ActualHeight * sizeRatio);
+      dialog.Width = width;
+      dialog.Height = height;
+      if (owner.WindowState == WindowState.Normal) {
+        dialog.Left = owner.Left + (owner.ActualWidth - width) / 2;
+        dialog.Top = owner.Top + (owner.ActualHeight - height) / 2;
+      }
+      bool opening = true;
+      EventHandler placeOnHandle = null;
+      placeOnHandle = (s, e) => {
+        dialog.SourceInitialized -= placeOnHandle;
+        CenterOnOwnerPhysical(dialog, owner);
+        // Moving onto another monitor may resize it: centre again for the size Windows gave it there.
+        CenterOnOwnerPhysical(dialog, owner);
+      };
+      dialog.SourceInitialized += placeOnHandle;
+      dialog.DpiChanged += (s, e) => {
+        if (opening) {
+          dialog.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() => CenterOnOwnerPhysical(dialog, owner)));
+        }
+      };
+      dialog.ContentRendered += (s, e) => opening = false;
+      dialog.Closed += (s, e) => opening = false;
+    }
+
+    // Centres the dialog's handle on the owner's handle for its current physical size, if it is not centred yet.
+    private static void CenterOnOwnerPhysical(Window dialog, Window owner) {
+      Rect ownerBounds = PhysicalBoundsOf(owner);
+      Rect bounds = PhysicalBoundsOf(dialog);
+      if (ownerBounds.IsEmpty || bounds.IsEmpty) {
+        return;
+      }
+      Point centred = new Point(Math.Round(ownerBounds.X + (ownerBounds.Width - bounds.Width) / 2), Math.Round(ownerBounds.Y + (ownerBounds.Height - bounds.Height) / 2));
+      if (centred != bounds.TopLeft) {
+        MoveToPhysical(dialog, centred);
+      }
     }
 
     // Centres the dialog's handle in the screen's work area for its current physical size, if it is not centred yet.

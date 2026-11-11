@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -177,13 +177,10 @@ namespace MDSHO.Tests {
             ShowOffScreen(examples);
             ListBox list = (ListBox)examples.FindName("ListExamples");
             Assert.Equal(RunCommandExamples.All.Count, list.Items.Count);
-            // Select every example so the description and "Runs:" text and each grouped item template get bound.
+            // Select every example so each grouped item template and its tooltip (description and "Runs:" text) get bound.
             foreach (RunCommandExample example in RunCommandExamples.All) {
               list.SelectedItem = example;
-              list.ScrollIntoView(example);
-              list.UpdateLayout();
-              Pump();
-              Assert.Equal(example.RunsText, ((TextBlock)examples.FindName("TextRuns")).Text);
+              Assert.Equal(new[] { example.Description, example.RunsText }, RunCommandWindowTests.ExampleToolTipTexts(list, example));
             }
             examples.Close();
             runWindow.Close();
