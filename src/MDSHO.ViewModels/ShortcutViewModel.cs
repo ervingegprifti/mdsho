@@ -87,9 +87,9 @@ namespace MDSHO.ViewModels {
     /// <summary>True while the item is selected in the tree.</summary>
     [ObservableProperty]
     private bool isSelected;
-    /// <summary>Free notes about the shortcut.</summary>
+    /// <summary>The comment on the shortcut.</summary>
     [ObservableProperty]
-    private string notes;
+    private string comment;
     /// <summary>True when the shortcut carries a colour mark.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowMark))]
@@ -445,7 +445,7 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string notes, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "") {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "") {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -456,7 +456,7 @@ namespace MDSHO.ViewModels {
       this.guid = guid;
       this.isGroup = isGroup;
       this.isGroupExpanded = isGroupExpanded;
-      this.notes = notes;
+      this.comment = comment;
       this.isMarked = isMarked;
       this.markColor = markColor;
       this.position = position;

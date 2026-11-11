@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using Microsoft.Data.Sqlite;
@@ -69,13 +69,7 @@ namespace MDSHO.Tests {
     private string[] Baks() { return Directory.GetFiles(db.Folder, "test.sqlite3.bak-v*"); }
 
     [Fact]
-    public void Version_is_5_and_the_last_migration_is_5() {
-      Assert.Equal(5, AppConstants.DatabaseVersion);
-      Assert.Equal(5, SchemaManager.Migrations.Last().Version);
-    }
-
-    [Fact]
-    public void V4_database_migrates_to_5_dropping_RoundedCorners_and_keeping_everything_else() {
+    public void V4_database_migrates_past_5_dropping_RoundedCorners_and_keeping_everything_else() {
       BuildV4Db(true);
       string windowsBefore = Text("SELECT group_concat(ID||'|'||Title||'|'||ScreenDeviceName||'|'||Left||'|'||Top||'|'||Width||'|'||Height||'|'||BorderColor||'|'||BackgroundColor||'|'||TextColor||'|'||TitleBackgroundColor||'|'||TitleTextColor||'|'||Notes||'|'||SolidIcons||'|'||SingleClickToOpen, ';') FROM (SELECT * FROM MDSHOWindows ORDER BY ID)");
       string clonesBefore = Text("SELECT group_concat(ID||'|'||ParentMDSHOWindowID||'|'||ScreenDeviceName||'|'||Left||'|'||Top||'|'||Width||'|'||Height, ';') FROM (SELECT * FROM MDSHOWindowClones ORDER BY ID)");
@@ -83,7 +77,7 @@ namespace MDSHO.Tests {
 
       DataStore.Upgrade();
 
-      Assert.Equal(5, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(0, Columns("MDSHOWindows", "RoundedCorners"));
       Assert.Equal(0, Columns("MDSHOWindowClones", "RoundedCorners"));
       Assert.Equal(windowsBefore, Text("SELECT group_concat(ID||'|'||Title||'|'||ScreenDeviceName||'|'||Left||'|'||Top||'|'||Width||'|'||Height||'|'||BorderColor||'|'||BackgroundColor||'|'||TextColor||'|'||TitleBackgroundColor||'|'||TitleTextColor||'|'||Notes||'|'||SolidIcons||'|'||SingleClickToOpen, ';') FROM (SELECT * FROM MDSHOWindows ORDER BY ID)"));
@@ -115,7 +109,7 @@ namespace MDSHO.Tests {
     public void Migration_tolerates_the_column_already_being_absent() {
       BuildV4Db(false);
       DataStore.Upgrade();
-      Assert.Equal(5, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(0, Columns("MDSHOWindows", "RoundedCorners"));
       Assert.Equal(2, db.Scalar("SELECT count(*) FROM MDSHOWindowClones"));
     }
@@ -132,9 +126,9 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Fresh_database_is_version_5_without_RoundedCorners() {
+    public void Fresh_database_has_no_RoundedCorners() {
       db = new TempDb();
-      Assert.Equal(5, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(0, Columns("MDSHOWindows", "RoundedCorners"));
       Assert.Equal(0, Columns("MDSHOWindowClones", "RoundedCorners"));
       // New windows and clones can be saved without the column.

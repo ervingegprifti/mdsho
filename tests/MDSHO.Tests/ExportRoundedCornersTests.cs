@@ -41,11 +41,11 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void New_export_has_no_RoundedCorners_and_schema_version_5() {
+    public void New_export_has_no_RoundedCorners_and_the_current_schema_version() {
       string zip = ExportWithAClone();
       Assert.DoesNotContain("roundedCorners", ReadEntry(zip, "data.json"), StringComparison.OrdinalIgnoreCase);
       JsonNode manifest = JsonNode.Parse(ReadEntry(zip, "manifest.json"));
-      Assert.Equal(5, (int)manifest["schemaVersion"]);
+      Assert.Equal(MDSHO.Common.AppConstants.DatabaseVersion, (int)manifest["schemaVersion"]);
       Assert.Equal(ExportManifest.CurrentFormatVersion, (int)manifest["formatVersion"]);
     }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Data.Sqlite;
@@ -57,7 +57,7 @@ namespace MDSHO.Data {
           Guid TEXT NOT NULL,
           IsGroup INTEGER NOT NULL,
           IsGroupExpanded INTEGER NOT NULL,
-          Notes TEXT NOT NULL,
+          Comment TEXT NOT NULL,
           IsMarked INTEGER NOT NULL,
           MarkColor TEXT NOT NULL,
           Position INTEGER NOT NULL,
@@ -160,6 +160,12 @@ namespace MDSHO.Data {
         }
         if (ColumnExists(conn, "MDSHOWindowClones", "RoundedCorners")) {
           Execute(conn, "ALTER TABLE MDSHOWindowClones DROP COLUMN RoundedCorners;");
+        }
+      }),
+      new DbMigration(6, "Rename Shortcuts.Notes to Comment (button comments; MDSHOWindows.Notes is unchanged)", conn => {
+        // RENAME COLUMN (SQLite 3.25+) keeps the rows, the text, indexes and foreign keys.
+        if (ColumnExists(conn, "Shortcuts", "Notes") && !ColumnExists(conn, "Shortcuts", "Comment")) {
+          Execute(conn, "ALTER TABLE Shortcuts RENAME COLUMN Notes TO Comment;");
         }
       })
     };

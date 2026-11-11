@@ -31,8 +31,8 @@ namespace MDSHO.Core {
     public long IsGroup { get; set; }
     /// <summary>1 when the group is open in the tree.</summary>
     public long IsGroupExpanded { get; set; }
-    /// <summary>Free notes about the shortcut.</summary>
-    public string Notes { get; set; }
+    /// <summary>The comment on the shortcut, shown in its tooltip and edited in the Comment window.</summary>
+    public string Comment { get; set; }
     /// <summary>1 when the shortcut is marked with a colour.</summary>
     public long IsMarked { get; set; }
     /// <summary>The mark colour as #AARRGGBB text.</summary>
@@ -59,11 +59,11 @@ namespace MDSHO.Core {
     public Shortcut() { }
 
     /// <summary>Creates a shortcut record (the first overload gets a new ID from the database, the second keeps the given ID).</summary>
-    public Shortcut(long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid, long isGroup, long isGroupExpanded, string notes, long isMarked, string markColor, long position, long isProcessCommand, string processFileName, string processArguments, long processRunAsAdmin = 0, string processWorkingFolder = "") :
-      this (id: 0, parentShortcutID, parentWindowID, name, target, ext, guid, isGroup, isGroupExpanded, notes, isMarked, markColor, position, isProcessCommand, processFileName, processArguments, processRunAsAdmin, processWorkingFolder) { }
+    public Shortcut(long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid, long isGroup, long isGroupExpanded, string comment, long isMarked, string markColor, long position, long isProcessCommand, string processFileName, string processArguments, long processRunAsAdmin = 0, string processWorkingFolder = "") :
+      this (id: 0, parentShortcutID, parentWindowID, name, target, ext, guid, isGroup, isGroupExpanded, comment, isMarked, markColor, position, isProcessCommand, processFileName, processArguments, processRunAsAdmin, processWorkingFolder) { }
 
     /// <summary>Creates a shortcut record (the first overload gets a new ID from the database, the second keeps the given ID).</summary>
-    public Shortcut(long id, long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid, long isGroup, long isGroupExpanded, string notes, long isMarked, string markColor, long position, long isProcessCommand, string processFileName, string processArguments, long processRunAsAdmin = 0, string processWorkingFolder = "") {
+    public Shortcut(long id, long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid, long isGroup, long isGroupExpanded, string comment, long isMarked, string markColor, long position, long isProcessCommand, string processFileName, string processArguments, long processRunAsAdmin = 0, string processWorkingFolder = "") {
       this.ID = id;
       this.ParentShortcutID = parentShortcutID;
       this.ParentWindowID = parentWindowID;
@@ -73,7 +73,7 @@ namespace MDSHO.Core {
       this.Guid = guid;
       this.IsGroup = isGroup;
       this.IsGroupExpanded = isGroupExpanded;
-      this.Notes = notes;
+      this.Comment = comment;
       this.IsMarked = isMarked;
       this.MarkColor = markColor;
       this.Position = position;

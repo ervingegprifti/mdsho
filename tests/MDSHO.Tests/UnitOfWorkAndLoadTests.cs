@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -242,8 +242,8 @@ namespace MDSHO.Tests {
       for (int i = 0; i < expected.Count; i++) {
         Shortcut e = expected[i], a = actual[i];
         Assert.Equal(
-          (e.ID, e.ParentShortcutID, e.ParentWindowID, e.Name, e.Target, e.Ext, e.Guid, e.IsGroup, e.IsGroupExpanded, e.Notes, e.IsMarked, e.MarkColor, e.Position, e.IsProcessCommand, e.ProcessFileName, e.ProcessArguments),
-          (a.ID, a.ParentShortcutID, a.ParentWindowID, a.Name, a.Target, a.Ext, a.Guid, a.IsGroup, a.IsGroupExpanded, a.Notes, a.IsMarked, a.MarkColor, a.Position, a.IsProcessCommand, a.ProcessFileName, a.ProcessArguments));
+          (e.ID, e.ParentShortcutID, e.ParentWindowID, e.Name, e.Target, e.Ext, e.Guid, e.IsGroup, e.IsGroupExpanded, e.Comment, e.IsMarked, e.MarkColor, e.Position, e.IsProcessCommand, e.ProcessFileName, e.ProcessArguments),
+          (a.ID, a.ParentShortcutID, a.ParentWindowID, a.Name, a.Target, a.Ext, a.Guid, a.IsGroup, a.IsGroupExpanded, a.Comment, a.IsMarked, a.MarkColor, a.Position, a.IsProcessCommand, a.ProcessFileName, a.ProcessArguments));
         AssertSameTree(e.Shortcuts, a.Shortcuts);
       }
     }

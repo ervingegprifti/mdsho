@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -148,14 +148,14 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Target_Notes_IsSelected_and_EditText_raise_their_change() {
+    public void Target_Comment_IsSelected_and_EditText_raise_their_change() {
       ShortcutViewModel s = Command(null);
       List<string> raised = Record(s);
-      s.Notes = "n";
+      s.Comment = "n";
       s.IsSelected = true;
       s.EditText = "e";
       s.Target = "https://example.com/";
-      Assert.Equal(new[] { nameof(s.Notes), nameof(s.IsSelected), nameof(s.EditText), nameof(s.Target) }, raised.Take(4));
+      Assert.Equal(new[] { nameof(s.Comment), nameof(s.IsSelected), nameof(s.EditText), nameof(s.Target) }, raised.Take(4));
     }
 
     [Fact]

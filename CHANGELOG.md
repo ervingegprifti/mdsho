@@ -22,6 +22,9 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - Menus, buttons, labels and window titles use sentence case, as in Windows 11: only the first word and names start
   with a capital letter ("New window", "Set run command...", "Single click to open", "Run command"). New groups and
   run commands are named "New group" and "New command"; existing buttons keep their names.
+- Database version 6: the buttons' unused `Notes` column is renamed to `Comment`, for the new button comments. The
+  database is backed up first, as with every upgrade. Exports now call the field `comment`; exports from older versions
+  still import. The windows' `Notes` column is unchanged.
 
 ## [1.1.5]
 

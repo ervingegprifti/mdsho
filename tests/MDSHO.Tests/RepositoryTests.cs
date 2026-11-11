@@ -247,7 +247,7 @@ namespace MDSHO.Tests {
       Assert.True(r.ID > 0);
       Assert.Equal(1, r.Position); // template position is ignored
       Assert.Equal(("n", "t", ".url", "G9", 0L, 1L, "notes", 1L, "#FF112233", 1L, "cmd.exe", "/c dir"),
-        (r.Name, r.Target, r.Ext, r.Guid, r.IsGroup, r.IsGroupExpanded, r.Notes, r.IsMarked, r.MarkColor, r.IsProcessCommand, r.ProcessFileName, r.ProcessArguments));
+        (r.Name, r.Target, r.Ext, r.Guid, r.IsGroup, r.IsGroupExpanded, r.Comment, r.IsMarked, r.MarkColor, r.IsProcessCommand, r.ProcessFileName, r.ProcessArguments));
     }
 
     [Fact]
@@ -260,12 +260,12 @@ namespace MDSHO.Tests {
       Assert.Null(r.ParentShortcutID);
       Assert.Equal(w.ID, r.ParentWindowID);
       Assert.Equal(5, r.Position);
-      r.Name = "n2"; r.Target = "t2"; r.Ext = ".url"; r.Guid = "G2"; r.IsGroup = 1; r.IsGroupExpanded = 1; r.Notes = "y"; r.IsMarked = 1;
+      r.Name = "n2"; r.Target = "t2"; r.Ext = ".url"; r.Guid = "G2"; r.IsGroup = 1; r.IsGroupExpanded = 1; r.Comment = "y"; r.IsMarked = 1;
       r.MarkColor = "#FF000001"; r.Position = 9; r.IsProcessCommand = 1; r.ProcessFileName = "p"; r.ProcessArguments = "a";
       Shortcuts.Update(r);
       Shortcut u = Shortcuts.Get(id);
       Assert.Equal(("n2", "t2", ".url", "G2", 1L, 1L, "y", 1L, "#FF000001", 9L, 1L, "p", "a"),
-        (u.Name, u.Target, u.Ext, u.Guid, u.IsGroup, u.IsGroupExpanded, u.Notes, u.IsMarked, u.MarkColor, u.Position, u.IsProcessCommand, u.ProcessFileName, u.ProcessArguments));
+        (u.Name, u.Target, u.Ext, u.Guid, u.IsGroup, u.IsGroupExpanded, u.Comment, u.IsMarked, u.MarkColor, u.Position, u.IsProcessCommand, u.ProcessFileName, u.ProcessArguments));
       Assert.Null(Shortcuts.Get(99999));
       Assert.Equal(1, Shortcuts.GetAll().Count);
     }

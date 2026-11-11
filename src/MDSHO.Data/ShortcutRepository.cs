@@ -7,20 +7,20 @@ namespace MDSHO.Data {
   internal sealed class ShortcutRepository : RepositoryBase, IShortcutRepository {
     /// <summary>Column list for SELECTs: the database column ParentMDSHOWindowID is exposed as the property ParentWindowID.</summary>
     internal const string SelectColumns = @"ID, ParentShortcutID, ParentMDSHOWindowID AS ParentWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded,
-      Notes, IsMarked, MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder";
+      Comment, IsMarked, MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder";
 
     private const string InsertSql = @"
       INSERT INTO Shortcuts (
-        ID, ParentShortcutID, ParentMDSHOWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded, Notes, IsMarked,
+        ID, ParentShortcutID, ParentMDSHOWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded, Comment, IsMarked,
         MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder)
       VALUES (
-        NULLIF(@ID, 0), @ParentShortcutID, @ParentWindowID, @Name, @Target, @Ext, @Guid, @IsGroup, @IsGroupExpanded, @Notes, @IsMarked,
+        NULLIF(@ID, 0), @ParentShortcutID, @ParentWindowID, @Name, @Target, @Ext, @Guid, @IsGroup, @IsGroupExpanded, @Comment, @IsMarked,
         @MarkColor, @Position, @IsProcessCommand, @ProcessFileName, @ProcessArguments, @ProcessRunAsAdmin, COALESCE(@ProcessWorkingFolder, ''))";
 
     private const string UpdateSql = @"
       UPDATE Shortcuts SET
         ParentShortcutID = @ParentShortcutID, ParentMDSHOWindowID = @ParentWindowID, Name = @Name, Target = @Target,
-        Ext = @Ext, Guid = @Guid, IsGroup = @IsGroup, IsGroupExpanded = @IsGroupExpanded, Notes = @Notes, IsMarked = @IsMarked,
+        Ext = @Ext, Guid = @Guid, IsGroup = @IsGroup, IsGroupExpanded = @IsGroupExpanded, Comment = @Comment, IsMarked = @IsMarked,
         MarkColor = @MarkColor, Position = @Position, IsProcessCommand = @IsProcessCommand, ProcessFileName = @ProcessFileName,
         ProcessArguments = @ProcessArguments, ProcessRunAsAdmin = @ProcessRunAsAdmin,
         ProcessWorkingFolder = COALESCE(@ProcessWorkingFolder, '')
@@ -67,7 +67,7 @@ namespace MDSHO.Data {
       return InTransaction(() => {
         Shortcut copy = new Shortcut(
           template.ParentShortcutID, template.ParentWindowID, template.Name, template.Target, template.Ext, template.Guid,
-          template.IsGroup, template.IsGroupExpanded, template.Notes, template.IsMarked, template.MarkColor,
+          template.IsGroup, template.IsGroupExpanded, template.Comment, template.IsMarked, template.MarkColor,
           GetMaxPosition(template.ParentShortcutID, template.ParentWindowID) + 1,
           template.IsProcessCommand, template.ProcessFileName, template.ProcessArguments,
           template.ProcessRunAsAdmin, template.ProcessWorkingFolder);
@@ -77,19 +77,19 @@ namespace MDSHO.Data {
 
     public Shortcut CreateGroup(long? parentShortcutID, long? parentWindowID) {
       return Append(new Shortcut(parentShortcutID, parentWindowID, "New group", "", "", Identifiers.NewGuid(),
-        isGroup: 1, isGroupExpanded: 1, notes: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
+        isGroup: 1, isGroupExpanded: 1, comment: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
         isProcessCommand: 0, processFileName: "", processArguments: ""));
     }
 
     public Shortcut Create(long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid) {
       return Append(new Shortcut(parentShortcutID, parentWindowID, name, target, ext, guid,
-        isGroup: 0, isGroupExpanded: 0, notes: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
+        isGroup: 0, isGroupExpanded: 0, comment: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
         isProcessCommand: 0, processFileName: "", processArguments: ""));
     }
 
     public Shortcut CreateProcessCommand(long? parentShortcutID, long? parentWindowID) {
       return Append(new Shortcut(parentShortcutID, parentWindowID, "New command", "", "", Identifiers.NewGuid(),
-        isGroup: 0, isGroupExpanded: 0, notes: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
+        isGroup: 0, isGroupExpanded: 0, comment: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
         isProcessCommand: 1, processFileName: "", processArguments: ""));
     }
     #endregion CREATE

@@ -61,7 +61,7 @@ namespace MDSHO.Tests {
       List<string> rows = new List<string>();
       foreach (DesktopWindow w in DataStore.Windows.GetAll().OrderBy(x => x.ID)) { rows.Add("W" + JsonSerializer.Serialize(new { w.ID, w.Title, w.ScreenDeviceName, w.Left, w.Top, w.Width, w.Height, w.BorderColor, w.BackgroundColor, w.TextColor, w.TitleBackgroundColor, w.TitleTextColor, w.Notes, w.SolidIcons, w.SingleClickToOpen }, Json)); }
       foreach (DesktopWindowClone c in DataStore.Clones.GetAll().OrderBy(x => x.ID)) { rows.Add("C" + JsonSerializer.Serialize(new { c.ID, c.ParentWindowID, c.ScreenDeviceName, c.Left, c.Top, c.Width, c.Height }, Json)); }
-      foreach (Shortcut s in DataStore.Shortcuts.GetAll().OrderBy(x => x.ID)) { rows.Add("S" + JsonSerializer.Serialize(new { s.ID, s.ParentShortcutID, s.ParentWindowID, s.Name, s.Target, s.Ext, s.Guid, s.IsGroup, s.IsGroupExpanded, s.Notes, s.IsMarked, s.MarkColor, s.Position, s.IsProcessCommand, s.ProcessFileName, s.ProcessArguments }, Json)); }
+      foreach (Shortcut s in DataStore.Shortcuts.GetAll().OrderBy(x => x.ID)) { rows.Add("S" + JsonSerializer.Serialize(new { s.ID, s.ParentShortcutID, s.ParentWindowID, s.Name, s.Target, s.Ext, s.Guid, s.IsGroup, s.IsGroupExpanded, s.Comment, s.IsMarked, s.MarkColor, s.Position, s.IsProcessCommand, s.ProcessFileName, s.ProcessArguments }, Json)); }
       return rows;
     }
 

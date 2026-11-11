@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 5**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 6**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -72,7 +72,7 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `Guid` | TEXT | NOT NULL | | Unique name (without extension) of the button's shortcut file in the shortcuts folder. |
 | `IsGroup` | INTEGER | NOT NULL | | `1` for a group. |
 | `IsGroupExpanded` | INTEGER | NOT NULL | | `1` when the group is open. |
-| `Notes` | TEXT | NOT NULL | | Free notes about the button (kept, but the current app has no field to edit them). |
+| `Comment` | TEXT | NOT NULL | | The button's comment (empty = no comment). Called `Notes` before database version 6. |
 | `IsMarked` | INTEGER | NOT NULL | | `1` when the button is marked with a color. |
 | `MarkColor` | TEXT | NOT NULL | | The mark color. |
 | `Position` | INTEGER | NOT NULL | | Order among buttons with the same parent, from 0. |
@@ -113,6 +113,7 @@ that worked.
 | 3 | 1.1.0 | Indexes on the foreign key columns (see [Indexes](#indexes)). |
 | 4 | 1.1.5 | `Shortcuts.ProcessRunAsAdmin` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.ProcessWorkingFolder` (`TEXT NOT NULL DEFAULT ''`) for the Run command window. |
 | 5 | 1.1.5 | `RoundedCorners` dropped from `MDSHOWindows` and `MDSHOWindowClones` (corners now follow the docked state). Uses `ALTER TABLE ... DROP COLUMN`, so no rows, IDs, indexes or foreign keys change. |
+| 6 | 1.1.6 | `Shortcuts.Notes` renamed to `Comment` (`ALTER TABLE ... RENAME COLUMN`; the text, rows, indexes and foreign keys stay). `MDSHOWindows.Notes` is unchanged. Exports made before this still import: their `notes` becomes the comment. |
 
 ### Backup before an upgrade
 

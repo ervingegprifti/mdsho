@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -81,6 +81,18 @@ namespace MDSHO.Data {
       DefaultJsonTypeInfoResolver resolver = new DefaultJsonTypeInfoResolver();
       // The children lists are not columns: the tree is rebuilt from the parent ids.
       resolver.Modifiers.Add(info => {
+        // Exports made before database version 6 call the shortcut comment "notes": read it into Comment (a "comment"
+        // in the same object wins), but never write it.
+        if (info.Type == typeof(Shortcut)) {
+          JsonPropertyInfo legacyNotes = info.CreateJsonPropertyInfo(typeof(string), "notes");
+          legacyNotes.Set = (obj, value) => {
+            Shortcut shortcut = (Shortcut)obj;
+            if (string.IsNullOrEmpty(shortcut.Comment)) {
+              shortcut.Comment = (string)value;
+            }
+          };
+          info.Properties.Add(legacyNotes);
+        }
         if (info.Type == typeof(DesktopWindow) || info.Type == typeof(DesktopWindowClone) || info.Type == typeof(Shortcut)) {
           for (int i = info.Properties.Count - 1; i >= 0; i--) {
             string name = info.Properties[i].Name;
