@@ -311,6 +311,92 @@ namespace MDSHO.Tests {
       });
     }
 
+    // ---- Several note windows at once ----
+
+    /// <summary>Opens note windows off screen through the real ShowNoteFor, then closes every one of them.</summary>
+    private static void WithNoteWindows(Action check) {
+      Action<TextEditWindow> oldPlace = TextEditWindow.PlaceNoteWindow;
+      TextEditWindow.PlaceNoteWindow = w => {
+        w.WindowStartupLocation = WindowStartupLocation.Manual;
+        w.Left = -10000;
+        w.Top = -10000;
+        w.ShowActivated = false;
+      };
+      try {
+        check();
+      } finally {
+        foreach (TextEditWindow w in TextEditWindow.OpenNoteWindows.ToList()) {
+          w.Close();
+        }
+        WpfAppHost.Pump();
+        TextEditWindow.PlaceNoteWindow = oldPlace;
+      }
+    }
+
+    [Fact]
+    public void Two_notes_open_in_two_windows_at_the_same_time() {
+      WithGroup(f => {
+        ShortcutViewModel first = NewNoteInGroup(f);
+        ShortcutViewModel second = NewNoteInGroup(f);
+        WithNoteWindows(() => {
+          // ShowNoteFor returns at once (the window is not a dialog), so both can be open.
+          TextEditWindow.ShowNoteFor(first);
+          TextEditWindow.ShowNoteFor(second);
+          WpfAppHost.Pump();
+          Assert.Equal(2, TextEditWindow.OpenNoteWindows.Count);
+          Assert.All(TextEditWindow.OpenNoteWindows, w => Assert.True(w.IsVisible));
+        });
+      });
+    }
+
+    [Fact]
+    public void Opening_a_note_that_is_already_open_reuses_its_window() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        WithNoteWindows(() => {
+          TextEditWindow.ShowNoteFor(note);
+          TextEditWindow window = TextEditWindow.OpenNoteWindows.Single();
+          TextEditWindow.ShowNoteFor(note);
+          WpfAppHost.Pump();
+          Assert.Same(window, TextEditWindow.OpenNoteWindows.Single());
+        });
+      });
+    }
+
+    [Fact]
+    public void A_closed_note_window_can_be_opened_again() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        WithNoteWindows(() => {
+          TextEditWindow.ShowNoteFor(note);
+          TextEditWindow.OpenNoteWindows.Single().Close();
+          WpfAppHost.Pump();
+          Assert.Empty(TextEditWindow.OpenNoteWindows);
+          TextEditWindow.ShowNoteFor(note);
+          Assert.Single(TextEditWindow.OpenNoteWindows);
+        });
+      });
+    }
+
+    [Fact]
+    public void Saving_in_one_note_window_leaves_the_other_open() {
+      WithGroup(f => {
+        ShortcutViewModel first = NewNoteInGroup(f);
+        ShortcutViewModel second = NewNoteInGroup(f);
+        WithNoteWindows(() => {
+          TextEditWindow.ShowNoteFor(first);
+          TextEditWindow.ShowNoteFor(second);
+          TextEditWindow firstWindow = TextEditWindow.OpenNoteWindows.Single(w => w.Shortcut == first);
+          ((TextBox)firstWindow.FindName("TextComment")).Text = "saved";
+          Button save = (Button)firstWindow.FindName("ButtonSave");
+          save.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, save));
+          WpfAppHost.Pump();
+          Assert.Equal("saved", first.NoteText);
+          Assert.Equal(second, TextEditWindow.OpenNoteWindows.Single().Shortcut);
+        });
+      });
+    }
+
     // ---- Panel view ----
 
     private static void WithView(Fixture f, ShortcutViewModel note, Action<DesktopWindowView, Button> check) {

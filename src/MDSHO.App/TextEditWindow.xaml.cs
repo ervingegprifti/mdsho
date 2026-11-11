@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
 using MDSHO.Helpers;
@@ -72,14 +73,51 @@ namespace MDSHO {
     /// <summary>True when the user saved; false after Cancel, X or Esc.</summary>
     public bool Saved { get; private set; }
 
+    /// <summary>The button whose comment or note this window edits.</summary>
+    public ShortcutViewModel Shortcut => this.shortcut;
+
+    private static readonly List<TextEditWindow> openNoteWindows = new List<TextEditWindow>();
+
+    /// <summary>The note windows open now. Several notes can be open at once, but each note in one window only.</summary>
+    public static IReadOnlyCollection<TextEditWindow> OpenNoteWindows => openNoteWindows.AsReadOnly();
+
+    /// <summary>Places a new note window before it shows: centred on the screen of the MDSHO window the note belongs to. Tests replace it.</summary>
+    public static Action<TextEditWindow> PlaceNoteWindow = window => {
+      Window owner = RunCommandWindow.FindOwner(window.shortcut);
+      if (owner != null) {
+        DialogPlacement.CenterOnScreenOf(window, owner);
+      } else {
+        window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+      }
+    };
+
     /// <summary>Opens the comment window as a dialog, centred on the screen of the MDSHO window the button belongs to.</summary>
     public static void ShowCommentFor(ShortcutViewModel shortcut) {
       ShowDialogFor(() => ForComment(shortcut), shortcut);
     }
 
-    /// <summary>Opens the note window as a dialog, centred on the screen of the MDSHO window the note belongs to.</summary>
+    /// <summary>
+    /// Opens the note window without blocking, so several notes can be open side by side while MDSHO stays usable. A note
+    /// that is already open is brought to the front instead of opening a second window that could overwrite it.
+    /// </summary>
     public static void ShowNoteFor(ShortcutViewModel shortcut) {
-      ShowDialogFor(() => ForNote(shortcut), shortcut);
+      try {
+        TextEditWindow open = openNoteWindows.Find(w => ReferenceEquals(w.shortcut, shortcut) || (shortcut != null && w.shortcut.ID == shortcut.ID && shortcut.ID != 0));
+        if (open != null) {
+          if (open.WindowState == WindowState.Minimized) {
+            open.WindowState = WindowState.Normal;
+          }
+          open.Activate();
+          return;
+        }
+        TextEditWindow window = ForNote(shortcut);
+        PlaceNoteWindow(window);
+        openNoteWindows.Add(window);
+        window.Closed += (s, e) => openNoteWindows.Remove(window);
+        window.Show();
+      } catch (Exception ex) {
+        ErrorDialog.ShowDialog(ex);
+      }
     }
 
     private static void ShowDialogFor(Func<TextEditWindow> create, ShortcutViewModel shortcut) {
