@@ -22,7 +22,9 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   which buttons have one. A comment of only spaces counts as none. The Comment window looks like the Note window.
 - **Note buttons**, a third kind of button next to shortcuts and run commands: **New note** (right-click empty space or
   a group) creates one and opens the Note window. Opening a note (double-click, or single click when that is set) opens
-  the Note window to read and edit its text (several notes can be open side by side; the text fills the window and scrolls sideways instead of wrapping); its tooltip shows the first 10 lines. A note's right-click menu has **Edit
+  the Note window to read and edit its text (several notes can be open side by side; the text fills the window and scrolls sideways instead of wrapping); its tooltip shows the first 10 lines. Note windows remember their place, size and state: notes that were open come back
+  where they were after MDSHO or Windows restarts (unsaved typing is saved at exit), a note opens again where it was last,
+  and a place that is off every screen moves to the middle of the main screen. A note's right-click menu has **Edit
   note...** and **Copy note text** (puts the whole note on the clipboard). Notes can be renamed, marked,
   moved, copied, exported and imported like other buttons, and need no shortcut file. They use the text-box glyph
   until the icon font gets a dedicated note glyph.

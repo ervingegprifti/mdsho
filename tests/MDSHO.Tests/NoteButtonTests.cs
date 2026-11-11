@@ -407,6 +407,9 @@ namespace MDSHO.Tests {
     /// <summary>Opens note windows off screen through the real ShowNoteFor, then closes every one of them.</summary>
     private static void WithNoteWindows(Action check) {
       Action<TextEditWindow> oldPlace = TextEditWindow.PlaceNoteWindow;
+      Func<IList<MDSHO.Common.ScreenRect>> oldAreas = TextEditWindow.WorkAreas;
+      // The far-away test area counts as a screen, so a reopened test window is never moved onto the real screen.
+      TextEditWindow.WorkAreas = () => new List<MDSHO.Common.ScreenRect> { new MDSHO.Common.ScreenRect(-20000, -20000, 15000, 15000) };
       TextEditWindow.PlaceNoteWindow = w => {
         w.WindowStartupLocation = WindowStartupLocation.Manual;
         w.Left = -10000;
@@ -421,6 +424,7 @@ namespace MDSHO.Tests {
         }
         WpfAppHost.Pump();
         TextEditWindow.PlaceNoteWindow = oldPlace;
+        TextEditWindow.WorkAreas = oldAreas;
       }
     }
 

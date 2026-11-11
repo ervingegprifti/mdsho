@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
+using System.Windows.Threading;
+using MDSHO.Common;
+using MDSHO.Core;
+using MDSHO.Data;
 using System.Windows.Input;
 using MDSHO.Helpers;
 using MDSHO.ViewModels;
@@ -112,12 +117,150 @@ namespace MDSHO {
           return;
         }
         TextEditWindow window = ForNote(shortcut);
-        PlaceNoteWindow(window);
+        NoteWindowPlace place = shortcut.ID != 0 ? DataStore.NoteWindows.Get(shortcut.ID) : null;
+        if (place != null) {
+          window.UseSavedPlace(place);
+        } else {
+          PlaceNoteWindow(window);
+        }
         openNoteWindows.Add(window);
         window.Closed += (s, e) => openNoteWindows.Remove(window);
+        window.TrackNotePlace();
         window.Show();
+        window.SaveNotePlace();
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
+      }
+    }
+
+    // ---- Remembering the place of note windows ----
+
+    /// <summary>The work areas of all screens, in physical pixels. Tests replace it.</summary>
+    public static Func<IList<ScreenRect>> WorkAreas = () => AppServices.Current.Screens.AllScreens().Select(s => s.WorkingArea).ToList();
+
+    /// <summary>The work area of the main screen, in physical pixels; null = the primary screen. Tests replace it.</summary>
+    public static Func<ScreenRect> MainWorkArea;
+
+    /// <summary>True while MDSHO exits: open note windows then stay marked as open, so they come back at the next start.</summary>
+    public static bool IsExiting { get; set; }
+
+    private readonly DispatcherTimer placeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+    private WindowState savedState = WindowState.Normal;
+
+    /// <summary>Opens the window at a saved place and size, in its saved state; a place off every screen moves to the main screen.</summary>
+    private void UseSavedPlace(NoteWindowPlace place) {
+      this.WindowStartupLocation = WindowStartupLocation.Manual;
+      this.Left = place.Left;
+      this.Top = place.Top;
+      this.Width = Math.Max(this.MinWidth, place.Width);
+      this.Height = Math.Max(this.MinHeight, place.Height);
+      this.savedState = place.State == NoteWindowPlace.Maximized ? WindowState.Maximized
+        : place.State == NoteWindowPlace.Minimized ? WindowState.Minimized : WindowState.Normal;
+      EventHandler placeOnHandle = null;
+      placeOnHandle = (s, e) => {
+        this.SourceInitialized -= placeOnHandle;
+        // The normal place is checked in physical pixels before the window shows, then the state is applied.
+        RescueIfLost();
+        this.WindowState = this.savedState;
+      };
+      this.SourceInitialized += placeOnHandle;
+    }
+
+    // Moves the window to the middle of the main screen when not enough of its title bar is on any screen.
+    private void RescueIfLost() {
+      Rect bounds = DialogPlacement.PhysicalBoundsOf(this);
+      if (bounds.IsEmpty) {
+        return;
+      }
+      if (!LostWindows.IsLost(new ScreenRect(bounds.X, bounds.Y, bounds.Width, bounds.Height), WorkAreas())) {
+        return;
+      }
+      ScreenRect main = MainWorkArea != null ? MainWorkArea() : AppServices.Current.Screens.PrimaryScreen().WorkingArea;
+      DialogPlacement.MoveToPhysical(this, new Point(Math.Round(main.X + (main.Width - bounds.Width) / 2), Math.Round(main.Y + (main.Height - bounds.Height) / 2)));
+    }
+
+    // Saves the place shortly after the window stops moving or resizing, and marks it closed when the user closes it.
+    private void TrackNotePlace() {
+      this.placeTimer.Tick += (s, e) => {
+        this.placeTimer.Stop();
+        SaveNotePlace();
+      };
+      EventHandler later = (s, e) => {
+        this.placeTimer.Stop();
+        this.placeTimer.Start();
+      };
+      this.LocationChanged += later;
+      this.SizeChanged += (s, e) => later(s, e);
+      this.StateChanged += later;
+      this.Closing += (s, e) => {
+        this.placeTimer.Stop();
+        // Closed by the user: remember the place for next time, but not as open. At exit it stays open.
+        SaveNotePlace(isOpen: IsExiting);
+      };
+    }
+
+    /// <summary>Saves this note window's normal place, size and state, marked as open.</summary>
+    public void SaveNotePlace() {
+      SaveNotePlace(isOpen: true);
+    }
+
+    private void SaveNotePlace(bool isOpen) {
+      if (this.kind != TextKind.Note || this.shortcut.ID == 0) {
+        return;
+      }
+      Rect normal = this.WindowState == WindowState.Normal
+        ? new Rect(this.Left, this.Top, double.IsNaN(this.Width) ? this.ActualWidth : this.Width, double.IsNaN(this.Height) ? this.ActualHeight : this.Height)
+        : this.RestoreBounds;
+      if (normal.IsEmpty || double.IsNaN(normal.X) || double.IsInfinity(normal.Width)) {
+        return;
+      }
+      long state = this.WindowState == WindowState.Maximized ? NoteWindowPlace.Maximized
+        : this.WindowState == WindowState.Minimized ? NoteWindowPlace.Minimized : NoteWindowPlace.Normal;
+      try {
+        DataStore.NoteWindows.Save(new NoteWindowPlace(this.shortcut.ID, (long)Math.Round(normal.X), (long)Math.Round(normal.Y),
+          (long)Math.Round(normal.Width), (long)Math.Round(normal.Height), state, isOpen));
+      } catch (Exception ex) {
+        // A place that can't be saved must never break the note window.
+        AppLog.Warning(ex, "Could not save the place of a note window");
+      }
+    }
+
+    /// <summary>
+    /// At exit (from the tray, or when Windows shuts down or restarts): saves unsaved typing in every open note window and
+    /// keeps the windows marked as open, so they come back where they were at the next start.
+    /// </summary>
+    public static void SaveOpenNotesForExit() {
+      IsExiting = true;
+      foreach (TextEditWindow window in openNoteWindows.ToList()) {
+        string text = window.TextComment.Text ?? "";
+        string value = string.IsNullOrWhiteSpace(text) ? "" : text;
+        if (value != (window.shortcut.NoteText ?? "")) {
+          window.shortcut.NoteText = value;
+        }
+        window.SaveNotePlace(isOpen: true);
+      }
+    }
+
+    /// <summary>At start: opens every note window that was open, where it was; a saved window of a note that is gone is marked closed.</summary>
+    public static void ReopenOpenNotes(AppViewModel app) {
+      List<ShortcutViewModel> all = new List<ShortcutViewModel>();
+      foreach (DesktopWindowViewModel panel in app.Windows) {
+        AddWithChildren(panel.RootShortcuts, all);
+      }
+      foreach (NoteWindowPlace place in DataStore.NoteWindows.GetOpen()) {
+        ShortcutViewModel note = all.FirstOrDefault(s => s.ID == place.ShortcutID && s.IsNote);
+        if (note != null) {
+          ShowNoteFor(note);
+        } else {
+          DataStore.NoteWindows.SetOpen(place.ShortcutID, false);
+        }
+      }
+    }
+
+    private static void AddWithChildren(IEnumerable<ShortcutViewModel> shortcuts, List<ShortcutViewModel> into) {
+      foreach (ShortcutViewModel s in shortcuts) {
+        into.Add(s);
+        AddWithChildren(s.Children, into);
       }
     }
 
