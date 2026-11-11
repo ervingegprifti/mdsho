@@ -7,15 +7,18 @@ namespace MDSHO.Data {
   internal sealed class ShortcutRepository : RepositoryBase, IShortcutRepository {
     /// <summary>Column list for SELECTs: the database column ParentMDSHOWindowID is exposed as the property ParentWindowID.</summary>
     internal const string SelectColumns = @"ID, ParentShortcutID, ParentMDSHOWindowID AS ParentWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded,
-      Comment, IsMarked, MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText";
+      Comment, IsMarked, MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText,
+      NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor";
 
     private const string InsertSql = @"
       INSERT INTO Shortcuts (
         ID, ParentShortcutID, ParentMDSHOWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded, Comment, IsMarked,
-        MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText)
+        MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText,
+        NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor)
       VALUES (
         NULLIF(@ID, 0), @ParentShortcutID, @ParentWindowID, @Name, @Target, @Ext, @Guid, @IsGroup, @IsGroupExpanded, @Comment, @IsMarked,
-        @MarkColor, @Position, @IsProcessCommand, @ProcessFileName, @ProcessArguments, @ProcessRunAsAdmin, COALESCE(@ProcessWorkingFolder, ''), @IsNote, COALESCE(@NoteText, ''))";
+        @MarkColor, @Position, @IsProcessCommand, @ProcessFileName, @ProcessArguments, @ProcessRunAsAdmin, COALESCE(@ProcessWorkingFolder, ''), @IsNote, COALESCE(@NoteText, ''),
+        COALESCE(@NoteBorderColor, ''), COALESCE(@NoteTitleBackgroundColor, ''), COALESCE(@NoteTitleTextColor, ''), COALESCE(@NoteBackgroundColor, ''), COALESCE(@NoteTextColor, ''))";
 
     private const string UpdateSql = @"
       UPDATE Shortcuts SET
@@ -23,6 +26,7 @@ namespace MDSHO.Data {
         Ext = @Ext, Guid = @Guid, IsGroup = @IsGroup, IsGroupExpanded = @IsGroupExpanded, Comment = @Comment, IsMarked = @IsMarked,
         MarkColor = @MarkColor, Position = @Position, IsProcessCommand = @IsProcessCommand, ProcessFileName = @ProcessFileName,
         ProcessArguments = @ProcessArguments, ProcessRunAsAdmin = @ProcessRunAsAdmin, IsNote = @IsNote, NoteText = COALESCE(@NoteText, ''),
+        NoteBorderColor = COALESCE(@NoteBorderColor, ''), NoteTitleBackgroundColor = COALESCE(@NoteTitleBackgroundColor, ''), NoteTitleTextColor = COALESCE(@NoteTitleTextColor, ''), NoteBackgroundColor = COALESCE(@NoteBackgroundColor, ''), NoteTextColor = COALESCE(@NoteTextColor, ''),
         ProcessWorkingFolder = COALESCE(@ProcessWorkingFolder, '')
       WHERE ID = @ID";
 
@@ -71,6 +75,11 @@ namespace MDSHO.Data {
           GetMaxPosition(template.ParentShortcutID, template.ParentWindowID) + 1,
           template.IsProcessCommand, template.ProcessFileName, template.ProcessArguments,
           template.ProcessRunAsAdmin, template.ProcessWorkingFolder, template.IsNote, template.NoteText);
+        copy.NoteBorderColor = template.NoteBorderColor;
+        copy.NoteTitleBackgroundColor = template.NoteTitleBackgroundColor;
+        copy.NoteTitleTextColor = template.NoteTitleTextColor;
+        copy.NoteBackgroundColor = template.NoteBackgroundColor;
+        copy.NoteTextColor = template.NoteTextColor;
         return Get(Add(copy));
       });
     }
@@ -132,6 +141,11 @@ namespace MDSHO.Data {
     }
     public void UpdateComment(long id, string comment) {
       Run("UPDATE Shortcuts SET Comment = @comment WHERE ID = @id;", new { id, comment = comment ?? "" });
+    }
+    public void UpdateNoteColors(long id, string border, string titleBackground, string titleText, string background, string text) {
+      Run(@"UPDATE Shortcuts SET NoteBorderColor = @border, NoteTitleBackgroundColor = @titleBackground, NoteTitleTextColor = @titleText,
+        NoteBackgroundColor = @background, NoteTextColor = @text WHERE ID = @id;",
+        new { id, border = border ?? "", titleBackground = titleBackground ?? "", titleText = titleText ?? "", background = background ?? "", text = text ?? "" });
     }
     public void UpdateNoteText(long id, string noteText) {
       Run("UPDATE Shortcuts SET NoteText = @noteText WHERE ID = @id;", new { id, noteText = noteText ?? "" });

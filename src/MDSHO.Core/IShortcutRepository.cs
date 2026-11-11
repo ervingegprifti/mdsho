@@ -54,6 +54,8 @@ namespace MDSHO.Core {
     void UpdateComment(long id, string comment);
     /// <summary>Saves the text of a note.</summary>
     void UpdateNoteText(long id, string noteText);
+    /// <summary>Saves the five colours of a note's window (empty = the default colour).</summary>
+    void UpdateNoteColors(long id, string border, string titleBackground, string titleText, string background, string text);
     /// <summary>Saves the order among the siblings.</summary>
     void UpdatePosition(long id, long position);
     /// <summary>Sets Position to the index in the list (0, 1, 2, ...) in one transaction: either all positions change or none.</summary>

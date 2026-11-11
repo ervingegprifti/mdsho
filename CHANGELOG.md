@@ -52,6 +52,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   them; exports from older versions still import, as normal buttons.
 - Database version 8: a new `NoteWindows` table keeps the place, size and state of each note window and whether it was
   open (backed up first). Database version 9 adds whether a note window stays on top (`IsTopmost`).
+- Database version 10: the buttons table gets the five colours of a note's window (empty = the default colours); exports
+  carry them, and older exports import with the default colours.
 
 ## [1.1.5]
 

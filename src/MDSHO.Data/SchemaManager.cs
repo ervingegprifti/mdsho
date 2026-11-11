@@ -68,6 +68,11 @@ namespace MDSHO.Data {
           ProcessWorkingFolder TEXT NOT NULL DEFAULT '',
           IsNote INTEGER NOT NULL DEFAULT 0,
           NoteText TEXT NOT NULL DEFAULT '',
+          NoteBorderColor TEXT NOT NULL DEFAULT '',
+          NoteTitleBackgroundColor TEXT NOT NULL DEFAULT '',
+          NoteTitleTextColor TEXT NOT NULL DEFAULT '',
+          NoteBackgroundColor TEXT NOT NULL DEFAULT '',
+          NoteTextColor TEXT NOT NULL DEFAULT '',
           FOREIGN KEY(ParentShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE,
           FOREIGN KEY(ParentMDSHOWindowID) REFERENCES MDSHOWindows(ID) ON DELETE CASCADE);
 
@@ -205,6 +210,23 @@ namespace MDSHO.Data {
       new DbMigration(9, "Note windows can stay on top: NoteWindows.IsTopmost", conn => {
         if (!ColumnExists(conn, "NoteWindows", "IsTopmost")) {
           Execute(conn, "ALTER TABLE NoteWindows ADD COLUMN IsTopmost INTEGER NOT NULL DEFAULT 0;");
+        }
+      }),
+      new DbMigration(10, "Note window colours: Shortcuts.NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor", conn => {
+        if (!ColumnExists(conn, "Shortcuts", "NoteBorderColor")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN NoteBorderColor TEXT NOT NULL DEFAULT '';");
+        }
+        if (!ColumnExists(conn, "Shortcuts", "NoteTitleBackgroundColor")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN NoteTitleBackgroundColor TEXT NOT NULL DEFAULT '';");
+        }
+        if (!ColumnExists(conn, "Shortcuts", "NoteTitleTextColor")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN NoteTitleTextColor TEXT NOT NULL DEFAULT '';");
+        }
+        if (!ColumnExists(conn, "Shortcuts", "NoteBackgroundColor")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN NoteBackgroundColor TEXT NOT NULL DEFAULT '';");
+        }
+        if (!ColumnExists(conn, "Shortcuts", "NoteTextColor")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN NoteTextColor TEXT NOT NULL DEFAULT '';");
         }
       })
     };

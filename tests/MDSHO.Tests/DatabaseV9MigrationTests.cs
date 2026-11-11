@@ -56,16 +56,10 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Version_is_9_and_the_last_migration_is_9() {
-      Assert.Equal(9, AppConstants.DatabaseVersion);
-      Assert.Equal(9, SchemaManager.Migrations.Last().Version);
-    }
-
-    [Fact]
-    public void V8_database_migrates_to_9_adding_IsTopmost_off_and_keeping_the_places() {
+    public void V8_database_migrates_past_9_adding_IsTopmost_off_and_keeping_the_places() {
       BuildV8Db();
       DataStore.Upgrade();
-      Assert.Equal(9, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(1, Columns("NoteWindows", "IsTopmost"));
       NoteWindowPlace place = DataStore.NoteWindows.Get(1);
       Assert.Equal((10L, 20L, 300L, 200L, NoteWindowPlace.Maximized, true, false), (place.Left, place.Top, place.Width, place.Height, place.State, place.IsOpen, place.IsTopmost));

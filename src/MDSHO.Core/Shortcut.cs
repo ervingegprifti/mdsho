@@ -53,6 +53,16 @@ namespace MDSHO.Core {
     public long IsNote { get; set; }
     /// <summary>The text of a note button; empty for other buttons (also empty when an older export file has no value).</summary>
     public string NoteText { get; set; } = "";
+    /// <summary>Border colour of the note's window (#AARRGGBB); empty = the default colour. Also empty in older export files.</summary>
+    public string NoteBorderColor { get; set; } = "";
+    /// <summary>Title bar background colour of the note's window; empty = the default colour.</summary>
+    public string NoteTitleBackgroundColor { get; set; } = "";
+    /// <summary>Title text colour of the note's window; empty = the default colour.</summary>
+    public string NoteTitleTextColor { get; set; } = "";
+    /// <summary>Background colour of the note's window; empty = the default colour.</summary>
+    public string NoteBackgroundColor { get; set; } = "";
+    /// <summary>Text colour of the note's window; empty = the default colour.</summary>
+    public string NoteTextColor { get; set; } = "";
     /// <summary>
     /// Children shortcuts.
     /// </summary>

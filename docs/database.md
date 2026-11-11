@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 9**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 10**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -83,6 +83,11 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `ProcessWorkingFolder` | TEXT | NOT NULL | `''` | Folder the run command starts in; empty = none. Added in version 4. |
 | `IsNote` | INTEGER | NOT NULL | `0` | `1` = a note button (its text is `NoteText`; no shortcut file). Added in version 7. |
 | `NoteText` | TEXT | NOT NULL | `''` | The text of a note button; empty for other buttons. Added in version 7. |
+| `NoteBorderColor` | TEXT | NOT NULL | `''` | Border colour of the note's window (`#AARRGGBB`); empty = the default colour. Added in version 10. |
+| `NoteTitleBackgroundColor` | TEXT | NOT NULL | `''` | Title bar background colour of the note's window; empty = the default. Added in version 10. |
+| `NoteTitleTextColor` | TEXT | NOT NULL | `''` | Title text (and title button) colour of the note's window; empty = the default. Added in version 10. |
+| `NoteBackgroundColor` | TEXT | NOT NULL | `''` | Background colour of the note's window; empty = the default. Added in version 10. |
+| `NoteTextColor` | TEXT | NOT NULL | `''` | Text colour of the note's window; empty = the default. Added in version 10. |
 
 ### NoteWindows
 
@@ -137,6 +142,7 @@ that worked.
 | 7 | 1.2.3 | `Shortcuts.IsNote` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.NoteText` (`TEXT NOT NULL DEFAULT ''`) for note buttons. Exports made before this still import, as normal buttons. |
 | 8 | 1.2.3 | `NoteWindows` table: the place, size and state of each note window and whether it was open, so open notes reopen where they were. |
 | 9 | 1.2.3 | `NoteWindows.IsTopmost` (`INTEGER NOT NULL DEFAULT 0`): whether a note window stays on top of other apps. |
+| 10 | 1.2.3 | The five note window colours on `Shortcuts` (`NoteBorderColor`, `NoteTitleBackgroundColor`, `NoteTitleTextColor`, `NoteBackgroundColor`, `NoteTextColor`, `TEXT NOT NULL DEFAULT ''`). Exports carry them; older exports import with the default colours. |
 
 ### Backup before an upgrade
 
