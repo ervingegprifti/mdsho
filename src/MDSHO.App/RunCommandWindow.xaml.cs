@@ -107,13 +107,13 @@ namespace MDSHO {
     /// <summary>Creates the Examples popup, owned by this window and centred on this window's screen, without showing it.</summary>
     public RunCommandExamplesWindow CreateExamples() {
       RunCommandExamplesWindow examples = new RunCommandExamplesWindow(this.viewModel);
-      // Centred on this window, at 70 % of its size (never below the popup's minimum size).
+      // Centred on this window, at 80 % of its size (never below the popup's minimum size).
       DialogPlacement.CenterOnWindow(examples, this, ExamplesSizeRatio);
       return examples;
     }
 
     /// <summary>The Examples popup opens at this share of the Run command window's width and height.</summary>
-    public const double ExamplesSizeRatio = 0.7;
+    public const double ExamplesSizeRatio = 0.8;
 
     private void SetTitle() {
 #if DEBUG

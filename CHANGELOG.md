@@ -39,7 +39,7 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   outer margin of its fields and of its bottom bar equals the button height, and the About and error windows use the
   same 26 px around their content.
 - The Examples list of the Run command window has the same look as the Note window, shows what an example does and the
-  command it runs when you hover it (instead of below the list), and opens centred on the Run command window at 70 % of
+  command it runs when you hover it (instead of below the list), and opens centred on the Run command window at 80 % of
   its size.
 - Menus, buttons, labels and window titles use sentence case, as in Windows 11: only the first word and names start
   with a capital letter ("New window", "Set run command...", "Single click to open", "Run command"). New groups and

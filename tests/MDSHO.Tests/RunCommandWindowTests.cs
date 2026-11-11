@@ -734,7 +734,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Examples_window_opens_centred_on_the_run_command_window_at_70_percent_of_its_size() {
+    public void Examples_window_opens_centred_on_the_run_command_window_at_80_percent_of_its_size() {
       WithCommand("cmd.exe", "/K ping {}", f => {
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
         Shown(window, () => {
@@ -746,8 +746,8 @@ namespace MDSHO.Tests {
           RunCommandExamplesWindow examples = window.CreateExamples();
           Assert.Same(window, examples.Owner);
           Assert.Equal(WindowStartupLocation.Manual, examples.WindowStartupLocation);
-          Assert.Equal(560 * 0.7, examples.Width, 1);
-          Assert.Equal(580 * 0.7, examples.Height, 1);
+          Assert.Equal(560 * 0.8, examples.Width, 1);
+          Assert.Equal(580 * 0.8, examples.Height, 1);
           Assert.Equal(-9000 + (560 - examples.Width) / 2, examples.Left, 1);
           Assert.Equal(-8000 + (580 - examples.Height) / 2, examples.Top, 1);
           examples.Close();
