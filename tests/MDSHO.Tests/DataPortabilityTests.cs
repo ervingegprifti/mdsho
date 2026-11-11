@@ -36,7 +36,7 @@ namespace MDSHO.Tests {
       return s;
     }
 
-    /// <summary>W1 (clone, roots: g[c, d], a, b â€” reordered), W2 (root e, root m with a missing file).</summary>
+    /// <summary>W1 (clone, roots: g[c, d], a, b — reordered), W2 (root e, root m with a missing file).</summary>
     private void Seed() {
       foreach (DesktopWindow existing in DataStore.Windows.GetAll()) { DataStore.Windows.Delete(existing.ID); } // the new database has one default window
       DesktopWindow w1 = DataStore.Windows.Create("SCREEN1", 10, 20);

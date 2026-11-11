@@ -104,10 +104,10 @@ where they were after a restart. Added in version 8.
 
 Foreign keys are switched on for every connection, and all of them use `ON DELETE CASCADE`:
 
-- `MDSHOWindowClones.ParentMDSHOWindowID` â†’ `MDSHOWindows.ID`: deleting a panel deletes its clones.
-- `Shortcuts.ParentMDSHOWindowID` â†’ `MDSHOWindows.ID`: deleting a panel deletes its root buttons.
-- `Shortcuts.ParentShortcutID` â†’ `Shortcuts.ID`: deleting a group deletes everything inside it.
-- `NoteWindows.ShortcutID` â†’ `Shortcuts.ID`: deleting a note deletes its window place.
+- `MDSHOWindowClones.ParentMDSHOWindowID` → `MDSHOWindows.ID`: deleting a panel deletes its clones.
+- `Shortcuts.ParentMDSHOWindowID` → `MDSHOWindows.ID`: deleting a panel deletes its root buttons.
+- `Shortcuts.ParentShortcutID` → `Shortcuts.ID`: deleting a group deletes everything inside it.
+- `NoteWindows.ShortcutID` → `Shortcuts.ID`: deleting a note deletes its window place.
 
 The shortcut files in the shortcuts folder are not part of the database; the app deletes them itself.
 
