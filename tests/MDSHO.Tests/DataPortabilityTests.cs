@@ -210,7 +210,7 @@ namespace MDSHO.Tests {
       Assert.Empty(TempFolders());
       // Tree order (Position) and clone link.
       DesktopWindow w1 = DataStore.Windows.LoadAll().Single(w => w.Title == "W1");
-      Assert.Equal(new[] { "b", "a", "New Group" }, w1.RootShortcuts.Select(s => s.Name).ToArray());
+      Assert.Equal(new[] { "b", "a", "New group" }, w1.RootShortcuts.Select(s => s.Name).ToArray());
       Assert.Single(w1.Clones);
       Assert.Equal(new[] { "c", "d" }, w1.RootShortcuts[2].Shortcuts.Select(s => s.Name).ToArray());
       Assert.NotNull(r);
@@ -284,7 +284,7 @@ namespace MDSHO.Tests {
       DesktopWindow nw1 = added.Single(w => w.Title == "W1");
       Assert.Single(nw1.Clones);
       Assert.Equal(nw1.ID, nw1.Clones[0].ParentWindowID);
-      Assert.Equal(new[] { "b", "a", "New Group" }, nw1.RootShortcuts.Select(s => s.Name).ToArray());
+      Assert.Equal(new[] { "b", "a", "New group" }, nw1.RootShortcuts.Select(s => s.Name).ToArray());
       Assert.Equal(new[] { "c", "d" }, nw1.RootShortcuts[2].Shortcuts.Select(s => s.Name).ToArray());
       Assert.Equal(nw1.RootShortcuts[2].ID, nw1.RootShortcuts[2].Shortcuts[0].ParentShortcutID);
 

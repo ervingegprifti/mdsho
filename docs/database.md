@@ -111,7 +111,7 @@ that worked.
 | 1 | before 1.1.0 | Original schema, before versioned upgrades existed (such databases report version 0 or 1). It already had `MDSHOWindows.RoundedCorners`. |
 | 2 | 1.1.0 | `MDSHOWindowClones.RoundedCorners` (`INTEGER NOT NULL DEFAULT 1`). The column first appeared in app 1.0.25.0, so the step adds it only when it is missing. |
 | 3 | 1.1.0 | Indexes on the foreign key columns (see [Indexes](#indexes)). |
-| 4 | 1.1.5 | `Shortcuts.ProcessRunAsAdmin` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.ProcessWorkingFolder` (`TEXT NOT NULL DEFAULT ''`) for the Run Command window. |
+| 4 | 1.1.5 | `Shortcuts.ProcessRunAsAdmin` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.ProcessWorkingFolder` (`TEXT NOT NULL DEFAULT ''`) for the Run command window. |
 | 5 | 1.1.5 | `RoundedCorners` dropped from `MDSHOWindows` and `MDSHOWindowClones` (corners now follow the docked state). Uses `ALTER TABLE ... DROP COLUMN`, so no rows, IDs, indexes or foreign keys change. |
 
 ### Backup before an upgrade

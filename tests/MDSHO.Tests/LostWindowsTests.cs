@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using MDSHO.Common;
@@ -7,7 +7,7 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// "Find Other Lost Windows": which windows of other apps count as lost (their title bar can't be grabbed on any
+  /// "Find other lost windows": which windows of other apps count as lost (their title bar can't be grabbed on any
   /// screen), where each one lands on the target screen, and what the message says.
   /// </summary>
   public class LostWindowsTests {

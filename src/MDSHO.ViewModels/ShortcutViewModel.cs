@@ -625,10 +625,10 @@ namespace MDSHO.ViewModels {
         message = shortcutCount + groupCount == 0
           ? $"Delete group '{this.Name}'? It is empty."
           : $"Delete group '{this.Name}' and everything in it ({shortcutCount} {(shortcutCount == 1 ? "shortcut" : "shortcuts")}, {groupCount} {(groupCount == 1 ? "group" : "groups")})?";
-        caption = "Delete Group Confirmation";
+        caption = "Delete group confirmation";
       } else {
         message = $"Delete shortcut '{this.Name}'?";
-        caption = "Delete Shortcut Confirmation";
+        caption = "Delete shortcut confirmation";
       }
       if (!Dialogs.Confirm(message, caption)) {
         return;
@@ -660,7 +660,7 @@ namespace MDSHO.ViewModels {
     /// <summary>The message shown when a run command without a program is run.</summary>
     public const string NoProgramMessage = "Set a program first. Use Set Run Command... to choose one.";
     /// <summary>The caption of <see cref="NoProgramMessage"/>.</summary>
-    public const string NoProgramCaption = "Run Command";
+    public const string NoProgramCaption = "Run command";
     /// <summary>Opens the shortcut or runs the command, optionally elevated; shows a message when Windows cannot open it.</summary>
     public void RunShortcut(bool runAsAdministrator) {
       if (this.IsEditing) {

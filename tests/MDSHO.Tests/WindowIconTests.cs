@@ -101,12 +101,12 @@ namespace MDSHO.Tests {
           SettingsWindow window = new SettingsWindow(w);
           Shown(window, () => {
             Assert.Equal("", GlyphIcon.GlyphOf(window.Icon));
-            RadioButton outlined = WpfAppHost.VisualDescendants<RadioButton>(window).Single(r => (string)r.Content == "Outlined Icons");
+            RadioButton outlined = WpfAppHost.VisualDescendants<RadioButton>(window).Single(r => (string)r.Content == "Outlined icons");
             outlined.IsChecked = true;
             WpfAppHost.Pump();
             Assert.False(w.Appearance.SolidIcons);
             Assert.Equal("", GlyphIcon.GlyphOf(window.Icon));
-            WpfAppHost.VisualDescendants<RadioButton>(window).Single(r => (string)r.Content == "Solid Icons").IsChecked = true;
+            WpfAppHost.VisualDescendants<RadioButton>(window).Single(r => (string)r.Content == "Solid icons").IsChecked = true;
             WpfAppHost.Pump();
             Assert.Equal("", GlyphIcon.GlyphOf(window.Icon));
           });
@@ -226,14 +226,14 @@ namespace MDSHO.Tests {
         IconGlyphs icons = new IconGlyphs(solid);
         using (System.Windows.Forms.ContextMenuStrip menu = App.CreateTrayMenu(null, () => icons)) {
           System.Collections.Generic.Dictionary<string, Func<IconGlyphs, string>> expected = new System.Collections.Generic.Dictionary<string, Func<IconGlyphs, string>> {
-            ["New Window"] = g => g.Plus,
-            ["Find MDSHO Lost Windows"] = g => g.Desktop,
-            ["Find Other Lost Windows"] = g => g.Desktop,
+            ["New window"] = g => g.Plus,
+            ["Find MDSHO lost windows"] = g => g.Desktop,
+            ["Find other lost windows"] = g => g.Desktop,
             ["Export data..."] = g => g.Send,
             ["Import data..."] = g => g.Database,
             ["Browse app data"] = g => g.Folder,
             ["About"] = g => g.Info,
-            ["Exit Application"] = g => g.Times,
+            ["Exit application"] = g => g.Times,
           };
           System.Windows.Forms.ToolStripItem Item(string text) => menu.Items.Cast<System.Windows.Forms.ToolStripItem>().Single(i => i.Text == text);
           foreach (var pair in expected) {

@@ -62,7 +62,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void Tray_menu_has_no_rate_share_and_no_product_name() {
       Assert.Equal(new[] {
-        "New Window", "Find MDSHO Lost Windows", "Find Other Lost Windows", "Start with Windows", "Export data...", "Import data...", "Browse app data", "About", "Exit Application"
+        "New window", "Find MDSHO lost windows", "Find other lost windows", "Start with Windows", "Export data...", "Import data...", "Browse app data", "About", "Exit application"
       }, TrayTexts());
     }
 
@@ -86,7 +86,7 @@ namespace MDSHO.Tests {
           MDSHO.ViewModels.Dialogs.ShowMessage = (message, caption) => shown.Add(caption + "|" + message);
           OnStaThread(() => {
             using (System.Windows.Forms.ContextMenuStrip menu = App.CreateTrayMenu(null)) {
-              menu.Items.Cast<System.Windows.Forms.ToolStripItem>().Single(i => i.Text == "Find Other Lost Windows").PerformClick();
+              menu.Items.Cast<System.Windows.Forms.ToolStripItem>().Single(i => i.Text == "Find other lost windows").PerformClick();
             }
           });
           Assert.Equal(new[] { (IntPtr)11, (IntPtr)12 }, windows.Moved);
@@ -94,7 +94,7 @@ namespace MDSHO.Tests {
       } finally {
         MDSHO.ViewModels.Dialogs.ShowMessage = oldShow;
       }
-      Assert.Equal(new[] { "Find Other Lost Windows|Moved 2 windows to this screen." }, shown);
+      Assert.Equal(new[] { "Find other lost windows|Moved 2 windows to this screen." }, shown);
     }
 
     [Fact]
@@ -155,14 +155,14 @@ namespace MDSHO.Tests {
         List<string> items = menu.Items.Cast<object>().Where(i => !(i is FrameworkElement f) || f.Visibility != Visibility.Collapsed || i is Separator).Select(Describe).ToList();
         int export = items.IndexOf("Export data...");
         Assert.True(export > 0, "Export data... missing: " + string.Join(" | ", items));
-        Assert.Equal(new[] { "-", "Export data...", "Import data...", "Browse app data", "-", "Rate...", "Share...", "About", "Exit Application" },
+        Assert.Equal(new[] { "-", "Export data...", "Import data...", "Browse app data", "-", "Rate...", "Share...", "About", "Exit application" },
           items.Skip(export - 1).ToArray());
         Assert.DoesNotContain(items, text => text.Contains("MDSHO"));
       });
     }
 
     /// <summary>
-    /// With only one window (not a clone) both "Close this Clone" and "Delete Window" are hidden; the separators around
+    /// With only one window (not a clone) both "Close this clone" and "Delete window" are hidden; the separators around
     /// them must not then show up as two lines next to each other.
     /// </summary>
     [Fact]
@@ -174,8 +174,8 @@ namespace MDSHO.Tests {
         List<string> visible = menu.Items.Cast<object>()
           .Where(i => !(i is FrameworkElement f) || f.Visibility != Visibility.Collapsed)
           .Select(Describe).ToList();
-        Assert.DoesNotContain("Delete Window", visible);
-        Assert.DoesNotContain("Close this Clone", visible);
+        Assert.DoesNotContain("Delete window", visible);
+        Assert.DoesNotContain("Close this clone", visible);
         for (int i = 1; i < visible.Count; i++) {
           Assert.False(visible[i] == "-" && visible[i - 1] == "-", "Two separators in a row: " + string.Join(" | ", visible));
         }

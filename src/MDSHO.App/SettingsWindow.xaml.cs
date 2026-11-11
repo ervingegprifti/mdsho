@@ -217,7 +217,7 @@ namespace MDSHO {
       this.TextEditing.Text = "Editing: " + ColorLabel(item);
     }
 
-    /// <summary>The visible label of a colour button ("Border", "Title Background", ...).</summary>
+    /// <summary>The visible label of a colour button ("Border", "Title background", ...).</summary>
     private static string ColorLabel(ListBoxItem item) {
       return ((TextBlock)((Panel)item.Content).Children[1]).Text;
     }

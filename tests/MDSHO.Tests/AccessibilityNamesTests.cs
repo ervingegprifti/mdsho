@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -205,7 +205,7 @@ namespace MDSHO.Tests {
             DesktopWindowViewModel windowVm = app.Windows[0];
             DesktopWindowViewModel cloneVm = windowVm.Clones.Single();
 
-            // The window and its clone (the clone shows "Close this Clone" instead of "Clone this Window").
+            // The window and its clone (the clone shows "Close this clone" instead of "Clone this Window").
             foreach (DesktopWindowViewModel vm in new[] { windowVm, cloneVm }) {
               problems.AddRange(Check(new DesktopWindowView(vm), view => {
                 ExpandTree(view);

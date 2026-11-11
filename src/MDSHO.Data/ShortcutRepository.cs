@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using MDSHO.Common;
 using MDSHO.Core;
 
@@ -76,7 +76,7 @@ namespace MDSHO.Data {
     }
 
     public Shortcut CreateGroup(long? parentShortcutID, long? parentWindowID) {
-      return Append(new Shortcut(parentShortcutID, parentWindowID, "New Group", "", "", Identifiers.NewGuid(),
+      return Append(new Shortcut(parentShortcutID, parentWindowID, "New group", "", "", Identifiers.NewGuid(),
         isGroup: 1, isGroupExpanded: 1, notes: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
         isProcessCommand: 0, processFileName: "", processArguments: ""));
     }
@@ -88,7 +88,7 @@ namespace MDSHO.Data {
     }
 
     public Shortcut CreateProcessCommand(long? parentShortcutID, long? parentWindowID) {
-      return Append(new Shortcut(parentShortcutID, parentWindowID, "New Command", "", "", Identifiers.NewGuid(),
+      return Append(new Shortcut(parentShortcutID, parentWindowID, "New command", "", "", Identifiers.NewGuid(),
         isGroup: 0, isGroupExpanded: 0, notes: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
         isProcessCommand: 1, processFileName: "", processArguments: ""));
     }

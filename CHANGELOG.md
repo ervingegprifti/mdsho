@@ -10,7 +10,7 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 
 ### Added
 
-- **Find Other Lost Windows** in the tray menu: moves every window of another app whose title bar can't be reached on
+- **Find other lost windows** in the tray menu: moves every window of another app whose title bar can't be reached on
   any screen (for example one that opened on a screen that is no longer connected) to the screen with the mouse
   pointer, keeping its size unless it is bigger than that screen, then says how many windows moved. Minimized windows,
   windows on other virtual desktops and MDSHO's own windows are left alone; windows that Windows doesn't let MDSHO move
@@ -18,7 +18,10 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 
 ### Changed
 
-- The tray menu item **Find Windows** is now called **Find MDSHO Lost Windows**; it works as before.
+- The tray menu item **Find Windows** is now called **Find MDSHO lost windows**; it works as before.
+- Menus, buttons, labels and window titles use sentence case, as in Windows 11: only the first word and names start
+  with a capital letter ("New window", "Set run command...", "Single click to open", "Run command"). New groups and
+  run commands are named "New group" and "New command"; existing buttons keep their names.
 
 ## [1.1.5]
 

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace MDSHO.Core {
 
@@ -23,11 +23,11 @@ namespace MDSHO.Core {
     long Add(Shortcut shortcut);
     /// <summary>Inserts a copy of all the fields of the template as the last sibling under its parent (the template's ID and Position are ignored).</summary>
     Shortcut Append(Shortcut template);
-    /// <summary>Appends a new empty group named "New Group".</summary>
+    /// <summary>Appends a new empty group named "New group".</summary>
     Shortcut CreateGroup(long? parentShortcutID, long? parentWindowID);
     /// <summary>Appends a new shortcut.</summary>
     Shortcut Create(long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid);
-    /// <summary>Appends a new run-command shortcut named "New Command".</summary>
+    /// <summary>Appends a new run-command shortcut named "New command".</summary>
     Shortcut CreateProcessCommand(long? parentShortcutID, long? parentWindowID);
     /// <summary>Writes every column of the row.</summary>
     void Update(Shortcut shortcut);

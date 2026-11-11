@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -177,7 +177,7 @@ namespace MDSHO.Tests {
       g2.DeleteShortcutCommand.Execute(null);
       Assert.Single(prompts);
       Assert.Equal("Delete group 'Work' and everything in it (2 shortcuts, 2 groups)?", prompts[0].message);
-      Assert.Equal("Delete Group Confirmation", prompts[0].caption);
+      Assert.Equal("Delete group confirmation", prompts[0].caption);
       Assert.Equal(new[] { g1 }, win.RootShortcuts.ToArray());
       Assert.Equal(-1, db.Scalar("SELECT 1 FROM Shortcuts WHERE ID=" + s2.ID));
     }
@@ -193,7 +193,7 @@ namespace MDSHO.Tests {
       g.DeleteShortcutCommand.Execute(null);
       Assert.Equal(2, prompts.Count);
       Assert.Equal("Delete shortcut 'Docs'?", prompts[0].message);
-      Assert.Equal("Delete Shortcut Confirmation", prompts[0].caption);
+      Assert.Equal("Delete shortcut confirmation", prompts[0].caption);
       Assert.Equal("Delete group 'Empty'? It is empty.", prompts[1].message);
       Assert.Empty(win.RootShortcuts);
     }

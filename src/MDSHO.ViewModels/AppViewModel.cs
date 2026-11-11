@@ -38,9 +38,9 @@ namespace MDSHO.ViewModels {
     public string NewCommandMenuItemHeader {
       get {
         if (this.Trial) {
-          return "New Command (PRO)";
+          return "New command (PRO)";
         } else {
-          return "New Command";
+          return "New command";
         }
       }
     }
@@ -66,7 +66,7 @@ namespace MDSHO.ViewModels {
       return desktopWindow;
     }
     /// <summary>
-    /// Find MDSHO Lost Windows: gathers every window and clone to the middle of <paramref name="screen"/> (the primary screen) at the
+    /// Find MDSHO lost windows: gathers every window and clone to the middle of <paramref name="screen"/> (the primary screen) at the
     /// initial size, each one slightly offset from the previous, so none is lost off screen.
     /// </summary>
     public void FindWindows(MDSHO.Common.ScreenInfo screen) {

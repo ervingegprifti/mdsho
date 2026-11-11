@@ -120,7 +120,7 @@
 
         <ScrollViewer x:Name="ScrollBody" Grid.Row="0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="PanelBody" Orientation="Vertical" Margin="40,30,40,30">
-                <Label Content="Window Appearance" Style="{StaticResource StyleSettingsCategory}"/>
+                <Label Content="Window appearance" Style="{StaticResource StyleSettingsCategory}"/>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <!--Colour buttons-->
@@ -151,16 +151,16 @@
                                 <TextBlock Text="Border" VerticalAlignment="Center"/>
                             </StackPanel>
                         </ListBoxItem>
-                        <ListBoxItem x:Name="ItemTitleBackgroundColor" Tag="TitleBackgroundColor" AutomationProperties.Name="Title Background colour">
+                        <ListBoxItem x:Name="ItemTitleBackgroundColor" Tag="TitleBackgroundColor" AutomationProperties.Name="Title background colour">
                             <StackPanel Orientation="Horizontal">
                                 <Border x:Name="SwatchTitleBackground" Style="{StaticResource StyleSwatch}" Background="{Binding Appearance.TitleBackgroundColor, Converter={StaticResource HexToBrush}}"/>
-                                <TextBlock Text="Title Background" VerticalAlignment="Center"/>
+                                <TextBlock Text="Title background" VerticalAlignment="Center"/>
                             </StackPanel>
                         </ListBoxItem>
-                        <ListBoxItem x:Name="ItemTitleTextColor" Tag="TitleTextColor" AutomationProperties.Name="Title Text colour">
+                        <ListBoxItem x:Name="ItemTitleTextColor" Tag="TitleTextColor" AutomationProperties.Name="Title text colour">
                             <StackPanel Orientation="Horizontal">
                                 <Border x:Name="SwatchTitleText" Style="{StaticResource StyleSwatch}" Background="{Binding Appearance.TitleTextColor, Converter={StaticResource HexToBrush}}"/>
-                                <TextBlock Text="Title Text" VerticalAlignment="Center"/>
+                                <TextBlock Text="Title text" VerticalAlignment="Center"/>
                             </StackPanel>
                         </ListBoxItem>
                         <ListBoxItem x:Name="ItemBackgroundColor" Tag="BackgroundColor" AutomationProperties.Name="Background colour">
@@ -176,17 +176,17 @@
                             </StackPanel>
                         </ListBoxItem>
                     </ListBox>
-                        <Label Content="Icons Appearance" Margin="0,14,0,10" Style="{StaticResource StyleSettingsCategory}"/>
+                        <Label Content="Icons appearance" Margin="0,14,0,10" Style="{StaticResource StyleSettingsCategory}"/>
                         <StackPanel Orientation="Vertical" Style="{StaticResource StylePropertyContainer}">
-                            <RadioButton Content="Solid Icons" Margin="0,0,0,5"
+                            <RadioButton Content="Solid icons" Margin="0,0,0,5"
                                          IsChecked="{Binding Path=Appearance.SolidIcons, Mode=TwoWay, Converter={StaticResource SolidIconsConverter}, ConverterParameter=SolidIcons}" />
-                            <RadioButton Content="Outlined Icons" Margin="0,0,0,0"
+                            <RadioButton Content="Outlined icons" Margin="0,0,0,0"
                                          IsChecked="{Binding Path=Appearance.SolidIcons, Mode=TwoWay, Converter={StaticResource SolidIconsConverter}, ConverterParameter=OutlinedIcons}" />
                         </StackPanel>
 
                         <Label Content="Other" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
                         <StackPanel Orientation="Vertical" Style="{StaticResource StylePropertyContainer}">
-                            <CheckBox x:Name="CheckSingleClickToOpen" Content="Single Click To Open" IsChecked="{Binding Appearance.SingleClickToOpen}" />
+                            <CheckBox x:Name="CheckSingleClickToOpen" Content="Single click to open" IsChecked="{Binding Appearance.SingleClickToOpen}" />
                         </StackPanel>
                     </StackPanel>
 

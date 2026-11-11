@@ -92,14 +92,14 @@
                     </Hyperlink>
                 </Label>
                 <!--Privacy Policy-->
-                <Label Grid.Row="5" Content="Privacy Policy: " Style="{StaticResource StyleLabel}"/>
+                <Label Grid.Row="5" Content="Privacy policy: " Style="{StaticResource StyleLabel}"/>
                 <Label Grid.Row="5" Grid.Column="1" Margin="10,0,0,0" Style="{StaticResource StyleValue}">
                     <Hyperlink x:Name="HyperlinkPrivacyPolicy" TextDecorations="None">
                         View Privacy Policy
                     </Hyperlink>
                 </Label>
                 <!--Terms & Conditions-->
-                <Label Grid.Row="6" Content="Terms &amp; Conditions: " Style="{StaticResource StyleLabel}"/>
+                <Label Grid.Row="6" Content="Terms &amp; conditions: " Style="{StaticResource StyleLabel}"/>
                 <Label Grid.Row="6" Grid.Column="1" Margin="10,0,0,0" Style="{StaticResource StyleValue}">
                     <Hyperlink x:Name="HyperlinkTermsAndConditions" TextDecorations="None">
                         View Terms &amp; Conditions
@@ -123,7 +123,7 @@
             <TextBlock x:Name="TextCopyright" Text="{x:Static local:ThirdPartyNotices.Copyright}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Left" HorizontalAlignment="Left" Margin="40,20,40,20" />
 
             <!--Third Party heading: stays put, only the list below scrolls-->
-            <Label x:Name="LabelThirdPartyTitle" Content="Third Party Notices" FontSize="14" FontWeight="Bold" Padding="0" HorizontalAlignment="Left" Margin="40,0,40,10" />
+            <Label x:Name="LabelThirdPartyTitle" Content="Third-party notices" FontSize="14" FontWeight="Bold" Padding="0" HorizontalAlignment="Left" Margin="40,0,40,10" />
         </StackPanel>
 
         <!--Third Party list: one line per entry, never wraps; a longer future line gets a horizontal scroll bar.

@@ -53,7 +53,7 @@ namespace MDSHO
 
         if (!AcquireSingleInstanceMutex()) {
           string message = "MDSHO seems to be running already. Please check the taskbar.";
-          MessageBox.Show(message, "MDSHO Already Running", MessageBoxButton.OK, MessageBoxImage.Information);
+          MessageBox.Show(message, "MDSHO already running", MessageBoxButton.OK, MessageBoxImage.Information);
           Application.Current.Shutdown();
           return;
         }
@@ -75,7 +75,7 @@ namespace MDSHO
           return;
         }
 
-        // New run commands and "Set Run Command..." open the Run Command window.
+        // New run commands and "Set run command..." open the Run Command window.
         ShortcutViewModel.OpenRunCommandEditor = RunCommandWindow.ShowFor;
 
         // Get the data context for the application.
@@ -216,14 +216,14 @@ namespace MDSHO
     }
     /// <summary>The font icon of each tray menu item, by its text. Start with Windows has none: Windows draws its check mark in the icon spot.</summary>
     private static readonly (string Text, Func<IconGlyphs, string> Glyph)[] TrayIcons = {
-      ("New Window", g => g.Plus),
-      ("Find MDSHO Lost Windows", g => g.Desktop),
-      ("Find Other Lost Windows", g => g.Desktop),
+      ("New window", g => g.Plus),
+      ("Find MDSHO lost windows", g => g.Desktop),
+      ("Find other lost windows", g => g.Desktop),
       ("Export data...", g => g.Send),
       ("Import data...", g => g.Database),
       ("Browse app data", g => g.Folder),
       ("About", g => g.Info),
-      ("Exit Application", g => g.Times),
+      ("Exit application", g => g.Times),
     };
     /// <summary>Draws the tray menu's icons again from <paramref name="icons"/> (solid or outline); items already showing the right glyph are left alone.</summary>
     public static void UpdateTrayIcons(System.Windows.Forms.ContextMenuStrip menu, IconGlyphs icons) {
@@ -249,9 +249,9 @@ namespace MDSHO
     /// </summary>
     public static System.Windows.Forms.ContextMenuStrip CreateTrayMenu(App app, Func<IconGlyphs> icons) {
       System.Windows.Forms.ContextMenuStrip menu = new System.Windows.Forms.ContextMenuStrip();
-      menu.Items.Add("New Window").Click += (s, e) => app.NewWindow(null);
-      menu.Items.Add("Find MDSHO Lost Windows").Click += (s, e) => app.FindWindows();
-      menu.Items.Add("Find Other Lost Windows").Click += (s, e) => FindOtherLostWindows();
+      menu.Items.Add("New window").Click += (s, e) => app.NewWindow(null);
+      menu.Items.Add("Find MDSHO lost windows").Click += (s, e) => app.FindWindows();
+      menu.Items.Add("Find other lost windows").Click += (s, e) => FindOtherLostWindows();
       Common.AutoStartController autoStartController = new Common.AutoStartController(AppServices.Current.AutoStart, message => MessageBox.Show(message, Common.AutoStartController.MessageTitle, MessageBoxButton.OK, MessageBoxImage.Information));
       System.Windows.Forms.ToolStripMenuItem autoStartMenuItem = new System.Windows.Forms.ToolStripMenuItem("Start with Windows") { CheckOnClick = false };
       autoStartMenuItem.Click += (s, e) => autoStartController.Toggle();
@@ -262,7 +262,7 @@ namespace MDSHO
       menu.Items.Add("Browse app data").Click += (s, e) => BrowseAppData();
       System.Windows.Forms.ToolStripItem aboutMenuItem = menu.Items.Add("About");
       aboutMenuItem.Click += (s, e) => app.ShowAboutWindow();
-      menu.Items.Add("Exit Application").Click += (s, e) => app.ExitApplication(silent: false);
+      menu.Items.Add("Exit application").Click += (s, e) => app.ExitApplication(silent: false);
       UpdateTrayIcons(menu, icons());
       menu.Opening += (s, e) => UpdateTrayIcons(menu, icons());
       return menu;
@@ -330,20 +330,20 @@ namespace MDSHO
       }
     }
     /// <summary>
-    /// Find Other Lost Windows: moves every window of another app whose title bar can't be grabbed on any screen to the
+    /// Find other lost windows: moves every window of another app whose title bar can't be grabbed on any screen to the
     /// screen with the mouse pointer, then says how many moved and how many Windows refused.
     /// </summary>
     public static void FindOtherLostWindows() {
       try {
         AppServices services = AppServices.Current;
         Common.LostWindowsResult result = Common.LostWindows.Rescue(services.OtherWindows, services.Screens.AllScreens(), services.Screens.ScreenAtCursor());
-        Common.AppLog.Information("Find Other Lost Windows moved {Moved} windows and skipped {Skipped}", result.Moved, result.Skipped);
-        Dialogs.ShowMessage(result.Message, "Find Other Lost Windows");
+        Common.AppLog.Information("Find other lost windows moved {Moved} windows and skipped {Skipped}", result.Moved, result.Skipped);
+        Dialogs.ShowMessage(result.Message, "Find other lost windows");
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
       }
     }
-    /// <summary>A minimized or maximized window goes back to normal, so the position Find MDSHO Lost Windows gives it shows.</summary>
+    /// <summary>A minimized or maximized window goes back to normal, so the position Find MDSHO lost windows gives it shows.</summary>
     private static void RestoreWindowState(DesktopWindowViewModel desktopWindow) {
       Window window = WindowLookup.GetViewFromViewModel(desktopWindow);
       if (window != null) {

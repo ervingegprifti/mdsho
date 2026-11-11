@@ -99,7 +99,7 @@ namespace MDSHO {
 					// Prevent Delete Window if there is only one left.
 					this.MenuItemHeaderDeleteWindow.Visibility = (desktopWindow.AppViewModel.CountWindows() > 1) ? Visibility.Visible : Visibility.Collapsed;
         }
-				// With neither "Close this Clone" nor "Delete Window" shown, their separator would sit next to the following one.
+				// With neither "Close this clone" nor "Delete window" shown, their separator would sit next to the following one.
 				bool closeOrDeleteShown = desktopWindow.IsClone || this.MenuItemHeaderDeleteWindow.Visibility == Visibility.Visible;
 				this.SeparatorHeaderCloseDelete.Visibility = closeOrDeleteShown ? Visibility.Visible : Visibility.Collapsed;
 			}
@@ -133,9 +133,9 @@ namespace MDSHO {
 		}
 		private void MenuItemHeaderDeleteWindow_Click(object sender, RoutedEventArgs e) {
       try {
-				MessageBoxResult messageBoxResult1 = MessageBox.Show("This window and all its shortcuts will be deleted. Do you want to delete this window?", "Delete Window Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+				MessageBoxResult messageBoxResult1 = MessageBox.Show("This window and all its shortcuts will be deleted. Do you want to delete this window?", "Delete window confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
 				if (messageBoxResult1 == MessageBoxResult.Yes) {
-					MessageBoxResult messageBoxResult2 = MessageBox.Show("One last warning. Do you want to delete this window? All its shortcuts will be gone.", "Delete Window Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+					MessageBoxResult messageBoxResult2 = MessageBox.Show("One last warning. Do you want to delete this window? All its shortcuts will be gone.", "Delete window warning", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
 					if (messageBoxResult2 == MessageBoxResult.Yes) {
 						DesktopWindowViewModel desktopWindow = (DesktopWindowViewModel)this.DataContext;
 						if (desktopWindow.IsClone) {
@@ -205,7 +205,7 @@ namespace MDSHO {
 			ShowSettingsWindow();
 		}
 		private void ButtonFooterPRO_Click(object sender, RoutedEventArgs e) {
-			MessageBox.Show("PRO features will be freely available until Professional License implementation.", "Professional License", MessageBoxButton.OK, MessageBoxImage.Information);
+			MessageBox.Show("PRO features will be freely available until Professional License implementation.", "Professional license", MessageBoxButton.OK, MessageBoxImage.Information);
 		}
 		#endregion CONTROL EVENTS
 
@@ -253,7 +253,7 @@ namespace MDSHO {
 		private const int WM_SYSCOMMAND = 0x0112;
 		private const int SC_CLOSE = 0xF060;
 		/// <summary>
-		/// Alt+F4: on a clone it does exactly what "Close this Clone" does (deletes it and frees its screen); on a real window
+		/// Alt+F4: on a clone it does exactly what "Close this clone" does (deletes it and frees its screen); on a real window
 		/// it is ignored, because a window only goes away through Delete Window or Exit.
 		/// </summary>
 		private void SystemCloseRequested() {

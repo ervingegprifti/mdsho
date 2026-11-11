@@ -6,7 +6,7 @@
         xmlns:viewmodels="clr-namespace:MDSHO.ViewModels;assembly=MDSHO.ViewModels"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=viewmodels:RunCommandViewModel}"
-        Title="Run Command"
+        Title="Run command"
         Width="560"
         Height="580"
         MinWidth="420"
@@ -88,7 +88,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock x:Name="TextTitleIcon" Text="{Binding Icons.Run}" FontFamily="{StaticResource IconFont}" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"/>
-                    <TextBlock x:Name="TextTitle" Text="Run Command" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"/>
+                    <TextBlock x:Name="TextTitle" Text="Run command" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"/>
                 </StackPanel>
                 <Button x:Name="ButtonExamples" Grid.Column="1" Style="{StaticResource StyleTitleBarButton}" Content="{Binding Icons.Wizard}" ToolTip="Examples" AutomationProperties.Name="Examples"/>
                 <Button x:Name="ButtonMaximize" Grid.Column="2" Style="{StaticResource StyleTitleBarButton}" FontFamily="Segoe MDL2 Assets" FontSize="10" Content="&#xE922;" ToolTip="Maximize" AutomationProperties.Name="{Binding ToolTip, RelativeSource={RelativeSource Self}}"/>

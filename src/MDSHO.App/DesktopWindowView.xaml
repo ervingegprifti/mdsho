@@ -202,40 +202,40 @@
                     <!--Header Menu-->
                     <Grid.ContextMenu>
                         <ContextMenu>
-                            <MenuItem x:Name="MenuItemHeaderCloneThisWindowToAllScreens" Header="Clone this Window to all screens" Visibility="{Binding ShowCloneWindow, Converter={StaticResource BoolToVisibility}}">
+                            <MenuItem x:Name="MenuItemHeaderCloneThisWindowToAllScreens" Header="Clone this window to all screens" Visibility="{Binding ShowCloneWindow, Converter={StaticResource BoolToVisibility}}">
                                 <MenuItem.Icon>
                                     <TextBlock Text="{Binding Appearance.Icons.Clones}" Style="{StaticResource StyleMenuItemFontIcon}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem x:Name="MenuItemHeaderRenameWindowTitle" Header="Rename Window Title">
+                            <MenuItem x:Name="MenuItemHeaderRenameWindowTitle" Header="Rename window title">
                                 <MenuItem.Icon>
                                     <TextBlock Text="{Binding Appearance.Icons.Rename}" Style="{StaticResource StyleMenuItemFontIcon}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
                             <Separator/>
-                            <MenuItem x:Name="MenuItemHeaderNewWindow" Header="New Window">
+                            <MenuItem x:Name="MenuItemHeaderNewWindow" Header="New window">
                                 <MenuItem.Icon>
                                     <TextBlock  Text="{Binding Appearance.Icons.Plus}" Style="{StaticResource StyleMenuItemFontIcon}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
                             <Separator/>
-                            <MenuItem x:Name="MenuItemHeaderDockWindowLeft" Header="Dock Window Left">
+                            <MenuItem x:Name="MenuItemHeaderDockWindowLeft" Header="Dock window left">
                                 <MenuItem.Icon>
                                     <TextBlock Text="{Binding Appearance.Icons.DockLeft}" Style="{StaticResource StyleMenuItemFontIcon}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem x:Name="MenuItemHeaderDockWindowRight" Header="Dock Window Right">
+                            <MenuItem x:Name="MenuItemHeaderDockWindowRight" Header="Dock window right">
                                 <MenuItem.Icon>
                                     <TextBlock Text="{Binding Appearance.Icons.DockRight}" Style="{StaticResource StyleMenuItemFontIcon}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
                             <Separator x:Name="SeparatorHeaderCloseDelete"/>
-                            <MenuItem x:Name="MenuItemHeaderCloseWindow" Header="Close this Clone" Command="{Binding CloseWindowCommand}" Visibility="{Binding ShowCloseWindow, Converter={StaticResource BoolToVisibility}}">
+                            <MenuItem x:Name="MenuItemHeaderCloseWindow" Header="Close this clone" Command="{Binding CloseWindowCommand}" Visibility="{Binding ShowCloseWindow, Converter={StaticResource BoolToVisibility}}">
                                 <MenuItem.Icon>
                                     <TextBlock Text="{Binding Appearance.Icons.Times}" Style="{StaticResource StyleMenuItemFontIcon}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem x:Name="MenuItemHeaderDeleteWindow" Header="Delete Window">
+                            <MenuItem x:Name="MenuItemHeaderDeleteWindow" Header="Delete window">
                                 <MenuItem.Icon>
                                     <TextBlock Text="{Binding Appearance.Icons.Delete}" Style="{StaticResource StyleMenuItemFontIcon}"/>
                                 </MenuItem.Icon>
@@ -272,7 +272,7 @@
                                     <TextBlock Text="{Binding Appearance.Icons.Info}" Style="{StaticResource StyleMenuItemFontIcon}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem x:Name="MenuItemHeaderExitApplication" Header="Exit Application">
+                            <MenuItem x:Name="MenuItemHeaderExitApplication" Header="Exit application">
                                 <MenuItem.Icon>
                                     <TextBlock Text="{Binding Appearance.Icons.Times}" Style="{StaticResource StyleMenuItemFontIcon}"/>
                                 </MenuItem.Icon>
@@ -318,26 +318,26 @@
                     <Button x:Name="ButtonHeaderDockWindowLeft" Grid.Row="0" Grid.Column="2"
                         Content="{Binding Appearance.Icons.DockLeft}"
                         Style="{StaticResource StyleHeaderButton}"
-                        ToolTip="Dock Window Left"
-                        AutomationProperties.Name="Dock Window Left" />
+                        ToolTip="Dock window left"
+                        AutomationProperties.Name="Dock window left" />
                     <Button x:Name="ButtonHeaderDockWindowRight" Grid.Row="0" Grid.Column="3"
                         Content="{Binding Appearance.Icons.DockRight}"
                         Style="{StaticResource StyleHeaderButton}"
-                        ToolTip="Dock Window Right"
-                        AutomationProperties.Name="Dock Window Right" />
+                        ToolTip="Dock window right"
+                        AutomationProperties.Name="Dock window right" />
                     <Button x:Name="ButtonHeaderCloneThisWindowToAllScreens" Grid.Row="0" Grid.Column="4"
                         Content="{Binding Appearance.Icons.Clones}"
                         Style="{StaticResource StyleHeaderMostRightButton}"
                         Visibility="{Binding ShowCloneWindow, Converter={StaticResource BoolToVisibility}}"
-                        ToolTip="Clone this Window to all screens"
-                        AutomationProperties.Name="Clone this Window to all screens" />
+                        ToolTip="Clone this window to all screens"
+                        AutomationProperties.Name="Clone this window to all screens" />
                     <Button x:Name="ButtonHeaderCloseWindow" Grid.Row="0" Grid.Column="4"
                         Content="{Binding Appearance.Icons.Times}"
                         Style="{StaticResource StyleHeaderMostRightButton}"
                         Command="{Binding CloseWindowCommand}"
                         Visibility="{Binding ShowCloseWindow, Converter={StaticResource BoolToVisibility}}"
-                        ToolTip="Close this Clone"
-                        AutomationProperties.Name="Close this Clone" />
+                        ToolTip="Close this clone"
+                        AutomationProperties.Name="Close this clone" />
                 </Grid>
             </ContentControl>
         </Border>
@@ -377,7 +377,7 @@
                     <!--The context menu of treeview-->
                     <TreeView.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="New Group" Command="{Binding NewGroupShortcutCommand}">
+                            <MenuItem Header="New group" Command="{Binding NewGroupShortcutCommand}">
                                 <MenuItem.Icon>
                                     <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Plus}"/>
                                 </MenuItem.Icon>
@@ -413,7 +413,7 @@
                                 Style="{StaticResource StyleButtonShortcut}">
                                 <Button.ContextMenu>
                                     <ContextMenu>
-                                        <MenuItem Header="New Group" Command="{Binding NewGroupShortcutCommand}" Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}">
+                                        <MenuItem Header="New group" Command="{Binding NewGroupShortcutCommand}" Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Plus}"/>
                                             </MenuItem.Icon>
@@ -505,10 +505,10 @@
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Rename}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Set Name the same as Target" Command="{Binding SetNameTheSameAsTargetCommand}" Visibility="{Binding ShowSetNameTheSameAsTarget, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
-                                        <MenuItem Header="Copy Target to Memory" Command="{Binding CopyTargetToMemoryCommand}" Visibility="{Binding ShowCopyTargetToMemory, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
+                                        <MenuItem Header="Set name the same as target" Command="{Binding SetNameTheSameAsTargetCommand}" Visibility="{Binding ShowSetNameTheSameAsTarget, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
+                                        <MenuItem Header="Copy target to memory" Command="{Binding CopyTargetToMemoryCommand}" Visibility="{Binding ShowCopyTargetToMemory, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
                                         <Separator/>
-                                        <MenuItem Header="Set Run Command..." Visibility="{Binding ShowCommand, Converter={StaticResource BoolToVisibility}}" Command="{Binding SetRunCommandCommand}">
+                                        <MenuItem Header="Set run command..." Visibility="{Binding ShowCommand, Converter={StaticResource BoolToVisibility}}" Command="{Binding SetRunCommandCommand}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Run}"/>
                                             </MenuItem.Icon>

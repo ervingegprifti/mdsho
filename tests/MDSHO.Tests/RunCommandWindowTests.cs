@@ -292,7 +292,7 @@ namespace MDSHO.Tests {
           Button star = Named<Button>(window, "ButtonExamples");
           Button max = Named<Button>(window, "ButtonMaximize");
           Button close = Named<Button>(window, "ButtonClose");
-          Assert.Equal("Run Command", title.Text);
+          Assert.Equal("Run command", title.Text);
           Assert.Equal("Examples", star.ToolTip);
           Assert.Equal("Examples", System.Windows.Automation.AutomationProperties.GetName(star));
           Assert.Equal(f.Win.Appearance.Icons.Wizard, star.Content);
@@ -810,7 +810,7 @@ namespace MDSHO.Tests {
           Assert.DoesNotContain("Run as administrator", headers);
           Assert.DoesNotContain("Set Process File Name", headers);
           Assert.DoesNotContain("Set Process Arguments", headers);
-          MenuItem setRun = items.Single(m => (m.Header as string) == "Set Run Command...");
+          MenuItem setRun = items.Single(m => (m.Header as string) == "Set run command...");
           // Context menu bindings resolve when the menu opens: check what they bind to.
           Assert.Equal(nameof(ShortcutViewModel.SetRunCommandCommand), BindingOperations.GetBinding(setRun, MenuItem.CommandProperty).Path.Path);
           Assert.Equal(nameof(ShortcutViewModel.ShowCommand), BindingOperations.GetBinding(setRun, UIElement.VisibilityProperty).Path.Path);
@@ -883,7 +883,7 @@ namespace MDSHO.Tests {
             for (int i = 1; i < visible.Count; i++) {
               Assert.False(visible[i] == "-" && visible[i - 1] == "-", "Two separators in a row: " + all);
             }
-            Assert.Equal(shortcut == f.Command, visible.Contains("Set Run Command..."));
+            Assert.Equal(shortcut == f.Command, visible.Contains("Set run command..."));
           }
         } finally {
           view.Close();

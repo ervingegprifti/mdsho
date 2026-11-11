@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace MDSHO.Common {
 
-  /// <summary>A top-level window of another app, as "Find Other Lost Windows" sees it.</summary>
+  /// <summary>A top-level window of another app, as "Find other lost windows" sees it.</summary>
   /// <param name="Handle">The window handle.</param>
   /// <param name="Title">The window title (for logging and tests only).</param>
   /// <param name="Bounds">Where the window is, in physical pixels.</param>
@@ -23,7 +23,7 @@ namespace MDSHO.Common {
     bool MoveTo(OtherWindow window, ScreenRect bounds);
   }
 
-  /// <summary>What "Find Other Lost Windows" did.</summary>
+  /// <summary>What "Find other lost windows" did.</summary>
   /// <param name="Moved">Windows moved onto the target screen.</param>
   /// <param name="Skipped">Lost windows that Windows didn't let MDSHO move.</param>
   public sealed record LostWindowsResult(int Moved, int Skipped) {
@@ -52,7 +52,7 @@ namespace MDSHO.Common {
   }
 
   /// <summary>
-  /// "Find Other Lost Windows": a window of another app is lost when its title bar can't be grabbed on any screen (for
+  /// "Find other lost windows": a window of another app is lost when its title bar can't be grabbed on any screen (for
   /// example it opened at the position of a screen that is no longer connected). Lost windows move to the middle of the
   /// target screen, keeping their size unless they are bigger than the screen, and cascade so none hides another.
   /// </summary>

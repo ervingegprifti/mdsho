@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -88,14 +88,14 @@ namespace MDSHO.Tests {
     }
 
     private static readonly string[] Expected = { Border, TitleBackground, TitleText, Background, Text };
-    private static readonly string[] Labels = { "Border", "Title Background", "Title Text", "Background", "Text" };
+    private static readonly string[] Labels = { "Border", "Title background", "Title text", "Background", "Text" };
 
     [Fact]
     public void Colour_buttons_are_border_title_background_title_text_background_text_without_the_word_color() {
       WithSettings((window, w) => {
         List<ListBoxItem> items = Items(window);
         Assert.Equal(Labels, items.Select(VisibleText).ToArray());
-        Assert.Equal(new[] { "Border colour", "Title Background colour", "Title Text colour", "Background colour", "Text colour" },
+        Assert.Equal(new[] { "Border colour", "Title background colour", "Title text colour", "Background colour", "Text colour" },
           items.Select(i => AutomationProperties.GetName(i)).ToArray());
       });
     }
@@ -353,12 +353,12 @@ namespace MDSHO.Tests {
     public void Icons_appearance_and_single_click_to_open_still_work() {
       WithSettings((window, w) => {
         List<RadioButton> radios = WpfAppHost.VisualDescendants<RadioButton>(window).ToList();
-        Assert.Equal(new[] { "Solid Icons", "Outlined Icons" }, radios.Select(r => (string)r.Content).ToArray());
+        Assert.Equal(new[] { "Solid icons", "Outlined icons" }, radios.Select(r => (string)r.Content).ToArray());
         radios[1].IsChecked = true;
         WpfAppHost.Pump();
         Assert.False(w.Appearance.SolidIcons);
         CheckBox single = Named<CheckBox>(window, "CheckSingleClickToOpen");
-        Assert.Equal("Single Click To Open", single.Content);
+        Assert.Equal("Single click to open", single.Content);
         bool before = w.Appearance.SingleClickToOpen;
         single.IsChecked = !before;
         WpfAppHost.Pump();

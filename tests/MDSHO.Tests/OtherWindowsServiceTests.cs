@@ -9,7 +9,7 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// The Windows layer of "Find Other Lost Windows", checked with real windows of the test process. The service normally
+  /// The Windows layer of "Find other lost windows", checked with real windows of the test process. The service normally
   /// skips MDSHO's own process; these tests pass process id 0 so it sees the test's windows.
   /// </summary>
   public class OtherWindowsServiceTests {

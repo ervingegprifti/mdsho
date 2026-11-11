@@ -135,7 +135,7 @@ namespace MDSHO.Tests {
     public void All_label_values_start_in_one_column() {
       WithAboutWindow(window => {
         var rows = LabelRows(window);
-        Assert.Equal(new[] { "Pronounced:", "Version:", "Developer:", "E-mail:", "Source code:", "Privacy Policy:", "Terms & Conditions:", "Microsoft Store:" },
+        Assert.Equal(new[] { "Pronounced:", "Version:", "Developer:", "E-mail:", "Source code:", "Privacy policy:", "Terms & conditions:", "Microsoft Store:" },
           rows.Select(r => LabelText(r.Label).Trim()));
         double labelX = X(rows[0].Label, window);
         double valueX = X(rows[0].Value, window);

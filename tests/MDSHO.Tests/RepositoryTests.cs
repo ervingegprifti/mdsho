@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using MDSHO.Core;
@@ -216,7 +216,7 @@ namespace MDSHO.Tests {
     public void Shortcut_Create_variants_use_their_defaults_and_append_positions() {
       DesktopWindow w = NewWindow();
       Shortcut g = Shortcuts.CreateGroup(null, w.ID);
-      Assert.Equal(("New Group", 1L, 1L, 0L, 0L), (g.Name, g.IsGroup, g.IsGroupExpanded, g.IsProcessCommand, g.Position));
+      Assert.Equal(("New group", 1L, 1L, 0L, 0L), (g.Name, g.IsGroup, g.IsGroupExpanded, g.IsProcessCommand, g.Position));
       Assert.Equal("#FFFFFFFF", g.MarkColor);
       Assert.Null(g.ParentShortcutID);
       Assert.Equal(w.ID, g.ParentWindowID);
@@ -226,7 +226,7 @@ namespace MDSHO.Tests {
       Assert.Equal(("calc", "C:\\calc.exe", ".lnk", "GUID-1", 0L, 0L, 1L), (s.Name, s.Target, s.Ext, s.Guid, s.IsGroup, s.IsProcessCommand, s.Position));
 
       Shortcut c = Shortcuts.CreateProcessCommand(null, w.ID);
-      Assert.Equal(("New Command", 1L, 0L, 2L), (c.Name, c.IsProcessCommand, c.IsGroup, c.Position));
+      Assert.Equal(("New command", 1L, 0L, 2L), (c.Name, c.IsProcessCommand, c.IsGroup, c.Position));
       Assert.Equal("", c.ProcessFileName);
       Assert.Equal("", c.ProcessArguments);
 
