@@ -8,6 +8,8 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- Thin scroll bars in every window -->
+                <ResourceDictionary Source="Themes/ScrollBars.xaml"/>
                 <ResourceDictionary>
                     <!-- View model Show... flags: true = Visible, false = Collapsed. -->
                     <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>

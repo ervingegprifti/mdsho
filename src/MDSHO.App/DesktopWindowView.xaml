@@ -334,6 +334,7 @@
                     BorderThickness="0"
                     BorderBrush="{x:Null}"
                     Background="Transparent"
+                    Foreground="{Binding Appearance.TextColor, Converter={StaticResource HexToBrush}}"
                     Margin="0"
                     Padding="0,5,0,5"
                     ScrollViewer.CanContentScroll="True"
