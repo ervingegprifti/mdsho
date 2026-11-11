@@ -371,16 +371,33 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_comment_window_keeps_its_layout() {
+    public void The_comment_window_has_the_same_look_as_the_note_window_at_its_own_size() {
       WithGroup(f => {
-        ShortcutViewModel note = NewNoteInGroup(f);
         TextEditWindow window = TextEditWindow.ForComment(f.Group);
         Shown(window, () => {
+          window.UpdateLayout();
           TextBox editor = Named<TextBox>(window, "TextComment");
-          Assert.Equal(TextWrapping.Wrap, editor.TextWrapping);
-          Assert.Equal(Visibility.Visible, Named<TextBlock>(window, "TextHint").Visibility);
-          Assert.Equal(Visibility.Collapsed, Named<TextBlock>(window, "TextFooterHint").Visibility);
-          Assert.Equal(40, BoundsIn(editor, Named<FrameworkElement>(window, "Body")).X, 1);
+          FrameworkElement body = Named<FrameworkElement>(window, "Body");
+          Rect e = BoundsIn(editor, body);
+          Assert.Equal(0, e.X, 1);
+          Assert.Equal(0, e.Y, 1);
+          Assert.Equal(body.ActualWidth, e.Width, 1);
+          Assert.Equal(body.ActualHeight, e.Height, 1);
+          Assert.Equal(((SolidColorBrush)window.Background).Color, Assert.IsType<SolidColorBrush>(editor.Background).Color);
+          Assert.Equal(new Thickness(0), editor.BorderThickness);
+          Assert.Equal(new Thickness(10), editor.Padding);
+          Assert.Equal(TextWrapping.NoWrap, editor.TextWrapping);
+          Assert.Equal(ScrollBarVisibility.Visible, editor.HorizontalScrollBarVisibility);
+          Assert.Equal(ScrollBarVisibility.Visible, editor.VerticalScrollBarVisibility);
+          Assert.Equal(Visibility.Collapsed, Named<TextBlock>(window, "TextHint").Visibility);
+          Assert.Equal(Visibility.Visible, Named<TextBlock>(window, "TextFooterHint").Visibility);
+          FrameworkElement footer = Named<FrameworkElement>(window, "Footer");
+          Button save = Named<Button>(window, "ButtonSave");
+          double h = save.ActualHeight;
+          Assert.Equal(h, BoundsIn(save, footer).Top, 1);
+          Assert.Equal(h, BoundsIn(Named<TextBlock>(window, "TextFooterHint"), footer).Left, 1);
+          // A comment is short: its window stays smaller than a note's.
+          Assert.Equal(520, window.Width);
         });
       });
     }

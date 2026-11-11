@@ -48,8 +48,11 @@ namespace MDSHO {
       this.TextComment.Text = (kind == TextKind.Note ? shortcut.NoteText : shortcut.Comment) ?? "";
       System.Windows.Automation.AutomationProperties.SetName(this.TextComment, kind == TextKind.Note ? "Note" : "Comment");
       if (kind == TextKind.Note) {
-        UseNoteLayout();
+        // A note is the main content, so its window is bigger; a comment keeps the smaller size.
+        this.Width = 640;
+        this.Height = 520;
       }
+      UseEditorLayout();
 
       // The title icon, the close button and the window icon follow the window's solid or outline setting while open.
       IconGlyphs icons = shortcut.OwningWindow?.Appearance?.Icons ?? new IconGlyphs(true);
@@ -134,13 +137,11 @@ namespace MDSHO {
     }
 
     /// <summary>
-    /// A note is the main content: a bigger window whose editor fills the body (window colour, no border, 10 px padding,
-    /// no word wrap, both scroll bars), with the hint in the bottom bar on the left. Every outer margin of the bottom bar
+    /// The look of the Note and Comment windows: the editor fills the body (window colour, no border, 10 px padding, no
+    /// word wrap, both scroll bars), with the hint in the bottom bar on the left. Every outer margin of the bottom bar
     /// equals the height of the Save button.
     /// </summary>
-    private void UseNoteLayout() {
-      this.Width = 640;
-      this.Height = 520;
+    private void UseEditorLayout() {
       this.BodyContent.Margin = new Thickness(0);
       this.TextComment.Background = this.Background;
       this.TextComment.BorderThickness = new Thickness(0);

@@ -19,7 +19,7 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - **Comments** on buttons and groups: right-click → **Comment...** opens the Comment window to write a comment of
   several lines (Save or Ctrl+Enter saves; Cancel, the X button or Esc close without saving). The comment shows in the
   button's tooltip below the target or command line, cut after 10 lines, and a small "i" marker after the name shows
-  which buttons have one. A comment of only spaces counts as none.
+  which buttons have one. A comment of only spaces counts as none. The Comment window looks like the Note window.
 - **Note buttons**, a third kind of button next to shortcuts and run commands: **New note** (right-click empty space or
   a group) creates one and opens the Note window. Opening a note (double-click, or single click when that is set) opens
   the Note window to read and edit its text (several notes can be open side by side; the text fills the window and scrolls sideways instead of wrapping); its tooltip shows the first 10 lines. A note's right-click menu has **Edit

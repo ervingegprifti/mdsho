@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -190,7 +190,7 @@ namespace MDSHO.Tests {
           TextBox text = Named<TextBox>(window, "TextComment");
           Assert.Equal("Call Anna first.", text.Text);
           Assert.True(text.AcceptsReturn);
-          Assert.Equal(TextWrapping.Wrap, text.TextWrapping);
+          Assert.Equal(TextWrapping.NoWrap, text.TextWrapping); // the same look as the Note window
           Assert.Equal(f.Command.OwningWindow.Appearance.Icons.Info, Named<TextBlock>(window, "TextTitleIcon").Text);
         });
       });
