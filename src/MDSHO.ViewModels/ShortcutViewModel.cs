@@ -94,7 +94,9 @@ namespace MDSHO.ViewModels {
     [NotifyPropertyChangedFor(nameof(HasComment), nameof(CommentPreview), nameof(HasToolTip), nameof(ShowCommentDivider))]
     private string comment;
     /// <summary>True when the comment has more than spaces and new lines; the view then shows the comment marker.</summary>
-    public bool HasComment => !string.IsNullOrWhiteSpace(this.comment);
+    public bool HasComment => !this.isNote && !string.IsNullOrWhiteSpace(this.comment);
+    /// <summary>True when the button can have a comment: every button and group except notes (a note is text already).</summary>
+    public bool ShowComment => !this.isNote;
     /// <summary>How many comment lines the tooltip shows; more are cut and marked with "…".</summary>
     public const int CommentPreviewLines = 10;
     /// <summary>The comment for the tooltip: at most <see cref="CommentPreviewLines"/> lines, then "…"; null without a comment.</summary>
@@ -630,9 +632,12 @@ namespace MDSHO.ViewModels {
         CopyText(this.NoteText ?? "");
       }
     }
-    /// <summary>Opens the Comment window for this button or group.</summary>
-    [RelayCommand]
+    /// <summary>Opens the Comment window for this button or group (not for notes).</summary>
+    [RelayCommand(CanExecute = nameof(ShowComment))]
     private void EditComment() {
+      if (!this.ShowComment) {
+        return;
+      }
       OpenCommentEditor?.Invoke(this);
     }
     /// <summary>Opens the Run Command window for this run command.</summary>

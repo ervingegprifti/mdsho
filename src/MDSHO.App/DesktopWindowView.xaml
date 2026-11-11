@@ -538,7 +538,7 @@
                                         </MenuItem>
                                         <MenuItem Header="Set name the same as target" Command="{Binding SetNameTheSameAsTargetCommand}" Visibility="{Binding ShowSetNameTheSameAsTarget, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
                                         <MenuItem Header="Copy target to memory" Command="{Binding CopyTargetToMemoryCommand}" Visibility="{Binding ShowCopyTargetToMemory, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
-                                        <MenuItem Header="Comment..." Command="{Binding EditCommentCommand}">
+                                        <MenuItem Header="Comment..." Command="{Binding EditCommentCommand}" Visibility="{Binding ShowComment, Converter={StaticResource BoolToVisibility}}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Info}"/>
                                             </MenuItem.Icon>

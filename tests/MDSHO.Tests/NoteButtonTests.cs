@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -171,8 +171,10 @@ namespace MDSHO.Tests {
         Assert.Equal("step 10", lines[9]);
         Assert.Equal("…", lines[10]);
         Assert.True(note.HasToolTip);
+        // Notes have no comments: even a stored comment never shows.
         note.Comment = "Reviewed in May";
-        Assert.True(note.ShowCommentDivider);
+        Assert.False(note.ShowCommentDivider);
+        Assert.False(note.HasComment);
       });
     }
 
@@ -185,6 +187,51 @@ namespace MDSHO.Tests {
         note.NoteText = "x";
         Assert.Contains(nameof(ShortcutViewModel.ToolTipText), raised);
         Assert.Contains(nameof(ShortcutViewModel.HasToolTip), raised);
+      });
+    }
+
+    // ---- No comments on notes ----
+
+    [Fact]
+    public void Notes_do_not_offer_comments_but_other_buttons_do() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        ShortcutViewModel command = ViewModelFactory.NewProcessCommandShortcut(f.App, f.Group, null);
+        f.Group.Children.Add(command);
+        Assert.False(note.ShowComment);
+        Assert.True(command.ShowComment);
+        Assert.True(f.Group.ShowComment);
+        Assert.False(note.EditCommentCommand.CanExecute(null));
+        Assert.True(command.EditCommentCommand.CanExecute(null));
+      });
+    }
+
+    [Fact]
+    public void Edit_comment_on_a_note_opens_nothing() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        Action<ShortcutViewModel> old = ShortcutViewModel.OpenCommentEditor;
+        List<ShortcutViewModel> opened = new List<ShortcutViewModel>();
+        ShortcutViewModel.OpenCommentEditor = s => opened.Add(s);
+        try {
+          note.EditCommentCommand.Execute(null);
+        } finally {
+          ShortcutViewModel.OpenCommentEditor = old;
+        }
+        Assert.Empty(opened);
+      });
+    }
+
+    [Fact]
+    public void A_note_never_shows_the_comment_marker_or_a_comment_in_its_tooltip() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        note.NoteText = "text";
+        note.Comment = "stored before";
+        Assert.False(note.HasComment);
+        Assert.Null(note.CommentPreview);
+        Assert.False(note.ShowCommentDivider);
+        Assert.Equal("text", note.ToolTipText);
       });
     }
 
@@ -310,6 +357,8 @@ namespace MDSHO.Tests {
           Assert.Equal(nameof(ShortcutViewModel.EditNoteCommand), BindingOperations.GetBinding(edit, MenuItem.CommandProperty).Path.Path);
           Assert.Equal(nameof(ShortcutViewModel.ShowNote), BindingOperations.GetBinding(edit, UIElement.VisibilityProperty).Path.Path);
           Assert.Equal("OwningWindow.Appearance.Icons.Rename", BindingOperations.GetBinding((TextBlock)edit.Icon, TextBlock.TextProperty).Path.Path);
+          MenuItem comment = items.Single(m => (m.Header as string) == "Comment...");
+          Assert.Equal(nameof(ShortcutViewModel.ShowComment), BindingOperations.GetBinding(comment, UIElement.VisibilityProperty).Path.Path);
           MenuItem copy = items.Single(m => (m.Header as string) == "Copy note text");
           Assert.Equal(nameof(ShortcutViewModel.CopyNoteTextCommand), BindingOperations.GetBinding(copy, MenuItem.CommandProperty).Path.Path);
           Assert.Equal(nameof(ShortcutViewModel.ShowNote), BindingOperations.GetBinding(copy, UIElement.VisibilityProperty).Path.Path);
