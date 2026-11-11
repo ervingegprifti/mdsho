@@ -28,7 +28,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   other apps, off for new notes and remembered per note), save and close in its title bar and no bottom bar: Save (also
   Ctrl+Enter or Ctrl+S) is greyed out while there is nothing to save and keeps the note open; X or Esc close without saving.
   The colours button (brush) in its title bar opens **Note colours**: the Settings window with only the five colours
-  (border, title background, title text, background, text), the palette, **Default colours** and Apply. The note's window
+  (border, title background, title text, background, text), the palette, **Default colours** and Apply. It opens beside
+  the note, 20 pixels away: on the right when there is room, otherwise on the left. The note's window
   follows the colours live; they are saved on Apply and kept with the note (exported, imported and copied with it). A note's right-click menu has **Edit
   note...** and **Copy note text** (puts the whole note on the clipboard). Notes can be renamed, marked,
   moved, copied, exported and imported like other buttons, and need no shortcut file. They use the text-box glyph

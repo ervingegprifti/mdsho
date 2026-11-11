@@ -84,6 +84,27 @@ namespace MDSHO.Common {
       return new ScreenPoint(Math.Max(w.Left, left), Math.Max(w.Top, top));
     }
 
+    /// <summary>
+    /// Top-left (whole PHYSICAL pixels) of a window of the given physical size placed beside another window, <paramref name="gapPx"/>
+    /// away: on its right when there is room, otherwise on its left, otherwise on the side with more room. The tops line up,
+    /// and the window is kept inside the work area.
+    /// </summary>
+    public static ScreenPoint BesideWindowPhysical(ScreenRect ownerPx, double widthPx, double heightPx, ScreenRect workAreaPx, double gapPx) {
+      double right = ownerPx.Right + gapPx;
+      double left = ownerPx.Left - gapPx - widthPx;
+      double x;
+      if (right + widthPx <= workAreaPx.Right) {
+        x = right;
+      } else if (left >= workAreaPx.Left) {
+        x = left;
+      } else {
+        x = (workAreaPx.Right - ownerPx.Right) >= (ownerPx.Left - workAreaPx.Left) ? right : left;
+      }
+      x = Math.Max(workAreaPx.Left, Math.Min(x, workAreaPx.Right - widthPx));
+      double y = Math.Max(workAreaPx.Top, Math.Min(ownerPx.Top, workAreaPx.Bottom - heightPx));
+      return new ScreenPoint(Math.Floor(x), Math.Floor(y));
+    }
+
     /// <summary>ScreenRect (DIPs) filling the working area height, at its left edge.</summary>
     public static ScreenRect DockLeft(ScreenInfo screen, double widthDip) {
       ScreenRect w = screen.WorkingAreaDip;

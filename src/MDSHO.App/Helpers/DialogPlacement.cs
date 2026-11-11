@@ -94,6 +94,52 @@ namespace MDSHO.Helpers {
       dialog.Closed += (s, e) => opening = false;
     }
 
+    /// <summary>
+    /// Makes <paramref name="owner"/> the dialog's owner and places the dialog beside the owner, <paramref name="gapDip"/> away:
+    /// on its right when there is room in the work area of the owner's screen, otherwise on its left (see
+    /// <see cref="ScreenGeometry.BesideWindowPhysical"/>). The owner must have been shown.
+    /// </summary>
+    /// <remarks>Like the other placements, Left/Top are only a first guess; the dialog is placed through its handle in physical pixels.</remarks>
+    public static void BesideWindow(Window dialog, Window owner, double gapDip) {
+      dialog.Owner = owner;
+      dialog.WindowStartupLocation = WindowStartupLocation.Manual;
+      if (owner.WindowState == WindowState.Normal) {
+        dialog.Left = owner.Left + owner.ActualWidth + gapDip;
+        dialog.Top = owner.Top;
+      }
+      bool opening = true;
+      EventHandler placeOnHandle = null;
+      placeOnHandle = (s, e) => {
+        dialog.SourceInitialized -= placeOnHandle;
+        PlaceBesidePhysical(dialog, owner, gapDip);
+        // Moving onto another monitor may resize it: place it again for the size Windows gave it there.
+        PlaceBesidePhysical(dialog, owner, gapDip);
+      };
+      dialog.SourceInitialized += placeOnHandle;
+      dialog.DpiChanged += (s, e) => {
+        if (opening) {
+          dialog.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() => PlaceBesidePhysical(dialog, owner, gapDip)));
+        }
+      };
+      dialog.ContentRendered += (s, e) => opening = false;
+      dialog.Closed += (s, e) => opening = false;
+    }
+
+    // Moves the dialog's handle beside the owner's handle for its current physical size, if it is not there yet.
+    private static void PlaceBesidePhysical(Window dialog, Window owner, double gapDip) {
+      Rect ownerBounds = PhysicalBoundsOf(owner);
+      Rect bounds = PhysicalBoundsOf(dialog);
+      if (ownerBounds.IsEmpty || bounds.IsEmpty) {
+        return;
+      }
+      ScreenInfo screen = ScreenOf(owner);
+      ScreenRect ownerRect = new ScreenRect(ownerBounds.X, ownerBounds.Y, ownerBounds.Width, ownerBounds.Height);
+      Point beside = ScreenGeometry.BesideWindowPhysical(ownerRect, bounds.Width, bounds.Height, screen.WorkingArea, gapDip * screen.Scale).ToPoint();
+      if (beside != bounds.TopLeft) {
+        MoveToPhysical(dialog, beside);
+      }
+    }
+
     // Centres the dialog's handle on the owner's handle for its current physical size, if it is not centred yet.
     private static void CenterOnOwnerPhysical(Window dialog, Window owner) {
       Rect ownerBounds = PhysicalBoundsOf(owner);

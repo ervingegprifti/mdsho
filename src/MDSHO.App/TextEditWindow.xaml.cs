@@ -327,12 +327,19 @@ namespace MDSHO {
       this.TextComment.SetBinding(System.Windows.Controls.Primitives.TextBoxBase.CaretBrushProperty, Bind(nameof(NoteColors.TextColor)));
     }
 
-    // Opens the Settings window as "Note colours" over this note; the window follows the colours while they change.
+    /// <summary>Shows the Note colours window modally. Tests replace it so no modal window blocks them.</summary>
+    public static Func<Window, bool?> ShowNoteColoursDialog = w => w.ShowDialog();
+
+    /// <summary>The gap between a note and its Note colours window (DIPs).</summary>
+    public const double NoteColoursGap = 20;
+
+    // Opens the Settings window as "Note colours" beside this note (right or left, where there is room); the note
+    // follows the colours while they change.
     private void ShowNoteColours() {
       try {
         SettingsWindow colours = new SettingsWindow(this.shortcut);
-        DialogPlacement.CenterOnScreenOf(colours, this);
-        colours.ShowDialog();
+        DialogPlacement.BesideWindow(colours, this, NoteColoursGap);
+        ShowNoteColoursDialog(colours);
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
       }
