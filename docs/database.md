@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 7**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 8**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -84,6 +84,22 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `IsNote` | INTEGER | NOT NULL | `0` | `1` = a note button (its text is `NoteText`; no shortcut file). Added in version 7. |
 | `NoteText` | TEXT | NOT NULL | `''` | The text of a note button; empty for other buttons. Added in version 7. |
 
+### NoteWindows
+
+One row per note window: where it was last, how big, in which state, and whether it was open, so open notes come back
+where they were after a restart. Added in version 8.
+
+| Column | Type | Null | Default | Meaning |
+|---|---|---|---|---|
+| `ID` | INTEGER | NOT NULL | | Primary key. |
+| `ShortcutID` | INTEGER | NOT NULL | | The note (`Shortcuts.ID`); one row per note. |
+| `Left` | INTEGER | NOT NULL | | Left edge of the normal (not maximized) window. |
+| `Top` | INTEGER | NOT NULL | | Top edge of the normal window. |
+| `Width` | INTEGER | NOT NULL | | Width of the normal window. |
+| `Height` | INTEGER | NOT NULL | | Height of the normal window. |
+| `State` | INTEGER | NOT NULL | `0` | `0` = normal, `1` = minimized, `2` = maximized. |
+| `IsOpen` | INTEGER | NOT NULL | `0` | `1` = the window was open (also when MDSHO or Windows closed it at exit), so it opens again at start. |
+
 ## Keys and relationships
 
 Foreign keys are switched on for every connection, and all of them use `ON DELETE CASCADE`:
@@ -91,6 +107,7 @@ Foreign keys are switched on for every connection, and all of them use `ON DELET
 - `MDSHOWindowClones.ParentMDSHOWindowID` â†’ `MDSHOWindows.ID`: deleting a panel deletes its clones.
 - `Shortcuts.ParentMDSHOWindowID` â†’ `MDSHOWindows.ID`: deleting a panel deletes its root buttons.
 - `Shortcuts.ParentShortcutID` â†’ `Shortcuts.ID`: deleting a group deletes everything inside it.
+- `NoteWindows.ShortcutID` â†’ `Shortcuts.ID`: deleting a note deletes its window place.
 
 The shortcut files in the shortcuts folder are not part of the database; the app deletes them itself.
 
@@ -117,6 +134,7 @@ that worked.
 | 5 | 1.1.5 | `RoundedCorners` dropped from `MDSHOWindows` and `MDSHOWindowClones` (corners now follow the docked state). Uses `ALTER TABLE ... DROP COLUMN`, so no rows, IDs, indexes or foreign keys change. |
 | 6 | 1.1.6 | `Shortcuts.Notes` renamed to `Comment` (`ALTER TABLE ... RENAME COLUMN`; the text, rows, indexes and foreign keys stay). `MDSHOWindows.Notes` is unchanged. Exports made before this still import: their `notes` becomes the comment. |
 | 7 | 1.1.6 | `Shortcuts.IsNote` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.NoteText` (`TEXT NOT NULL DEFAULT ''`) for note buttons. Exports made before this still import, as normal buttons. |
+| 8 | 1.1.6 | `NoteWindows` table: the place, size and state of each note window and whether it was open, so open notes reopen where they were. |
 
 ### Backup before an upgrade
 

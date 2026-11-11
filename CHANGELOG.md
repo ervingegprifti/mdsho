@@ -45,6 +45,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   still import. The windows' `Notes` column is unchanged.
 - Database version 7: the buttons table gets `IsNote` and `NoteText` for note buttons (backed up first). Exports carry
   them; exports from older versions still import, as normal buttons.
+- Database version 8: a new `NoteWindows` table keeps the place, size and state of each note window and whether it was
+  open (backed up first).
 
 ## [1.1.5]
 

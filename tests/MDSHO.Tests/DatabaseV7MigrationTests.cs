@@ -52,16 +52,10 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Version_is_7_and_the_last_migration_is_7() {
-      Assert.Equal(7, AppConstants.DatabaseVersion);
-      Assert.Equal(7, SchemaManager.Migrations.Last().Version);
-    }
-
-    [Fact]
-    public void V6_database_migrates_to_7_adding_IsNote_and_NoteText_with_defaults() {
+    public void V6_database_migrates_past_7_adding_IsNote_and_NoteText_with_defaults() {
       BuildV6Db();
       DataStore.Upgrade();
-      Assert.Equal(7, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(1, Columns("Shortcuts", "IsNote"));
       Assert.Equal(1, Columns("Shortcuts", "NoteText"));
       Assert.Equal(0, db.Scalar("SELECT count(*) FROM Shortcuts WHERE IsNote <> 0 OR NoteText <> ''"));
@@ -81,9 +75,9 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Fresh_database_is_version_7_and_a_note_round_trips() {
+    public void Fresh_database_round_trips_a_note() {
       db = new TempDb();
-      Assert.Equal(7, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       long windowId = DataStore.Windows.GetAll().First().ID;
       Shortcut note = DataStore.Shortcuts.Append(new Shortcut(null, windowId, "Checklist", "", "", "gN", 0, 0, "", 0, "", 0, 0, "", "",
         isNote: 1, noteText: "1. Tell the help desk.\r\n2. Restart SRV01."));

@@ -74,6 +74,17 @@ namespace MDSHO.Data {
         CREATE INDEX IF NOT EXISTS IX_Shortcuts_ParentShortcutID ON Shortcuts(ParentShortcutID);
         CREATE INDEX IF NOT EXISTS IX_Shortcuts_ParentMDSHOWindowID ON Shortcuts(ParentMDSHOWindowID);
         CREATE INDEX IF NOT EXISTS IX_MDSHOWindowClones_ParentMDSHOWindowID ON MDSHOWindowClones(ParentMDSHOWindowID);
+
+        CREATE TABLE IF NOT EXISTS NoteWindows (
+          ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+          ShortcutID INTEGER NOT NULL UNIQUE,
+          Left INTEGER NOT NULL,
+          Top INTEGER NOT NULL,
+          Width INTEGER NOT NULL,
+          Height INTEGER NOT NULL,
+          State INTEGER NOT NULL DEFAULT 0,
+          IsOpen INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY(ShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE);
       ";
 
     /// <summary>
@@ -177,6 +188,18 @@ namespace MDSHO.Data {
         if (!ColumnExists(conn, "Shortcuts", "NoteText")) {
           Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN NoteText TEXT NOT NULL DEFAULT '';");
         }
+      }),
+      new DbMigration(8, "Note windows remember their place: NoteWindows table", conn => {
+        Execute(conn, @"CREATE TABLE IF NOT EXISTS NoteWindows (
+          ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+          ShortcutID INTEGER NOT NULL UNIQUE,
+          Left INTEGER NOT NULL,
+          Top INTEGER NOT NULL,
+          Width INTEGER NOT NULL,
+          Height INTEGER NOT NULL,
+          State INTEGER NOT NULL DEFAULT 0,
+          IsOpen INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY(ShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE);");
       })
     };
 
