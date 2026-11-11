@@ -295,7 +295,7 @@ namespace MDSHO.Tests {
         note.NoteText = "old";
         TextEditWindow window = TextEditWindow.ForNote(note);
         Shown(window, () => {
-          Assert.Equal("Note: Restart checklist", Named<TextBlock>(window, "TextTitle").Text);
+          Assert.Equal("Restart checklist", Named<TextBlock>(window, "TextTitle").Text);
           Assert.Equal(note.OwningWindow.Appearance.Icons.Rename, Named<TextBlock>(window, "TextTitleIcon").Text);
           Assert.Equal(note.OwningWindow.Appearance.Icons.Rename, GlyphIcon.GlyphOf(window.Icon));
           TextBox text = Named<TextBox>(window, "TextComment");

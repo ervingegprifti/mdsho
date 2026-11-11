@@ -185,8 +185,8 @@ namespace MDSHO.Tests {
         f.Command.Comment = "Call Anna first.";
         TextEditWindow window = TextEditWindow.ForComment(f.Command);
         Shown(window, () => {
-          Assert.Equal("Comment: Ping SRV01", Named<TextBlock>(window, "TextTitle").Text);
-          Assert.Equal("Comment: Ping SRV01", window.Title);
+          Assert.Equal("Ping SRV01", Named<TextBlock>(window, "TextTitle").Text);
+          Assert.Equal("Ping SRV01", window.Title);
           TextBox text = Named<TextBox>(window, "TextComment");
           Assert.Equal("Call Anna first.", text.Text);
           Assert.True(text.AcceptsReturn);

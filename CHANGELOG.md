@@ -33,7 +33,7 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   follows the colours live; they are saved on Apply and kept with the note (exported, imported and copied with it). A note's right-click menu has **Edit
   note...** and **Copy note text** (puts the whole note on the clipboard). Notes can be renamed, marked,
   moved, copied, exported and imported like other buttons, and need no shortcut file. They use the text-box glyph
-  until the icon font gets a dedicated note glyph.
+  until the icon font gets a dedicated note glyph. The Note and Comment windows show just the button's name as their title.
 - **Default colours** in a panel's Settings window: puts the five colours back to those of a new window (black border,
   see-through black background, white text). Icons appearance and Single click to open stay as they are; Apply saves
   the colours, and closing without Apply puts the old ones back.

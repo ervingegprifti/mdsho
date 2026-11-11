@@ -48,7 +48,8 @@ namespace MDSHO {
       Helpers.WindowCorners.UseRoundedCorners(this);
       this.shortcut = shortcut ?? throw new ArgumentNullException(nameof(shortcut));
       this.kind = kind;
-      this.Title = (kind == TextKind.Note ? "Note: " : "Comment: ") + shortcut.Name;
+      // Just the button's name: the icon already says whether it is a note or a comment.
+      this.Title = shortcut.Name;
       this.TextTitle.Text = this.Title;
       this.TextComment.Text = (kind == TextKind.Note ? shortcut.NoteText : shortcut.Comment) ?? "";
       System.Windows.Automation.AutomationProperties.SetName(this.TextComment, kind == TextKind.Note ? "Note" : "Comment");
