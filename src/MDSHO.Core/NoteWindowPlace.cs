@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace MDSHO.Core {
 
@@ -27,6 +27,8 @@ namespace MDSHO.Core {
     public long State { get; set; }
     /// <summary>True when the window was open (also when MDSHO or Windows closed it at exit).</summary>
     public bool IsOpen { get; set; }
+    /// <summary>True when the window is pinned to stay on top of other apps (off for new notes).</summary>
+    public bool IsTopmost { get; set; }
 
     /// <summary>Parameterless constructor for the data layer (row mapping).</summary>
     public NoteWindowPlace() { }

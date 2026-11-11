@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 8**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 9**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -99,6 +99,7 @@ where they were after a restart. Added in version 8.
 | `Height` | INTEGER | NOT NULL | | Height of the normal window. |
 | `State` | INTEGER | NOT NULL | `0` | `0` = normal, `1` = minimized, `2` = maximized. |
 | `IsOpen` | INTEGER | NOT NULL | `0` | `1` = the window was open (also when MDSHO or Windows closed it at exit), so it opens again at start. |
+| `IsTopmost` | INTEGER | NOT NULL | `0` | `1` = the window stays on top of other apps (the pin in its title bar). Added in version 9. |
 
 ## Keys and relationships
 
@@ -135,6 +136,7 @@ that worked.
 | 6 | 1.1.6 | `Shortcuts.Notes` renamed to `Comment` (`ALTER TABLE ... RENAME COLUMN`; the text, rows, indexes and foreign keys stay). `MDSHOWindows.Notes` is unchanged. Exports made before this still import: their `notes` becomes the comment. |
 | 7 | 1.1.6 | `Shortcuts.IsNote` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.NoteText` (`TEXT NOT NULL DEFAULT ''`) for note buttons. Exports made before this still import, as normal buttons. |
 | 8 | 1.1.6 | `NoteWindows` table: the place, size and state of each note window and whether it was open, so open notes reopen where they were. |
+| 9 | 1.1.6 | `NoteWindows.IsTopmost` (`INTEGER NOT NULL DEFAULT 0`): whether a note window stays on top of other apps. |
 
 ### Backup before an upgrade
 

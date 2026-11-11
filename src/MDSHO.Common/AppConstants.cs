@@ -22,7 +22,7 @@
     /// <summary>
     /// We use this to identify the current database schema version.
     /// </summary>
-    public const int DatabaseVersion = 8;
+    public const int DatabaseVersion = 9;
 
     // Database file name.
     /// <summary>File name of the database of the Release build.</summary>

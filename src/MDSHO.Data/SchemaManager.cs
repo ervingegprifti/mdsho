@@ -84,6 +84,7 @@ namespace MDSHO.Data {
           Height INTEGER NOT NULL,
           State INTEGER NOT NULL DEFAULT 0,
           IsOpen INTEGER NOT NULL DEFAULT 0,
+          IsTopmost INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(ShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE);
       ";
 
@@ -200,6 +201,11 @@ namespace MDSHO.Data {
           State INTEGER NOT NULL DEFAULT 0,
           IsOpen INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(ShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE);");
+      }),
+      new DbMigration(9, "Note windows can stay on top: NoteWindows.IsTopmost", conn => {
+        if (!ColumnExists(conn, "NoteWindows", "IsTopmost")) {
+          Execute(conn, "ALTER TABLE NoteWindows ADD COLUMN IsTopmost INTEGER NOT NULL DEFAULT 0;");
+        }
       })
     };
 

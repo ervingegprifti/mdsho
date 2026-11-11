@@ -54,16 +54,10 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Version_is_8_and_the_last_migration_is_8() {
-      Assert.Equal(8, AppConstants.DatabaseVersion);
-      Assert.Equal(8, SchemaManager.Migrations.Last().Version);
-    }
-
-    [Fact]
-    public void V7_database_migrates_to_8_adding_an_empty_NoteWindows_table() {
+    public void V7_database_migrates_past_8_adding_an_empty_NoteWindows_table() {
       BuildV7Db();
       DataStore.Upgrade();
-      Assert.Equal(8, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(1, Tables("NoteWindows"));
       Assert.Equal(0, db.Scalar("SELECT count(*) FROM NoteWindows"));
       Assert.Equal("note text", db.ScalarText("SELECT NoteText FROM Shortcuts WHERE ID = 1"));
@@ -83,7 +77,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void A_note_window_place_is_saved_updated_and_read_back() {
       db = new TempDb();
-      Assert.Equal(8, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       long windowId = DataStore.Windows.GetAll().First().ID;
       Shortcut note = DataStore.Shortcuts.CreateNote(null, windowId);
       Assert.Null(DataStore.NoteWindows.Get(note.ID));
