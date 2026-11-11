@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -82,6 +82,26 @@ namespace MDSHO.Tests {
           Assert.DoesNotContain(" at ", visible);
           Assert.DoesNotContain("inner cause", visible);
           Assert.DoesNotContain(nameof(Thrown), visible);
+        });
+      });
+    }
+
+    [Fact]
+    public void Message_and_button_bar_have_the_same_26_pixel_outer_margin_as_the_other_windows() {
+      WpfAppHost.Run(() => {
+        ErrorWindow window = new ErrorWindow("The data could not be exported.", Thrown());
+        Shown(window, () => {
+          window.UpdateLayout();
+          double m = AboutWindow.OuterMargin;
+          FrameworkElement message = (FrameworkElement)window.FindName("PanelMessage");
+          Assert.Equal(new Thickness(m), message.Margin);
+          System.Windows.Controls.Border bar = (System.Windows.Controls.Border)window.FindName("ButtonBar");
+          Assert.Equal(new Thickness(m), bar.Padding);
+          FrameworkElement ok = (FrameworkElement)window.FindName("ButtonOK");
+          Point okTopLeft = ok.TranslatePoint(new Point(0, 0), bar);
+          Assert.Equal(m, okTopLeft.Y, 1);
+          Assert.Equal(bar.ActualWidth - m, okTopLeft.X + ok.ActualWidth, 1);
+          Assert.Equal(bar.ActualHeight - m, okTopLeft.Y + ok.ActualHeight, 1);
         });
       });
     }

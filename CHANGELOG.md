@@ -32,8 +32,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - The tray menu item **Find Windows** is now called **Find MDSHO lost windows**; it works as before.
 - The Settings window has tighter, even margins: every outer margin of the content and of the Apply bar equals the
   Apply button height, and the window is 537 pixels high (was 560). The Run command window follows the same rule: every
-  outer margin of its fields and of its bottom bar equals the button height, and the About window uses the same 26 px
-  around its content.
+  outer margin of its fields and of its bottom bar equals the button height, and the About and error windows use the
+  same 26 px around their content.
 - The Examples list of the Run command window has the same look as the Note window, shows what an example does and the
   command it runs when you hover it (instead of below the list), and opens centred on the Run command window at 70 % of
   its size.
