@@ -333,7 +333,7 @@ namespace MDSHO {
 
     /// <summary>
     /// The look of the Note and Comment windows: the editor fills the body (window colour, no border, 10 px padding, no
-    /// word wrap, both scroll bars), with the hint in the bottom bar on the left. Every outer margin of the bottom bar
+    /// word wrap, each scroll bar only when it is needed), with the hint in the bottom bar on the left. Every outer margin of the bottom bar
     /// equals the height of the Save button.
     /// </summary>
     private void UseEditorLayout() {
@@ -342,8 +342,8 @@ namespace MDSHO {
       this.TextComment.BorderThickness = new Thickness(0);
       this.TextComment.Padding = new Thickness(10);
       this.TextComment.TextWrapping = TextWrapping.NoWrap;
-      this.TextComment.HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Visible;
-      this.TextComment.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Visible;
+      this.TextComment.HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto;
+      this.TextComment.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto;
       this.TextHint.Visibility = Visibility.Collapsed;
       this.TextFooterHint.Visibility = Visibility.Visible;
       this.TextFooterHint.Margin = new Thickness(0, 0, 16, 0);

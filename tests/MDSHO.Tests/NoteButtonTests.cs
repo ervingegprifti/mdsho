@@ -320,7 +320,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_note_editor_fills_the_body_with_the_window_colour_padding_and_both_scroll_bars() {
+    public void The_note_editor_fills_the_body_with_the_window_colour_padding_and_scroll_bars_when_needed() {
       WithGroup(f => {
         ShortcutViewModel note = NewNoteInGroup(f);
         TextEditWindow window = TextEditWindow.ForNote(note);
@@ -337,8 +337,8 @@ namespace MDSHO.Tests {
           Assert.Equal(new Thickness(0), editor.BorderThickness);
           Assert.Equal(new Thickness(10), editor.Padding);
           Assert.Equal(TextWrapping.NoWrap, editor.TextWrapping);
-          Assert.Equal(ScrollBarVisibility.Visible, editor.HorizontalScrollBarVisibility);
-          Assert.Equal(ScrollBarVisibility.Visible, editor.VerticalScrollBarVisibility);
+          Assert.Equal(ScrollBarVisibility.Auto, editor.HorizontalScrollBarVisibility);
+          Assert.Equal(ScrollBarVisibility.Auto, editor.VerticalScrollBarVisibility);
         });
       });
     }
@@ -427,6 +427,31 @@ namespace MDSHO.Tests {
       }
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Each_scroll_bar_shows_only_when_its_direction_needs_it(bool note) {
+      WithGroup(f => {
+        ShortcutViewModel button = note ? NewNoteInGroup(f) : f.Group;
+        TextEditWindow window = note ? TextEditWindow.ForNote(button) : TextEditWindow.ForComment(button);
+        Shown(window, () => {
+          TextBox editor = Named<TextBox>(window, "TextComment");
+          ScrollViewer scroll = WpfAppHost.VisualDescendants<ScrollViewer>(editor).First();
+          (Visibility H, Visibility V) Bars(string text) {
+            editor.Text = text;
+            window.UpdateLayout();
+            WpfAppHost.Pump();
+            return (scroll.ComputedHorizontalScrollBarVisibility, scroll.ComputedVerticalScrollBarVisibility);
+          }
+          Assert.Equal((Visibility.Collapsed, Visibility.Collapsed), Bars("short"));
+          Assert.Equal((Visibility.Visible, Visibility.Collapsed), Bars(new string('x', 400)));
+          string many = string.Join(Environment.NewLine, Enumerable.Range(1, 80));
+          Assert.Equal((Visibility.Collapsed, Visibility.Visible), Bars(many));
+          Assert.Equal((Visibility.Visible, Visibility.Visible), Bars(new string('x', 400) + Environment.NewLine + many));
+        });
+      });
+    }
+
     [Fact]
     public void The_comment_window_has_the_same_look_as_the_note_window_at_its_own_size() {
       WithGroup(f => {
@@ -444,8 +469,8 @@ namespace MDSHO.Tests {
           Assert.Equal(new Thickness(0), editor.BorderThickness);
           Assert.Equal(new Thickness(10), editor.Padding);
           Assert.Equal(TextWrapping.NoWrap, editor.TextWrapping);
-          Assert.Equal(ScrollBarVisibility.Visible, editor.HorizontalScrollBarVisibility);
-          Assert.Equal(ScrollBarVisibility.Visible, editor.VerticalScrollBarVisibility);
+          Assert.Equal(ScrollBarVisibility.Auto, editor.HorizontalScrollBarVisibility);
+          Assert.Equal(ScrollBarVisibility.Auto, editor.VerticalScrollBarVisibility);
           Assert.Equal(Visibility.Collapsed, Named<TextBlock>(window, "TextHint").Visibility);
           Assert.Equal(Visibility.Visible, Named<TextBlock>(window, "TextFooterHint").Visibility);
           FrameworkElement footer = Named<FrameworkElement>(window, "Footer");

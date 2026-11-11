@@ -22,7 +22,7 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   which buttons have one. A comment of only spaces counts as none. The Comment window looks like the Note window.
 - **Note buttons**, a third kind of button next to shortcuts and run commands: **New note** (right-click empty space or
   a group) creates one and opens the Note window. Opening a note (double-click, or single click when that is set) opens
-  the Note window to read and edit its text (several notes can be open side by side; the text fills the window and scrolls sideways instead of wrapping); its tooltip shows the first 10 lines. Note windows remember their place, size and state: notes that were open come back
+  the Note window to read and edit its text (several notes can be open side by side; the text fills the window and scrolls sideways instead of wrapping, with each scroll bar shown only when it is needed); its tooltip shows the first 10 lines. Note windows remember their place, size and state: notes that were open come back
   where they were after MDSHO or Windows restarts (unsaved typing is saved at exit), a note opens again where it was last,
   and a place that is off every screen moves to the middle of the main screen. The Note window has pin (keep on top of
   other apps, off for new notes and remembered per note), save and close in its title bar and no bottom bar: Save (also
