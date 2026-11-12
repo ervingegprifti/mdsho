@@ -40,6 +40,7 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 
 ### Changed
 
+- The Run command window has no maximise button any more: double-click its title bar to maximise or restore it.
 - Panels have no bottom bar any more: the Settings button (gear) moved to the title bar, just left of Dock left, and
   the button list uses the freed 32 pixels. The unused PRO badge and its trial code are gone.
 - Thin scroll bars in every window, as in Windows 11: a 3 pixel line that widens to 8 pixels when the mouse is over it,

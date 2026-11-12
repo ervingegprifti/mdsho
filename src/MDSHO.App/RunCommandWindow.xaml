@@ -77,12 +77,11 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!--Title bar: title, examples (wizard), maximise, close-->
+        <!--Title bar: title, examples (wizard), close. Double-clicking the title bar maximises and restores the window-->
         <Border x:Name="TitleBar" Grid.Row="0" Background="#FFDFDACB">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
@@ -91,8 +90,7 @@
                     <TextBlock x:Name="TextTitle" Text="Run command" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"/>
                 </StackPanel>
                 <Button x:Name="ButtonExamples" Grid.Column="1" Style="{StaticResource StyleTitleBarButton}" Content="{Binding Icons.Wizard}" ToolTip="Examples" AutomationProperties.Name="Examples"/>
-                <Button x:Name="ButtonMaximize" Grid.Column="2" Style="{StaticResource StyleTitleBarButton}" FontFamily="Segoe MDL2 Assets" FontSize="10" Content="&#xE922;" ToolTip="Maximize" AutomationProperties.Name="{Binding ToolTip, RelativeSource={RelativeSource Self}}"/>
-                <Button x:Name="ButtonClose" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" Content="{Binding Icons.Times}" ToolTip="Close" AutomationProperties.Name="Close"/>
+                <Button x:Name="ButtonClose" Grid.Column="2" Style="{StaticResource StyleTitleBarButton}" Content="{Binding Icons.Times}" ToolTip="Close" AutomationProperties.Name="Close"/>
             </Grid>
         </Border>
 

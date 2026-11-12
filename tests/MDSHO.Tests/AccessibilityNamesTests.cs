@@ -194,7 +194,6 @@ namespace MDSHO.Tests {
       List<string> problems = new List<string>();
       List<string> shortcutNames = new List<string>();
       List<string> spokenShortcutNames = new List<string>();
-      List<string> maximizeNames = new List<string>();
       WpfAppHost.Run(() => {
         Action<ProcessStartInfo> oldStarter = ShortcutViewModel.ProcessStarter;
         ShortcutViewModel.ProcessStarter = psi => throw new InvalidOperationException("A process was started in a test.");
@@ -218,14 +217,7 @@ namespace MDSHO.Tests {
 
             ShortcutViewModel command = windowVm.RootShortcuts.Single(s => s.IsProcessCommand);
             RunCommandViewModel runCommand = new RunCommandViewModel(command, false);
-            problems.AddRange(Check(new RunCommandWindow(runCommand), window => {
-              // The maximise button says what it does now: Maximize, or Restore while maximised.
-              Button maximize = (Button)window.FindName("ButtonMaximize");
-              maximize.ToolTip = "Restore";
-              maximizeNames.Add(SpokenName(maximize));
-              maximize.ToolTip = "Maximize";
-              maximizeNames.Add(SpokenName(maximize));
-            }));
+            problems.AddRange(Check(new RunCommandWindow(runCommand)));
             problems.AddRange(Check(new RunCommandExamplesWindow(runCommand)));
             problems.AddRange(Check(new SettingsWindow(windowVm)));
             problems.AddRange(Check(new AboutWindow()));
@@ -239,7 +231,6 @@ namespace MDSHO.Tests {
       // Every shortcut of the tree was checked, in both windows, and is named after its shortcut.
       Assert.Equal(new[] { "Child file", "File", "Ping", "Tools", "Url" }, shortcutNames.Distinct().OrderBy(n => n));
       Assert.Equal(shortcutNames, spokenShortcutNames);
-      Assert.Equal(new[] { "Restore", "Maximize" }, maximizeNames);
     }
   }
 }

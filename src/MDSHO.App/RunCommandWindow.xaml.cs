@@ -34,7 +34,6 @@ namespace MDSHO {
       this.Closed += (s, e) => icons.PropertyChanged -= iconsChanged;
 
       this.ButtonExamples.Click += (s, e) => ShowExamples();
-      this.ButtonMaximize.Click += (s, e) => this.WindowState = this.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
       this.ButtonClose.Click += (s, e) => Close();
       this.ButtonBrowseProgram.Click += (s, e) => BrowseProgram();
       this.ButtonBrowseFolder.Click += (s, e) => BrowseFolder();
@@ -42,7 +41,7 @@ namespace MDSHO {
       this.ButtonSave.Click += ButtonSave_Click;
       this.ButtonCancel.Click += (s, e) => Close();
       this.PreviewKeyDown += Window_PreviewKeyDown;
-      this.StateChanged += (s, e) => UpdateMaximizeButton();
+      this.StateChanged += (s, e) => KeepContentInsideWhenMaximized();
       // Every outer margin of the fields and of the bottom bar equals the button height, like in Settings and the Note window.
       this.ButtonSave.SizeChanged += (s, e) => {
         Thickness margin = new Thickness(this.ButtonSave.ActualHeight);
@@ -135,10 +134,9 @@ namespace MDSHO {
       }
     }
 
-    private void UpdateMaximizeButton() {
+    // Maximising is a double-click on the title bar (there is no maximise button).
+    private void KeepContentInsideWhenMaximized() {
       bool maximized = this.WindowState == WindowState.Maximized;
-      this.ButtonMaximize.Content = maximized ? "" : "";
-      this.ButtonMaximize.ToolTip = maximized ? "Restore" : "Maximize";
       // A maximised borderless window reaches past the screen edges by the resize border: keep the content inside.
       this.RootGrid.Margin = maximized ? new Thickness(7) : new Thickness(0);
     }

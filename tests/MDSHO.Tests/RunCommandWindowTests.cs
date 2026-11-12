@@ -283,7 +283,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Title_bar_has_title_star_maximise_and_close_from_left_to_right() {
+    public void Title_bar_has_title_star_and_close_from_left_to_right_and_no_maximise_button() {
       WithCommand("cmd.exe", "/K ping {}", f => {
         RunCommandViewModel vm = new RunCommandViewModel(f.Command, false);
         RunCommandWindow window = new RunCommandWindow(vm);
@@ -292,7 +292,7 @@ namespace MDSHO.Tests {
           Assert.NotNull(System.Windows.Shell.WindowChrome.GetWindowChrome(window));
           TextBlock title = Named<TextBlock>(window, "TextTitle");
           Button star = Named<Button>(window, "ButtonExamples");
-          Button max = Named<Button>(window, "ButtonMaximize");
+          Assert.Null(window.FindName("ButtonMaximize"));
           Button close = Named<Button>(window, "ButtonClose");
           Assert.Equal("Run command", title.Text);
           Assert.Equal("Examples", star.ToolTip);
@@ -303,8 +303,36 @@ namespace MDSHO.Tests {
           WpfAppHost.Pump();
           Assert.Equal(f.Win.Appearance.Icons.Wizard, star.Content);
           Assert.Equal(f.Win.Appearance.Icons.SolidIcons ? "" : "", star.Content);
-          double[] x = new[] { Position(title, window).X, Position(star, window).X, Position(max, window).X, Position(close, window).X };
+          double[] x = new[] { Position(title, window).X, Position(star, window).X, Position(close, window).X };
           Assert.Equal(x.OrderBy(v => v).ToArray(), x);
+        });
+      });
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
+    private static extern IntPtr GetWindowLongPtr(IntPtr hwnd, int index);
+
+    [Fact]
+    public void Double_clicking_the_title_bar_maximises_and_the_content_stays_inside_the_screen() {
+      WithCommand("cmd.exe", "", f => {
+        RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
+        Shown(window, () => {
+          // Windows maximises a window on a double-click of its caption when it has a maximise box: the whole title bar is
+          // the caption, and the window keeps the maximise box although it draws no maximise button.
+          System.Windows.Shell.WindowChrome chrome = System.Windows.Shell.WindowChrome.GetWindowChrome(window);
+          Assert.Equal(Named<Border>(window, "TitleBar").ActualHeight, chrome.CaptionHeight, 1);
+          Assert.Equal(ResizeMode.CanResize, window.ResizeMode);
+          IntPtr hwnd = new System.Windows.Interop.WindowInteropHelper(window).Handle;
+          const long WS_MAXIMIZEBOX = 0x00010000;
+          Assert.NotEqual(0, GetWindowLongPtr(hwnd, -16).ToInt64() & WS_MAXIMIZEBOX);
+          Grid root = Named<Grid>(window, "RootGrid");
+          Assert.Equal(new Thickness(0), root.Margin);
+          window.WindowState = WindowState.Maximized;
+          WpfAppHost.Pump();
+          Assert.Equal(new Thickness(7), root.Margin);
+          window.WindowState = WindowState.Normal;
+          WpfAppHost.Pump();
+          Assert.Equal(new Thickness(0), root.Margin);
         });
       });
     }
