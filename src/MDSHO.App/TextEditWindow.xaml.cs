@@ -85,6 +85,16 @@ namespace MDSHO {
         SetPinned(!this.Topmost);
         SaveNotePlace();
       };
+      // Wrap text: a note remembers it with its window, the Comment windows of a panel share it.
+      SetWrapText(kind == TextKind.Comment && (shortcut.OwningWindow?.Appearance?.CommentWrapText ?? false));
+      this.ButtonWrap.Click += (s, e) => {
+        SetWrapText(!this.IsWrapText);
+        if (this.kind == TextKind.Note) {
+          SaveNotePlace();
+        } else if (shortcut.OwningWindow?.Appearance != null) {
+          shortcut.OwningWindow.Appearance.CommentWrapText = this.IsWrapText;
+        }
+      };
       this.PreviewKeyDown += Window_PreviewKeyDown;
       this.Loaded += (s, e) => {
         this.TextComment.Focus();
@@ -182,6 +192,7 @@ namespace MDSHO {
       this.Width = Math.Max(this.MinWidth, place.Width);
       this.Height = Math.Max(this.MinHeight, place.Height);
       SetPinned(place.IsTopmost);
+      SetWrapText(place.IsWrapText);
       this.savedState = place.State == NoteWindowPlace.Maximized ? WindowState.Maximized
         : place.State == NoteWindowPlace.Minimized ? WindowState.Minimized : WindowState.Normal;
       EventHandler placeOnHandle = null;
@@ -246,7 +257,7 @@ namespace MDSHO {
         : this.WindowState == WindowState.Minimized ? NoteWindowPlace.Minimized : NoteWindowPlace.Normal;
       try {
         DataStore.NoteWindows.Save(new NoteWindowPlace(this.shortcut.ID, (long)Math.Round(normal.X), (long)Math.Round(normal.Y),
-          (long)Math.Round(normal.Width), (long)Math.Round(normal.Height), state, isOpen) { IsTopmost = this.Topmost });
+          (long)Math.Round(normal.Width), (long)Math.Round(normal.Height), state, isOpen) { IsTopmost = this.Topmost, IsWrapText = this.IsWrapText });
       } catch (Exception ex) {
         // A place that can't be saved must never break the note window.
         AppLog.Warning(ex, "Could not save the place of a note window");
@@ -423,6 +434,24 @@ namespace MDSHO {
       }
     }
 
+    /// <summary>True while the text wraps at the window's edge.</summary>
+    public bool IsWrapText => this.TextComment.TextWrapping == TextWrapping.Wrap;
+
+    /// <summary>Wraps the text at the window's edge (no sideways scrolling then), or not.</summary>
+    private void SetWrapText(bool wrap) {
+      this.TextComment.TextWrapping = wrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
+      this.TextComment.HorizontalScrollBarVisibility = wrap ? System.Windows.Controls.ScrollBarVisibility.Disabled : System.Windows.Controls.ScrollBarVisibility.Auto;
+      string tip = wrap ? "Stop wrapping text" : "Wrap text";
+      this.ButtonWrap.ToolTip = tip;
+      System.Windows.Automation.AutomationProperties.SetName(this.ButtonWrap, tip);
+      if (wrap) {
+        // The same shade as the pin while on.
+        this.ButtonWrap.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0, 0, 0));
+      } else {
+        this.ButtonWrap.ClearValue(BackgroundProperty);
+      }
+    }
+
     private string TextToSave() {
       string text = this.TextComment.Text ?? "";
       return string.IsNullOrWhiteSpace(text) ? "" : text;
@@ -449,6 +478,7 @@ namespace MDSHO {
       this.ButtonClose.Content = icons.Times;
       this.ButtonColors.Content = icons.Brush;
       this.ButtonOk.Content = icons.Ok;
+      this.ButtonWrap.Content = icons.WrapText;
       this.ButtonPin.Content = this.Topmost ? icons.PinOn : icons.PinOff;
       this.Icon = GlyphIcon.Create(glyph);
     }

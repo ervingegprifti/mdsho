@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace MDSHO.Core {
 
@@ -39,6 +39,8 @@ namespace MDSHO.Core {
     void UpdateSolidIcons(long id, bool solidIcons);
     /// <summary>Saves the single click setting.</summary>
     void UpdateSingleClickToOpen(long id, bool singleClickToOpen);
+    /// <summary>Saves whether the window's Comment windows wrap their text.</summary>
+    void UpdateCommentWrapText(long id, bool commentWrapText);
     /// <summary>Saves position and height.</summary>
     void UpdateLeftTopHeight(long id, long left, long top, long height);
     /// <summary>Saves position and size.</summary>

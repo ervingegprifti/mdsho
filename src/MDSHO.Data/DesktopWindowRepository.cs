@@ -9,17 +9,17 @@ namespace MDSHO.Data {
     private const string InsertSql = @"
       INSERT INTO MDSHOWindows (
         ID, Title, ScreenDeviceName, Left, Top, Width, Height, BorderColor, BackgroundColor, TextColor,
-        TitleBackgroundColor, TitleTextColor, Notes, SolidIcons, SingleClickToOpen)
+        TitleBackgroundColor, TitleTextColor, Notes, SolidIcons, SingleClickToOpen, CommentWrapText)
       VALUES (
         NULLIF(@ID, 0), @Title, @ScreenDeviceName, @Left, @Top, @Width, @Height, @BorderColor, @BackgroundColor, @TextColor,
-        @TitleBackgroundColor, @TitleTextColor, @Notes, @SolidIcons, @SingleClickToOpen)";
+        @TitleBackgroundColor, @TitleTextColor, @Notes, @SolidIcons, @SingleClickToOpen, @CommentWrapText)";
 
     private const string UpdateSql = @"
       UPDATE MDSHOWindows SET
         Title = @Title, ScreenDeviceName = @ScreenDeviceName, Left = @Left, Top = @Top, Width = @Width, Height = @Height,
         BorderColor = @BorderColor, BackgroundColor = @BackgroundColor, TextColor = @TextColor,
         TitleBackgroundColor = @TitleBackgroundColor, TitleTextColor = @TitleTextColor, Notes = @Notes,
-        SolidIcons = @SolidIcons, SingleClickToOpen = @SingleClickToOpen
+        SolidIcons = @SolidIcons, SingleClickToOpen = @SingleClickToOpen, CommentWrapText = @CommentWrapText
       WHERE ID = @ID";
 
     private readonly IDesktopWindowCloneRepository clones;
@@ -136,6 +136,9 @@ namespace MDSHO.Data {
     }
     public void UpdateSingleClickToOpen(long id, bool singleClickToOpen) {
       Run("UPDATE MDSHOWindows SET SingleClickToOpen = @singleClickToOpen WHERE ID = @id;", new { id, singleClickToOpen });
+    }
+    public void UpdateCommentWrapText(long id, bool commentWrapText) {
+      Run("UPDATE MDSHOWindows SET CommentWrapText = @commentWrapText WHERE ID = @id;", new { id, commentWrapText });
     }
     public void UpdateLeftTopHeight(long id, long left, long top, long height) {
       Run("UPDATE MDSHOWindows SET Left = @left, Top = @top, Height = @height WHERE ID = @id;", new { id, left, top, height });

@@ -246,6 +246,8 @@ namespace MDSHO.ViewModels {
         DataStore.Windows.UpdateSolidIcons(windowID, this.Appearance.SolidIcons);
       } else if (e.PropertyName == nameof(this.Appearance.SingleClickToOpen)) {
         DataStore.Windows.UpdateSingleClickToOpen(windowID, this.Appearance.SingleClickToOpen);
+      } else if (e.PropertyName == nameof(this.Appearance.CommentWrapText)) {
+        DataStore.Windows.UpdateCommentWrapText(windowID, this.Appearance.CommentWrapText);
       }
     }
     private void Clones_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) {

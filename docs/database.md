@@ -1,4 +1,4 @@
-﻿---
+---
 title: Database
 permalink: /database/
 ---
@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 10**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 11**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -39,6 +39,7 @@ One row per panel (MDSHO window).
 | `Notes` | TEXT | NOT NULL | | Free notes about the panel (kept, but the current app has no field to edit them). |
 | `SolidIcons` | INTEGER | NOT NULL | | `1` = filled icons, `0` = outline icons. |
 | `SingleClickToOpen` | INTEGER | NOT NULL | | `1` = one click opens a button, `0` = double click. |
+| `CommentWrapText` | INTEGER | NOT NULL | `0` | `1` = the Comment windows opened from this window wrap their text (the wrap text button in their title bar). Exports carry it; older exports import with it off. Added in version 11. |
 
 ### MDSHOWindowClones
 
@@ -105,6 +106,7 @@ where they were after a restart. Added in version 8.
 | `State` | INTEGER | NOT NULL | `0` | `0` = normal, `1` = minimized, `2` = maximized. |
 | `IsOpen` | INTEGER | NOT NULL | `0` | `1` = the window was open (also when MDSHO or Windows closed it at exit), so it opens again at start. |
 | `IsTopmost` | INTEGER | NOT NULL | `0` | `1` = the window stays on top of other apps (the pin in its title bar). Added in version 9. |
+| `IsWrapText` | INTEGER | NOT NULL | `0` | `1` = the note's text wraps at the window's edge (the wrap text button in its title bar). Added in version 11. |
 
 ## Keys and relationships
 
@@ -143,6 +145,7 @@ that worked.
 | 8 | 1.3.3 | `NoteWindows` table: the place, size and state of each note window and whether it was open, so open notes reopen where they were. |
 | 9 | 1.3.3 | `NoteWindows.IsTopmost` (`INTEGER NOT NULL DEFAULT 0`): whether a note window stays on top of other apps. |
 | 10 | 1.3.3 | The five note window colours on `Shortcuts` (`NoteBorderColor`, `NoteTitleBackgroundColor`, `NoteTitleTextColor`, `NoteBackgroundColor`, `NoteTextColor`, `TEXT NOT NULL DEFAULT ''`). Exports carry them; older exports import with the default colours. |
+| 11 | 1.3.3 | Wrap text: `NoteWindows.IsWrapText` and `MDSHOWindows.CommentWrapText` (`INTEGER NOT NULL DEFAULT 0`). |
 
 ### Backup before an upgrade
 

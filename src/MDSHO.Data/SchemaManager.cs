@@ -35,7 +35,8 @@ namespace MDSHO.Data {
           TitleTextColor TEXT NOT NULL,
           Notes TEXT NOT NULL,
           SolidIcons INTEGER NOT NULL,
-          SingleClickToOpen INTEGER NOT NULL);
+          SingleClickToOpen INTEGER NOT NULL,
+          CommentWrapText INTEGER NOT NULL DEFAULT 0);
 
         CREATE TABLE MDSHOWindowClones (
           ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
@@ -90,6 +91,7 @@ namespace MDSHO.Data {
           State INTEGER NOT NULL DEFAULT 0,
           IsOpen INTEGER NOT NULL DEFAULT 0,
           IsTopmost INTEGER NOT NULL DEFAULT 0,
+          IsWrapText INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(ShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE);
       ";
 
@@ -227,6 +229,14 @@ namespace MDSHO.Data {
         }
         if (!ColumnExists(conn, "Shortcuts", "NoteTextColor")) {
           Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN NoteTextColor TEXT NOT NULL DEFAULT '';");
+        }
+      }),
+      new DbMigration(11, "Wrap text: NoteWindows.IsWrapText and MDSHOWindows.CommentWrapText", conn => {
+        if (!ColumnExists(conn, "NoteWindows", "IsWrapText")) {
+          Execute(conn, "ALTER TABLE NoteWindows ADD COLUMN IsWrapText INTEGER NOT NULL DEFAULT 0;");
+        }
+        if (!ColumnExists(conn, "MDSHOWindows", "CommentWrapText")) {
+          Execute(conn, "ALTER TABLE MDSHOWindows ADD COLUMN CommentWrapText INTEGER NOT NULL DEFAULT 0;");
         }
       })
     };

@@ -4,7 +4,7 @@ using Xunit;
 
 namespace MDSHO.Tests {
 
-  /// <summary>The glyphs added in MDSHOFont v1.15 (comment, note, the two thumbtacks of the note window's pin) and v1.16 (ok).</summary>
+  /// <summary>The glyphs added in MDSHOFont v1.15 (comment, note, the two thumbtacks of the note window's pin) v1.16 (ok) and v1.17 (wrap text).</summary>
   public class NewGlyphsTests {
 
     [Fact]
@@ -37,7 +37,14 @@ namespace MDSHO.Tests {
       Assert.Equal("\uE955", new IconGlyphs(false).Ok);
     }
 
+    [Fact]
+    public void Wrap_text_is_e956_solid_and_e957_outline() {
+      Assert.Equal("\uE956", new IconGlyphs(true).WrapText);
+      Assert.Equal("\uE957", new IconGlyphs(false).WrapText);
+    }
+
     [Theory]
+    [InlineData(nameof(IconGlyphs.WrapText))]
     [InlineData(nameof(IconGlyphs.Ok))]
     [InlineData(nameof(IconGlyphs.Comment))]
     [InlineData(nameof(IconGlyphs.Note))]

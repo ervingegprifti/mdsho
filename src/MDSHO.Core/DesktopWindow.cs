@@ -38,6 +38,8 @@ namespace MDSHO.Core {
     public bool SolidIcons { get; set; }
     /// <summary>True when one click opens a shortcut, false when it takes a double click.</summary>
     public bool SingleClickToOpen { get; set; }
+    /// <summary>True when the Comment windows opened from this window wrap their text (off for new windows).</summary>
+    public bool CommentWrapText { get; set; }
     /// <summary>
     /// Children RootShortcuts.
     /// </summary>

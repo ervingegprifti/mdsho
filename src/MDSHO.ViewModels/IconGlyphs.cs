@@ -11,7 +11,7 @@ namespace MDSHO.ViewModels {
       nameof(DockRight), nameof(Shortcuts), nameof(Shortcut), nameof(Plus), nameof(Delete), nameof(Cut), nameof(Copy),
       nameof(Paste), nameof(Send), nameof(Database), nameof(Command), nameof(Bookmark), nameof(Share), nameof(Star),
       nameof(Folder), nameof(Globe), nameof(Warning), nameof(Run), nameof(Wizard), nameof(Info), nameof(Desktop), nameof(Brush),
-      nameof(Comment), nameof(Note), nameof(PinOff), nameof(PinOn), nameof(Ok))]
+      nameof(Comment), nameof(Note), nameof(PinOff), nameof(PinOn), nameof(Ok), nameof(WrapText))]
     private bool solidIcons;
 
     /// <summary>Icon font character of the MDSHO logo.</summary>
@@ -79,6 +79,9 @@ namespace MDSHO.ViewModels {
 
     /// <summary>The ok icon: OK in the Comment window's title bar (added in font v1.16).</summary>
     public string Ok { get { return this.SolidIcons ? UnicodeText.FromHex("e954") : UnicodeText.FromHex("e955"); } }
+
+    /// <summary>The wrap text icon: wrap text on or off in the Note and Comment windows (added in font v1.17).</summary>
+    public string WrapText { get { return this.SolidIcons ? UnicodeText.FromHex("e956") : UnicodeText.FromHex("e957"); } }
 
     /// <summary>The brush icon (the colours button of a Note window and the Note colours window).</summary>
     public string Brush { get { return this.SolidIcons ? UnicodeText.FromHex("e932") : UnicodeText.FromHex("e933"); } }

@@ -35,6 +35,9 @@ namespace MDSHO.ViewModels {
     /// <summary>True when one click opens a shortcut.</summary>
     [ObservableProperty]
     private bool singleClickToOpen;
+    /// <summary>True when the Comment windows opened from this window (and its clones) wrap their text.</summary>
+    [ObservableProperty]
+    private bool commentWrapText;
 
     #region PROPERTIES
     /// <summary>The application view model this belongs to.</summary>

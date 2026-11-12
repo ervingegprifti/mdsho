@@ -1,4 +1,4 @@
-﻿# Changelog
+# Changelog
 
 All notable changes to MDSHO are documented in this file.
 
@@ -40,11 +40,15 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - **Default colours** in a panel's Settings window: puts the five colours back to those of a new window (black border,
   see-through black background, white text). Icons appearance and Single click to open stay as they are; Apply saves
   the colours, and closing without Apply puts the old ones back.
+- **Wrap text** in the Note and Comment windows: a button in the title bar (right of the colours brush in the Note
+  window, left of OK in the Comment window) wraps long lines at the window's edge instead of scrolling sideways. It is
+  shaded while on and off at first. Each note remembers it with its window; the Comment windows opened from a panel
+  share it, and it is kept with the panel (exported and imported with it).
 
 ### Changed
 
 - The Run command window has no maximise button any more: double-click its title bar to maximise or restore it.
-- The icon font is now MDSHOFont 1.16, with new comment, note, thumbtack and ok icons and a redrawn globe (web links).
+- The icon font is now MDSHOFont 1.17, with new comment, note, thumbtack, ok and wrap text icons and a redrawn globe (web links).
 - The Comment window has no bottom bar any more: Save, Cancel and the hint line gave way to OK in the title bar.
 - Notes save themselves: the Note window has no Save button any more. The text is saved half a second after you stop
   typing and when the window closes, so closing a note (X or Esc) no longer throws away what you typed.

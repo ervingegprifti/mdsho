@@ -68,6 +68,131 @@ namespace MDSHO.Tests {
       return DataStore.Shortcuts.GetAll().Single(s => s.ID == id);
     }
 
+
+    // ---- Wrap text ----
+
+    private static void Click(Button button) {
+      button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
+      WpfAppHost.Pump();
+    }
+
+    private static void AssertWraps(TextEditWindow window, bool wraps) {
+      TextBox editor = Named<TextBox>(window, "TextComment");
+      Button wrap = Named<Button>(window, "ButtonWrap");
+      Assert.Equal(wraps ? TextWrapping.Wrap : TextWrapping.NoWrap, editor.TextWrapping);
+      Assert.Equal(wraps ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto, editor.HorizontalScrollBarVisibility);
+      string tip = wraps ? "Stop wrapping text" : "Wrap text";
+      Assert.Equal(tip, wrap.ToolTip);
+      Assert.Equal(tip, System.Windows.Automation.AutomationProperties.GetName(wrap));
+      // Shaded while on, like the pin.
+      Assert.Equal(wraps, wrap.ReadLocalValue(Control.BackgroundProperty) != DependencyProperty.UnsetValue);
+    }
+
+    [Fact]
+    public void The_note_window_has_wrap_text_just_right_of_the_brush() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        TextEditWindow window = TextEditWindow.ForNote(note);
+        Shown(window, () => {
+          window.UpdateLayout();
+          Button wrap = Named<Button>(window, "ButtonWrap");
+          Assert.Equal(Visibility.Visible, wrap.Visibility);
+          Assert.Equal(note.OwningWindow.Appearance.Icons.WrapText, wrap.Content);
+          FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
+          Rect rColors = BoundsIn(Named<Button>(window, "ButtonColors"), bar), rWrap = BoundsIn(wrap, bar), rPin = BoundsIn(Named<Button>(window, "ButtonPin"), bar);
+          Assert.Equal(rColors.Right, rWrap.Left, 1);
+          Assert.Equal(rWrap.Right, rPin.Left, 1);
+          AssertWraps(window, false);
+        });
+      });
+    }
+
+    [Fact]
+    public void The_comment_window_has_wrap_text_just_left_of_ok() {
+      WithGroup(f => {
+        TextEditWindow window = TextEditWindow.ForComment(f.Group);
+        Shown(window, () => {
+          window.UpdateLayout();
+          Button wrap = Named<Button>(window, "ButtonWrap");
+          Assert.Equal(Visibility.Visible, wrap.Visibility);
+          Assert.Equal(f.Win.Appearance.Icons.WrapText, wrap.Content);
+          FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
+          Assert.Equal(BoundsIn(Named<Button>(window, "ButtonOk"), bar).Left, BoundsIn(wrap, bar).Right, 1);
+          AssertWraps(window, false);
+        });
+      });
+    }
+
+    [Fact]
+    public void The_wrap_text_icon_follows_the_solid_icons_setting_while_open() {
+      WithGroup(f => {
+        IconGlyphs icons = f.Win.Appearance.Icons;
+        bool solid = icons.SolidIcons;
+        TextEditWindow window = TextEditWindow.ForComment(f.Group);
+        try {
+          Shown(window, () => {
+            icons.SolidIcons = !solid;
+            WpfAppHost.Pump();
+            Assert.Equal(icons.WrapText, Named<Button>(window, "ButtonWrap").Content);
+          });
+        } finally {
+          icons.SolidIcons = solid;
+        }
+      });
+    }
+
+    [Fact]
+    public void Wrap_text_in_a_comment_is_saved_with_its_panel_and_is_not_a_change_to_the_comment() {
+      WithGroup(f => {
+        f.Group.Comment = "old";
+        TextEditWindow window = TextEditWindow.ForComment(f.Group);
+        Shown(window, () => {
+          Button wrap = Named<Button>(window, "ButtonWrap");
+          Click(wrap);
+          AssertWraps(window, true);
+          Assert.True(f.Win.Appearance.CommentWrapText);
+          Assert.True(DataStore.Windows.Get(f.Win.ID).CommentWrapText);
+          Assert.False(Named<Button>(window, "ButtonOk").IsEnabled);
+          Click(wrap);
+          AssertWraps(window, false);
+          Assert.False(f.Win.Appearance.CommentWrapText);
+          Assert.False(DataStore.Windows.Get(f.Win.ID).CommentWrapText);
+        });
+        Assert.Equal("old", f.Group.Comment);
+      });
+    }
+
+    [Fact]
+    public void A_comment_opens_wrapped_when_its_panel_wraps_comments() {
+      WithGroup(f => {
+        f.Win.Appearance.CommentWrapText = true;
+        TextEditWindow window = TextEditWindow.ForComment(f.Group);
+        Shown(window, () => AssertWraps(window, true));
+      });
+    }
+
+    [Fact]
+    public void Wrapping_a_note_does_not_change_how_the_panel_wraps_comments() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        TextEditWindow window = TextEditWindow.ForNote(note);
+        Shown(window, () => {
+          Click(Named<Button>(window, "ButtonWrap"));
+          AssertWraps(window, true);
+          Assert.False(f.Win.Appearance.CommentWrapText);
+        });
+      });
+    }
+
+    [Fact]
+    public void A_panel_loads_its_comment_wrap_text_from_the_database() {
+      WithGroup(f => {
+        DataStore.Windows.UpdateCommentWrapText(f.Win.ID, true);
+        DesktopWindowViewModel loaded = ViewModelFactory.WindowToViewModel(f.App, DataStore.Windows.Get(f.Win.ID));
+        Assert.True(loaded.Appearance.CommentWrapText);
+      });
+    }
+
     // ---- Creating ----
 
     [Fact]

@@ -187,6 +187,36 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
+    public void A_new_note_does_not_wrap_and_wrap_text_is_saved_with_its_window() {
+      WithNote(f => {
+        TextEditWindow window = Open(f.Note);
+        TextBox editor = (TextBox)window.FindName("TextComment");
+        Assert.Equal(TextWrapping.NoWrap, editor.TextWrapping);
+        Button wrap = (Button)window.FindName("ButtonWrap");
+        wrap.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, wrap));
+        WpfAppHost.Pump();
+        Assert.Equal(TextWrapping.Wrap, editor.TextWrapping);
+        Assert.True(DataStore.NoteWindows.Get(f.Note.ID).IsWrapText);
+        wrap.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, wrap));
+        WpfAppHost.Pump();
+        Assert.Equal(TextWrapping.NoWrap, editor.TextWrapping);
+        Assert.False(DataStore.NoteWindows.Get(f.Note.ID).IsWrapText);
+      });
+    }
+
+    [Fact]
+    public void A_wrapped_note_opens_wrapped_and_stays_wrapped_after_closing() {
+      WithNote(f => {
+        DataStore.NoteWindows.Save(new NoteWindowPlace(f.Note.ID, -9200, -9100, 720, 610, NoteWindowPlace.Normal, isOpen: true) { IsWrapText = true });
+        TextEditWindow window = Open(f.Note);
+        Assert.Equal(TextWrapping.Wrap, ((TextBox)window.FindName("TextComment")).TextWrapping);
+        window.Close();
+        WpfAppHost.Pump();
+        Assert.True(DataStore.NoteWindows.Get(f.Note.ID).IsWrapText);
+      });
+    }
+
+    [Fact]
     public void At_exit_unsaved_typing_is_saved_and_open_notes_stay_open() {
       WithNote(f => {
         f.Note.NoteText = "saved before";

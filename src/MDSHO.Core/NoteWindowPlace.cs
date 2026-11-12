@@ -29,6 +29,8 @@ namespace MDSHO.Core {
     public bool IsOpen { get; set; }
     /// <summary>True when the window is pinned to stay on top of other apps (off for new notes).</summary>
     public bool IsTopmost { get; set; }
+    /// <summary>True when the note's text wraps at the window's edge (off for new notes).</summary>
+    public bool IsWrapText { get; set; }
 
     /// <summary>Parameterless constructor for the data layer (row mapping).</summary>
     public NoteWindowPlace() { }

@@ -2,7 +2,7 @@
 
 ### Used in MDSHO application.
 
-Version: **1.16**
+Version: **1.17**
 
 | Icon | Name | Code | Icon | Name | Code |
 | :---: | :--- | :--- | :---: | :--- | :--- |
@@ -49,5 +49,6 @@ Version: **1.16**
 | ![](Icons/png/thumbtackleft_s.png) | thumbtackleft_s | \&#xe950; | ![](Icons/png/thumbtackleft_o.png) | thumbtackleft_o | \&#xe951; |
 | ![](Icons/png/thumbtackdown_s.png) | thumbtackdown_s | \&#xe952; | ![](Icons/png/thumbtackdown_o.png) | thumbtackdown_o | \&#xe953; |
 | ![](Icons/png/ok_s.png) | ok_s | \&#xe954; | ![](Icons/png/ok_o.png) | ok_o | \&#xe955; |
+| ![](Icons/png/wraptext_s.png) | wraptext_s | \&#xe956; | ![](Icons/png/wraptext_o.png) | wraptext_o | \&#xe957; |
 
 MDSHO Font was created using the free version of <b>[IcoMoon](https://icomoon.io)</b> generator.

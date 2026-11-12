@@ -64,12 +64,13 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!--Title bar: icon and the button's name, then for a note colours and pin (keep on top), for a comment OK, then close.
+        <!--Title bar: icon and the button's name, then for a note colours, wrap text and pin (keep on top), for a comment wrap text and OK, then close.
             A note saves itself while you type, so it has no OK. The pin is a thumbtack pointing left, or down while the note is on top.-->
         <Border x:Name="TitleBar" Grid.Row="0" Background="#FFDFDACB">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -81,11 +82,12 @@
                 </StackPanel>
                 <Button x:Name="ButtonColors" Grid.Column="1" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Note colours" AutomationProperties.Name="Note colours" Visibility="Collapsed"/>
-                <Button x:Name="ButtonPin" Grid.Column="2" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
+                <Button x:Name="ButtonWrap" Grid.Column="2" Style="{StaticResource StyleTitleBarButton}" FontSize="14" ToolTip="Wrap text" AutomationProperties.Name="Wrap text"/>
+                <Button x:Name="ButtonPin" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Keep on top" AutomationProperties.Name="Keep on top" Visibility="Collapsed"/>
-                <Button x:Name="ButtonOk" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
+                <Button x:Name="ButtonOk" Grid.Column="4" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Save (Ctrl+Enter)" AutomationProperties.Name="Save" Visibility="Collapsed"/>
-                <Button x:Name="ButtonClose" Grid.Column="4" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"/>
+                <Button x:Name="ButtonClose" Grid.Column="5" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"/>
             </Grid>
         </Border>
 

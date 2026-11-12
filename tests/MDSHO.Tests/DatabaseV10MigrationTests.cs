@@ -19,7 +19,7 @@ namespace MDSHO.Tests {
     private static readonly string[] ColourColumns = { "NoteBorderColor", "NoteTitleBackgroundColor", "NoteTitleTextColor", "NoteBackgroundColor", "NoteTextColor" };
 
     // The version 9 schema.
-    private const string V9Sql = @"
+    internal const string V9Sql = @"
         CREATE TABLE MDSHOWindows (
           ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, Title TEXT NOT NULL, ScreenDeviceName TEXT NOT NULL,
           Left INTEGER NOT NULL, Top INTEGER NOT NULL, Width INTEGER NOT NULL, Height INTEGER NOT NULL,
@@ -59,16 +59,10 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Version_is_10_and_the_last_migration_is_10() {
-      Assert.Equal(10, AppConstants.DatabaseVersion);
-      Assert.Equal(10, SchemaManager.Migrations.Last().Version);
-    }
-
-    [Fact]
-    public void V9_database_migrates_to_10_adding_empty_note_colours() {
+    public void V9_database_migrates_past_10_adding_empty_note_colours() {
       BuildV9Db();
       DataStore.Upgrade();
-      Assert.Equal(10, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       foreach (string column in ColourColumns) {
         Assert.Equal(1, Columns("Shortcuts", column));
       }
