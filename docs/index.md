@@ -15,6 +15,9 @@ window with your own buttons, and you can have as many panels as you like, on as
 - **Web links:** buttons that open a web address in your browser.
 - **Run commands:** buttons that run a program with arguments, for example a `ping` or a PowerShell line, optionally in a
   working folder or as administrator.
+- **Notes:** buttons that hold a note of their own. The note opens in its own window, which you can keep on top,
+  colour and wrap, and it saves itself as you type. Opening the button again closes it.
+- **Comments:** add a comment to any button or group; it shows in the button's tooltip.
 - **Groups:** fold buttons into groups, and put a value in a group's name to reuse it in the commands inside it.
 - **Clones:** show the same panel on another screen; a change in one shows in all of its clones.
 - **Docking:** dock a panel to the left or right edge of a screen.

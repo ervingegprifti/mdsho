@@ -63,6 +63,13 @@ namespace MDSHO.Tests {
       Assert.False(Directory.Exists(Path.Combine(ThirdPartyNoticesTests.RepoRoot(), "assets", "Font", "MDSHOFont-v1.16")));
     }
 
+    /// <summary>The icon sources README points at a font project folder that exists (the current one).</summary>
+    [Fact]
+    public void The_icons_readme_points_at_the_current_font_folder() {
+      string readme = File.ReadAllText(Path.Combine(ThirdPartyNoticesTests.RepoRoot(), "assets", "Font", "Icons", "README.md"));
+      Assert.Contains(@"..\MDSHOFont-v1.17\selection.json", readme);
+    }
+
     /// <summary>The font README names the version that is embedded.</summary>
     [Fact]
     public void The_font_readme_says_version_1_17() {

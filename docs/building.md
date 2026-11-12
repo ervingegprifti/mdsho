@@ -96,8 +96,8 @@ The certificate also stays in your personal certificate store (**MDSHO sideload 
 
 The version must be the same in two files:
 
-- `Directory.Build.props`: `<Version>1.2.0</Version>` (three parts);
-- `src/MDSHO.Package/Package.appxmanifest`: `Version="1.2.0.0"` in the `Identity` element (four parts, the last one
+- `Directory.Build.props`: `<Version>x.y.z</Version>` (three parts);
+- `src/MDSHO.Package/Package.appxmanifest`: `Version="x.y.z.0"` in the `Identity` element (four parts, the last one
   `0`).
 
 ### 3. Build the package in Visual Studio
