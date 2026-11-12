@@ -43,8 +43,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - Panels have no bottom bar any more: the Settings button (gear) moved to the title bar, just left of Dock left, and
   the button list uses the freed 32 pixels. The unused PRO badge and its trial code are gone.
 - Thin scroll bars in every window, as in Windows 11: a 3 pixel line that widens to 8 pixels when the mouse is over it,
-  with no arrow buttons. They lie over the content instead of taking a column, in the colour of the text (a panel's
-  text colour, a note's text colour).
+  with no arrow buttons. They take a thin 12 pixel strip of their own (instead of 17), so the text never goes under
+  them, and use the colour of the text (a panel's text colour, a note's text colour).
 - The tray menu item **Find Windows** is now called **Find MDSHO lost windows**; it works as before.
 - The Settings window has tighter, even margins: every outer margin of the content and of the Apply bar equals the
   Apply button height, and the window is 537 pixels high (was 560). The Run command window follows the same rule: every

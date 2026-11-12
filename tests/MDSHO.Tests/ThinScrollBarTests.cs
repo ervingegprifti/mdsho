@@ -12,7 +12,7 @@ namespace MDSHO.Tests {
 
   /// <summary>
   /// Thin scroll bars in every MDSHO window (one shared style): a 3 px line that widens to 8 px when the mouse is over it,
-  /// no arrow buttons, floating over the content instead of taking a column, in the colour of the content's text.
+  /// no arrow buttons, in a thin column of their own so the content never goes under them, in the colour of the content's text.
   /// </summary>
   public class ThinScrollBarTests {
 
@@ -128,15 +128,20 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_bars_float_over_the_content_instead_of_taking_a_column_or_a_row() {
+    public void The_content_stops_before_the_bars_in_a_thin_column_and_row_of_their_own() {
       WpfAppHost.Run(() => {
         ScrollViewer viewer = Overflowing(Brushes.Black);
         Window window = Host(viewer);
         try {
           Assert.Equal(Visibility.Visible, viewer.ComputedVerticalScrollBarVisibility);
           Assert.Equal(Visibility.Visible, viewer.ComputedHorizontalScrollBarVisibility);
-          Assert.Equal(viewer.ActualWidth, viewer.ViewportWidth, 1);
-          Assert.Equal(viewer.ActualHeight, viewer.ViewportHeight, 1);
+          // The 8 px bar with 2 px either side: 12 px taken, not the 17 px of a standard bar.
+          Assert.Equal(viewer.ActualWidth - 12, viewer.ViewportWidth, 1);
+          Assert.Equal(viewer.ActualHeight - 12, viewer.ViewportHeight, 1);
+          ScrollBar vertical = Bar(viewer, Orientation.Vertical);
+          ScrollBar horizontal = Bar(viewer, Orientation.Horizontal);
+          Assert.True(vertical.TranslatePoint(new Point(0, 0), viewer).X >= viewer.ViewportWidth);
+          Assert.True(horizontal.TranslatePoint(new Point(0, 0), viewer).Y >= viewer.ViewportHeight);
         } finally {
           window.Close();
         }
