@@ -331,6 +331,11 @@ namespace MDSHO.ViewModels {
     public static Action<ShortcutViewModel> OpenCommentEditor { get; set; }
     /// <summary>Opens the Note window for a note button (set by the app; tests replace it).</summary>
     public static Action<ShortcutViewModel> OpenNoteEditor { get; set; }
+    /// <summary>
+    /// Opens the Note window for a note button, or closes it when it is open: triggering the button (click or double click,
+    /// or Enter) shows and hides its note. Set by the app; when null, <see cref="OpenNoteEditor"/> is used.
+    /// </summary>
+    public static Action<ShortcutViewModel> ToggleNoteEditor { get; set; }
     /// <summary>The Windows error code when the user answers No to the administrator (UAC) prompt.</summary>
     public const int ErrorCancelled = 1223;
     /// <summary>
@@ -761,8 +766,8 @@ namespace MDSHO.ViewModels {
         return;
       }
       if (this.isNote) {
-        // A note runs nothing: opening it shows the note.
-        OpenNoteEditor?.Invoke(this);
+        // A note runs nothing: triggering it shows the note, or hides it when it is open.
+        (ToggleNoteEditor ?? OpenNoteEditor)?.Invoke(this);
         return;
       }
       // The target may have been deleted or restored since the icon was drawn.

@@ -193,6 +193,77 @@ namespace MDSHO.Tests {
       });
     }
 
+
+    // ---- Toggling from the button ----
+
+    [Fact]
+    public void Triggering_a_note_button_toggles_its_note_window() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        f.NotesOpened.Clear();
+        List<ShortcutViewModel> toggled = new List<ShortcutViewModel>();
+        Action<ShortcutViewModel> old = ShortcutViewModel.ToggleNoteEditor;
+        ShortcutViewModel.ToggleNoteEditor = s => toggled.Add(s);
+        try {
+          note.Click(true);
+          note.DoubleClick(false);
+          note.RunShortcut(false);
+          Assert.Equal(new[] { note, note, note }, toggled);
+          Assert.Empty(f.NotesOpened);
+          // Edit note... from the menu always opens it (or brings it to the front).
+          note.EditNoteCommand.Execute(null);
+          Assert.Equal(new[] { note }, f.NotesOpened);
+          Assert.Equal(3, toggled.Count);
+        } finally {
+          ShortcutViewModel.ToggleNoteEditor = old;
+        }
+      });
+    }
+
+    // ---- Double and triple click in the editor ----
+
+    private static void ClickEditor(TextEditWindow window, int clicks, out bool handled) {
+      TextBox editor = Named<TextBox>(window, "TextComment");
+      System.Windows.Input.MouseButtonEventArgs args = new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0, System.Windows.Input.MouseButton.Left) {
+        RoutedEvent = UIElement.PreviewMouseLeftButtonDownEvent
+      };
+      typeof(System.Windows.Input.MouseButtonEventArgs).GetProperty("ClickCount").SetValue(args, clicks);
+      editor.RaiseEvent(args);
+      handled = args.Handled;
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Double_click_selects_the_word_and_triple_click_the_paragraph(bool isNote) {
+      WithGroup(f => {
+        ShortcutViewModel button = isNote ? NewNoteInGroup(f) : f.Group;
+        TextEditWindow window = isNote ? TextEditWindow.ForNote(button) : TextEditWindow.ForComment(button);
+        Func<TextBox, System.Windows.Input.MouseButtonEventArgs, int> old = TextEditWindow.CharacterIndexAt;
+        TextEditWindow.CharacterIndexAt = (box, e) => 9;
+        try {
+          Shown(window, () => {
+            TextBox editor = Named<TextBox>(window, "TextComment");
+            editor.Text = "Restart the server now.\r\nThen check the dashboard.";
+            editor.Select(0, 0);
+            ClickEditor(window, 2, out bool handled);
+            Assert.True(handled);
+            Assert.Equal("the", editor.SelectedText);
+            ClickEditor(window, 3, out handled);
+            Assert.True(handled);
+            Assert.Equal("Restart the server now.", editor.SelectedText);
+            // A single click is left to the text box.
+            editor.Select(0, 0);
+            ClickEditor(window, 1, out handled);
+            Assert.False(handled);
+            Assert.Equal("", editor.SelectedText);
+          });
+        } finally {
+          TextEditWindow.CharacterIndexAt = old;
+        }
+      });
+    }
+
     // ---- Creating ----
 
     [Fact]

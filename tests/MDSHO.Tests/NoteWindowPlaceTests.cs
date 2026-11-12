@@ -216,6 +216,47 @@ namespace MDSHO.Tests {
       });
     }
 
+    private static TextEditWindow Toggle(ShortcutViewModel note) {
+      TextEditWindow.ToggleNoteFor(note);
+      WpfAppHost.Pump();
+      return TextEditWindow.OpenNoteWindows.SingleOrDefault(w => w.Shortcut == note);
+    }
+
+    [Fact]
+    public void Toggling_a_closed_note_opens_it_and_toggling_again_closes_it_keeping_the_typing() {
+      WithNote(f => {
+        TextEditWindow window = Toggle(f.Note);
+        Assert.NotNull(window);
+        Assert.True(window.IsVisible);
+        ((TextBox)window.FindName("TextComment")).Text = "typed just now";
+        Assert.Null(Toggle(f.Note));
+        Assert.False(window.IsVisible);
+        Assert.Equal("typed just now", f.Note.NoteText);
+        Assert.False(DataStore.NoteWindows.Get(f.Note.ID).IsOpen);
+        Assert.NotNull(Toggle(f.Note));
+      });
+    }
+
+    [Fact]
+    public void Toggling_a_minimized_note_brings_it_back_instead_of_closing_it() {
+      WithNote(f => {
+        TextEditWindow window = Toggle(f.Note);
+        window.WindowState = WindowState.Minimized;
+        WpfAppHost.Pump();
+        Assert.Same(window, Toggle(f.Note));
+        Assert.Equal(WindowState.Normal, window.WindowState);
+      });
+    }
+
+    [Fact]
+    public void Edit_note_on_an_open_note_keeps_it_open() {
+      WithNote(f => {
+        TextEditWindow window = Open(f.Note);
+        Assert.Same(window, Open(f.Note));
+        Assert.True(window.IsVisible);
+      });
+    }
+
     [Fact]
     public void At_exit_unsaved_typing_is_saved_and_open_notes_stay_open() {
       WithNote(f => {

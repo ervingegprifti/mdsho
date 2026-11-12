@@ -44,6 +44,11 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   window, left of OK in the Comment window) wraps long lines at the window's edge instead of scrolling sideways. It is
   shaded while on and off at first. Each note remembers it with its window; the Comment windows opened from a panel
   share it, and it is kept with the panel (exported and imported with it).
+- **Note buttons show and hide their note**: opening a note button again (click or double click, as the panel is set,
+  or Enter) closes its Note window, saving the text. A minimized Note window is brought back instead. **Edit note...**
+  always opens it.
+- **Double and triple click** in the Note and Comment windows: a double click selects the word without the space after
+  it, a triple click selects the whole paragraph (without its line break).
 
 ### Changed
 

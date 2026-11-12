@@ -96,6 +96,7 @@ namespace MDSHO {
         }
       };
       this.PreviewKeyDown += Window_PreviewKeyDown;
+      this.TextComment.PreviewMouseLeftButtonDown += TextComment_PreviewMouseLeftButtonDown;
       this.Loaded += (s, e) => {
         this.TextComment.Focus();
         this.TextComment.CaretIndex = this.TextComment.Text.Length;
@@ -143,9 +144,35 @@ namespace MDSHO {
     /// Opens the note window without blocking, so several notes can be open side by side while MDSHO stays usable. A note
     /// that is already open is brought to the front instead of opening a second window that could overwrite it.
     /// </summary>
+    /// <summary>The character under the mouse in the editor, or -1. Tests replace it.</summary>
+    public static Func<System.Windows.Controls.TextBox, MouseButtonEventArgs, int> CharacterIndexAt =
+      (box, e) => box.GetCharacterIndexFromPoint(e.GetPosition(box), true);
+
+    /// <summary>
+    /// Triggering a note button: opens its note window, or closes it when it is open (closing saves the text). A minimized
+    /// note window is brought back instead, since it can't be seen.
+    /// </summary>
+    public static void ToggleNoteFor(ShortcutViewModel shortcut) {
+      try {
+        TextEditWindow open = FindOpenNoteWindow(shortcut);
+        if (open != null && open.WindowState != WindowState.Minimized) {
+          open.Close();
+          return;
+        }
+      } catch (Exception ex) {
+        ErrorDialog.ShowDialog(ex);
+        return;
+      }
+      ShowNoteFor(shortcut);
+    }
+
+    private static TextEditWindow FindOpenNoteWindow(ShortcutViewModel shortcut) {
+      return openNoteWindows.Find(w => ReferenceEquals(w.shortcut, shortcut) || (shortcut != null && w.shortcut.ID == shortcut.ID && shortcut.ID != 0));
+    }
+
     public static void ShowNoteFor(ShortcutViewModel shortcut) {
       try {
-        TextEditWindow open = openNoteWindows.Find(w => ReferenceEquals(w.shortcut, shortcut) || (shortcut != null && w.shortcut.ID == shortcut.ID && shortcut.ID != 0));
+        TextEditWindow open = FindOpenNoteWindow(shortcut);
         if (open != null) {
           if (open.WindowState == WindowState.Minimized) {
             open.WindowState = WindowState.Normal;
@@ -450,6 +477,22 @@ namespace MDSHO {
       } else {
         this.ButtonWrap.ClearValue(BackgroundProperty);
       }
+    }
+
+    // A double click selects the word without the space after it, a triple click the whole paragraph.
+    private void TextComment_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+      if (e.ClickCount != 2 && e.ClickCount != 3) {
+        return;
+      }
+      int index = CharacterIndexAt(this.TextComment, e);
+      if (index < 0) {
+        return;
+      }
+      string text = this.TextComment.Text ?? "";
+      (int start, int length) = e.ClickCount == 2 ? TextClickSelection.WordAt(text, index) : TextClickSelection.ParagraphAt(text, index);
+      this.TextComment.Focus();
+      this.TextComment.Select(start, length);
+      e.Handled = true;
     }
 
     private string TextToSave() {
