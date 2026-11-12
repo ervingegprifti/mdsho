@@ -1,10 +1,10 @@
 @font-face {
   font-family: 'MDSHOFont';
-  src:  url('fonts/MDSHOFont.eot?b6b6nf');
-  src:  url('fonts/MDSHOFont.eot?b6b6nf#iefix') format('embedded-opentype'),
-    url('fonts/MDSHOFont.ttf?b6b6nf') format('truetype'),
-    url('fonts/MDSHOFont.woff?b6b6nf') format('woff'),
-    url('fonts/MDSHOFont.svg?b6b6nf#MDSHOFont') format('svg');
+  src:  url('fonts/MDSHOFont.eot?v349');
+  src:  url('fonts/MDSHOFont.eot?v349#iefix') format('embedded-opentype'),
+    url('fonts/MDSHOFont.ttf?v349') format('truetype'),
+    url('fonts/MDSHOFont.woff?v349') format('woff'),
+    url('fonts/MDSHOFont.svg?v349#MDSHOFont') format('svg');
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -252,4 +252,34 @@ i {
 }
 .mdshofont_wizard_o:before {
   content: "\e94b";
+}
+.mdshofont_comment_s:before {
+  content: "\e94c";
+}
+.mdshofont_comment_o:before {
+  content: "\e94d";
+}
+.mdshofont_note_s:before {
+  content: "\e94e";
+}
+.mdshofont_note_o:before {
+  content: "\e94f";
+}
+.mdshofont_thumbtackleft_s:before {
+  content: "\e950";
+}
+.mdshofont_thumbtackleft_o:before {
+  content: "\e951";
+}
+.mdshofont_thumbtackdown_s:before {
+  content: "\e952";
+}
+.mdshofont_thumbtackdown_o:before {
+  content: "\e953";
+}
+.mdshofont_ok_s:before {
+  content: "\e954";
+}
+.mdshofont_ok_o:before {
+  content: "\e955";
 }

@@ -2,10 +2,10 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Comment"
-        Width="520"
-        Height="400"
-        MinWidth="380"
-        MinHeight="300"
+        Width="300"
+        Height="150"
+        MinWidth="300"
+        MinHeight="150"
         WindowStyle="None"
         ResizeMode="CanResize"
         Topmost="True"
@@ -44,13 +44,15 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="Background" Value="#33000000" />
                             </Trigger>
+                            <!--OK with no change to save is greyed out (faded, so it keeps the title text colour)-->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-        </Style>
-        <Style x:Key="StyleSecondaryButton" TargetType="{x:Type Button}" BasedOn="{StaticResource StyleDarkButton}">
-            <Setter Property="Background" Value="#FFA09A88"/>
         </Style>
     </Window.Resources>
 
@@ -60,16 +62,15 @@
             <RowDefinition Height="Auto"/>
             <!--Body-->
             <RowDefinition Height="*"/>
-            <!--Footer-->
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!--Title bar: icon, "Comment: <button name>" or "Note: <title>", then for a note only colours and pin (keep on top), then close.
-            A note saves itself while you type, so it has no Save button. Pin uses the Windows icon font until MDSHOFont has its own glyph.-->
+        <!--Title bar: icon and the button's name, then for a note colours and pin (keep on top), for a comment OK, then close.
+            A note saves itself while you type, so it has no OK. The pin is a thumbtack pointing left, or down while the note is on top.-->
         <Border x:Name="TitleBar" Grid.Row="0" Background="#FFDFDACB">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -80,45 +81,25 @@
                 </StackPanel>
                 <Button x:Name="ButtonColors" Grid.Column="1" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Note colours" AutomationProperties.Name="Note colours" Visibility="Collapsed"/>
-                <Button x:Name="ButtonPin" Grid.Column="2" Style="{StaticResource StyleTitleBarButton}" FontFamily="Segoe MDL2 Assets" FontSize="14"
-                        Content="&#xE718;" ToolTip="Keep on top" AutomationProperties.Name="Keep on top" Visibility="Collapsed"/>
-                <Button x:Name="ButtonClose" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"/>
+                <Button x:Name="ButtonPin" Grid.Column="2" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
+                        ToolTip="Keep on top" AutomationProperties.Name="Keep on top" Visibility="Collapsed"/>
+                <Button x:Name="ButtonOk" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
+                        ToolTip="Save (Ctrl+Enter)" AutomationProperties.Name="Save" Visibility="Collapsed"/>
+                <Button x:Name="ButtonClose" Grid.Column="4" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"/>
             </Grid>
         </Border>
 
-        <!--Body: the text (a comment has margins around a framed box; a note fills the body, see TextEditWindow.UseNoteLayout)-->
+        <!--Body: the text fills it (window colour, no border, 10 px padding, no word wrap, each scroll bar only when needed)-->
         <Grid x:Name="Body" Grid.Row="1" Background="#FFF4F3ED">
-            <Grid x:Name="BodyContent" Margin="40,24,40,20">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <TextBox x:Name="TextComment" Grid.Row="0"
-                         AcceptsReturn="True"
-                         AcceptsTab="False"
-                         TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto"
-                         Padding="4,3"
-                         AutomationProperties.Name="Comment"/>
-                <TextBlock x:Name="TextHint" Grid.Row="1" Margin="0,8,0,0" Foreground="#FF666666"
-                           Text="Ctrl+Enter saves. Esc closes without saving."/>
-            </Grid>
+            <TextBox x:Name="TextComment"
+                     AcceptsReturn="True"
+                     AcceptsTab="False"
+                     TextWrapping="NoWrap"
+                     BorderThickness="0"
+                     Padding="10"
+                     HorizontalScrollBarVisibility="Auto"
+                     VerticalScrollBarVisibility="Auto"
+                     AutomationProperties.Name="Comment"/>
         </Grid>
-
-        <!--Footer: the note hint on the left (notes only), Save and Cancel on the right-->
-        <Border x:Name="Footer" Grid.Row="2" Background="#FFDFDACB">
-            <Grid x:Name="FooterContent" Margin="40,30">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock x:Name="TextFooterHint" Grid.Column="0" VerticalAlignment="Center" Foreground="#FF555555" Visibility="Collapsed"
-                           TextTrimming="CharacterEllipsis" Text="Ctrl+Enter saves. Esc closes without saving."/>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="ButtonSave" Style="{StaticResource StyleDarkButton}" Content="Save" Margin="0,0,8,0"/>
-                <Button x:Name="ButtonCancel" Style="{StaticResource StyleSecondaryButton}" Content="Cancel" IsCancel="True"/>
-            </StackPanel>
-            </Grid>
-        </Border>
     </Grid>
 </Window>

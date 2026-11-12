@@ -125,6 +125,58 @@ namespace MDSHO.Helpers {
       dialog.Closed += (s, e) => opening = false;
     }
 
+    /// <summary>The physical-pixel rect of an element on screen; empty when it is not shown. Tests replace it.</summary>
+    public static Func<FrameworkElement, Rect> PhysicalBoundsOfElement = GetElementPhysicalBounds;
+
+    /// <summary>
+    /// Makes <paramref name="owner"/> the dialog's owner and places the dialog beside the owner, <paramref name="gapDip"/> away
+    /// (right when there is room, otherwise left), with the dialog's title middle (<paramref name="titleMiddleDip"/> below its
+    /// top) level with <paramref name="button"/>, inside the work area. With no room on either side it is centred on the
+    /// owner's screen. The owner must have been shown.
+    /// </summary>
+    public static void BesideButton(Window dialog, Window owner, FrameworkElement button, double gapDip, double titleMiddleDip) {
+      dialog.Owner = owner;
+      dialog.WindowStartupLocation = WindowStartupLocation.Manual;
+      if (owner.WindowState == WindowState.Normal) {
+        dialog.Left = owner.Left + owner.ActualWidth + gapDip;
+        dialog.Top = owner.Top;
+      }
+      bool opening = true;
+      EventHandler placeOnHandle = null;
+      placeOnHandle = (s, e) => {
+        dialog.SourceInitialized -= placeOnHandle;
+        PlaceBesideButtonPhysical(dialog, owner, button, gapDip, titleMiddleDip);
+        // Moving onto another monitor may resize it: place it again for the size Windows gave it there.
+        PlaceBesideButtonPhysical(dialog, owner, button, gapDip, titleMiddleDip);
+      };
+      dialog.SourceInitialized += placeOnHandle;
+      dialog.DpiChanged += (s, e) => {
+        if (opening) {
+          dialog.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() => PlaceBesideButtonPhysical(dialog, owner, button, gapDip, titleMiddleDip)));
+        }
+      };
+      dialog.ContentRendered += (s, e) => opening = false;
+      dialog.Closed += (s, e) => opening = false;
+    }
+
+    // Moves the dialog's handle beside the owner, level with the button, or to the middle of the screen when it fits on neither side.
+    private static void PlaceBesideButtonPhysical(Window dialog, Window owner, FrameworkElement button, double gapDip, double titleMiddleDip) {
+      Rect ownerBounds = PhysicalBoundsOf(owner);
+      Rect bounds = PhysicalBoundsOf(dialog);
+      Rect buttonBounds = PhysicalBoundsOfElement(button);
+      if (ownerBounds.IsEmpty || bounds.IsEmpty || buttonBounds.IsEmpty) {
+        return;
+      }
+      ScreenInfo screen = ScreenOf(owner);
+      ScreenRect ownerRect = new ScreenRect(ownerBounds.X, ownerBounds.Y, ownerBounds.Width, ownerBounds.Height);
+      ScreenPoint? beside = ScreenGeometry.BesideButtonPhysical(ownerRect, buttonBounds.Y + buttonBounds.Height / 2, bounds.Width, bounds.Height,
+        titleMiddleDip * screen.Scale, screen.WorkingArea, gapDip * screen.Scale);
+      Point target = beside.HasValue ? beside.Value.ToPoint() : ScreenGeometry.CenterInWorkAreaPhysical(screen, bounds.Width, bounds.Height).ToPoint();
+      if (target != bounds.TopLeft) {
+        MoveToPhysical(dialog, target);
+      }
+    }
+
     // Moves the dialog's handle beside the owner's handle for its current physical size, if it is not there yet.
     private static void PlaceBesidePhysical(Window dialog, Window owner, double gapDip) {
       Rect ownerBounds = PhysicalBoundsOf(owner);
@@ -194,6 +246,14 @@ namespace MDSHO.Helpers {
         return Rect.Empty;
       }
       return new Rect(r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top);
+    }
+
+    private static Rect GetElementPhysicalBounds(FrameworkElement element) {
+      if (element == null || PresentationSource.FromVisual(element) == null) {
+        return Rect.Empty;
+      }
+      // PointToScreen gives physical pixels.
+      return new Rect(element.PointToScreen(new Point(0, 0)), element.PointToScreen(new Point(element.ActualWidth, element.ActualHeight)));
     }
 
     private static void MovePhysical(Window window, Point topLeft) {

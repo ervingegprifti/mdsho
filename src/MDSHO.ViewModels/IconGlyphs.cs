@@ -10,7 +10,8 @@ namespace MDSHO.ViewModels {
     [NotifyPropertyChangedFor(nameof(MDSHO), nameof(Times), nameof(Rename), nameof(Settings), nameof(Clones), nameof(DockLeft),
       nameof(DockRight), nameof(Shortcuts), nameof(Shortcut), nameof(Plus), nameof(Delete), nameof(Cut), nameof(Copy),
       nameof(Paste), nameof(Send), nameof(Database), nameof(Command), nameof(Bookmark), nameof(Share), nameof(Star),
-      nameof(Folder), nameof(Globe), nameof(Warning), nameof(Run), nameof(Wizard), nameof(Info), nameof(Desktop), nameof(Brush))]
+      nameof(Folder), nameof(Globe), nameof(Warning), nameof(Run), nameof(Wizard), nameof(Info), nameof(Desktop), nameof(Brush),
+      nameof(Comment), nameof(Note), nameof(PinOff), nameof(PinOn), nameof(Ok))]
     private bool solidIcons;
 
     /// <summary>Icon font character of the MDSHO logo.</summary>
@@ -64,6 +65,21 @@ namespace MDSHO.ViewModels {
     /// <summary>Icon font character for Wizard, used for the Examples button of the Run Command window (added in font v1.14).</summary>
     public string Wizard { get { return this.SolidIcons ? UnicodeText.FromHex("e94a") : UnicodeText.FromHex("e94b"); } }
 
+    /// <summary>The comment icon: the comment marker on a button, the Comment window and the Comment... menu item (added in font v1.15).</summary>
+    public string Comment { get { return this.SolidIcons ? UnicodeText.FromHex("e94c") : UnicodeText.FromHex("e94d"); } }
+
+    /// <summary>The note icon: note buttons, the Note window and the Edit note... menu item (added in font v1.15).</summary>
+    public string Note { get { return this.SolidIcons ? UnicodeText.FromHex("e94e") : UnicodeText.FromHex("e94f"); } }
+
+    /// <summary>The pin of a Note window while it is not kept on top: a thumbtack pointing left (added in font v1.15).</summary>
+    public string PinOff { get { return this.SolidIcons ? UnicodeText.FromHex("e950") : UnicodeText.FromHex("e951"); } }
+
+    /// <summary>The pin of a Note window while it is kept on top: a thumbtack pointing down (added in font v1.15).</summary>
+    public string PinOn { get { return this.SolidIcons ? UnicodeText.FromHex("e952") : UnicodeText.FromHex("e953"); } }
+
+    /// <summary>The ok icon: OK in the Comment window's title bar (added in font v1.16).</summary>
+    public string Ok { get { return this.SolidIcons ? UnicodeText.FromHex("e954") : UnicodeText.FromHex("e955"); } }
+
     /// <summary>The brush icon (the colours button of a Note window and the Note colours window).</summary>
     public string Brush { get { return this.SolidIcons ? UnicodeText.FromHex("e932") : UnicodeText.FromHex("e933"); } }
 
@@ -80,6 +96,7 @@ namespace MDSHO.ViewModels {
         case ShortcutTargetKind.WebLink: return this.Globe;
         case ShortcutTargetKind.Missing: return this.Warning;
         case ShortcutTargetKind.Command: return this.Run;
+        case ShortcutTargetKind.Note: return this.Note;
         case ShortcutTargetKind.Group: return this.Shortcuts;
         default: return this.Shortcut;
       }

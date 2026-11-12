@@ -14,7 +14,8 @@ namespace MDSHO {
 
   /// <summary>
   /// Edits the text of one button: its comment (any button or group) or, for a note button, the note itself. A comment is
-  /// saved only by Save (or Ctrl+Enter); Cancel, the X button and Esc close it without saving. A note saves itself shortly
+  /// saved only by OK in the title bar (or Ctrl+Enter), which is greyed out while nothing changed; the X button and Esc
+  /// close it without saving. A note saves itself shortly
   /// after each change and when its window closes, so it has no Save button. A text of only spaces and new lines is saved
   /// as empty.
   /// </summary>
@@ -29,6 +30,7 @@ namespace MDSHO {
 
     private readonly ShortcutViewModel shortcut;
     private readonly TextKind kind;
+    private readonly IconGlyphs icons;
 
     /// <summary>The keyboard modifiers held down; tests replace it, since they can't hold Ctrl.</summary>
     public static Func<ModifierKeys> KeyboardModifiers = () => Keyboard.Modifiers;
@@ -49,6 +51,7 @@ namespace MDSHO {
       Helpers.WindowCorners.UseRoundedCorners(this);
       this.shortcut = shortcut ?? throw new ArgumentNullException(nameof(shortcut));
       this.kind = kind;
+      this.icons = shortcut.OwningWindow?.Appearance?.Icons ?? new IconGlyphs(true);
       // Just the button's name: the icon already says whether it is a note or a comment.
       this.Title = shortcut.Name;
       this.TextTitle.Text = this.Title;
@@ -58,22 +61,26 @@ namespace MDSHO {
         // A note is the main content, so its window is bigger; a comment keeps the smaller size.
         this.Width = 640;
         this.Height = 520;
+        this.MinWidth = 380;
+        this.MinHeight = 300;
       }
-      UseEditorLayout();
+      // The editor has the window's colour (a note then follows its own colours).
+      this.TextComment.Background = this.Background;
       if (kind == TextKind.Note) {
         UseNoteTitleBar();
+      } else {
+        UseCommentTitleBar();
       }
 
-      // The title icon, the close button and the window icon follow the window's solid or outline setting while open.
-      IconGlyphs icons = shortcut.OwningWindow?.Appearance?.Icons ?? new IconGlyphs(true);
+      // The title icon, the title bar buttons and the window icon follow the window's solid or outline setting while open.
+      IconGlyphs icons = this.icons;
       ShowIcons(icons);
       System.ComponentModel.PropertyChangedEventHandler iconsChanged = (s, e) => ShowIcons(icons);
       icons.PropertyChanged += iconsChanged;
       this.Closed += (s, e) => icons.PropertyChanged -= iconsChanged;
 
       this.ButtonClose.Click += (s, e) => Close();
-      this.ButtonCancel.Click += (s, e) => Close();
-      this.ButtonSave.Click += (s, e) => Save();
+      this.ButtonOk.Click += (s, e) => Save();
       this.ButtonPin.Click += (s, e) => {
         SetPinned(!this.Topmost);
         SaveNotePlace();
@@ -106,9 +113,20 @@ namespace MDSHO {
       }
     };
 
-    /// <summary>Opens the comment window as a dialog, centred on the screen of the MDSHO window the button belongs to.</summary>
+    /// <summary>Opens the comment window as a dialog beside the MDSHO window the button belongs to, level with the button (see <see cref="PlaceComment"/>).</summary>
     public static void ShowCommentFor(ShortcutViewModel shortcut) {
-      ShowDialogFor(() => ForComment(shortcut), shortcut);
+      try {
+        TextEditWindow window = ForComment(shortcut);
+        Window owner = RunCommandWindow.FindOwner(shortcut);
+        if (owner != null) {
+          PlaceComment(window, owner);
+        } else {
+          window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        }
+        window.ShowDialog();
+      } catch (Exception ex) {
+        ErrorDialog.ShowDialog(ex);
+      }
     }
 
     /// <summary>
@@ -274,19 +292,38 @@ namespace MDSHO {
       }
     }
 
-    private static void ShowDialogFor(Func<TextEditWindow> create, ShortcutViewModel shortcut) {
-      try {
-        TextEditWindow window = create();
-        Window owner = RunCommandWindow.FindOwner(shortcut);
-        if (owner != null) {
-          DialogPlacement.CenterOnScreenOf(window, owner);
-        } else {
-          window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        }
-        window.ShowDialog();
-      } catch (Exception ex) {
-        ErrorDialog.ShowDialog(ex);
+    /// <summary>The gap between the Comment window and its panel (DIPs).</summary>
+    public const double CommentGap = 20;
+
+    /// <summary>
+    /// Places the Comment window beside its panel, <see cref="CommentGap"/> away, with its title bar level with the button the
+    /// comment belongs to; centred on the panel's screen when there is no room beside it or the button can't be found.
+    /// </summary>
+    public static void PlaceComment(TextEditWindow window, Window owner) {
+      FrameworkElement button = FindButtonOf(owner, window.shortcut);
+      if (button == null) {
+        DialogPlacement.CenterOnScreenOf(window, owner);
+        return;
       }
+      // The middle of the title bar: below the window's top border, half the caption height down.
+      double caption = System.Windows.Shell.WindowChrome.GetWindowChrome(window)?.CaptionHeight ?? 32;
+      DialogPlacement.BesideButton(window, owner, button, CommentGap, window.BorderThickness.Top + caption / 2);
+    }
+
+    // The shown button of the shortcut in an MDSHO window, or null (for example inside a collapsed group).
+    private static FrameworkElement FindButtonOf(DependencyObject root, ShortcutViewModel shortcut) {
+      int count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+      for (int i = 0; i < count; i++) {
+        DependencyObject child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+        if (child is System.Windows.Controls.Button button && ReferenceEquals(button.DataContext, shortcut) && button.IsVisible) {
+          return button;
+        }
+        FrameworkElement found = FindButtonOf(child, shortcut);
+        if (found != null) {
+          return found;
+        }
+      }
+      return null;
     }
 
     /// <summary>How long after the last change a note saves itself.</summary>
@@ -300,7 +337,6 @@ namespace MDSHO {
     /// window closes (X or Esc), so nothing typed is lost.
     /// </summary>
     private void UseNoteTitleBar() {
-      this.Footer.Visibility = Visibility.Collapsed;
       this.ButtonColors.Visibility = Visibility.Visible;
       this.ButtonColors.Click += (s, e) => ShowNoteColours();
       this.ButtonPin.Visibility = Visibility.Visible;
@@ -336,6 +372,24 @@ namespace MDSHO {
       this.TextComment.SetBinding(System.Windows.Controls.Primitives.TextBoxBase.CaretBrushProperty, Bind(nameof(NoteColors.TextColor)));
     }
 
+    /// <summary>A comment has OK and close in its title bar: OK saves and closes, X and Esc close without saving.</summary>
+    private void UseCommentTitleBar() {
+      this.ButtonOk.Visibility = Visibility.Visible;
+      this.ButtonClose.ToolTip = "Close without saving (Esc)";
+      System.Windows.Automation.AutomationProperties.SetName(this.ButtonClose, "Close without saving");
+      this.TextComment.TextChanged += (s, e) => UpdateOk();
+      UpdateOk();
+    }
+
+    // OK is active only when the text differs from the saved comment (only spaces counts as no comment).
+    private void UpdateOk() {
+      this.ButtonOk.IsEnabled = HasCommentChange();
+    }
+
+    private bool HasCommentChange() {
+      return TextToSave() != (this.shortcut.Comment ?? "");
+    }
+
     /// <summary>Shows the Note colours window modally. Tests replace it so no modal window blocks them.</summary>
     public static Func<Window, bool?> ShowNoteColoursDialog = w => w.ShowDialog();
 
@@ -354,10 +408,13 @@ namespace MDSHO {
       }
     }
 
-    /// <summary>Pins the window on top of other apps, or not; the pin button shows a filled pin while pinned.</summary>
+    /// <summary>Pins the window on top of other apps, or not; the thumbtack points down while pinned and left while not.</summary>
     private void SetPinned(bool pinned) {
       this.Topmost = pinned;
-      this.ButtonPin.Content = pinned ? "\uE841" : "\uE718";
+      this.ButtonPin.Content = pinned ? this.icons.PinOn : this.icons.PinOff;
+      string tip = pinned ? "Stop keeping on top" : "Keep on top";
+      this.ButtonPin.ToolTip = tip;
+      System.Windows.Automation.AutomationProperties.SetName(this.ButtonPin, tip);
       if (pinned) {
         // A shade, so the pinned look works on any title bar colour.
         this.ButtonPin.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0, 0, 0));
@@ -386,41 +443,22 @@ namespace MDSHO {
       }
     }
 
-    /// <summary>
-    /// The look of the Note and Comment windows: the editor fills the body (window colour, no border, 10 px padding, no
-    /// word wrap, each scroll bar only when it is needed), with the hint in the bottom bar on the left. Every outer margin of the bottom bar
-    /// equals the height of the Save button.
-    /// </summary>
-    private void UseEditorLayout() {
-      this.BodyContent.Margin = new Thickness(0);
-      this.TextComment.Background = this.Background;
-      this.TextComment.BorderThickness = new Thickness(0);
-      this.TextComment.Padding = new Thickness(10);
-      this.TextComment.TextWrapping = TextWrapping.NoWrap;
-      this.TextComment.HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto;
-      this.TextComment.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto;
-      this.TextHint.Visibility = Visibility.Collapsed;
-      this.TextFooterHint.Visibility = Visibility.Visible;
-      this.TextFooterHint.Margin = new Thickness(0, 0, 16, 0);
-      this.ButtonSave.SizeChanged += (s, e) => this.FooterContent.Margin = new Thickness(this.ButtonSave.ActualHeight);
-    }
-
     private void ShowIcons(IconGlyphs icons) {
-      string glyph = this.kind == TextKind.Note ? icons.Rename : icons.Info;
+      string glyph = this.kind == TextKind.Note ? icons.Note : icons.Comment;
       this.TextTitleIcon.Text = glyph;
       this.ButtonClose.Content = icons.Times;
       this.ButtonColors.Content = icons.Brush;
+      this.ButtonOk.Content = icons.Ok;
+      this.ButtonPin.Content = this.Topmost ? icons.PinOn : icons.PinOff;
       this.Icon = GlyphIcon.Create(glyph);
     }
 
+    // Saves the comment and closes; does nothing while there is no change (OK is greyed out then).
     private void Save() {
-      string text = this.TextComment.Text ?? "";
-      string value = string.IsNullOrWhiteSpace(text) ? "" : text;
-      if (this.kind == TextKind.Note) {
-        this.shortcut.NoteText = value;
-      } else {
-        this.shortcut.Comment = value;
+      if (!HasCommentChange()) {
+        return;
       }
+      this.shortcut.Comment = TextToSave();
       this.Saved = true;
       Close();
     }

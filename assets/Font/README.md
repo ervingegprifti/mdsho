@@ -2,7 +2,7 @@
 
 ### Used in MDSHO application.
 
-Version: **1.14**
+Version: **1.16**
 
 | Icon | Name | Code | Icon | Name | Code |
 | :---: | :--- | :--- | :---: | :--- | :--- |
@@ -44,5 +44,10 @@ Version: **1.14**
 | ![](Icons/png/globe_s.png) | globe_s | \&#xe946; | ![](Icons/png/globe_o.png) | globe_o | \&#xe947; |
 | ![](Icons/png/run_s.png) | run_s | \&#xe948; | ![](Icons/png/run_o.png) | run_o | \&#xe949; |
 | ![](Icons/png/wizard_s.png) | wizard_s | \&#xe94a; | ![](Icons/png/wizard_o.png) | wizard_o | \&#xe94b; |
+| ![](Icons/png/comment_s.png) | comment_s | \&#xe94c; | ![](Icons/png/comment_o.png) | comment_o | \&#xe94d; |
+| ![](Icons/png/note_s.png) | note_s | \&#xe94e; | ![](Icons/png/note_o.png) | note_o | \&#xe94f; |
+| ![](Icons/png/thumbtackleft_s.png) | thumbtackleft_s | \&#xe950; | ![](Icons/png/thumbtackleft_o.png) | thumbtackleft_o | \&#xe951; |
+| ![](Icons/png/thumbtackdown_s.png) | thumbtackdown_s | \&#xe952; | ![](Icons/png/thumbtackdown_o.png) | thumbtackdown_o | \&#xe953; |
+| ![](Icons/png/ok_s.png) | ok_s | \&#xe954; | ![](Icons/png/ok_o.png) | ok_o | \&#xe955; |
 
 MDSHO Font was created using the free version of <b>[IcoMoon](https://icomoon.io)</b> generator.

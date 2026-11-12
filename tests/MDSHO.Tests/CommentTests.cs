@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
+using MDSHO.Common;
 using MDSHO.Core;
 using MDSHO.Data;
 using MDSHO.Helpers;
@@ -191,7 +192,7 @@ namespace MDSHO.Tests {
           Assert.Equal("Call Anna first.", text.Text);
           Assert.True(text.AcceptsReturn);
           Assert.Equal(TextWrapping.NoWrap, text.TextWrapping); // the same look as the Note window
-          Assert.Equal(f.Command.OwningWindow.Appearance.Icons.Info, Named<TextBlock>(window, "TextTitleIcon").Text);
+          Assert.Equal(f.Command.OwningWindow.Appearance.Icons.Comment, Named<TextBlock>(window, "TextTitleIcon").Text);
         });
       });
     }
@@ -202,7 +203,7 @@ namespace MDSHO.Tests {
         TextEditWindow window = TextEditWindow.ForComment(f.Command);
         Shown(window, () => {
           Named<TextBox>(window, "TextComment").Text = "line 1\r\nline 2";
-          Click(Named<Button>(window, "ButtonSave"));
+          Click(Named<Button>(window, "ButtonOk"));
           Assert.False(window.IsVisible);
         });
         Assert.Equal("line 1\r\nline 2", f.Command.Comment);
@@ -217,7 +218,7 @@ namespace MDSHO.Tests {
         TextEditWindow window = TextEditWindow.ForComment(f.Command);
         Shown(window, () => {
           Named<TextBox>(window, "TextComment").Text = "   \r\n ";
-          Click(Named<Button>(window, "ButtonSave"));
+          Click(Named<Button>(window, "ButtonOk"));
         });
         Assert.Equal("", f.Command.Comment);
         Assert.Equal("", StoredComment(f.Command.ID));
@@ -225,8 +226,8 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Cancel_close_and_escape_keep_the_old_comment() {
-      foreach (string way in new[] { "ButtonCancel", "ButtonClose", "Escape" }) {
+    public void Close_and_escape_keep_the_old_comment() {
+      foreach (string way in new[] { "ButtonClose", "Escape" }) {
         WithButtons(f => {
           f.Command.Comment = "old";
           TextEditWindow window = TextEditWindow.ForComment(f.Command);
@@ -243,6 +244,68 @@ namespace MDSHO.Tests {
           Assert.Equal("old", StoredComment(f.Command.ID));
         });
       }
+    }
+
+    [Fact]
+    public void OK_uses_the_ok_icon_of_the_solid_or_outline_set() {
+      WithButtons(f => {
+        IconGlyphs icons = f.Command.OwningWindow.Appearance.Icons;
+        bool solid = icons.SolidIcons;
+        TextEditWindow window = TextEditWindow.ForComment(f.Command);
+        try {
+          Shown(window, () => {
+            Button ok = Named<Button>(window, "ButtonOk");
+            Assert.NotEqual("Segoe MDL2 Assets", ok.FontFamily.Source);
+            Assert.Equal(icons.Ok, ok.Content);
+            icons.SolidIcons = !solid;
+            WpfAppHost.Pump();
+            Assert.Equal(icons.Ok, ok.Content);
+          });
+        } finally {
+          icons.SolidIcons = solid;
+        }
+      });
+    }
+
+    [Fact]
+    public void OK_is_greyed_out_until_the_comment_changes() {
+      WithButtons(f => {
+        f.Command.Comment = "old";
+        TextEditWindow window = TextEditWindow.ForComment(f.Command);
+        Shown(window, () => {
+          Button ok = Named<Button>(window, "ButtonOk");
+          TextBox text = Named<TextBox>(window, "TextComment");
+          Assert.False(ok.IsEnabled);
+          text.Text = "old and new";
+          Assert.True(ok.IsEnabled);
+          text.Text = "old";
+          Assert.False(ok.IsEnabled);
+        });
+      });
+    }
+
+    [Fact]
+    public void Only_spaces_in_an_empty_comment_is_no_change() {
+      WithButtons(f => {
+        TextEditWindow window = TextEditWindow.ForComment(f.Command);
+        Shown(window, () => {
+          Named<TextBox>(window, "TextComment").Text = "  \r\n ";
+          Assert.False(Named<Button>(window, "ButtonOk").IsEnabled);
+        });
+      });
+    }
+
+    [Fact]
+    public void Ctrl_Enter_does_nothing_while_there_is_no_change() {
+      WithButtons(f => {
+        f.Command.Comment = "old";
+        TextEditWindow window = TextEditWindow.ForComment(f.Command);
+        Shown(window, () => {
+          PressKey(window, Key.Enter, ModifierKeys.Control);
+          Assert.True(window.IsVisible);
+          Assert.False(window.Saved);
+        });
+      });
     }
 
     [Fact]
@@ -266,7 +329,7 @@ namespace MDSHO.Tests {
       WithButtons(f => {
         TextEditWindow window = TextEditWindow.ForComment(f.Command);
         Shown(window, () => {
-          Assert.Equal(f.Command.OwningWindow.Appearance.Icons.Info, GlyphIcon.GlyphOf(window.Icon));
+          Assert.Equal(f.Command.OwningWindow.Appearance.Icons.Comment, GlyphIcon.GlyphOf(window.Icon));
         });
       });
     }
@@ -291,12 +354,37 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Buttons_and_groups_have_a_Comment_menu_item_with_the_info_icon() {
+    public void Buttons_and_groups_have_a_Comment_menu_item_with_the_comment_icon() {
       WithButtons(f => WithView(f, (view, button) => {
         MenuItem comment = button.ContextMenu.Items.OfType<MenuItem>().Single(m => (m.Header as string) == "Comment...");
         Assert.Equal(nameof(ShortcutViewModel.EditCommentCommand), BindingOperations.GetBinding(comment, MenuItem.CommandProperty).Path.Path);
-        Assert.Equal("OwningWindow.Appearance.Icons.Info", BindingOperations.GetBinding((TextBlock)comment.Icon, TextBlock.TextProperty).Path.Path);
+        Assert.Equal("OwningWindow.Appearance.Icons.Comment", BindingOperations.GetBinding((TextBlock)comment.Icon, TextBlock.TextProperty).Path.Path);
         Assert.Equal(Visibility.Visible, comment.Visibility);
+      }));
+    }
+
+    [Fact]
+    public void The_Comment_window_opens_beside_the_panel_level_with_its_button() {
+      WithButtons(f => WithView(f, (view, button) => {
+        ScreenInfo screen = new ScreenInfo("D1", new ScreenRect(0, 0, 1920, 1080), new ScreenRect(0, 0, 1920, 1040), 1.0, true);
+        CommentPlacementTests.WithFakes(screen, fake => {
+          // The panel at the left of the screen; the command's button 300 px down.
+          fake.Rects[view] = new Rect(0, 0, 320, 1040);
+          fake.Rects[button] = new Rect(10, 300, 300, 24);
+          TextEditWindow window = TextEditWindow.ForComment(f.Command);
+          fake.Rects[window] = new Rect(0, 0, 300, 150);
+          TextEditWindow.PlaceComment(window, view);
+          window.ShowActivated = false;
+          window.Show();
+          try {
+            WpfAppHost.Pump();
+            // 20 px right of the panel; the title bar's middle (1 px border + 16 px) level with the button's middle.
+            Assert.Equal(new Point(320 + 20, 312 - 17), fake.Rects[window].TopLeft);
+            Assert.Same(view, window.Owner);
+          } finally {
+            window.Close();
+          }
+        });
       }));
     }
 
@@ -308,7 +396,10 @@ namespace MDSHO.Tests {
         f.Command.Comment = "Call Anna first.";
         WpfAppHost.Pump();
         Assert.Equal(Visibility.Visible, marker.Visibility);
-        Assert.Equal(f.Win.Appearance.Icons.Info, marker.Text);
+        Assert.Equal(f.Win.Appearance.Icons.Comment, marker.Text);
+        // The same size as the other icons of a button (the kind icon and the mark), not smaller.
+        Assert.Equal(16, marker.FontSize);
+        Assert.Equal(16, marker.Width);
       }));
     }
 

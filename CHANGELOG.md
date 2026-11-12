@@ -17,23 +17,26 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   (for example apps running as administrator) are counted as skipped.
 
 - **Comments** on buttons and groups: right-click → **Comment...** opens the Comment window to write a comment of
-  several lines (Save or Ctrl+Enter saves; Cancel, the X button or Esc close without saving). The comment shows in the
-  button's tooltip below the target or command line, cut after 10 lines, and a small "i" marker after the name shows
-  which buttons have one. A comment of only spaces counts as none. The Comment window looks like the Note window.
+  several lines. OK in its title bar (left of X, greyed out while nothing changed) or Ctrl+Enter saves and closes;
+  the X button or Esc close without saving. The title bar buttons' tooltips name their shortcuts. The Comment window is
+  small (300 by 150 pixels) and opens beside its panel, 20 pixels away (on the right when there is room, otherwise on
+  the left), with its title level with the button; with no room on either side it opens in the middle of the screen. The comment shows in the
+  button's tooltip below the target or command line, cut after 10 lines, and a comment icon after the name (the same
+  size as the other icons) shows which buttons have one. A comment of only spaces counts as none. The Comment window looks like the Note window.
 - **Note buttons**, a third kind of button next to shortcuts and run commands: **New note** (right-click empty space or
   a group) creates one and opens the Note window. Opening a note (double-click, or single click when that is set) opens
   the Note window to read and edit its text (several notes can be open side by side; the text fills the window and scrolls sideways instead of wrapping, with each scroll bar shown only when it is needed); its tooltip shows the first 10 lines. Note windows remember their place, size and state: notes that were open come back
   where they were after MDSHO or Windows restarts (unsaved typing is saved at exit), a note opens again where it was last,
   and a place that is off every screen moves to the middle of the main screen. The Note window has pin (keep on top of
-  other apps, off for new notes and remembered per note) and close in its title bar and no bottom bar. A note saves
+  other apps, off for new notes and remembered per note; a thumbtack pointing left, or down while on top) and close in its title bar and no bottom bar. A note saves
   itself half a second after you stop typing and when its window closes (X or Esc), so it needs no Save button.
   The colours button (brush) in its title bar opens **Note colours**: the Settings window with only the five colours
   (border, title background, title text, background, text), the palette, **Default colours** and Apply. It opens beside
   the note, 20 pixels away: on the right when there is room, otherwise on the left. The note's window
   follows the colours live; they are saved on Apply and kept with the note (exported, imported and copied with it). A note's right-click menu has **Edit
   note...** and **Copy note text** (puts the whole note on the clipboard). Notes can be renamed, marked,
-  moved, copied, exported and imported like other buttons, and need no shortcut file. They use the text-box glyph
-  until the icon font gets a dedicated note glyph. The Note and Comment windows show just the button's name as their title.
+  moved, copied, exported and imported like other buttons, and need no shortcut file. They use the new note icon on
+  the button, in the Note window and in the menu. The Note and Comment windows show just the button's name as their title.
 - **Default colours** in a panel's Settings window: puts the five colours back to those of a new window (black border,
   see-through black background, white text). Icons appearance and Single click to open stay as they are; Apply saves
   the colours, and closing without Apply puts the old ones back.
@@ -41,6 +44,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 ### Changed
 
 - The Run command window has no maximise button any more: double-click its title bar to maximise or restore it.
+- The icon font is now MDSHOFont 1.16, with new comment, note, thumbtack and ok icons and a redrawn globe (web links).
+- The Comment window has no bottom bar any more: Save, Cancel and the hint line gave way to OK in the title bar.
 - Notes save themselves: the Note window has no Save button any more. The text is saved half a second after you stop
   typing and when the window closes, so closing a note (X or Esc) no longer throws away what you typed.
 - Panels have no bottom bar any more: the Settings button (gear) moved to the title bar, just left of Dock left, and

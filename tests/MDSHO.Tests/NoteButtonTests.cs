@@ -296,11 +296,15 @@ namespace MDSHO.Tests {
         TextEditWindow window = TextEditWindow.ForNote(note);
         Shown(window, () => {
           Assert.Equal("Restart checklist", Named<TextBlock>(window, "TextTitle").Text);
-          Assert.Equal(note.OwningWindow.Appearance.Icons.Rename, Named<TextBlock>(window, "TextTitleIcon").Text);
-          Assert.Equal(note.OwningWindow.Appearance.Icons.Rename, GlyphIcon.GlyphOf(window.Icon));
+          Assert.Equal(note.OwningWindow.Appearance.Icons.Note, Named<TextBlock>(window, "TextTitleIcon").Text);
+          Assert.Equal(note.OwningWindow.Appearance.Icons.Note, GlyphIcon.GlyphOf(window.Icon));
           TextBox text = Named<TextBox>(window, "TextComment");
           Assert.Equal("old", text.Text);
-          Assert.True(window.Width > 520, "The note window is bigger than the comment window.");
+          Assert.Equal(640, window.Width);
+          Assert.Equal(520, window.Height);
+          // A note keeps its own smallest size.
+          Assert.Equal(380, window.MinWidth);
+          Assert.Equal(300, window.MinHeight);
           text.Text = "new text";
           PumpUntil(() => note.NoteText == "new text");
           Assert.True(window.IsVisible, "Saving a note keeps its window open.");
@@ -348,7 +352,8 @@ namespace MDSHO.Tests {
         TextEditWindow window = TextEditWindow.ForNote(note);
         Shown(window, () => {
           window.UpdateLayout();
-          Assert.Equal(Visibility.Collapsed, Named<FrameworkElement>(window, "Footer").Visibility);
+          Assert.Null(window.FindName("Footer"));
+          Assert.Equal(Visibility.Collapsed, Named<Button>(window, "ButtonOk").Visibility);
           Button pin = Named<Button>(window, "ButtonPin");
           Button close = Named<Button>(window, "ButtonClose");
           // The note saves itself, so there is no Save button.
@@ -370,13 +375,65 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_comment_window_keeps_its_bottom_bar_and_has_no_pin() {
+    public void The_pin_shows_the_thumbtack_left_when_not_on_top_and_down_when_on_top() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        IconGlyphs icons = note.OwningWindow.Appearance.Icons;
+        bool solid = icons.SolidIcons;
+        TextEditWindow window = TextEditWindow.ForNote(note);
+        try {
+          Shown(window, () => {
+            Button pin = Named<Button>(window, "ButtonPin");
+            Assert.NotEqual("Segoe MDL2 Assets", pin.FontFamily.Source);
+            Assert.False(window.Topmost);
+            Assert.Equal(icons.PinOff, pin.Content);
+            Assert.Equal("Keep on top", pin.ToolTip);
+            pin.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, pin));
+            WpfAppHost.Pump();
+            Assert.True(window.Topmost);
+            Assert.Equal(icons.PinOn, pin.Content);
+            Assert.Equal("Stop keeping on top", pin.ToolTip);
+            Assert.Equal("Stop keeping on top", System.Windows.Automation.AutomationProperties.GetName(pin));
+            // The solid or outline setting changes the thumbtack while the window is open.
+            icons.SolidIcons = !solid;
+            WpfAppHost.Pump();
+            Assert.Equal(icons.PinOn, pin.Content);
+            pin.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, pin));
+            WpfAppHost.Pump();
+            Assert.False(window.Topmost);
+            Assert.Equal(icons.PinOff, pin.Content);
+          });
+        } finally {
+          icons.SolidIcons = solid;
+        }
+      });
+    }
+
+    [Fact]
+    public void The_comment_window_has_ok_and_close_in_its_title_bar_and_no_bottom_bar() {
       WithGroup(f => {
         TextEditWindow window = TextEditWindow.ForComment(f.Group);
         Shown(window, () => {
-          Assert.Equal(Visibility.Visible, Named<FrameworkElement>(window, "Footer").Visibility);
+          window.UpdateLayout();
+          foreach (string gone in new[] { "Footer", "ButtonSave", "ButtonCancel", "TextHint", "TextFooterHint" }) {
+            Assert.Null(window.FindName(gone));
+          }
           Assert.Equal(Visibility.Collapsed, Named<Button>(window, "ButtonPin").Visibility);
-          Assert.Equal("Close", Named<Button>(window, "ButtonClose").ToolTip);
+          Assert.Equal(Visibility.Collapsed, Named<Button>(window, "ButtonColors").Visibility);
+          Button ok = Named<Button>(window, "ButtonOk");
+          Button close = Named<Button>(window, "ButtonClose");
+          Assert.Equal(Visibility.Visible, ok.Visibility);
+          Assert.Equal("Save (Ctrl+Enter)", ok.ToolTip);
+          Assert.Equal("Save", System.Windows.Automation.AutomationProperties.GetName(ok));
+          Assert.Equal("Close without saving (Esc)", close.ToolTip);
+          Assert.Equal("Close without saving", System.Windows.Automation.AutomationProperties.GetName(close));
+          // OK sits just left of X.
+          FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
+          Rect rOk = BoundsIn(ok, bar), rClose = BoundsIn(close, bar);
+          Assert.Equal(rClose.Left, rOk.Right, 1);
+          // The text reaches the bottom of the window.
+          FrameworkElement client = (FrameworkElement)window.Content;
+          Assert.Equal(client.ActualHeight, BoundsIn(Named<TextBox>(window, "TextComment"), client).Bottom, 1);
         });
       });
     }
@@ -505,15 +562,11 @@ namespace MDSHO.Tests {
           Assert.Equal(TextWrapping.NoWrap, editor.TextWrapping);
           Assert.Equal(ScrollBarVisibility.Auto, editor.HorizontalScrollBarVisibility);
           Assert.Equal(ScrollBarVisibility.Auto, editor.VerticalScrollBarVisibility);
-          Assert.Equal(Visibility.Collapsed, Named<TextBlock>(window, "TextHint").Visibility);
-          Assert.Equal(Visibility.Visible, Named<TextBlock>(window, "TextFooterHint").Visibility);
-          FrameworkElement footer = Named<FrameworkElement>(window, "Footer");
-          Button save = Named<Button>(window, "ButtonSave");
-          double h = save.ActualHeight;
-          Assert.Equal(h, BoundsIn(save, footer).Top, 1);
-          Assert.Equal(h, BoundsIn(Named<TextBlock>(window, "TextFooterHint"), footer).Left, 1);
-          // A comment is short: its window stays smaller than a note's.
-          Assert.Equal(520, window.Width);
+          // A comment is short: its window is small (300 x 150), and may be made that small again by hand.
+          Assert.Equal(300, window.Width);
+          Assert.Equal(150, window.Height);
+          Assert.Equal(300, window.MinWidth);
+          Assert.Equal(150, window.MinHeight);
         });
       });
     }
@@ -634,7 +687,7 @@ namespace MDSHO.Tests {
         WithView(f, note, (view, button) => {
           TextBlock icon = WpfAppHost.VisualDescendants<TextBlock>(button).Single(t => t.Name == "TextNoteIcon");
           Assert.Equal(Visibility.Visible, icon.Visibility);
-          Assert.Equal(f.Win.Appearance.Icons.Rename, icon.Text);
+          Assert.Equal(f.Win.Appearance.Icons.Note, icon.Text);
         });
       });
     }
@@ -653,7 +706,7 @@ namespace MDSHO.Tests {
           MenuItem edit = items.Single(m => (m.Header as string) == "Edit note...");
           Assert.Equal(nameof(ShortcutViewModel.EditNoteCommand), BindingOperations.GetBinding(edit, MenuItem.CommandProperty).Path.Path);
           Assert.Equal(nameof(ShortcutViewModel.ShowNote), BindingOperations.GetBinding(edit, UIElement.VisibilityProperty).Path.Path);
-          Assert.Equal("OwningWindow.Appearance.Icons.Rename", BindingOperations.GetBinding((TextBlock)edit.Icon, TextBlock.TextProperty).Path.Path);
+          Assert.Equal("OwningWindow.Appearance.Icons.Note", BindingOperations.GetBinding((TextBlock)edit.Icon, TextBlock.TextProperty).Path.Path);
           MenuItem comment = items.Single(m => (m.Header as string) == "Comment...");
           Assert.Equal(nameof(ShortcutViewModel.ShowComment), BindingOperations.GetBinding(comment, UIElement.VisibilityProperty).Path.Path);
           MenuItem copy = items.Single(m => (m.Header as string) == "Copy note text");

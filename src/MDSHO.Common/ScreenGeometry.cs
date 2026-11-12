@@ -105,6 +105,26 @@ namespace MDSHO.Common {
       return new ScreenPoint(Math.Floor(x), Math.Floor(y));
     }
 
+    /// <summary>
+    /// Top-left (whole PHYSICAL pixels) of a window placed beside another window, <paramref name="gapPx"/> away (on its right
+    /// when there is room, otherwise on its left), with the window's title middle (<paramref name="titleMiddlePx"/> below its
+    /// top) level with a button's middle, kept inside the work area. Null when it fits on neither side.
+    /// </summary>
+    public static ScreenPoint? BesideButtonPhysical(ScreenRect ownerPx, double buttonMiddleYPx, double widthPx, double heightPx, double titleMiddlePx, ScreenRect workAreaPx, double gapPx) {
+      double right = ownerPx.Right + gapPx;
+      double left = ownerPx.Left - gapPx - widthPx;
+      double x;
+      if (right + widthPx <= workAreaPx.Right) {
+        x = right;
+      } else if (left >= workAreaPx.Left) {
+        x = left;
+      } else {
+        return null;
+      }
+      double y = Math.Max(workAreaPx.Top, Math.Min(buttonMiddleYPx - titleMiddlePx, workAreaPx.Bottom - heightPx));
+      return new ScreenPoint(Math.Floor(x), Math.Floor(y));
+    }
+
     /// <summary>ScreenRect (DIPs) filling the working area height, at its left edge.</summary>
     public static ScreenRect DockLeft(ScreenInfo screen, double widthDip) {
       ScreenRect w = screen.WorkingAreaDip;

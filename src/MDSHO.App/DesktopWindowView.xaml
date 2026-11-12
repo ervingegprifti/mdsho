@@ -495,13 +495,13 @@
                                         <MenuItem Header="Copy target to memory" Command="{Binding CopyTargetToMemoryCommand}" Visibility="{Binding ShowCopyTargetToMemory, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
                                         <MenuItem Header="Comment..." Command="{Binding EditCommentCommand}" Visibility="{Binding ShowComment, Converter={StaticResource BoolToVisibility}}">
                                             <MenuItem.Icon>
-                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Info}"/>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Comment}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator/>
                                         <MenuItem Header="Edit note..." Visibility="{Binding ShowNote, Converter={StaticResource BoolToVisibility}}" Command="{Binding EditNoteCommand}">
                                             <MenuItem.Icon>
-                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Rename}"/>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Note}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="Copy note text" Visibility="{Binding ShowNote, Converter={StaticResource BoolToVisibility}}" Command="{Binding CopyNoteTextCommand}">
@@ -579,7 +579,7 @@
                                     </TextBlock>
                                     <!--This is used to display the note icon-->
                                     <TextBlock x:Name="TextNoteIcon" Grid.Row="0" Grid.Column="0"
-				                        Text="{Binding DataContext.Appearance.Icons.Rename, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+				                        Text="{Binding DataContext.Appearance.Icons.Note, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
 				                        Visibility="{Binding ShowNote, Converter={StaticResource BoolToVisibility}}"
 				                        Foreground="{Binding DataContext.Appearance.TextColor, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}, Converter={StaticResource HexToBrush}}"
 				                        FontFamily="{StaticResource IconFont}"
@@ -610,12 +610,13 @@
                                     <!--The comment marker: shows which buttons have a comment (the comment is in the tooltip)-->
                                     <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal">
                                     <TextBlock x:Name="TextCommentMarker"
-				                        Text="{Binding DataContext.Appearance.Icons.Info, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+				                        Text="{Binding DataContext.Appearance.Icons.Comment, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
 				                        Visibility="{Binding HasComment, Converter={StaticResource BoolToVisibility}}"
 				                        Foreground="{Binding DataContext.Appearance.TextColor, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}, Converter={StaticResource HexToBrush}}"
 				                        Opacity="0.6"
 				                        FontFamily="{StaticResource IconFont}"
-				                        FontSize="12"
+				                        FontSize="16"
+				                        Width="16"
 				                        Margin="5,0,0,0"
 				                        VerticalAlignment="Center"
 				                        AutomationProperties.Name="Has a comment" />
