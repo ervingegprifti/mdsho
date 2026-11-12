@@ -302,9 +302,7 @@ namespace MDSHO.Tests {
           Assert.Equal("old", text.Text);
           Assert.True(window.Width > 520, "The note window is bigger than the comment window.");
           text.Text = "new text";
-          Button save = Named<Button>(window, "ButtonTitleSave");
-          save.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, save));
-          WpfAppHost.Pump();
+          PumpUntil(() => note.NoteText == "new text");
           Assert.True(window.IsVisible, "Saving a note keeps its window open.");
         });
         Assert.Equal("new text", note.NoteText);
@@ -344,7 +342,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_note_window_has_pin_save_and_close_in_its_title_bar_and_no_bottom_bar() {
+    public void The_note_window_has_pin_and_close_in_its_title_bar_no_save_button_and_no_bottom_bar() {
       WithGroup(f => {
         ShortcutViewModel note = NewNoteInGroup(f);
         TextEditWindow window = TextEditWindow.ForNote(note);
@@ -352,17 +350,17 @@ namespace MDSHO.Tests {
           window.UpdateLayout();
           Assert.Equal(Visibility.Collapsed, Named<FrameworkElement>(window, "Footer").Visibility);
           Button pin = Named<Button>(window, "ButtonPin");
-          Button save = Named<Button>(window, "ButtonTitleSave");
           Button close = Named<Button>(window, "ButtonClose");
+          // The note saves itself, so there is no Save button.
+          Assert.Null(window.FindName("ButtonTitleSave"));
           Assert.Equal(Visibility.Visible, pin.Visibility);
-          Assert.Equal(Visibility.Visible, save.Visibility);
           Assert.Equal("Keep on top", pin.ToolTip);
-          Assert.Equal("Save (Ctrl+Enter)", save.ToolTip);
-          Assert.Equal("Close without saving (Esc)", close.ToolTip);
-          // Left to right: pin, save, close.
+          Assert.Equal("Close (Esc)", close.ToolTip);
+          Assert.Equal("Close", System.Windows.Automation.AutomationProperties.GetName(close));
+          // Left to right: pin, close.
           FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
-          double xPin = BoundsIn(pin, bar).X, xSave = BoundsIn(save, bar).X, xClose = BoundsIn(close, bar).X;
-          Assert.True(xPin < xSave && xSave < xClose, "Order " + xPin + ", " + xSave + ", " + xClose);
+          double xPin = BoundsIn(pin, bar).X, xClose = BoundsIn(close, bar).X;
+          Assert.True(xPin < xClose, "Order " + xPin + ", " + xClose);
           // The text reaches the bottom of the window.
           FrameworkElement client = (FrameworkElement)window.Content;
           TextBox editor = Named<TextBox>(window, "TextComment");
@@ -372,36 +370,72 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_comment_window_keeps_its_bottom_bar_and_has_no_pin_or_title_save() {
+    public void The_comment_window_keeps_its_bottom_bar_and_has_no_pin() {
       WithGroup(f => {
         TextEditWindow window = TextEditWindow.ForComment(f.Group);
         Shown(window, () => {
           Assert.Equal(Visibility.Visible, Named<FrameworkElement>(window, "Footer").Visibility);
           Assert.Equal(Visibility.Collapsed, Named<Button>(window, "ButtonPin").Visibility);
-          Assert.Equal(Visibility.Collapsed, Named<Button>(window, "ButtonTitleSave").Visibility);
           Assert.Equal("Close", Named<Button>(window, "ButtonClose").ToolTip);
         });
       });
     }
 
     [Fact]
-    public void Save_is_greyed_out_until_the_note_changes_and_again_after_saving() {
+    public void Typing_in_a_note_saves_it_by_itself_and_keeps_the_window_open() {
       WithGroup(f => {
         ShortcutViewModel note = NewNoteInGroup(f);
         note.NoteText = "old";
         TextEditWindow window = TextEditWindow.ForNote(note);
         Shown(window, () => {
-          Button save = Named<Button>(window, "ButtonTitleSave");
-          Assert.False(save.IsEnabled);
-          Named<TextBox>(window, "TextComment").Text = "old and new";
-          Assert.True(save.IsEnabled);
-          save.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, save));
-          WpfAppHost.Pump();
+          TextBox text = Named<TextBox>(window, "TextComment");
+          text.Text = "old and new";
+          PumpUntil(() => Stored(note.ID).NoteText == "old and new");
           Assert.Equal("old and new", note.NoteText);
-          Assert.False(save.IsEnabled);
+          // A note of only spaces and new lines is saved as empty.
+          text.Text = "  \n ";
+          PumpUntil(() => Stored(note.ID).NoteText == "");
           Assert.True(window.IsVisible);
         });
       });
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Closing_a_note_right_after_typing_keeps_what_was_typed(bool escape) {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        note.NoteText = "old";
+        TextEditWindow window = TextEditWindow.ForNote(note);
+        window.ShowActivated = false;
+        window.Left = -10000;
+        window.Top = -10000;
+        window.Show();
+        WpfAppHost.Pump();
+        Named<TextBox>(window, "TextComment").Text = "typed then closed";
+        if (escape) {
+          System.Windows.Input.KeyEventArgs args = new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, PresentationSource.FromVisual(window), 0, System.Windows.Input.Key.Escape) { RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent };
+          window.RaiseEvent(args);
+        } else {
+          Button close = Named<Button>(window, "ButtonClose");
+          close.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, close));
+        }
+        WpfAppHost.Pump();
+        Assert.False(window.IsVisible);
+        Assert.Equal("typed then closed", note.NoteText);
+        Assert.Equal("typed then closed", Stored(note.ID).NoteText);
+      });
+    }
+
+    // Pumps the dispatcher (so timers run) until the condition holds, for at most 5 seconds.
+    private static void PumpUntil(Func<bool> condition) {
+      DateTime end = DateTime.UtcNow.AddSeconds(5);
+      while (!condition()) {
+        Assert.True(DateTime.UtcNow < end, "Timed out waiting for the note to save itself.");
+        System.Threading.Thread.Sleep(20);
+        WpfAppHost.Pump();
+      }
     }
 
     [Fact]
@@ -556,7 +590,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Saving_in_one_note_window_leaves_the_other_open() {
+    public void Closing_one_note_window_saves_it_and_leaves_the_other_open() {
       WithGroup(f => {
         ShortcutViewModel first = NewNoteInGroup(f);
         ShortcutViewModel second = NewNoteInGroup(f);
@@ -565,11 +599,11 @@ namespace MDSHO.Tests {
           TextEditWindow.ShowNoteFor(second);
           TextEditWindow firstWindow = TextEditWindow.OpenNoteWindows.Single(w => w.Shortcut == first);
           ((TextBox)firstWindow.FindName("TextComment")).Text = "saved";
-          Button save = (Button)firstWindow.FindName("ButtonTitleSave");
-          save.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, save));
+          firstWindow.Close();
           WpfAppHost.Pump();
           Assert.Equal("saved", first.NoteText);
-          Assert.Equal(2, TextEditWindow.OpenNoteWindows.Count);
+          Assert.Equal("", second.NoteText ?? "");
+          Assert.Single(TextEditWindow.OpenNoteWindows);
         });
       });
     }

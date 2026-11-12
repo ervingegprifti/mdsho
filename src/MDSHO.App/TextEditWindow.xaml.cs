@@ -13,9 +13,10 @@ using MDSHO.ViewModels;
 namespace MDSHO {
 
   /// <summary>
-  /// Edits the text of one button: its comment (any button or group) or, for a note button, the note itself. Nothing is
-  /// saved until Save (or Ctrl+Enter); Cancel, the X button and Esc close it without saving. A text of only spaces and
-  /// new lines is saved as empty.
+  /// Edits the text of one button: its comment (any button or group) or, for a note button, the note itself. A comment is
+  /// saved only by Save (or Ctrl+Enter); Cancel, the X button and Esc close it without saving. A note saves itself shortly
+  /// after each change and when its window closes, so it has no Save button. A text of only spaces and new lines is saved
+  /// as empty.
   /// </summary>
   public partial class TextEditWindow : Window {
     /// <summary>What the window edits.</summary>
@@ -73,7 +74,6 @@ namespace MDSHO {
       this.ButtonClose.Click += (s, e) => Close();
       this.ButtonCancel.Click += (s, e) => Close();
       this.ButtonSave.Click += (s, e) => Save();
-      this.ButtonTitleSave.Click += (s, e) => SaveNoteKeepOpen();
       this.ButtonPin.Click += (s, e) => {
         SetPinned(!this.Topmost);
         SaveNotePlace();
@@ -85,7 +85,7 @@ namespace MDSHO {
       };
     }
 
-    /// <summary>True when the user saved; false after Cancel, X or Esc.</summary>
+    /// <summary>True when the text was saved; for a comment false after Cancel, X or Esc.</summary>
     public bool Saved { get; private set; }
 
     /// <summary>The button whose comment or note this window edits.</summary>
@@ -289,21 +289,29 @@ namespace MDSHO {
       }
     }
 
+    /// <summary>How long after the last change a note saves itself.</summary>
+    public static readonly TimeSpan NoteAutoSaveDelay = TimeSpan.FromMilliseconds(500);
+
+    private readonly DispatcherTimer noteSaveTimer = new DispatcherTimer { Interval = NoteAutoSaveDelay };
+
     /// <summary>
-    /// A note has pin (keep on top), save and close in its title bar and no bottom bar, so the text gets the whole window.
-    /// Save is greyed out while there is nothing to save and keeps the window open; X and Esc close without saving.
+    /// A note has colours, pin (keep on top) and close in its title bar and no bottom bar, so the text gets the whole window.
+    /// It saves itself shortly after each change (not on every key, to keep database writes few) and at once when the
+    /// window closes (X or Esc), so nothing typed is lost.
     /// </summary>
     private void UseNoteTitleBar() {
       this.Footer.Visibility = Visibility.Collapsed;
       this.ButtonColors.Visibility = Visibility.Visible;
       this.ButtonColors.Click += (s, e) => ShowNoteColours();
       this.ButtonPin.Visibility = Visibility.Visible;
-      this.ButtonTitleSave.Visibility = Visibility.Visible;
-      this.ButtonClose.ToolTip = "Close without saving (Esc)";
-      System.Windows.Automation.AutomationProperties.SetName(this.ButtonClose, "Close without saving");
+      this.ButtonClose.ToolTip = "Close (Esc)";
       SetPinned(false);
-      this.TextComment.TextChanged += (s, e) => UpdateTitleSave();
-      UpdateTitleSave();
+      this.noteSaveTimer.Tick += (s, e) => SaveNoteNow();
+      this.TextComment.TextChanged += (s, e) => {
+        this.noteSaveTimer.Stop();
+        this.noteSaveTimer.Start();
+      };
+      this.Closing += (s, e) => SaveNoteNow();
       UseNoteColours();
     }
 
@@ -318,7 +326,7 @@ namespace MDSHO {
       this.TitleBar.SetBinding(System.Windows.Controls.Border.BackgroundProperty, Bind(nameof(NoteColors.TitleBackgroundColor)));
       this.TextTitle.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       this.TextTitleIcon.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonColors, this.ButtonPin, this.ButtonTitleSave, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonColors, this.ButtonPin, this.ButtonClose }) {
         button.SetBinding(ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       }
       SetBinding(BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
@@ -358,21 +366,24 @@ namespace MDSHO {
       }
     }
 
-    // Save is active only when the text differs from the saved note.
-    private void UpdateTitleSave() {
-      this.ButtonTitleSave.IsEnabled = TextToSave() != (this.shortcut.NoteText ?? "");
-    }
-
     private string TextToSave() {
       string text = this.TextComment.Text ?? "";
       return string.IsNullOrWhiteSpace(text) ? "" : text;
     }
 
-    // Saves the note and keeps its window open (the title-bar Save, Ctrl+Enter and Ctrl+S).
-    private void SaveNoteKeepOpen() {
-      this.shortcut.NoteText = TextToSave();
-      this.Saved = true;
-      UpdateTitleSave();
+    // Saves the note now if its text changed, and keeps the window open (autosave, closing, Ctrl+Enter and Ctrl+S).
+    private void SaveNoteNow() {
+      this.noteSaveTimer.Stop();
+      string value = TextToSave();
+      if (value == (this.shortcut.NoteText ?? "")) {
+        return;
+      }
+      try {
+        this.shortcut.NoteText = value;
+        this.Saved = true;
+      } catch (Exception ex) {
+        ErrorDialog.ShowDialog(ex);
+      }
     }
 
     /// <summary>
@@ -419,9 +430,9 @@ namespace MDSHO {
         e.Handled = true;
         Close();
       } else if (this.kind == TextKind.Note && (e.Key == Key.Enter || e.Key == Key.S) && (KeyboardModifiers() & ModifierKeys.Control) == ModifierKeys.Control) {
-        // A note is saved and stays open.
+        // A note is saved now and stays open.
         e.Handled = true;
-        SaveNoteKeepOpen();
+        SaveNoteNow();
       } else if (e.Key == Key.Enter && (KeyboardModifiers() & ModifierKeys.Control) == ModifierKeys.Control) {
         e.Handled = true;
         Save();

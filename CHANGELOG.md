@@ -25,8 +25,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   the Note window to read and edit its text (several notes can be open side by side; the text fills the window and scrolls sideways instead of wrapping, with each scroll bar shown only when it is needed); its tooltip shows the first 10 lines. Note windows remember their place, size and state: notes that were open come back
   where they were after MDSHO or Windows restarts (unsaved typing is saved at exit), a note opens again where it was last,
   and a place that is off every screen moves to the middle of the main screen. The Note window has pin (keep on top of
-  other apps, off for new notes and remembered per note), save and close in its title bar and no bottom bar: Save (also
-  Ctrl+Enter or Ctrl+S) is greyed out while there is nothing to save and keeps the note open; X or Esc close without saving.
+  other apps, off for new notes and remembered per note) and close in its title bar and no bottom bar. A note saves
+  itself half a second after you stop typing and when its window closes (X or Esc), so it needs no Save button.
   The colours button (brush) in its title bar opens **Note colours**: the Settings window with only the five colours
   (border, title background, title text, background, text), the palette, **Default colours** and Apply. It opens beside
   the note, 20 pixels away: on the right when there is room, otherwise on the left. The note's window
@@ -41,6 +41,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 ### Changed
 
 - The Run command window has no maximise button any more: double-click its title bar to maximise or restore it.
+- Notes save themselves: the Note window has no Save button any more. The text is saved half a second after you stop
+  typing and when the window closes, so closing a note (X or Esc) no longer throws away what you typed.
 - Panels have no bottom bar any more: the Settings button (gear) moved to the title bar, just left of Dock left, and
   the button list uses the freed 32 pixels. The unused PRO badge and its trial code are gone.
 - Thin scroll bars in every window, as in Windows 11: a 3 pixel line that widens to 8 pixels when the mouse is over it,

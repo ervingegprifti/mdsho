@@ -44,11 +44,6 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="Background" Value="#33000000" />
                             </Trigger>
-                            <!--Save with nothing to save is greyed out (faded, so it keeps the title text colour)-->
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4" />
-                                <Setter Property="Cursor" Value="Arrow" />
-                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -69,13 +64,12 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!--Title bar: icon, "Comment: <button name>" or "Note: <title>", then for a note only pin (keep on top) and save, then close.
-            Pin and save use the Windows icon font until MDSHOFont has its own glyphs.-->
+        <!--Title bar: icon, "Comment: <button name>" or "Note: <title>", then for a note only colours and pin (keep on top), then close.
+            A note saves itself while you type, so it has no Save button. Pin uses the Windows icon font until MDSHOFont has its own glyph.-->
         <Border x:Name="TitleBar" Grid.Row="0" Background="#FFDFDACB">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -88,9 +82,7 @@
                         ToolTip="Note colours" AutomationProperties.Name="Note colours" Visibility="Collapsed"/>
                 <Button x:Name="ButtonPin" Grid.Column="2" Style="{StaticResource StyleTitleBarButton}" FontFamily="Segoe MDL2 Assets" FontSize="14"
                         Content="&#xE718;" ToolTip="Keep on top" AutomationProperties.Name="Keep on top" Visibility="Collapsed"/>
-                <Button x:Name="ButtonTitleSave" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" FontFamily="Segoe MDL2 Assets" FontSize="14"
-                        Content="&#xE74E;" ToolTip="Save (Ctrl+Enter)" AutomationProperties.Name="Save" Visibility="Collapsed"/>
-                <Button x:Name="ButtonClose" Grid.Column="4" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"/>
+                <Button x:Name="ButtonClose" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"/>
             </Grid>
         </Border>
 
