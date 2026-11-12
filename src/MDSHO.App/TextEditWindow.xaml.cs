@@ -47,8 +47,6 @@ namespace MDSHO {
 
     private TextEditWindow(ShortcutViewModel shortcut, TextKind kind) {
       InitializeComponent();
-      // Custom title bar: ask Windows 11 for rounded corners, like the Run command window.
-      Helpers.WindowCorners.UseRoundedCorners(this);
       this.shortcut = shortcut ?? throw new ArgumentNullException(nameof(shortcut));
       this.kind = kind;
       this.icons = shortcut.OwningWindow?.Appearance?.Icons ?? new IconGlyphs(true);
@@ -400,7 +398,7 @@ namespace MDSHO {
       this.TitleBar.SetBinding(System.Windows.Controls.Border.BackgroundProperty, Bind(nameof(NoteColors.TitleBackgroundColor)));
       this.TextTitle.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       this.TextTitleIcon.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonColors, this.ButtonPin, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonColors, this.ButtonWrap, this.ButtonPin, this.ButtonClose }) {
         button.SetBinding(ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       }
       SetBinding(BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));

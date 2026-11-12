@@ -194,6 +194,27 @@ namespace MDSHO.Tests {
       });
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(4)]
+    public void A_colour_picked_in_the_note_colours_window_shows_on_the_open_note_window(int target) {
+      WithNote(f => {
+        TextEditWindow note = TextEditWindow.ForNote(f.Note);
+        Shown(note, () => {
+          SettingsWindow colours = new SettingsWindow(f.Note);
+          Shown(colours, () => {
+            Named<ListBox>(colours, "ListColorTargets").SelectedIndex = target;
+            WpfAppHost.Pump();
+            Named<ColorPicker.PickerControlBase>(colours, "PickerColor").SelectedColor = Color.FromRgb(0xFF, 0x00, 0x00);
+            WpfAppHost.Pump();
+            Brush expected = target == 0 ? note.BorderBrush : target == 1 ? Named<Border>(note, "TitleBar").Background : Named<TextBox>(note, "TextComment").Foreground;
+            Assert.Equal(Hex("#FFFF0000"), ColorOf(expected));
+          });
+        });
+      });
+    }
+
     // ---- Note window ----
 
     [Fact]
@@ -237,6 +258,7 @@ namespace MDSHO.Tests {
           Assert.Equal(Hex("#FF2F4F6F"), ColorOf(Named<Border>(window, "TitleBar").Background));
           Assert.Equal(Hex("#FFFFFFFF"), ColorOf(Named<TextBlock>(window, "TextTitle").Foreground));
           Assert.Equal(Hex("#FFFFFFFF"), ColorOf(Named<Button>(window, "ButtonClose").Foreground));
+          Assert.Equal(Hex("#FFFFFFFF"), ColorOf(Named<Button>(window, "ButtonWrap").Foreground));
           TextBox editor = Named<TextBox>(window, "TextComment");
           Assert.Equal(Hex("#FFFFF8DC"), ColorOf(editor.Background));
           Assert.Equal(Hex("#FF1F2F3F"), ColorOf(editor.Foreground));

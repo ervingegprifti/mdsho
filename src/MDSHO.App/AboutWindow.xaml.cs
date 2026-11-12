@@ -24,7 +24,10 @@ namespace MDSHO {
     /// About, or the first window's set when it was opened from the tray. Until then the icon is solid.
     /// </summary>
     public void UseIcons(ViewModels.IconGlyphs icons) {
-      this.Icon = Helpers.GlyphIcon.Create((icons ?? new ViewModels.IconGlyphs(true)).Info);
+      ViewModels.IconGlyphs set = icons ?? new ViewModels.IconGlyphs(true);
+      this.Icon = Helpers.GlyphIcon.Create(set.Info);
+      this.TitleBar.Glyph = set.Info;
+      this.TitleBar.CloseGlyph = set.Times;
     }
 
     /// <summary>Creates the About dialog and fills in the version number.</summary>

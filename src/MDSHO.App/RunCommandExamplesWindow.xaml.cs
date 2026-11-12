@@ -17,8 +17,6 @@ namespace MDSHO {
     /// <summary>Creates the popup for the Run Command window's view model.</summary>
     public RunCommandExamplesWindow(RunCommandViewModel viewModel) {
       InitializeComponent();
-      // Custom title bar: ask Windows 11 for rounded corners, like the Settings window gets automatically.
-      Helpers.WindowCorners.UseRoundedCorners(this);
       this.viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
       this.DataContext = viewModel;
 

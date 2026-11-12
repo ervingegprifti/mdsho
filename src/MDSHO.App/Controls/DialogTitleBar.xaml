@@ -1,0 +1,56 @@
+﻿<UserControl x:Class="MDSHO.Controls.DialogTitleBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:MDSHO.Controls"
+             Height="32">
+
+    <UserControl.Resources>
+        <!--The same title bar button as in the Note window-->
+        <Style x:Key="StyleTitleBarButton" TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#FF333333"/>
+            <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border BorderThickness="0" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1F000000" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#33000000" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <!--Icon and title on the left, close on the right; the rest of the bar drags the window (WindowChrome caption)-->
+    <Border Background="#FFDFDACB">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock x:Name="TextGlyph" FontFamily="{StaticResource IconFont}" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"
+                           Text="{Binding Glyph, RelativeSource={RelativeSource AncestorType={x:Type controls:DialogTitleBar}}}"/>
+                <TextBlock x:Name="TextTitle" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333" TextTrimming="CharacterEllipsis"
+                           Text="{Binding Text, RelativeSource={RelativeSource AncestorType={x:Type controls:DialogTitleBar}}}"/>
+            </StackPanel>
+            <Button x:Name="ButtonClose" Grid.Column="1" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"
+                    Content="{Binding CloseGlyph, RelativeSource={RelativeSource AncestorType={x:Type controls:DialogTitleBar}}}"/>
+        </Grid>
+    </Border>
+</UserControl>

@@ -15,6 +15,11 @@ namespace MDSHO.Tests {
   /// </summary>
   public class AboutWindowLayoutTests {
 
+    // The window's content below its title bar (row 1 of the window's root grid), inside the rounded frame.
+    private static FrameworkElement ContentArea(Window window) {
+      return (FrameworkElement)((Grid)window.Content).Children[1];
+    }
+
     /// <summary>Shows the About window off screen, runs <paramref name="check"/> on it, then closes it.</summary>
     private static void WithAboutWindow(Action<AboutWindow> check) {
       WpfAppHost.Run(() => {
@@ -55,7 +60,7 @@ namespace MDSHO.Tests {
         }
         ScrollViewer scroll = Assert.IsType<ScrollViewer>(parent);
         // The window's own root visual is exactly the visible client area; the content grid may be taller and get clipped.
-        FrameworkElement client = (FrameworkElement)VisualTreeHelper.GetChild(window, 0);
+        FrameworkElement client = ContentArea(window); // below the title bar, inside the frame
         double bottom = scroll.TranslatePoint(new Point(0, scroll.ActualHeight), client).Y;
         Assert.True(bottom <= client.ActualHeight + 0.5,
           $"The third-party list ends at {bottom:0.#}, below the window's visible height {client.ActualHeight:0.#}, so the last entries can't be seen.");
@@ -175,7 +180,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void Content_has_the_outer_margin_on_the_left() {
       WithAboutWindow(window => {
-        Visual client = (Visual)VisualTreeHelper.GetChild(window, 0);
+        Visual client = ContentArea(window); // below the title bar, inside the frame
         double m = AboutWindow.OuterMargin;
         Assert.Equal(m, X(LabelRows(window)[0].Label, client), 1);
         Assert.Equal(m, X((FrameworkElement)window.FindName("TextCopyright"), client), 1);
@@ -187,7 +192,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void The_title_starts_one_outer_margin_from_the_top() {
       WithAboutWindow(window => {
-        Visual client = (Visual)VisualTreeHelper.GetChild(window, 0);
+        Visual client = ContentArea(window); // below the title bar, inside the frame
         StackPanel about = (StackPanel)window.FindName("PanelAbout");
         Label title = about.Children.OfType<Label>().First();
         Assert.Equal(AboutWindow.OuterMargin, title.TranslatePoint(new Point(0, 0), (UIElement)client).Y, 1);

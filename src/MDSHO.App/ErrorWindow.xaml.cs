@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 
 namespace MDSHO {
@@ -40,6 +40,10 @@ namespace MDSHO {
       this.ButtonCopyDetails.Click += (s, e) => Run(() => CopyText(this.Details));
       this.ButtonOpenLogs.Click += (s, e) => Run(OpenLogs);
       this.ButtonOK.Click += (s, e) => Close();
+      // The title bar shows the warning icon; the taskbar keeps the MDSHO logo.
+      ViewModels.IconGlyphs icons = new ViewModels.IconGlyphs(true);
+      this.TitleBar.Glyph = icons.Warning;
+      this.TitleBar.CloseGlyph = icons.Times;
     }
 
     /// <summary>A failing button must not open another error window from inside this one.</summary>

@@ -17,6 +17,11 @@ namespace MDSHO.Tests {
   /// </summary>
   public class SettingsWindowTests {
 
+    // The window's content below its title bar (row 1 of the window's root grid), inside the rounded frame.
+    private static FrameworkElement ContentArea(Window window) {
+      return (FrameworkElement)((Grid)window.Content).Children[1];
+    }
+
     private const string Border = "#FF102030";
     private const string TitleBackground = "#CC405060";
     private const string TitleText = "#FF0A0B0C";
@@ -136,7 +141,7 @@ namespace MDSHO.Tests {
         double inner = panel.ActualWidth - panel.BorderThickness.Left - panel.BorderThickness.Right - panel.Padding.Left - panel.Padding.Right;
         Assert.Equal(inner, square.ActualWidth, 0.5); // half a pixel for layout rounding at 125 % scaling
         // The panel's top lines up with the first colour button; "Editing: ..." is under the panel.
-        FrameworkElement client = (FrameworkElement)VisualTreeHelper.GetChild(window, 0);
+        FrameworkElement client = ContentArea(window); // below the title bar, inside the frame
         double panelTop = panel.TranslatePoint(new Point(0, 0), client).Y;
         Assert.Equal(Items(window)[0].TranslatePoint(new Point(0, 0), client).Y, panelTop, 1);
         TextBlock editing = Named<TextBlock>(window, "TextEditing");
@@ -301,7 +306,7 @@ namespace MDSHO.Tests {
       WithSettings((window, w) => {
         Assert.Equal(660, window.Width);
         Assert.Equal(ResizeMode.NoResize, window.ResizeMode);
-        FrameworkElement client = (FrameworkElement)VisualTreeHelper.GetChild(window, 0);
+        FrameworkElement client = ContentArea(window); // below the title bar, inside the frame
         FrameworkElement footer = Named<FrameworkElement>(window, "Footer");
         double bottom = footer.TranslatePoint(new Point(0, footer.ActualHeight), client).Y;
         Assert.True(bottom <= client.ActualHeight + 0.5, $"The footer ends at {bottom:0.#}, below the visible height {client.ActualHeight:0.#}.");
@@ -333,7 +338,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void Every_outer_margin_of_the_content_and_the_apply_bar_is_the_apply_button_height() {
       WithSettings((window, w) => {
-        FrameworkElement client = (FrameworkElement)VisualTreeHelper.GetChild(window, 0);
+        FrameworkElement client = ContentArea(window); // below the title bar, inside the frame
         FrameworkElement body = Named<FrameworkElement>(window, "PanelBody");
         Button apply = Named<Button>(window, "ButtonApply");
         double h = apply.ActualHeight;
@@ -353,7 +358,7 @@ namespace MDSHO.Tests {
         Assert.Equal(h, applyTopLeft.Y, 1);
         Assert.Equal(footer.ActualHeight - h, applyTopLeft.Y + apply.ActualHeight, 1);
         Assert.Equal(footer.ActualWidth - h, applyTopLeft.X + apply.ActualWidth, 1);
-        Assert.Equal(537, window.Height);
+        Assert.Equal(571, window.Height); // the content as before, plus the 32 px title bar and the 1 px frame top and bottom
       });
     }
 

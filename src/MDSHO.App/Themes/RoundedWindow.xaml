@@ -1,0 +1,26 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:MDSHO.Controls"
+                    xmlns:converters="clr-namespace:MDSHO.Converters">
+
+    <converters:WindowStateCornerRadiusConverter x:Key="WindowStateCorners"/>
+
+    <!--
+    The frame of MDSHO's own windows (Note, Comment, Run command, Examples, Settings, About, Error), drawn the way the
+    panels draw theirs: the window is see-through (AllowsTransparency) and this frame paints the window's background with
+    5 px rounded corners and its 1 px border on top, the same on Windows 10 and 11. Windows draws no frame of its own over
+    it. The corners go square while the window is maximised. What is inside is clipped to the inner corners.
+    -->
+    <ControlTemplate x:Key="RoundedWindowTemplate" TargetType="{x:Type Window}">
+        <controls:ClippingBorder x:Name="Frame"
+                                 CornerRadius="{Binding WindowState, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource WindowStateCorners}}"
+                                 Background="{TemplateBinding Background}"
+                                 BorderBrush="{TemplateBinding BorderBrush}"
+                                 BorderThickness="{TemplateBinding BorderThickness}">
+            <AdornerDecorator>
+                <ContentPresenter/>
+            </AdornerDecorator>
+        </controls:ClippingBorder>
+    </ControlTemplate>
+
+</ResourceDictionary>

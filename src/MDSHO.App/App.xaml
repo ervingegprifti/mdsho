@@ -10,6 +10,8 @@
             <ResourceDictionary.MergedDictionaries>
                 <!-- Thin scroll bars in every window -->
                 <ResourceDictionary Source="Themes/ScrollBars.xaml"/>
+                <!-- The rounded frame of MDSHO's own windows -->
+                <ResourceDictionary Source="Themes/RoundedWindow.xaml"/>
                 <ResourceDictionary>
                     <!-- View model Show... flags: true = Visible, false = Collapsed. -->
                     <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>

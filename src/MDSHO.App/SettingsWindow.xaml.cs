@@ -95,7 +95,7 @@ namespace MDSHO {
       this.DataContext = dataContext;
       // The window icon is the gear (or brush) of this window's icon set and changes as soon as Solid/Outlined is toggled.
       this.icons = iconGlyphs;
-      this.Icon = GlyphIcon.Create(this.iconGlyph(this.icons));
+      ShowIcons();
       this.icons.PropertyChanged += Icons_PropertyChanged;
       this.Closed += (s, e) => this.icons.PropertyChanged -= Icons_PropertyChanged;
 
@@ -147,9 +147,17 @@ namespace MDSHO {
       this.Close();
     }
     private void Icons_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e) {
-      if (e.PropertyName == nameof(IconGlyphs.Settings) || e.PropertyName == nameof(IconGlyphs.Brush)) {
-        this.Icon = GlyphIcon.Create(this.iconGlyph(this.icons));
+      if (e.PropertyName == nameof(IconGlyphs.Settings) || e.PropertyName == nameof(IconGlyphs.Brush) || e.PropertyName == nameof(IconGlyphs.Times)) {
+        ShowIcons();
       }
+    }
+
+    // The window icon and the title bar's icon (gear, or brush for Note colours) and close glyph, in the window's icon set.
+    private void ShowIcons() {
+      string glyph = this.iconGlyph(this.icons);
+      this.Icon = GlyphIcon.Create(glyph);
+      this.TitleBar.Glyph = glyph;
+      this.TitleBar.CloseGlyph = this.icons.Times;
     }
 
     private void ListColorTargets_SelectionChanged(object sender, SelectionChangedEventArgs e) {

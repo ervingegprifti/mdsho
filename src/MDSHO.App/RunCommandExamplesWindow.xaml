@@ -12,6 +12,8 @@
         MinWidth="360"
         MinHeight="360"
         WindowStyle="None"
+        AllowsTransparency="True"
+        Template="{StaticResource RoundedWindowTemplate}"
         ResizeMode="CanResize"
         ShowInTaskbar="False"
         Background="#FFF4F3ED"

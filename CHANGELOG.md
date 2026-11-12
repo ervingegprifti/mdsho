@@ -53,6 +53,10 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 ### Changed
 
 - The Run command window has no maximise button any more: double-click its title bar to maximise or restore it.
+- The Note, Comment, Run command, Examples, Settings (and Note colours), About and Error windows have rounded corners
+  on Windows 10 too, drawn the way the panels draw theirs, square while maximised. Their border now shows on Windows 11
+  as well, so a note's border colour can be seen. Settings, About and Error have MDSHO's own title bar for it (icon,
+  title and close). These windows have no Windows shadow any more, like the panels.
 - The icon font is now MDSHOFont 1.17, with new comment, note, thumbtack, ok and wrap text icons and a redrawn globe (web links).
 - The Comment window has no bottom bar any more: Save, Cancel and the hint line gave way to OK in the title bar.
 - Notes save themselves: the Note window has no Save button any more. The text is saved half a second after you stop
