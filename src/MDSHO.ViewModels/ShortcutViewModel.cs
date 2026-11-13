@@ -341,6 +341,11 @@ namespace MDSHO.ViewModels {
     /// (F2 on a note). Set by the app; tests replace it.
     /// </summary>
     public static Action<ShortcutViewModel> RenameNoteEditor { get; set; }
+    /// <summary>
+    /// Renames a run command: a command is renamed in its Run Command window, so this opens the window with the title
+    /// ready to edit (F2 on a command). Set by the app; tests replace it.
+    /// </summary>
+    public static Action<ShortcutViewModel> RenameRunCommandEditor { get; set; }
     /// <summary>The Windows error code when the user answers No to the administrator (UAC) prompt.</summary>
     public const int ErrorCancelled = 1223;
     /// <summary>
@@ -490,15 +495,15 @@ namespace MDSHO.ViewModels {
     // Shown or hidden (the views turn these into Visibility).
     /// <summary>True for a group.</summary>
     public bool ShowGroup => this.isGroup;
-    /// <summary>True for a normal shortcut.</summary>
-    public bool ShowSetNameTheSameAsTarget => !this.isGroup && !this.isNote;
-    /// <summary>True for every button but a note, which is renamed in its own Note window.</summary>
-    public bool ShowRename => !this.isNote;
+    /// <summary>True for a file, folder or web link shortcut.</summary>
+    public bool ShowSetNameTheSameAsTarget => this.ShowShortcut;
+    /// <summary>True for every button but a note or a run command, which are renamed in their own windows.</summary>
+    public bool ShowRename => !this.isNote && !this.ShowCommand;
     /// <summary>True when any of Rename, "Set name the same as target", "Copy target to memory" or Comment shows, so the
     /// separator above them doesn't sit next to the next one (a note shows none of them).</summary>
     public bool ShowNameItemsSeparator => this.ShowRename || this.ShowSetNameTheSameAsTarget || this.ShowCopyTargetToMemory || this.ShowComment;
-    /// <summary>True for a normal shortcut.</summary>
-    public bool ShowCopyTargetToMemory => !this.isGroup && !this.isNote;
+    /// <summary>True for a file, folder or web link shortcut.</summary>
+    public bool ShowCopyTargetToMemory => this.ShowShortcut;
     /// <summary>True for a file, folder or web link shortcut (not for groups and commands).</summary>
     public bool ShowShortcut => !this.isGroup && !this.isProcessCommand && !this.isNote;
     /// <summary>True for a note button.</summary>
@@ -510,7 +515,7 @@ namespace MDSHO.ViewModels {
     /// <summary>True for a group (only groups can get new items).</summary>
     public bool ShowNewShortcut => this.isGroup;
     // Commands: generated from the [RelayCommand] methods below (NewGroupShortcutCommand, NewProcessCommandShortcutCommand,
-    // SetRunCommandCommand, RenameCommand, SetNameTheSameAsTargetCommand, CopyTargetToMemoryCommand, CutShortcutCommand,
+    // EditRunCommandCommand, RenameCommand, SetNameTheSameAsTargetCommand, CopyTargetToMemoryCommand, CutShortcutCommand,
     // CopyShortcutCommand, PasteShortcutCommand, MarkShortcutCommand, DeleteShortcutCommand, CommitEditCommand, CancelEditCommand).
     #endregion PROPERTIES
 
@@ -656,7 +661,7 @@ namespace MDSHO.ViewModels {
     }
     /// <summary>Opens the Run Command window for this run command.</summary>
     [RelayCommand]
-    private void SetRunCommand() {
+    private void EditRunCommand() {
       OpenRunCommandEditor?.Invoke(this, false);
     }
     /// <summary>Starts renaming the shortcut.</summary>

@@ -75,12 +75,13 @@ namespace MDSHO
           return;
         }
 
-        // New run commands and "Set run command..." open the Run Command window.
+        // New run commands and "Edit run command..." open the Run Command window.
         ShortcutViewModel.OpenRunCommandEditor = RunCommandWindow.ShowFor;
         ShortcutViewModel.OpenCommentEditor = TextEditWindow.ShowCommentFor;
         ShortcutViewModel.OpenNoteEditor = TextEditWindow.ShowNoteFor;
         ShortcutViewModel.ToggleNoteEditor = TextEditWindow.ToggleNoteFor;
         ShortcutViewModel.RenameNoteEditor = TextEditWindow.RenameNoteFor;
+        ShortcutViewModel.RenameRunCommandEditor = RunCommandWindow.RenameFor;
 
         // Get the data context for the application.
         this.DataContext = this.host.Services.GetRequiredService<AppViewModel>();

@@ -8,18 +8,29 @@ using MDSHO.ViewModels;
 namespace MDSHO {
 
   /// <summary>
-  /// The Run Command window: edits the program, working folder, arguments and options of one run command. Nothing is
-  /// saved until Save; Cancel, the X button and Esc close it without saving.
+  /// The Run Command window: edits the name (in the title), program, working folder, arguments and options of one run
+  /// command. Nothing is saved until Save; Cancel, the X button and Esc close it without saving.
   /// </summary>
   public partial class RunCommandWindow : Window {
     private readonly RunCommandViewModel viewModel;
+    private readonly TitleRename titleRename;
+
+    /// <summary>The tooltip of the command's title.</summary>
+    public const string RenameTitleToolTip = "Double-click to rename the command";
 
     /// <summary>Creates the window for a run command.</summary>
     public RunCommandWindow(RunCommandViewModel viewModel) {
       InitializeComponent();
-      SetTitle();
       this.viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
       this.DataContext = viewModel;
+      // The title is the command's name; a rename from it is kept in the window until Save.
+      ShowTitle();
+      viewModel.PropertyChanged += (s, e) => {
+        if (e.PropertyName == nameof(RunCommandViewModel.Name)) { ShowTitle(); }
+      };
+      this.titleRename = new TitleRename(this, this.TextTitle, this.TextTitleEdit, RenameTitleToolTip,
+        () => this.viewModel.Name, name => this.viewModel.Name = name,
+        () => { if (this.IsActive) { this.ComboProgram.Focus(); } });
       // The window icon is the run glyph of the command's window (solid or outline) and follows that setting while open.
       IconGlyphs icons = viewModel.Icons;
       this.Icon = GlyphIcon.Create(icons.Run);
@@ -48,6 +59,19 @@ namespace MDSHO {
       };
     }
 
+    /// <summary>True while the command's title is being renamed.</summary>
+    public bool IsRenamingTitle => this.titleRename.IsRenaming;
+
+    /// <summary>Opens the edit box over the title, with the name selected.</summary>
+    public void BeginRenameTitle() {
+      this.titleRename.Begin();
+    }
+
+    /// <summary>Closes the title's edit box; with <paramref name="save"/> a changed, non-blank name is kept until Save.</summary>
+    public void EndRenameTitle(bool save) {
+      this.titleRename.End(save);
+    }
+
     /// <summary>True when the user saved; false after Cancel, X or Esc.</summary>
     public bool Saved { get; private set; }
 
@@ -57,8 +81,21 @@ namespace MDSHO {
     /// <param name="shortcut">The run command.</param>
     /// <param name="isNewCommand">True when the command was just created (cmd.exe and "keep window open" are preset).</param>
     public static void ShowFor(ShortcutViewModel shortcut, bool isNewCommand) {
+      Show(shortcut, isNewCommand, rename: false);
+    }
+
+    /// <summary>F2 on a command in its panel: opens the window with the title ready to rename.</summary>
+    public static void RenameFor(ShortcutViewModel shortcut) {
+      Show(shortcut, isNewCommand: false, rename: true);
+    }
+
+    private static void Show(ShortcutViewModel shortcut, bool isNewCommand, bool rename) {
       try {
-        Create(shortcut, isNewCommand, FindOwner(shortcut)).ShowDialog();
+        RunCommandWindow window = Create(shortcut, isNewCommand, FindOwner(shortcut));
+        if (rename) {
+          window.Loaded += (s, e) => window.BeginRenameTitle();
+        }
+        window.ShowDialog();
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
       }
@@ -112,20 +149,27 @@ namespace MDSHO {
     /// <summary>The Examples popup opens at this share of the Run command window's width and height.</summary>
     public const double ExamplesSizeRatio = 0.8;
 
-    private void SetTitle() {
+    private void ShowTitle() {
+      this.Title = this.viewModel.Name;
 #if DEBUG
       this.Title += " DEBUG";
 #endif
     }
 
     private void ButtonSave_Click(object sender, RoutedEventArgs e) {
+      // A name still being typed in the title counts.
+      EndRenameTitle(save: true);
       this.viewModel.Save();
       this.Saved = true;
       Close();
     }
 
-    // Esc works like Cancel (a ComboBox list that is open closes first).
+    // Esc works like Cancel (a ComboBox list that is open closes first). While renaming the title, Enter and Esc only
+    // close the edit box.
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e) {
+      if (this.titleRename.HandleKey(e)) {
+        return;
+      }
       if (e.Key == Key.Escape && !this.ComboProgram.IsDropDownOpen) {
         e.Handled = true;
         Close();

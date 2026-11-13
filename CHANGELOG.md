@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
-## [1.5.5]
+## [1.5.6]
 
 ### Added
 
@@ -53,9 +53,14 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   Enter or clicking away saves, Esc keeps the old name. F2 on a note in its panel opens the Note window ready to rename.
   Dragging the title still moves the window, and a double click elsewhere on the title bar still maximises and restores.
   Notes have no Rename in their right-click menu any more.
+- **Rename a run command in its Run command window**: the window's title is now the command's name (was "Run
+  command"); double-click it to edit it in place, the same way as a note. Enter or clicking away keeps the new name,
+  Esc the old one; **Save** writes it and **Cancel** throws it away with the other changes. F2 on a command in its
+  panel opens the Run command window ready to rename. A run command's right-click menu no longer has Rename, "Set name
+  the same as target" or "Copy target to memory", and its "Set run command..." is now **Edit run command...**.
 - **Show version in title**, under Other in a panel's Settings (on at first, shared by the panel and its clones):
-  shows the MDSHO version after the panel's title, for example "MDSHO v1.5.5". Closing Settings without Apply puts the
-  setting back. Sideload test builds show their build number as a 4th part (for example "v1.5.5.7"); Store builds show
+  shows the MDSHO version after the panel's title, for example "MDSHO v1.5.6". Closing Settings without Apply puts the
+  setting back. Sideload test builds show their build number as a 4th part (for example "v1.5.6.7"); Store builds show
   three parts.
 - Database version 13: the windows table gets `ShowVersionInTitle` (backed up first, on for every panel). Exports
   carry it; older exports import with it on.
@@ -90,7 +95,7 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   command it runs when you hover it (instead of below the list), and opens centred on the Run command window at 80 % of
   its size.
 - Menus, buttons, labels and window titles use sentence case, as in Windows 11: only the first word and names start
-  with a capital letter ("New window", "Set run command...", "Single click to open", "Run command"). New groups and
+  with a capital letter ("New window", "Edit run command...", "Single click to open", "Run command"). New groups and
   run commands are named "New group" and "New command"; existing buttons keep their names.
 - Database version 6: the buttons' unused `Notes` column is renamed to `Comment`, for the new button comments. The
   database is backed up first, as with every upgrade. Exports now call the field `comment`; exports from older versions

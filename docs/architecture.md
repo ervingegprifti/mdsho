@@ -98,7 +98,7 @@ The view models use [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/
   (`IsDocked`, `IsEditingTitle`, `EditField`), turning `null` into `""` (`ProcessWorkingFolder` and the Run Command
   window's fields) or a getter that is worked out (`Target`).
 - Commands are generated from methods marked `[RelayCommand]` (with `CanExecute =` where there is a check); the names
-  the XAML binds to (`PasteShortcutCommand`, `SetRunCommandCommand`, ...) are pinned by a test. Toolkit commands do not
+  the XAML binds to (`PasteShortcutCommand`, `EditRunCommandCommand`, ...) are pinned by a test. Toolkit commands do not
   listen to WPF's `CommandManager`, so `AppViewModel.NotifyPasteTargetsChanged` tells every Paste command to ask again
   after a cut, copy, paste or move.
 
