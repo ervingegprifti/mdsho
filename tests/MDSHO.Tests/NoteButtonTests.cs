@@ -129,6 +129,106 @@ namespace MDSHO.Tests {
       });
     }
 
+    // ---- Renaming a note in its Note window ----
+
+    private static void PressTitleKey(Window window, System.Windows.Input.Key key) {
+      window.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, PresentationSource.FromVisual(window), 0, key) {
+        RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent
+      });
+      WpfAppHost.Pump();
+    }
+
+    [Fact]
+    public void A_note_has_no_Rename_in_its_menu_other_buttons_do() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        Assert.False(note.ShowRename);
+        Assert.True(f.Group.ShowRename);
+      });
+    }
+
+    [Fact]
+    public void F2_on_a_note_opens_it_to_rename_instead_of_renaming_in_the_panel() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        Action<ShortcutViewModel> old = ShortcutViewModel.RenameNoteEditor;
+        List<ShortcutViewModel> renamed = new List<ShortcutViewModel>();
+        ShortcutViewModel.RenameNoteEditor = s => renamed.Add(s);
+        try {
+          Assert.True(f.Win.HandleKey(ShortcutKey.F2, ShortcutModifiers.None, note, false));
+          Assert.Equal(new[] { note }, renamed);
+          Assert.Equal(EditField.None, note.EditField);
+          // Other buttons still rename in the panel.
+          Assert.True(f.Win.HandleKey(ShortcutKey.F2, ShortcutModifiers.None, f.Group, false));
+          Assert.Equal(EditField.Name, f.Group.EditField);
+        } finally {
+          ShortcutViewModel.RenameNoteEditor = old;
+        }
+      });
+    }
+
+    [Fact]
+    public void The_note_title_says_double_click_to_rename_the_comment_title_does_not() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        Assert.Equal(TextEditWindow.RenameTitleToolTip, Named<TextBlock>(TextEditWindow.ForNote(note), "TextTitle").ToolTip);
+        Assert.Null(Named<TextBlock>(TextEditWindow.ForComment(f.Group), "TextTitle").ToolTip);
+      });
+    }
+
+    [Fact]
+    public void Renaming_from_the_note_title_saves_on_Enter_and_Esc_or_a_blank_name_keeps_it() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        note.Name = "Old name";
+        TextEditWindow window = TextEditWindow.ForNote(note);
+        Shown(window, () => {
+          TextBlock title = Named<TextBlock>(window, "TextTitle");
+          TextBox edit = Named<TextBox>(window, "TextTitleEdit");
+          Assert.False(window.IsRenamingTitle);
+          window.BeginRenameTitle();
+          WpfAppHost.Pump();
+          Assert.True(window.IsRenamingTitle);
+          Assert.Equal(Visibility.Collapsed, title.Visibility);
+          Assert.Equal("Old name", edit.Text);
+          edit.Text = "New name";
+          PressTitleKey(window, System.Windows.Input.Key.Enter);
+          Assert.False(window.IsRenamingTitle);
+          Assert.True(window.IsVisible);
+          Assert.Equal("New name", note.Name);
+          Assert.Equal("New name", Stored(note.ID).Name);
+          Assert.Equal("New name", title.Text);
+          // Esc keeps the name and leaves the window open.
+          window.BeginRenameTitle();
+          edit.Text = "Discarded";
+          PressTitleKey(window, System.Windows.Input.Key.Escape);
+          Assert.True(window.IsVisible);
+          Assert.Equal("New name", note.Name);
+          // A blank name is ignored.
+          window.BeginRenameTitle();
+          edit.Text = "   ";
+          window.EndRenameTitle(save: true);
+          Assert.Equal("New name", note.Name);
+        });
+      });
+    }
+
+    [Fact]
+    public void Closing_the_note_while_renaming_keeps_the_new_name() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        note.Name = "Before";
+        TextEditWindow window = TextEditWindow.ForNote(note);
+        Shown(window, () => {
+          window.BeginRenameTitle();
+          Named<TextBox>(window, "TextTitleEdit").Text = "After";
+          window.Close();
+          WpfAppHost.Pump();
+        });
+        Assert.Equal("After", note.Name);
+      });
+    }
+
     [Fact]
     public void The_comment_window_has_wrap_text_just_left_of_ok() {
       WithGroup(f => {

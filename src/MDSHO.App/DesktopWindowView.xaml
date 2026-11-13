@@ -486,7 +486,7 @@
                                             </MenuItem>
                                         </MenuItem>
                                         <Separator/>
-                                        <MenuItem Header="Rename" Command="{Binding RenameCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}">
+                                        <MenuItem Header="Rename" Command="{Binding RenameCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" Visibility="{Binding ShowRename, Converter={StaticResource BoolToVisibility}}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Rename}"/>
                                             </MenuItem.Icon>

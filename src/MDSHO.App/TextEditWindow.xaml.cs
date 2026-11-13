@@ -70,6 +70,7 @@ namespace MDSHO {
       this.TextComment.Background = this.Background;
       if (kind == TextKind.Note) {
         UseNoteTitleBar();
+        UseRenamableTitle();
       } else {
         UseCommentTitleBar();
       }
@@ -108,6 +109,103 @@ namespace MDSHO {
     private void ShowTitle() {
       this.Title = this.shortcut.Name;
       this.TextTitle.Text = this.Title;
+    }
+
+    // ---- Renaming a note from its title ----
+
+    /// <summary>The tooltip of a note's title.</summary>
+    public const string RenameTitleToolTip = "Double-click to rename the note";
+
+    private Point? titleDragStart;
+
+    /// <summary>
+    /// A note's title text takes the mouse (the rest of the title bar is still the caption): a double click on it renames the
+    /// note, dragging it moves the window. A double click elsewhere on the title bar still maximises and restores.
+    /// </summary>
+    private void UseRenamableTitle() {
+      System.Windows.Shell.WindowChrome.SetIsHitTestVisibleInChrome(this.TextTitle, true);
+      this.TextTitle.ToolTip = RenameTitleToolTip;
+      this.TextTitle.MouseLeftButtonDown += TextTitle_MouseLeftButtonDown;
+      this.TextTitle.MouseMove += TextTitle_MouseMove;
+      this.TextTitle.MouseLeftButtonUp += (s, e) => this.titleDragStart = null;
+      this.TextTitleEdit.LostKeyboardFocus += (s, e) => EndRenameTitle(save: true);
+      this.Closing += (s, e) => EndRenameTitle(save: true);
+    }
+
+    private void TextTitle_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+      e.Handled = true;
+      if (e.ClickCount == 2) {
+        this.titleDragStart = null;
+        BeginRenameTitle();
+      } else {
+        this.titleDragStart = e.GetPosition(this);
+      }
+    }
+
+    // Dragging starts only once the mouse has moved, so a double click still reaches the title.
+    private void TextTitle_MouseMove(object sender, MouseEventArgs e) {
+      if (this.titleDragStart == null) { return; }
+      if (e.LeftButton != MouseButtonState.Pressed) {
+        this.titleDragStart = null;
+        return;
+      }
+      Vector moved = e.GetPosition(this) - this.titleDragStart.Value;
+      if (Math.Abs(moved.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(moved.Y) < SystemParameters.MinimumVerticalDragDistance) {
+        return;
+      }
+      this.titleDragStart = null;
+      if (this.WindowState == WindowState.Maximized) {
+        // Like dragging a maximised window's title bar: restore it under the mouse, at the same place along the title.
+        Point inWindow = e.GetPosition(this);
+        double along = this.ActualWidth > 0 ? inWindow.X / this.ActualWidth : 0.5;
+        Point onScreen = PointToScreen(inWindow);
+        PresentationSource source = PresentationSource.FromVisual(this);
+        if (source?.CompositionTarget != null) {
+          onScreen = source.CompositionTarget.TransformFromDevice.Transform(onScreen);
+        }
+        this.WindowState = WindowState.Normal;
+        this.Left = onScreen.X - this.Width * along;
+        this.Top = onScreen.Y - inWindow.Y;
+      }
+      DragMove();
+    }
+
+    /// <summary>True while the note's title is being renamed.</summary>
+    public bool IsRenamingTitle => this.TextTitleEdit.Visibility == Visibility.Visible;
+
+    /// <summary>Opens the edit box over a note's title, with the name selected.</summary>
+    public void BeginRenameTitle() {
+      if (this.kind != TextKind.Note || IsRenamingTitle) { return; }
+      this.TextTitleEdit.Text = this.shortcut.Name ?? "";
+      this.TextTitle.Visibility = Visibility.Collapsed;
+      this.TextTitleEdit.Visibility = Visibility.Visible;
+      // Deferred so it runs after the window has been shown or activated.
+      Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() => {
+        if (IsRenamingTitle) {
+          this.TextTitleEdit.Focus();
+          this.TextTitleEdit.SelectAll();
+        }
+      }));
+    }
+
+    /// <summary>Closes the title's edit box; with <paramref name="save"/> a changed, non-blank name renames the note.</summary>
+    public void EndRenameTitle(bool save) {
+      if (!IsRenamingTitle) { return; }
+      string name = this.TextTitleEdit.Text ?? "";
+      this.TextTitleEdit.Visibility = Visibility.Collapsed;
+      this.TextTitle.Visibility = Visibility.Visible;
+      if (save && !string.IsNullOrWhiteSpace(name) && name != this.shortcut.Name) {
+        this.shortcut.Name = name;
+      }
+      if (this.IsActive) {
+        this.TextComment.Focus();
+      }
+    }
+
+    /// <summary>F2 on a note in its panel: opens (or brings back) its Note window with the title ready to rename.</summary>
+    public static void RenameNoteFor(ShortcutViewModel shortcut) {
+      ShowNoteFor(shortcut);
+      FindOpenNoteWindow(shortcut)?.BeginRenameTitle();
     }
 
     /// <summary>True when the text was saved; for a comment false after Cancel, X or Esc.</summary>
@@ -544,7 +642,11 @@ namespace MDSHO {
     }
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e) {
-      if (e.Key == Key.Escape) {
+      if (IsRenamingTitle && (e.Key == Key.Escape || e.Key == Key.Enter)) {
+        // Enter saves the new name, Esc keeps the old one; neither closes or saves the window.
+        e.Handled = true;
+        EndRenameTitle(save: e.Key == Key.Enter);
+      } else if (e.Key == Key.Escape) {
         e.Handled = true;
         Close();
       } else if (this.kind == TextKind.Note && (e.Key == Key.Enter || e.Key == Key.S) && (KeyboardModifiers() & ModifierKeys.Control) == ModifierKeys.Control) {

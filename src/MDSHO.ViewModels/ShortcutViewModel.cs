@@ -336,6 +336,11 @@ namespace MDSHO.ViewModels {
     /// or Enter) shows and hides its note. Set by the app; when null, <see cref="OpenNoteEditor"/> is used.
     /// </summary>
     public static Action<ShortcutViewModel> ToggleNoteEditor { get; set; }
+    /// <summary>
+    /// Renames a note button: a note is renamed in its Note window, so this opens the window with the title ready to edit
+    /// (F2 on a note). Set by the app; tests replace it.
+    /// </summary>
+    public static Action<ShortcutViewModel> RenameNoteEditor { get; set; }
     /// <summary>The Windows error code when the user answers No to the administrator (UAC) prompt.</summary>
     public const int ErrorCancelled = 1223;
     /// <summary>
@@ -487,6 +492,8 @@ namespace MDSHO.ViewModels {
     public bool ShowGroup => this.isGroup;
     /// <summary>True for a normal shortcut.</summary>
     public bool ShowSetNameTheSameAsTarget => !this.isGroup && !this.isNote;
+    /// <summary>True for every button but a note, which is renamed in its own Note window.</summary>
+    public bool ShowRename => !this.isNote;
     /// <summary>True for a normal shortcut.</summary>
     public bool ShowCopyTargetToMemory => !this.isGroup && !this.isNote;
     /// <summary>True for a file, folder or web link shortcut (not for groups and commands).</summary>

@@ -80,6 +80,7 @@ namespace MDSHO
         ShortcutViewModel.OpenCommentEditor = TextEditWindow.ShowCommentFor;
         ShortcutViewModel.OpenNoteEditor = TextEditWindow.ShowNoteFor;
         ShortcutViewModel.ToggleNoteEditor = TextEditWindow.ToggleNoteFor;
+        ShortcutViewModel.RenameNoteEditor = TextEditWindow.RenameNoteFor;
 
         // Get the data context for the application.
         this.DataContext = this.host.Services.GetRequiredService<AppViewModel>();

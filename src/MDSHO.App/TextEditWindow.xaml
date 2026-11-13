@@ -81,6 +81,9 @@
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock x:Name="TextTitleIcon" FontFamily="{StaticResource IconFont}" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"/>
                     <TextBlock x:Name="TextTitle" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333" TextTrimming="CharacterEllipsis"/>
+                    <!--A note's title is renamed here: double-click the title text (or F2 on the note in its panel). Enter or leaving saves, Esc cancels.-->
+                    <TextBox x:Name="TextTitleEdit" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="14" MinWidth="160" Padding="1,0"
+                             Visibility="Collapsed" WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="Note title"/>
                 </StackPanel>
                 <Button x:Name="ButtonColors" Grid.Column="1" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Note colours" AutomationProperties.Name="Note colours" Visibility="Collapsed"/>

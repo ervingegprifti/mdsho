@@ -56,6 +56,10 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - **Double and triple click** in the Note and Comment windows: a double click selects the word without the space after
   it, a triple click selects the whole paragraph (without its line break).
 
+- **Rename a note in its Note window**: double-click the note's title (its tooltip says so) to edit it in place;
+  Enter or clicking away saves, Esc keeps the old name. F2 on a note in its panel opens the Note window ready to rename.
+  Dragging the title still moves the window, and a double click elsewhere on the title bar still maximises and restores.
+  Notes have no Rename in their right-click menu any more.
 - **Show version in title**, under Other in a panel's Settings (on at first, shared by the panel and its clones):
   shows the MDSHO version after the panel's title, for example "MDSHO v1.5.1". Closing Settings without Apply puts the
   setting back. The Settings window is 7 pixels taller for it.
