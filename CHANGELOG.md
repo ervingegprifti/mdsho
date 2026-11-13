@@ -56,6 +56,17 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - **Double and triple click** in the Note and Comment windows: a double click selects the word without the space after
   it, a triple click selects the whole paragraph (without its line break).
 
+- **Rename a note in its Note window**: double-click the note's title (its tooltip says so) to edit it in place;
+  Enter or clicking away saves, Esc keeps the old name. F2 on a note in its panel opens the Note window ready to rename.
+  Dragging the title still moves the window, and a double click elsewhere on the title bar still maximises and restores.
+  Notes have no Rename in their right-click menu any more.
+- **Show version in title**, under Other in a panel's Settings (on at first, shared by the panel and its clones):
+  shows the MDSHO version after the panel's title, for example "MDSHO v1.5.1". Closing Settings without Apply puts the
+  setting back. The Settings window is 7 pixels taller for it. Sideload test builds show their build number as a 4th
+  part (for example "v1.5.1.7"); Store builds show three parts.
+- Database version 13: the windows table gets `ShowVersionInTitle` (backed up first, on for every panel). Exports
+  carry it; older exports import with it on.
+
 ### Changed
 
 - The Run command window has no maximise button any more: double-click its title bar to maximise or restore it.
@@ -93,6 +104,11 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   open (backed up first). Database version 9 adds whether a note window stays on top (`IsTopmost`).
 - Database version 10: the buttons table gets the five colours of a note's window (empty = the default colours); exports
   carry them, and older exports import with the default colours.
+
+### Fixed
+
+- Renaming a button now updates the title of its open Note or Comment window straight away (it used to show the old
+  name until the window was closed and opened again).
 
 ## [1.1.5]
 

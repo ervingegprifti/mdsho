@@ -27,12 +27,17 @@ namespace MDSHO.ViewModels {
   /// Represents the ViewModel of an DesktopWindow or an MDSHOClone object.
   /// </summary>
   public partial class DesktopWindowViewModel : ObservableObject, ICloseWindow {
-#if DEBUG
+    /// <summary>The version of the running application, shown after the title ("Show version in title").</summary>
+    private static readonly string appVersion = VersionForTitle(Assembly.GetEntryAssembly()?.GetName().Version);
     /// <summary>
-    /// The version of the running application, displayed in debug builds.
+    /// "x.y.z", or "x.y.z.n" for a sideload test build (whose 4th part is its build number); null when unknown.
     /// </summary>
-    private static readonly string appVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString();
-#endif
+    public static string VersionForTitle(Version version) {
+      if (version == null) { return null; }
+      return version.Revision > 0 ? version.ToString(4) : version.ToString(3);
+    }
+    /// <summary>The version shown after the title, for example "v1.5.1", or "v1.5.1.7" for a sideload test build (empty when it can't be read).</summary>
+    public static string VersionText => string.IsNullOrEmpty(appVersion) ? string.Empty : $"v{appVersion}";
     private DesktopWindowViewModel parentWindow = null;
     private long id;
     private long? parentWindowID;
@@ -121,16 +126,16 @@ namespace MDSHO.ViewModels {
       IsDocked = true;
     }
     /// <summary>
-    /// Display the sufix (Clone) in the title if the window is a clone.
+    /// The title as shown: with the suffix (Clone) for a clone, DEBUG in Debug builds, and the version when
+    /// "Show version in title" is on.
     /// </summary>
     public string TitleDisplay {
       get {
+        string title = IsClone ? $"{Appearance.Title} (Clone)" : Appearance.Title;
 #if DEBUG
-        string versionSuffix = string.IsNullOrEmpty(appVersion) ? string.Empty : $" v{appVersion}";
-        return IsClone ? $"{Appearance.Title} (Clone) DEBUG{versionSuffix}" : $"{Appearance.Title} DEBUG{versionSuffix}";
-#else
-        return IsClone ? $"{Appearance.Title} (Clone)" : Appearance.Title;
+        title += " DEBUG";
 #endif
+        return Appearance.ShowVersionInTitle && VersionText.Length > 0 ? $"{title} {VersionText}" : title;
       }
     }
     // Shown or hidden (the views turn these into Visibility).
@@ -237,7 +242,7 @@ namespace MDSHO.ViewModels {
 
     #region EVENTS
     private void Appearance_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e) {
-      if (e.PropertyName == nameof(this.Appearance.Title)) {
+      if (e.PropertyName == nameof(this.Appearance.Title) || e.PropertyName == nameof(this.Appearance.ShowVersionInTitle)) {
         OnPropertyChanged(nameof(this.TitleDisplay)); // So to refresh the Title View with the new change.
       }
       // DesktopWindowAppearance is shared between the window and its clones. Only the window (non clone) saves it, so it is saved once and against the Windows table ID.
@@ -257,6 +262,8 @@ namespace MDSHO.ViewModels {
         DataStore.Windows.UpdateCommentWrapText(windowID, this.Appearance.CommentWrapText);
       } else if (e.PropertyName == nameof(this.Appearance.ReserveDockedSpace)) {
         DataStore.Windows.UpdateReserveDockedSpace(windowID, this.Appearance.ReserveDockedSpace);
+      } else if (e.PropertyName == nameof(this.Appearance.ShowVersionInTitle)) {
+        DataStore.Windows.UpdateShowVersionInTitle(windowID, this.Appearance.ShowVersionInTitle);
       }
     }
     private void Clones_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) {
@@ -342,7 +349,11 @@ namespace MDSHO.ViewModels {
         return false;
       }
       if (none && key == ShortcutKey.F2) {
-        selected.BeginEdit(EditField.Name);
+        if (selected.IsNote) {
+          ShortcutViewModel.RenameNoteEditor?.Invoke(selected);
+        } else {
+          selected.BeginEdit(EditField.Name);
+        }
       } else if (none && key == ShortcutKey.Delete) {
         selected.DeleteShortcutCommand.Execute(null);
       } else if (ctrl && key == ShortcutKey.X) {

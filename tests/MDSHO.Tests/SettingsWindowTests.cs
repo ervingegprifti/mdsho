@@ -358,7 +358,7 @@ namespace MDSHO.Tests {
         Assert.Equal(h, applyTopLeft.Y, 1);
         Assert.Equal(footer.ActualHeight - h, applyTopLeft.Y + apply.ActualHeight, 1);
         Assert.Equal(footer.ActualWidth - h, applyTopLeft.X + apply.ActualWidth, 1);
-        Assert.Equal(571, window.Height); // the content as before, plus the 32 px title bar and the 1 px frame top and bottom
+        Assert.Equal(578, window.Height); // the content, plus the 32 px title bar and the 1 px frame top and bottom
       });
     }
 

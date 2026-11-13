@@ -35,16 +35,15 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Version_is_12_and_the_last_migration_is_12() {
-      Assert.Equal(12, AppConstants.DatabaseVersion);
-      Assert.Equal(12, SchemaManager.Migrations.Last().Version);
+    public void There_is_a_version_12_step() {
+      Assert.Single(SchemaManager.Migrations, m => m.Version == 12);
     }
 
     [Fact]
     public void V11_database_migrates_to_12_with_reserving_off_and_keeps_the_rest() {
       BuildV11Db();
       DataStore.Upgrade();
-      Assert.Equal(12, db.Scalar("PRAGMA user_version"));
+      Assert.True(db.Scalar("PRAGMA user_version") >= 12);
       Assert.Equal(1, Columns("MDSHOWindows", "ReserveDockedSpace"));
       DesktopWindow window = DataStore.Windows.GetAll().Single();
       Assert.False(window.ReserveDockedSpace);

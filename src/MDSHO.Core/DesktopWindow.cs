@@ -42,6 +42,8 @@ namespace MDSHO.Core {
     public bool CommentWrapText { get; set; }
     /// <summary>True when this window and its clones, docked to a screen side, reserve that strip of the screen (off for new windows).</summary>
     public bool ReserveDockedSpace { get; set; }
+    /// <summary>True when the title bar shows the app version after the title (on for new windows and older exports).</summary>
+    public bool ShowVersionInTitle { get; set; } = true;
     /// <summary>
     /// Children RootShortcuts.
     /// </summary>

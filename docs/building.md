@@ -169,13 +169,19 @@ To build: **Actions** → **sideload** → **Run workflow**, choose the branch a
    for that version is already published;
 2. builds and runs the tests;
 3. checks that the certificate's subject equals the manifest's `Publisher` and that it hasn't expired;
-4. builds and signs the bundle;
-5. creates a draft release **MDSHO &lt;version&gt;** with the `.msixbundle` and the public `.cer`, and the version's
-   section of `CHANGELOG.md` as notes.
+4. sets the 4th part of the version to the workflow's run number (on the build machine only; the repository keeps
+   `x.y.z.0`, as the Microsoft Store requires), so every build has its own, higher version, for example `1.5.1.7`;
+5. builds and signs the bundle;
+6. creates a draft release **MDSHO &lt;version&gt; (build &lt;run number&gt;)** with the `.msixbundle` and the public
+   `.cer`, and the version's section of `CHANGELOG.md` as notes.
 
-Download both files from the draft on the repository's **Releases** page and install them as below. The tag
-(`v<version>`) is created only when you publish the draft. Running the workflow again for the same version adds another
+Download both files from the draft on the repository's **Releases** page and install them as below. Each build installs
+over the previous one as an upgrade, and shows its build number in the About window and, with **Show version in title**,
+in the panel titles (`v1.5.1.7`). The tag (`v<version>`) is created only when you publish the draft. Every run adds a
 draft, so delete the drafts you no longer need.
+
+A build that adds a database version upgrades your data, and older builds can't open it afterwards: export your data
+before installing such a build if you may want to go back.
 
 ## Install a sideload package
 

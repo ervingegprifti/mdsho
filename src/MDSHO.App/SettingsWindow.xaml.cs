@@ -36,6 +36,7 @@ namespace MDSHO {
       bool oldSolidIcons = desktopWindow.Appearance.SolidIcons;
       bool oldSingleClickToOpen = desktopWindow.Appearance.SingleClickToOpen;
       bool oldReserveDockedSpace = desktopWindow.Appearance.ReserveDockedSpace;
+      bool oldShowVersionInTitle = desktopWindow.Appearance.ShowVersionInTitle;
       this.revert = () => {
         // These properties are not saved in DesktopWindowViewModel as they might change too many times.
         desktopWindow.Appearance.BorderColor = oldBorderColor;
@@ -47,6 +48,7 @@ namespace MDSHO {
         desktopWindow.Appearance.SolidIcons = oldSolidIcons;
         desktopWindow.Appearance.SingleClickToOpen = oldSingleClickToOpen;
         desktopWindow.Appearance.ReserveDockedSpace = oldReserveDockedSpace;
+        desktopWindow.Appearance.ShowVersionInTitle = oldShowVersionInTitle;
       };
       this.save = () => {
         // These properties are not saved in DesktopWindowViewModel as they might change too many times.
@@ -56,7 +58,7 @@ namespace MDSHO {
         DataStore.Windows.UpdateTextColor(windowID, desktopWindow.Appearance.TextColor);
         DataStore.Windows.UpdateTitleBackgroundColor(windowID, desktopWindow.Appearance.TitleBackgroundColor);
         DataStore.Windows.UpdateTitleTextColor(windowID, desktopWindow.Appearance.TitleTextColor);
-        // SolidIcons, SingleClickToOpen and ReserveDockedSpace are saved in DesktopWindowViewModel.
+        // SolidIcons, SingleClickToOpen, ReserveDockedSpace and ShowVersionInTitle are saved in DesktopWindowViewModel.
       };
     }
 

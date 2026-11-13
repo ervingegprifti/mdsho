@@ -11,7 +11,7 @@
         xmlns:converters="clr-namespace:MDSHO.Converters"
         Title="Settings"
         Width="660"
-        Height="571"
+        Height="578"
         ResizeMode="NoResize"
         Topmost="True"
         WindowStyle="None"
@@ -209,6 +209,9 @@
                                 <CheckBox x:Name="CheckReserveDockedSpace" Content="Reserve screen space when docked" Margin="0,6,0,0"
                                           ToolTip="While this window is docked, desktop icons and maximised programs stay out of its strip of the screen, like with the taskbar"
                                           IsChecked="{Binding Appearance.ReserveDockedSpace}" />
+                                <CheckBox x:Name="CheckShowVersionInTitle" Content="Show version in title" Margin="0,6,0,0"
+                                          ToolTip="Shows the MDSHO version after this window's title, for example MDSHO v1.5.1"
+                                          IsChecked="{Binding Appearance.ShowVersionInTitle}" />
                             </StackPanel>
                             </StackPanel>
                         </StackPanel>
