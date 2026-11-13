@@ -233,7 +233,7 @@ namespace MDSHO.Tests {
             view.Close();
           }
 
-          SettingsWindow settings = new SettingsWindow(w) { ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000 };
+          ColorsWindow settings = new ColorsWindow(w) { ShowActivated = false, ShowInTaskbar = false, Left = -10000, Top = -10000 };
           settings.Show();
           try {
             WpfAppHost.Pump();

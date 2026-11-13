@@ -156,7 +156,7 @@ namespace MDSHO.Tests {
                 window.Close();
                 WpfAppHost.Pump();
               }
-              Assert.IsType<SettingsWindow>(shown);
+              Assert.IsType<ColorsWindow>(shown);
               Assert.Same(window, shown.Owner);
               // No room on the right of a note at x 1300..1800: on its left, 20 px away.
               Assert.Equal(new Point(1300 - 20 - 560, 150), placed);

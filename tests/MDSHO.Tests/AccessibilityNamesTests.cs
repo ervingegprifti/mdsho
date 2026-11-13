@@ -220,6 +220,7 @@ namespace MDSHO.Tests {
             problems.AddRange(Check(new RunCommandWindow(runCommand)));
             problems.AddRange(Check(new RunCommandExamplesWindow(runCommand)));
             problems.AddRange(Check(new SettingsWindow(windowVm)));
+            problems.AddRange(Check(new ColorsWindow(windowVm)));
             problems.AddRange(Check(new AboutWindow()));
             problems.AddRange(Check(new ErrorWindow(new InvalidOperationException("Test error"))));
           }

@@ -10,7 +10,7 @@
   <Identity
     Name="41797ErvinGegprifti.MDSHO"
     Publisher="CN=F6485E11-0693-40BF-8B18-383BCB7322FF"
-    Version="1.5.6.0" />
+    Version="1.5.8.0" />
 
   <Properties>
     <DisplayName>MDSHO</DisplayName>

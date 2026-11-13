@@ -475,11 +475,11 @@ namespace MDSHO {
     /// <summary>The gap between a note and its Note colours window (DIPs).</summary>
     public const double NoteColoursGap = 20;
 
-    // Opens the Settings window as "Note colours" beside this note (right or left, where there is room); the note
+    // Opens the Colours window as "Note colours" beside this note (right or left, where there is room); the note
     // follows the colours while they change.
     private void ShowNoteColours() {
       try {
-        SettingsWindow colours = new SettingsWindow(this.shortcut);
+        ColorsWindow colours = new ColorsWindow(this.shortcut);
         DialogPlacement.BesideWindow(colours, this, NoteColoursGap);
         ShowNoteColoursDialog(colours);
       } catch (Exception ex) {

@@ -12,6 +12,8 @@
     IShortcutRepository Shortcuts { get; }
     /// <summary>The places of note windows.</summary>
     INoteWindowRepository NoteWindows { get; }
+    /// <summary>The default colours saved for panels and for notes.</summary>
+    IDefaultColorsRepository DefaultColors { get; }
     /// <summary>Begin a transaction scope (joins the current one on this thread, if any).</summary>
     ITransactionScope BeginTransaction();
     /// <summary>Create the database if missing and apply every pending schema migration (with a backup first).

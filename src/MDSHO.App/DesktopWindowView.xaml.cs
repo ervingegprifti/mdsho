@@ -75,6 +75,7 @@ namespace MDSHO {
       this.MenuItemHeaderExitApplication.Click += MenuItemHeaderExitApplication_Click;
       // Header Controls
       this.ButtonHeaderSettings.Click += ButtonHeaderSettings_Click;
+      this.ButtonHeaderColors.Click += (s, e) => ShowColorsWindow();
       this.ButtonHeaderDockWindowLeft.Click += ButtonHeaderDockWindowLeft_Click;
       this.ButtonHeaderDockWindowRight.Click += ButtonHeaderDockWindowRight_Click;
       this.ButtonHeaderCloneThisWindowToAllScreens.Click += ButtonHeaderCloneThisWindowToAllScreens_Click;
@@ -332,15 +333,26 @@ namespace MDSHO {
 
 
 		#region FUNCTIONS
-		/// <summary>Shows the Settings window modally. Tests replace it so no modal window blocks them.</summary>
+		/// <summary>The gap between a panel and its Settings or Colours window (DIPs), like a note and its Note colours window.</summary>
+		public const double DialogGap = 20;
+
+		/// <summary>Shows the Settings or Colours window modally. Tests replace it so no modal window blocks them.</summary>
 		public static Func<Window, bool?> ShowSettingsDialog = w => w.ShowDialog();
 
 		private void ShowSettingsWindow() {
+			ShowDialogBesideThis(desktopWindow => new SettingsWindow(desktopWindow));
+		}
+
+		private void ShowColorsWindow() {
+			ShowDialogBesideThis(desktopWindow => new ColorsWindow(desktopWindow));
+		}
+
+		// Opens the dialog beside this panel, DialogGap away: on its right when there is room, otherwise on its left.
+		private void ShowDialogBesideThis(Func<DesktopWindowViewModel, Window> create) {
 			try {
-				DesktopWindowViewModel desktopWindow = (DesktopWindowViewModel)this.DataContext;
-				SettingsWindow settingsWindow = new SettingsWindow(desktopWindow);
-				settingsWindow.PositionRelativeToParent(this);
-				ShowSettingsDialog(settingsWindow);
+				Window dialog = create((DesktopWindowViewModel)this.DataContext);
+				DialogPlacement.BesideWindow(dialog, this, DialogGap);
+				ShowSettingsDialog(dialog);
 			} catch (Exception ex) {
 				ErrorDialog.ShowDialog(ex);
 			}

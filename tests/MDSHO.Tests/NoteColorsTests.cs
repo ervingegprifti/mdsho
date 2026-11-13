@@ -14,7 +14,7 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// Note colours: the colours button in a Note window's title bar opens the Settings window as "Note colours" (the five
+  /// Note colours: the colours button in a Note window's title bar opens the Colours window as "Note colours" (the five
   /// colours and the palette, Default colours, Apply). The colours are saved with the note (exported, imported and copied
   /// with it), and the Note window uses them for its border, title bar, title text and buttons, background and text.
   /// </summary>
@@ -137,16 +137,17 @@ namespace MDSHO.Tests {
       });
     }
 
-    // ---- Note colours window (the Settings window in note mode) ----
+    // ---- Note colours window (the Colours window for a note) ----
 
     [Fact]
     public void The_note_colours_window_shows_only_the_colours_and_has_Default_colours() {
       WithNote(f => {
-        SettingsWindow window = new SettingsWindow(f.Note);
+        ColorsWindow window = new ColorsWindow(f.Note);
         Shown(window, () => {
           Assert.Equal("Note colours: Checklist", window.Title);
           Assert.Equal("Note colours", Named<Label>(window, "LabelAppearanceHeading").Content);
-          Assert.Equal(Visibility.Collapsed, Named<FrameworkElement>(window, "PanelWindowOnly").Visibility);
+          Assert.Empty(WpfAppHost.VisualDescendants<RadioButton>(window));
+          Assert.Null(window.FindName("CheckSingleClickToOpen"));
           Assert.Equal(Visibility.Visible, Named<Button>(window, "ButtonDefaultColours").Visibility);
           Assert.Equal(f.Note.OwningWindow.Appearance.Icons.Brush, GlyphIcon.GlyphOf(window.Icon));
         });
@@ -157,7 +158,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void Apply_saves_the_note_colours() {
       WithNote(f => {
-        SettingsWindow window = new SettingsWindow(f.Note);
+        ColorsWindow window = new ColorsWindow(f.Note);
         Shown(window, () => {
           f.Note.NoteColors.TitleBackgroundColor = "#FF2F4F6F";
           Click(Named<Button>(window, "ButtonApply"));
@@ -170,7 +171,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void Closing_without_Apply_puts_the_old_note_colours_back() {
       WithNote(f => {
-        SettingsWindow window = new SettingsWindow(f.Note);
+        ColorsWindow window = new ColorsWindow(f.Note);
         Shown(window, () => {
           f.Note.NoteColors.TitleBackgroundColor = "#FF2F4F6F";
         });
@@ -184,7 +185,7 @@ namespace MDSHO.Tests {
       WithNote(f => {
         f.Note.NoteColors.BackgroundColor = "#FFFFF8DC";
         f.Note.SaveNoteColors();
-        SettingsWindow window = new SettingsWindow(f.Note);
+        ColorsWindow window = new ColorsWindow(f.Note);
         Shown(window, () => {
           Click(Named<Button>(window, "ButtonDefaultColours"));
           Assert.Equal(NoteColors.DefaultBackground, f.Note.NoteColors.BackgroundColor);
@@ -202,7 +203,7 @@ namespace MDSHO.Tests {
       WithNote(f => {
         TextEditWindow note = TextEditWindow.ForNote(f.Note);
         Shown(note, () => {
-          SettingsWindow colours = new SettingsWindow(f.Note);
+          ColorsWindow colours = new ColorsWindow(f.Note);
           Shown(colours, () => {
             Named<ListBox>(colours, "ListColorTargets").SelectedIndex = target;
             WpfAppHost.Pump();

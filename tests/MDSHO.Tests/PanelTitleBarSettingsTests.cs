@@ -8,8 +8,9 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// A panel has no bottom bar: Settings sits in the title bar just left of Dock left, the PRO badge and its trial code
-  /// are gone, and the button list takes the whole space below the title bar, with the rounded bottom corners.
+  /// A panel has no bottom bar: Settings (gear) and Colours (brush) sit in the title bar just left of Dock left, the PRO
+  /// badge and its trial code are gone, and the button list takes the whole space below the title bar, with the rounded
+  /// bottom corners.
   /// </summary>
   public class PanelTitleBarSettingsTests {
 
@@ -34,19 +35,79 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Settings_is_in_the_title_bar_just_left_of_Dock_left() {
+    public void Settings_then_Colours_are_in_the_title_bar_just_left_of_Dock_left() {
       WithView((w, view) => {
         Button settings = Named<Button>(view, "ButtonHeaderSettings");
+        Button colors = Named<Button>(view, "ButtonHeaderColors");
         Button dockLeft = Named<Button>(view, "ButtonHeaderDockWindowLeft");
         Grid header = Named<Grid>(view, "GridHeader");
         Assert.Same(header, settings.Parent);
-        Assert.Equal(Grid.GetColumn(dockLeft) - 1, Grid.GetColumn(settings));
+        Assert.Same(header, colors.Parent);
+        Assert.Equal(Grid.GetColumn(colors) - 1, Grid.GetColumn(settings));
+        Assert.Equal(Grid.GetColumn(dockLeft) - 1, Grid.GetColumn(colors));
         Assert.Equal(w.Appearance.Icons.Settings, settings.Content);
         Assert.Equal("Settings", settings.ToolTip);
+        Assert.Equal(w.Appearance.Icons.Brush, colors.Content);
+        Assert.Equal("Colours", colors.ToolTip);
+        Assert.Equal("Colours", System.Windows.Automation.AutomationProperties.GetName(colors));
         Assert.Equal(Visibility.Visible, settings.Visibility);
+        Assert.Equal(Visibility.Visible, colors.Visibility);
+        Assert.Same(settings.Style, colors.Style);
         double settingsX = settings.TranslatePoint(new Point(0, 0), header).X;
+        double colorsX = colors.TranslatePoint(new Point(0, 0), header).X;
         double dockX = dockLeft.TranslatePoint(new Point(0, 0), header).X;
-        Assert.Equal(dockX - settings.ActualWidth, settingsX, 1);
+        Assert.Equal(colorsX - settings.ActualWidth, settingsX, 1);
+        Assert.Equal(dockX - colors.ActualWidth, colorsX, 1);
+        // The brush follows the Solid icons setting.
+        w.Appearance.SolidIcons = !w.Appearance.SolidIcons;
+        WpfAppHost.Pump();
+        Assert.Equal(w.Appearance.Icons.Brush, colors.Content);
+      });
+    }
+
+    [Fact]
+    public void Settings_and_Colours_open_20_pixels_beside_the_panel_owned_by_it() {
+      WithView((w, view) => {
+        Assert.Equal(20, DesktopWindowView.DialogGap);
+        foreach (string name in new[] { "ButtonHeaderSettings", "ButtonHeaderColors" }) {
+          Func<Window, bool?> old = DesktopWindowView.ShowSettingsDialog;
+          Window shown = null;
+          DesktopWindowView.ShowSettingsDialog = s => { shown = s; return false; };
+          try {
+            Button button = Named<Button>(view, name);
+            button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
+            WpfAppHost.Pump();
+          } finally {
+            DesktopWindowView.ShowSettingsDialog = old;
+          }
+          Assert.NotNull(shown);
+          Assert.Same(view, shown.Owner);
+          Assert.Equal(WindowStartupLocation.Manual, shown.WindowStartupLocation);
+          // The first guess; once shown it is placed on its handle, right of the panel when there is room, else left.
+          Assert.Equal(view.Left + view.ActualWidth + 20, shown.Left, 1);
+          Assert.Equal(view.Top, shown.Top, 1);
+          shown.Close();
+        }
+      });
+    }
+
+    [Fact]
+    public void The_title_bar_Colours_button_opens_the_Colours_window_for_the_panel() {
+      WithView((w, view) => {
+        Func<Window, bool?> old = DesktopWindowView.ShowSettingsDialog;
+        Window shown = null;
+        DesktopWindowView.ShowSettingsDialog = s => { shown = s; return false; };
+        try {
+          Button colors = Named<Button>(view, "ButtonHeaderColors");
+          colors.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, colors));
+          WpfAppHost.Pump();
+        } finally {
+          DesktopWindowView.ShowSettingsDialog = old;
+        }
+        ColorsWindow window = Assert.IsType<ColorsWindow>(shown);
+        Assert.Same(w, window.DataContext);
+        Assert.StartsWith("Window colours: " + w.Appearance.Title, window.Title);
+        window.Close();
       });
     }
 
