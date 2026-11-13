@@ -10,8 +10,8 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// Database version 12 adds MDSHOWindows.ReserveDockedSpace: a panel (and its clones) docked to a screen side reserves
-  /// that strip of the screen, so desktop icons and maximised programs stay out of it. Off for every panel.
+  /// Database version 12 added MDSHOWindows.ReserveDockedSpace ("Reserve screen space when docked"). The feature was
+  /// removed and version 14 drops the column again; the step stays so the version numbers keep their meaning.
   /// </summary>
   public class DatabaseV12MigrationTests : IDisposable {
     private TempDb db;
@@ -40,66 +40,25 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void V11_database_migrates_to_12_with_reserving_off_and_keeps_the_rest() {
+    public void The_v12_step_adds_the_column_once_and_keeps_the_rest() {
       BuildV11Db();
-      DataStore.Upgrade();
-      Assert.True(db.Scalar("PRAGMA user_version") >= 12);
-      Assert.Equal(1, Columns("MDSHOWindows", "ReserveDockedSpace"));
-      DesktopWindow window = DataStore.Windows.GetAll().Single();
-      Assert.False(window.ReserveDockedSpace);
-      Assert.True(window.SingleClickToOpen);
-      Assert.True(window.CommentWrapText);
-      Assert.Contains(Directory.GetFiles(db.Folder, "test.sqlite3.bak-v*"), p => p.Contains("bak-v11-"));
-    }
-
-    [Fact]
-    public void Running_the_v12_step_twice_does_nothing_the_second_time() {
-      BuildV11Db();
-      DataStore.Upgrade();
       using (SqliteConnection c = db.Open()) {
+        SchemaManager.Migrations.Single(m => m.Version == 12).Apply(c);
         SchemaManager.Migrations.Single(m => m.Version == 12).Apply(c);
       }
       Assert.Equal(1, Columns("MDSHOWindows", "ReserveDockedSpace"));
+      Assert.Equal(0, db.Scalar("SELECT ReserveDockedSpace FROM MDSHOWindows"));
+      Assert.Equal(1, db.Scalar("SELECT CommentWrapText FROM MDSHOWindows"));
     }
 
     [Fact]
-    public void A_new_database_has_the_column_and_new_panels_do_not_reserve() {
-      db = new TempDb();
-      Assert.Equal(1, Columns("MDSHOWindows", "ReserveDockedSpace"));
-      Assert.All(DataStore.Windows.GetAll(), w => Assert.False(w.ReserveDockedSpace));
-    }
-
-    [Fact]
-    public void Reserving_is_saved_with_the_panel() {
-      db = new TempDb();
-      long windowId = DataStore.Windows.GetAll().First().ID;
-      DataStore.Windows.UpdateReserveDockedSpace(windowId, true);
-      Assert.True(DataStore.Windows.GetAll().Single(w => w.ID == windowId).ReserveDockedSpace);
-      DataStore.Windows.UpdateReserveDockedSpace(windowId, false);
-      Assert.False(DataStore.Windows.GetAll().Single(w => w.ID == windowId).ReserveDockedSpace);
-    }
-
-    [Fact]
-    public void A_panel_added_or_updated_keeps_its_reserving() {
-      db = new TempDb();
-      DesktopWindow window = DataStore.Windows.GetAll().First();
-      window.ReserveDockedSpace = true;
-      window.ID = 0;
-      long id = DataStore.Windows.Add(window);
-      Assert.True(DataStore.Windows.Get(id).ReserveDockedSpace);
-      DesktopWindow read = DataStore.Windows.Get(id);
-      read.ReserveDockedSpace = false;
-      DataStore.Windows.Update(read);
-      Assert.False(DataStore.Windows.Get(id).ReserveDockedSpace);
-    }
-
-    [Fact]
-    public void Export_writes_reserving_and_an_old_export_imports_with_it_off() {
-      DesktopWindow window = new DesktopWindow { Title = "W", ReserveDockedSpace = true };
-      string json = System.Text.Json.JsonSerializer.Serialize(window, PortabilityJson.Options);
-      Assert.Contains("\"reserveDockedSpace\": true", json);
-      DesktopWindow old = System.Text.Json.JsonSerializer.Deserialize<DesktopWindow>("{\"id\":1,\"title\":\"W\"}", PortabilityJson.Options);
-      Assert.False(old.ReserveDockedSpace);
+    public void V11_database_migrates_to_the_latest_without_the_column() {
+      BuildV11Db();
+      DataStore.Upgrade();
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(0, Columns("MDSHOWindows", "ReserveDockedSpace"));
+      Assert.True(DataStore.Windows.GetAll().Single().CommentWrapText);
+      Assert.Contains(Directory.GetFiles(db.Folder, "test.sqlite3.bak-v*"), p => p.Contains("bak-v11-"));
     }
   }
 }

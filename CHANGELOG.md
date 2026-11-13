@@ -6,16 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
-## [1.5.1]
+## [1.5.3]
 
 ### Added
 
-- **Reserve screen space when docked**, under Other in a panel's Settings (off at first, shared by the panel and its
-  clones): while the panel is docked to the left or right side of a screen, it keeps that strip of the screen the way
-  the taskbar does, so desktop icons (including new files and shortcuts) and maximised programs stay out of it. Other
-  programs' windows can still be moved over it. The strip follows the panel when you make it wider or narrower and is
-  given back when the panel floats again, the setting is turned off, or MDSHO exits. Two panels docked on the same side
-  sit side by side. Closing Settings without Apply puts the setting back.
 - **Find other lost windows** in the tray menu: moves every window of another app whose title bar can't be reached on
   any screen (for example one that opened on a screen that is no longer connected) to the screen with the mouse
   pointer, keeping its size unless it is bigger than that screen, then says how many windows moved. Minimized windows,
@@ -61,11 +55,15 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   Dragging the title still moves the window, and a double click elsewhere on the title bar still maximises and restores.
   Notes have no Rename in their right-click menu any more.
 - **Show version in title**, under Other in a panel's Settings (on at first, shared by the panel and its clones):
-  shows the MDSHO version after the panel's title, for example "MDSHO v1.5.1". Closing Settings without Apply puts the
-  setting back. The Settings window is 7 pixels taller for it. Sideload test builds show their build number as a 4th
-  part (for example "v1.5.1.7"); Store builds show three parts.
+  shows the MDSHO version after the panel's title, for example "MDSHO v1.5.3". Closing Settings without Apply puts the
+  setting back. Sideload test builds show their build number as a 4th part (for example "v1.5.3.7"); Store builds show
+  three parts.
 - Database version 13: the windows table gets `ShowVersionInTitle` (backed up first, on for every panel). Exports
   carry it; older exports import with it on.
+- Database version 14: drops `ReserveDockedSpace` from the windows table (backed up first). Version 12 added it for
+  "Reserve screen space when docked", which only test builds had and which was removed again: Windows lays out the
+  desktop icons again every time a reserved strip changes. Exports no longer carry it; older exports that have it still
+  import.
 
 ### Changed
 

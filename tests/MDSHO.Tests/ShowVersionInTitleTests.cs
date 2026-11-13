@@ -62,7 +62,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Settings_has_the_checkbox_below_reserve_screen_space_and_closing_without_Apply_puts_it_back() {
+    public void Settings_has_the_checkbox_below_single_click_to_open_and_closing_without_Apply_puts_it_back() {
       using (TempDb db = new TempDb()) {
         WpfAppHost.Run(() => {
           DesktopWindowViewModel w = new AppViewModel().AddWindow("TEST", 100, 100);
@@ -70,13 +70,13 @@ namespace MDSHO.Tests {
           settings.Show();
           try {
             WpfAppHost.Pump();
-            CheckBox reserve = (CheckBox)settings.FindName("CheckReserveDockedSpace");
+            CheckBox single = (CheckBox)settings.FindName("CheckSingleClickToOpen");
             CheckBox version = Assert.IsType<CheckBox>(settings.FindName("CheckShowVersionInTitle"));
             Assert.Equal("Show version in title", version.Content);
             Assert.False(string.IsNullOrEmpty(version.ToolTip as string));
-            StackPanel other = (StackPanel)reserve.Parent;
+            StackPanel other = (StackPanel)single.Parent;
             Assert.Same(other, version.Parent);
-            Assert.Equal(other.Children.IndexOf(reserve) + 1, other.Children.IndexOf(version));
+            Assert.Equal(other.Children.IndexOf(single) + 1, other.Children.IndexOf(version));
             Assert.True(version.IsChecked);
             version.IsChecked = false;
             WpfAppHost.Pump();
