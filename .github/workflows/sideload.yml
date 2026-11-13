@@ -35,7 +35,14 @@ jobs:
         with:
           global-json-file: global.json
 
-      - uses: microsoft/setup-msbuild@v2
+      # Find Visual Studio's MSBuild with vswhere (preinstalled on GitHub's Windows runners) and put it on PATH.
+      - name: Find MSBuild
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+          $msbuild = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find "MSBuild\**\Bin\MSBuild.exe" | Select-Object -First 1
+          if (-not $msbuild) { throw "MSBuild was not found with vswhere." }
+          Split-Path $msbuild >> $env:GITHUB_PATH
+          Write-Host "MSBuild: $msbuild"
 
       - name: Show tool versions
         run: |
