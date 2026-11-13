@@ -2,6 +2,9 @@
 
 Rules for Claude Code sessions in this repository. It is public: never put secrets in it.
 
+Keep this file current: when a change alters how work is done here (workflows, build or version rules, conventions the
+owner sets), update this file in the same branch. Keep it short and describe the current state, not history.
+
 ## Project
 
 WPF app on .NET 10, x64, shipped as MSIX. See `README.md`, `docs/` and `CONTRIBUTING.md`.
