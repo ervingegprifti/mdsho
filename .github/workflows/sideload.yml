@@ -1,0 +1,170 @@
+name: sideload
+
+# Builds a signed sideload MSIX bundle and attaches it, with its public certificate, to a DRAFT GitHub release.
+# Draft releases are visible only to people with write access to the repository. The tag (v<version>) is created
+# only when the draft is published by hand.
+#
+# Manual only: Actions > sideload > Run workflow (choose the branch to build). It never runs on push or pull request,
+# so forks and pull requests can't reach the signing secrets.
+#
+# Repository secrets (Settings > Secrets and variables > Actions):
+#   SIDELOAD_PFX_BASE64    the signing certificate (.pfx), base64-encoded
+#   SIDELOAD_PFX_PASSWORD  its password
+# The certificate's subject must equal the Publisher in src/MDSHO.Package/Package.appxmanifest (see docs/building.md).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write # create the draft release
+
+concurrency:
+  group: sideload
+  cancel-in-progress: false
+
+jobs:
+  sideload:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Show tool versions
+        run: |
+          dotnet --version
+          msbuild -version -nologo
+
+      - name: Read and check the version
+        id: version
+        run: |
+          [xml]$props = Get-Content Directory.Build.props
+          $version = ($props.Project.PropertyGroup | Where-Object { $_.Version } | Select-Object -First 1).Version.Trim()
+          [xml]$manifest = Get-Content src/MDSHO.Package/Package.appxmanifest
+          $packageVersion = $manifest.Package.Identity.Version
+          if ($packageVersion -ne "$version.0") {
+            throw "Version mismatch: Directory.Build.props has $version, Package.appxmanifest has $packageVersion (expected $version.0)."
+          }
+          $publisher = $manifest.Package.Identity.Publisher
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "package_version=$packageVersion" >> $env:GITHUB_OUTPUT
+          "publisher=$publisher" >> $env:GITHUB_OUTPUT
+          Write-Host "Version $version (package $packageVersion), publisher $publisher"
+
+      - name: Stop if v${{ steps.version.outputs.version }} is already published
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.version.outputs.version }}
+        run: |
+          # The releases/tags endpoint returns published releases only, not drafts.
+          gh api "repos/${{ github.repository }}/releases/tags/$env:TAG" --silent 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            throw "Release $env:TAG is already published. Bump the version before building a new sideload package."
+          }
+          $global:LASTEXITCODE = 0
+
+      - run: dotnet restore MDSHO.Cli.slnf
+
+      - run: dotnet build MDSHO.Cli.slnf -c Release --no-restore
+
+      - run: dotnet test MDSHO.Cli.slnf -c Release --no-build
+
+      - name: Prepare the signing certificate
+        env:
+          PFX_BASE64: ${{ secrets.SIDELOAD_PFX_BASE64 }}
+          PFX_PASSWORD: ${{ secrets.SIDELOAD_PFX_PASSWORD }}
+          PUBLISHER: ${{ steps.version.outputs.publisher }}
+        run: |
+          if (-not $env:PFX_BASE64 -or -not $env:PFX_PASSWORD) {
+            throw "The SIDELOAD_PFX_BASE64 and SIDELOAD_PFX_PASSWORD repository secrets must both be set."
+          }
+          $pfx = Join-Path $env:RUNNER_TEMP "sideload.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:PFX_BASE64.Trim()))
+          $cert = [Security.Cryptography.X509Certificates.X509Certificate2]::new($pfx, $env:PFX_PASSWORD)
+          if ($cert.Subject -ne $env:PUBLISHER) {
+            throw "The certificate subject '$($cert.Subject)' does not match the manifest Publisher '$env:PUBLISHER'."
+          }
+          if ($cert.NotAfter -lt (Get-Date)) {
+            throw "The signing certificate expired on $($cert.NotAfter)."
+          }
+          # Public certificate only (no private key), for the release.
+          [IO.File]::WriteAllBytes((Join-Path $env:RUNNER_TEMP "sideload.cer"), $cert.Export([Security.Cryptography.X509Certificates.X509ContentType]::Cert))
+          Write-Host "Certificate OK: $($cert.Subject), valid until $($cert.NotAfter), thumbprint $($cert.Thumbprint)"
+
+      - name: Build the signed MSIX bundle
+        env:
+          PFX_PASSWORD: ${{ secrets.SIDELOAD_PFX_PASSWORD }}
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "AppPackages"
+          msbuild src/MDSHO.Package/MDSHO.Package.wapproj -restore -nologo -verbosity:minimal `
+            -p:Configuration=Release -p:Platform=x64 `
+            -p:UapAppxPackageBuildMode=SideloadOnly `
+            -p:AppxBundle=Always -p:AppxBundlePlatforms=x64 `
+            -p:AppxPackageSigningEnabled=true `
+            "-p:PackageCertificateKeyFile=$env:RUNNER_TEMP\sideload.pfx" `
+            "-p:PackageCertificatePassword=$env:PFX_PASSWORD" `
+            "-p:AppxPackageDir=$out/"
+          if ($LASTEXITCODE -ne 0) { throw "MSBuild failed with exit code $LASTEXITCODE." }
+
+      - name: Collect the release files
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "AppPackages"
+          $bundle = Get-ChildItem $out -Recurse -Filter *.msixbundle | Select-Object -First 1
+          if (-not $bundle) { throw "No .msixbundle was produced under $out." }
+          try {
+            $signature = Get-AuthenticodeSignature $bundle.FullName
+            Write-Host "Bundle: $($bundle.Name), signature status $($signature.Status), signer $($signature.SignerCertificate.Subject)"
+          } catch {
+            Write-Host "Bundle: $($bundle.Name) (signature not readable here: $($_.Exception.Message))"
+          }
+
+          $release = Join-Path $env:RUNNER_TEMP "release"
+          New-Item -ItemType Directory -Force $release | Out-Null
+          Copy-Item $bundle.FullName $release
+          # Named like Visual Studio names it.
+          Copy-Item (Join-Path $env:RUNNER_TEMP "sideload.cer") (Join-Path $release ("MDSHO.Package_{0}_x64.cer" -f $env:PACKAGE_VERSION))
+          Get-ChildItem $release | Format-Table Name, Length
+
+      - name: Write the release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $lines = Get-Content CHANGELOG.md
+          $start = [Array]::FindIndex($lines, [Predicate[string]] { param($l) $l -match "^## \[$([regex]::Escape($env:VERSION))\]" })
+          $notes = @()
+          if ($start -ge 0) {
+            for ($i = $start + 1; $i -lt $lines.Count -and $lines[$i] -notmatch '^## \['; $i++) { $notes += $lines[$i] }
+          } else {
+            $notes += "_No CHANGELOG.md section for $env:VERSION._"
+          }
+          $notes += ""
+          $notes += "---"
+          $notes += "Sideload build from ``$env:GITHUB_REF_NAME`` at $env:GITHUB_SHA ([run]($env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID))."
+          $notes += "Install: trust the ``.cer`` once (Local Machine > Trusted People), then open the ``.msixbundle``. See docs/building.md."
+          ($notes -join "`n").Trim() | Set-Content (Join-Path $env:RUNNER_TEMP "notes.md") -Encoding utf8
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $files = Get-ChildItem (Join-Path $env:RUNNER_TEMP "release") | ForEach-Object FullName
+          gh release create "v$env:VERSION" @files --draft `
+            --repo "${{ github.repository }}" `
+            --target "$env:GITHUB_SHA" `
+            --title "MDSHO $env:VERSION" `
+            --notes-file (Join-Path $env:RUNNER_TEMP "notes.md")
+          if ($LASTEXITCODE -ne 0) { throw "Creating the draft release failed." }
+
+      - name: Remove the signing certificate
+        if: always()
+        run: Remove-Item (Join-Path $env:RUNNER_TEMP "sideload.pfx") -Force -ErrorAction SilentlyContinue
