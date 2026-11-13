@@ -6,9 +6,9 @@ using Xunit;
 
 namespace MDSHO.Tests {
 
-  /// <summary>The app version is 1.5.0 everywhere: Directory.Build.props, the MSIX manifest and the built assemblies.</summary>
+  /// <summary>The app version is 1.5.1 everywhere: Directory.Build.props, the MSIX manifest and the built assemblies.</summary>
   public class VersionTests {
-    private const string Expected = "1.5.0";
+    private const string Expected = "1.5.1";
 
     private static string RepoRoot() {
       DirectoryInfo dir = new DirectoryInfo(AppContext.BaseDirectory);
