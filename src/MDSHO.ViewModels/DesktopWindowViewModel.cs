@@ -27,10 +27,7 @@ namespace MDSHO.ViewModels {
   /// Represents the ViewModel of an DesktopWindow or an MDSHOClone object.
   /// </summary>
   public partial class DesktopWindowViewModel : ObservableObject, ICloseWindow {
-#if DEBUG
-    /// <summary>
-    /// The version of the running application, displayed in debug builds.
-    /// </summary>
+    /// <summary>The version of the running application, shown after the title ("Show version in title").</summary>
     private static readonly string appVersion = VersionForTitle(Assembly.GetEntryAssembly()?.GetName().Version);
     /// <summary>
     /// "x.y.z", or "x.y.z.n" for a sideload test build (whose 4th part is its build number); null when unknown.
@@ -41,7 +38,6 @@ namespace MDSHO.ViewModels {
     }
     /// <summary>The version shown after the title, for example "v1.5.1", or "v1.5.1.7" for a sideload test build (empty when it can't be read).</summary>
     public static string VersionText => string.IsNullOrEmpty(appVersion) ? string.Empty : $"v{appVersion}";
-#endif
     private DesktopWindowViewModel parentWindow = null;
     private long id;
     private long? parentWindowID;
