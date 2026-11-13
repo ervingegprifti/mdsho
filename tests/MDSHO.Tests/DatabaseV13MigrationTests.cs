@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using Microsoft.Data.Sqlite;
@@ -28,7 +28,7 @@ namespace MDSHO.Tests {
         SchemaManager.Migrations.Single(m => m.Version == 11).Apply(c);
         SchemaManager.Migrations.Single(m => m.Version == 12).Apply(c);
       }
-      db.Exec("PRAGMA user_version = 12; UPDATE MDSHOWindows SET CommentWrapText = 1, ReserveDockedSpace = 1;");
+      db.Exec("PRAGMA user_version = 12; UPDATE MDSHOWindows SET CommentWrapText = 1;");
     }
 
     private long Columns(string table, string column) {
@@ -36,22 +36,20 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Version_is_13_and_the_last_migration_is_13() {
-      Assert.Equal(13, AppConstants.DatabaseVersion);
-      Assert.Equal(13, SchemaManager.Migrations.Last().Version);
+    public void There_is_a_version_13_step() {
+      Assert.Single(SchemaManager.Migrations, m => m.Version == 13);
     }
 
     [Fact]
     public void V12_database_migrates_to_13_with_the_version_shown_and_keeps_the_rest() {
       BuildV12Db();
       DataStore.Upgrade();
-      Assert.Equal(13, db.Scalar("PRAGMA user_version"));
+      Assert.True(db.Scalar("PRAGMA user_version") >= 13);
       Assert.Equal(1, Columns("MDSHOWindows", "ShowVersionInTitle"));
       DesktopWindow window = DataStore.Windows.GetAll().Single();
       Assert.True(window.ShowVersionInTitle);
       Assert.True(window.SingleClickToOpen);
       Assert.True(window.CommentWrapText);
-      Assert.True(window.ReserveDockedSpace);
       Assert.Contains(Directory.GetFiles(db.Folder, "test.sqlite3.bak-v*"), p => p.Contains("bak-v12-"));
     }
 

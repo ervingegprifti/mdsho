@@ -37,7 +37,6 @@ namespace MDSHO.Data {
           SolidIcons INTEGER NOT NULL,
           SingleClickToOpen INTEGER NOT NULL,
           CommentWrapText INTEGER NOT NULL DEFAULT 0,
-          ReserveDockedSpace INTEGER NOT NULL DEFAULT 0,
           ShowVersionInTitle INTEGER NOT NULL DEFAULT 1);
 
         CREATE TABLE MDSHOWindowClones (
@@ -249,6 +248,12 @@ namespace MDSHO.Data {
       new DbMigration(13, "Show version in title: MDSHOWindows.ShowVersionInTitle (on)", conn => {
         if (!ColumnExists(conn, "MDSHOWindows", "ShowVersionInTitle")) {
           Execute(conn, "ALTER TABLE MDSHOWindows ADD COLUMN ShowVersionInTitle INTEGER NOT NULL DEFAULT 1;");
+        }
+      }),
+      new DbMigration(14, "Reserve screen space when docked removed: MDSHOWindows.ReserveDockedSpace dropped", conn => {
+        // Like step 5: DROP COLUMN (SQLite 3.35+, bundled) keeps the rows, other columns, indexes and foreign keys.
+        if (ColumnExists(conn, "MDSHOWindows", "ReserveDockedSpace")) {
+          Execute(conn, "ALTER TABLE MDSHOWindows DROP COLUMN ReserveDockedSpace;");
         }
       })
     };

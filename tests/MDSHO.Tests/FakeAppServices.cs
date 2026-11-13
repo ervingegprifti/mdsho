@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -19,8 +19,6 @@ namespace MDSHO.Tests {
     public readonly List<ProcessStartInfo> Started = new List<ProcessStartInfo>();
     public readonly List<string> Copied = new List<string>();
     public readonly List<Uri> Launched = new List<Uri>();
-    /// <summary>Reserved screen strips are recorded, never made: no test may change the real desktop.</summary>
-    public readonly FakeAppBars AppBars = new FakeAppBars();
     public AppServices Services { get; }
 
     public FakeAppServices() {
@@ -30,7 +28,6 @@ namespace MDSHO.Tests {
       FakeUriLauncher uriLauncher = new FakeUriLauncher(Launched);
       Services = new AppServices(shell, package, new AppDataLocator(package), new AutoStartService(package), new ScreenService(),
         clipboard, uriLauncher, new ShellLinkWriter(), new StoreActions(new StoreActionsHost(clipboard, shell, uriLauncher)));
-      Services.AppBars = AppBars;
       AppServices.Current = Services;
     }
 
@@ -68,28 +65,6 @@ namespace MDSHO.Tests {
       public FakeUriLauncher(List<Uri> launched) { this.launched = launched; }
       public Task<bool> LaunchUriAsync(Uri uri) { launched.Add(uri); return Task.FromResult(true); }
     }
-  }
-
-  /// <summary>Records the screen strips windows ask for (as "Reserve Left", "Release" and "ReleaseAll") and grants them.</summary>
-  public sealed class FakeAppBars : IAppBarService {
-    public readonly List<string> Calls = new List<string>();
-    public readonly List<IntPtr> Windows = new List<IntPtr>();
-    /// <summary>What <see cref="WindowRect"/> answers, in physical pixels.</summary>
-    public ScreenRect Rect = new ScreenRect(0, 0, 300, 1040);
-    /// <summary>False to refuse every strip, the way Windows can.</summary>
-    public bool Grant = true;
-    public int CallbackMessage => 0x8000 + 77;
-    public ScreenRect? Reserve(IntPtr window, DockSide side) {
-      Calls.Add("Reserve " + side);
-      Windows.Add(window);
-      return Grant ? Rect : (ScreenRect?)null;
-    }
-    public void Release(IntPtr window) {
-      Calls.Add("Release");
-      Windows.Add(window);
-    }
-    public void ReleaseAll() { Calls.Add("ReleaseAll"); }
-    public ScreenRect WindowRect(IntPtr window) { return Rect; }
   }
 
   /// <summary>Test-run set-up: the shortcut files are written for real (into temp folders), processes are never started.</summary>
