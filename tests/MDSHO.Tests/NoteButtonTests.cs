@@ -108,6 +108,28 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
+    public void Renaming_a_button_updates_the_title_of_its_open_note_and_comment_windows() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        TextEditWindow noteWindow = TextEditWindow.ForNote(note);
+        Shown(noteWindow, () => {
+          note.Name = "Renamed note";
+          Assert.Equal("Renamed note", noteWindow.Title);
+          Assert.Equal("Renamed note", Named<TextBlock>(noteWindow, "TextTitle").Text);
+        });
+        TextEditWindow commentWindow = TextEditWindow.ForComment(f.Group);
+        Shown(commentWindow, () => {
+          f.Group.Name = "Renamed group";
+          Assert.Equal("Renamed group", commentWindow.Title);
+          Assert.Equal("Renamed group", Named<TextBlock>(commentWindow, "TextTitle").Text);
+        });
+        // Closed windows stop following the name.
+        note.Name = "After close";
+        Assert.Equal("Renamed note", noteWindow.Title);
+      });
+    }
+
+    [Fact]
     public void The_comment_window_has_wrap_text_just_left_of_ok() {
       WithGroup(f => {
         TextEditWindow window = TextEditWindow.ForComment(f.Group);

@@ -50,9 +50,13 @@ namespace MDSHO {
       this.shortcut = shortcut ?? throw new ArgumentNullException(nameof(shortcut));
       this.kind = kind;
       this.icons = shortcut.OwningWindow?.Appearance?.Icons ?? new IconGlyphs(true);
-      // Just the button's name: the icon already says whether it is a note or a comment.
-      this.Title = shortcut.Name;
-      this.TextTitle.Text = this.Title;
+      // Just the button's name: the icon already says whether it is a note or a comment. It follows renames while open.
+      ShowTitle();
+      System.ComponentModel.PropertyChangedEventHandler nameChanged = (s, e) => {
+        if (e.PropertyName == nameof(ShortcutViewModel.Name)) { ShowTitle(); }
+      };
+      shortcut.PropertyChanged += nameChanged;
+      this.Closed += (s, e) => shortcut.PropertyChanged -= nameChanged;
       this.TextComment.Text = (kind == TextKind.Note ? shortcut.NoteText : shortcut.Comment) ?? "";
       System.Windows.Automation.AutomationProperties.SetName(this.TextComment, kind == TextKind.Note ? "Note" : "Comment");
       if (kind == TextKind.Note) {
@@ -99,6 +103,11 @@ namespace MDSHO {
         this.TextComment.Focus();
         this.TextComment.CaretIndex = this.TextComment.Text.Length;
       };
+    }
+
+    private void ShowTitle() {
+      this.Title = this.shortcut.Name;
+      this.TextTitle.Text = this.Title;
     }
 
     /// <summary>True when the text was saved; for a comment false after Cancel, X or Esc.</summary>

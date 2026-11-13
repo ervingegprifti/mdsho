@@ -94,6 +94,11 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - Database version 10: the buttons table gets the five colours of a note's window (empty = the default colours); exports
   carry them, and older exports import with the default colours.
 
+### Fixed
+
+- Renaming a button now updates the title of its open Note or Comment window straight away (it used to show the old
+  name until the window was closed and opened again).
+
 ## [1.1.5]
 
 First public version of the source code, published under GPLv3 with a commercial license available.
