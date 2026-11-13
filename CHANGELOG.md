@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
-## [1.5.3]
+## [1.5.5]
 
 ### Added
 
@@ -34,8 +34,7 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   (border, title background, title text, background, text), the palette, **Default colours** and Apply. It opens beside
   the note, 20 pixels away: on the right when there is room, otherwise on the left. The note's window
   follows the colours live; they are saved on Apply and kept with the note (exported, imported and copied with it). A note's right-click menu has **Edit
-  note...** and **Copy note text** (puts the whole note on the clipboard). Notes can be renamed, marked,
-  moved, copied, exported and imported like other buttons, and need no shortcut file. They use the new note icon on
+  note...**. Notes can be renamed, marked, moved, copied, exported and imported like other buttons, and need no shortcut file. They use the new note icon on
   the button, in the Note window and in the menu. The Note and Comment windows show just the button's name as their title.
 - **Default colours** in a panel's Settings window: puts the five colours back to those of a new window (black border,
   see-through black background, white text). Icons appearance and Single click to open stay as they are; Apply saves
@@ -55,8 +54,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   Dragging the title still moves the window, and a double click elsewhere on the title bar still maximises and restores.
   Notes have no Rename in their right-click menu any more.
 - **Show version in title**, under Other in a panel's Settings (on at first, shared by the panel and its clones):
-  shows the MDSHO version after the panel's title, for example "MDSHO v1.5.3". Closing Settings without Apply puts the
-  setting back. Sideload test builds show their build number as a 4th part (for example "v1.5.3.7"); Store builds show
+  shows the MDSHO version after the panel's title, for example "MDSHO v1.5.5". Closing Settings without Apply puts the
+  setting back. Sideload test builds show their build number as a 4th part (for example "v1.5.5.7"); Store builds show
   three parts.
 - Database version 13: the windows table gets `ShowVersionInTitle` (backed up first, on for every panel). Exports
   carry it; older exports import with it on.

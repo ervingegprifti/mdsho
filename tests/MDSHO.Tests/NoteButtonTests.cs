@@ -18,7 +18,7 @@ namespace MDSHO.Tests {
   /// <summary>
   /// Note buttons: a third kind of button next to shortcuts and run commands. "New note" creates one and opens the Note
   /// window; opening a note (double-click, or single click) opens the Note window; the tooltip shows the first lines of
-  /// the note; "Copy note text" puts the note on the clipboard. Notes have no shortcut file.
+  /// the note. Notes have no shortcut file.
   /// </summary>
   public class NoteButtonTests {
 
@@ -28,7 +28,6 @@ namespace MDSHO.Tests {
       public ShortcutViewModel Group;
       public List<ShortcutViewModel> NotesOpened = new List<ShortcutViewModel>();
       public List<ProcessStartInfo> Started = new List<ProcessStartInfo>();
-      public List<string> Copied = new List<string>();
     }
 
     private static void WithGroup(Action<Fixture> body) {
@@ -36,12 +35,10 @@ namespace MDSHO.Tests {
         Action<ShortcutViewModel, bool> oldRunEditor = ShortcutViewModel.OpenRunCommandEditor;
         Action<ShortcutViewModel> oldNoteEditor = ShortcutViewModel.OpenNoteEditor;
         Action<ProcessStartInfo> oldStarter = ShortcutViewModel.ProcessStarter;
-        Action<string> oldCopy = ShortcutViewModel.CopyText;
         Fixture f = new Fixture();
         ShortcutViewModel.OpenRunCommandEditor = (s, isNew) => { };
         ShortcutViewModel.OpenNoteEditor = s => f.NotesOpened.Add(s);
         ShortcutViewModel.ProcessStarter = psi => f.Started.Add(psi);
-        ShortcutViewModel.CopyText = text => f.Copied.Add(text);
         try {
           using (TempDb db = new TempDb()) {
             f.App = new AppViewModel();
@@ -54,7 +51,6 @@ namespace MDSHO.Tests {
           ShortcutViewModel.OpenRunCommandEditor = oldRunEditor;
           ShortcutViewModel.OpenNoteEditor = oldNoteEditor;
           ShortcutViewModel.ProcessStarter = oldStarter;
-          ShortcutViewModel.CopyText = oldCopy;
         }
       });
     }
@@ -144,6 +140,61 @@ namespace MDSHO.Tests {
         ShortcutViewModel note = NewNoteInGroup(f);
         Assert.False(note.ShowRename);
         Assert.True(f.Group.ShowRename);
+      });
+    }
+
+    /// <summary>The visible items of an open menu, in order: a Separator shows as "-".</summary>
+    private static List<string> VisibleMenuItems(FrameworkElement owner) {
+      ContextMenu menu = owner.ContextMenu;
+      menu.PlacementTarget = owner;
+      menu.IsOpen = true;
+      menu.UpdateLayout();
+      WpfAppHost.Pump();
+      try {
+        return menu.Items.OfType<Control>().Where(c => c.Visibility == Visibility.Visible)
+          .Select(c => c is Separator ? "-" : (((MenuItem)c).Header as string ?? "?")).ToList();
+      } finally {
+        menu.IsOpen = false;
+        WpfAppHost.Pump();
+      }
+    }
+
+    [Fact]
+    public void A_note_menu_and_a_group_menu_have_no_separator_next_to_another_or_at_an_end() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        foreach (ShortcutViewModel shown in new[] { note, f.Group }) {
+          WithView(f, shown, (view, button) => {
+            List<string> items = VisibleMenuItems(button);
+            string list = string.Join(" | ", items);
+            Assert.NotEqual("-", items.First());
+            Assert.NotEqual("-", items.Last());
+            for (int i = 1; i < items.Count; i++) {
+              Assert.False(items[i] == "-" && items[i - 1] == "-", "Two separators in a row: " + list);
+            }
+          });
+        }
+      });
+    }
+
+    [Fact]
+    public void The_note_icon_stays_where_it_is_while_the_title_is_renamed() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        TextEditWindow window = TextEditWindow.ForNote(note);
+        Shown(window, () => {
+          FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
+          TextBlock icon = Named<TextBlock>(window, "TextTitleIcon");
+          window.UpdateLayout();
+          Rect before = BoundsIn(icon, bar);
+          double barHeight = bar.ActualHeight;
+          window.BeginRenameTitle();
+          WpfAppHost.Pump();
+          window.UpdateLayout();
+          Assert.Equal(before, BoundsIn(icon, bar));
+          Assert.Equal(barHeight, bar.ActualHeight);
+          window.EndRenameTitle(save: false);
+        });
       });
     }
 
@@ -454,16 +505,6 @@ namespace MDSHO.Tests {
         f.NotesOpened.Clear();
         note.EditNoteCommand.Execute(null);
         Assert.Equal(new[] { note }, f.NotesOpened);
-      });
-    }
-
-    [Fact]
-    public void Copy_note_text_puts_the_whole_note_on_the_clipboard() {
-      WithGroup(f => {
-        ShortcutViewModel note = NewNoteInGroup(f);
-        note.NoteText = "line 1\r\nline 2";
-        note.CopyNoteTextCommand.Execute(null);
-        Assert.Equal(new[] { "line 1\r\nline 2" }, f.Copied);
       });
     }
 
@@ -1011,7 +1052,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Menus_have_New_note_and_a_note_has_Edit_note_and_Copy_note_text() {
+    public void Menus_have_New_note_and_a_note_has_Edit_note_but_no_Copy_note_text() {
       WithGroup(f => {
         ShortcutViewModel note = NewNoteInGroup(f);
         WithView(f, note, (view, button) => {
@@ -1027,9 +1068,9 @@ namespace MDSHO.Tests {
           Assert.Equal("OwningWindow.Appearance.Icons.Note", BindingOperations.GetBinding((TextBlock)edit.Icon, TextBlock.TextProperty).Path.Path);
           MenuItem comment = items.Single(m => (m.Header as string) == "Comment...");
           Assert.Equal(nameof(ShortcutViewModel.ShowComment), BindingOperations.GetBinding(comment, UIElement.VisibilityProperty).Path.Path);
-          MenuItem copy = items.Single(m => (m.Header as string) == "Copy note text");
-          Assert.Equal(nameof(ShortcutViewModel.CopyNoteTextCommand), BindingOperations.GetBinding(copy, MenuItem.CommandProperty).Path.Path);
-          Assert.Equal(nameof(ShortcutViewModel.ShowNote), BindingOperations.GetBinding(copy, UIElement.VisibilityProperty).Path.Path);
+          // The note's text is copied from its Note window.
+          Assert.DoesNotContain(items, m => (m.Header as string) == "Copy note text");
+          Assert.Equal(new[] { "Mark", "-", "Edit note...", "-", "Cut", "Copy", "Paste", "-", "Delete" }, VisibleMenuItems(button));
         });
       });
     }
