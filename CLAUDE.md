@@ -27,9 +27,9 @@ The repository's 4th version part stays `0` (reserved by the Microsoft Store); n
 ## Sideload builds
 
 Sessions on the owner's Windows machine (desktop app) build sideloads locally, as the steps in `docs/building.md`
-describe and only when the owner asks, not with the workflow. A local build keeps `0` as the 4th part, so before each
-installed local build raise the patch version above every build already installed, workflow builds included (after
-`1.5.1.N` from the workflow, the next local build is `1.5.2`).
+describe and only when the owner asks, not with the workflow, and don't zip the package. A local build keeps `0` as
+the 4th part, so before each installed local build raise the patch version above every build already installed,
+workflow builds included (after `1.5.1.N` from the workflow, the next local build is `1.5.2`).
 
 Cloud or browser sessions, which can't build, use the workflow: **Actions > sideload > Run workflow** on any branch creates a draft release "MDSHO x.y.z (build N)" with the
 `.msixbundle` and `.cer`. The workflow stamps its run number N as the 4th version part on the build machine only, so

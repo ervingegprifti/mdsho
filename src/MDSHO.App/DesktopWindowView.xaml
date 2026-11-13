@@ -485,7 +485,7 @@
                                                 </MenuItem.Icon>
                                             </MenuItem>
                                         </MenuItem>
-                                        <Separator/>
+                                        <Separator Visibility="{Binding ShowNameItemsSeparator, Converter={StaticResource BoolToVisibility}}"/>
                                         <MenuItem Header="Rename" Command="{Binding RenameCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" Visibility="{Binding ShowRename, Converter={StaticResource BoolToVisibility}}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Rename}"/>
@@ -502,11 +502,6 @@
                                         <MenuItem Header="Edit note..." Visibility="{Binding ShowNote, Converter={StaticResource BoolToVisibility}}" Command="{Binding EditNoteCommand}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Note}"/>
-                                            </MenuItem.Icon>
-                                        </MenuItem>
-                                        <MenuItem Header="Copy note text" Visibility="{Binding ShowNote, Converter={StaticResource BoolToVisibility}}" Command="{Binding CopyNoteTextCommand}">
-                                            <MenuItem.Icon>
-                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Copy}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator Visibility="{Binding ShowNote, Converter={StaticResource BoolToVisibility}}" />

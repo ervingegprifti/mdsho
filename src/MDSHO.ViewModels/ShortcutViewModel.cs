@@ -494,6 +494,9 @@ namespace MDSHO.ViewModels {
     public bool ShowSetNameTheSameAsTarget => !this.isGroup && !this.isNote;
     /// <summary>True for every button but a note, which is renamed in its own Note window.</summary>
     public bool ShowRename => !this.isNote;
+    /// <summary>True when any of Rename, "Set name the same as target", "Copy target to memory" or Comment shows, so the
+    /// separator above them doesn't sit next to the next one (a note shows none of them).</summary>
+    public bool ShowNameItemsSeparator => this.ShowRename || this.ShowSetNameTheSameAsTarget || this.ShowCopyTargetToMemory || this.ShowComment;
     /// <summary>True for a normal shortcut.</summary>
     public bool ShowCopyTargetToMemory => !this.isGroup && !this.isNote;
     /// <summary>True for a file, folder or web link shortcut (not for groups and commands).</summary>
@@ -641,13 +644,6 @@ namespace MDSHO.ViewModels {
     private void EditNote() {
       if (this.isNote) {
         OpenNoteEditor?.Invoke(this);
-      }
-    }
-    /// <summary>Puts the whole note on the clipboard.</summary>
-    [RelayCommand]
-    private void CopyNoteText() {
-      if (this.isNote) {
-        CopyText(this.NoteText ?? "");
       }
     }
     /// <summary>Opens the Comment window for this button or group (not for notes).</summary>
