@@ -62,7 +62,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   Notes have no Rename in their right-click menu any more.
 - **Show version in title**, under Other in a panel's Settings (on at first, shared by the panel and its clones):
   shows the MDSHO version after the panel's title, for example "MDSHO v1.5.1". Closing Settings without Apply puts the
-  setting back. The Settings window is 7 pixels taller for it.
+  setting back. The Settings window is 7 pixels taller for it. Sideload test builds show their build number as a 4th
+  part (for example "v1.5.1.7"); Store builds show three parts.
 - Database version 13: the windows table gets `ShowVersionInTitle` (backed up first, on for every panel). Exports
   carry it; older exports import with it on.
 

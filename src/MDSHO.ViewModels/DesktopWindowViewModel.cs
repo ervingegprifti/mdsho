@@ -31,8 +31,15 @@ namespace MDSHO.ViewModels {
     /// <summary>
     /// The version of the running application, displayed in debug builds.
     /// </summary>
-    private static readonly string appVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3);
-    /// <summary>The version shown after the title, for example "v1.5.1" (empty when it can't be read).</summary>
+    private static readonly string appVersion = VersionForTitle(Assembly.GetEntryAssembly()?.GetName().Version);
+    /// <summary>
+    /// "x.y.z", or "x.y.z.n" for a sideload test build (whose 4th part is its build number); null when unknown.
+    /// </summary>
+    public static string VersionForTitle(Version version) {
+      if (version == null) { return null; }
+      return version.Revision > 0 ? version.ToString(4) : version.ToString(3);
+    }
+    /// <summary>The version shown after the title, for example "v1.5.1", or "v1.5.1.7" for a sideload test build (empty when it can't be read).</summary>
     public static string VersionText => string.IsNullOrEmpty(appVersion) ? string.Empty : $"v{appVersion}";
 #endif
     private DesktopWindowViewModel parentWindow = null;

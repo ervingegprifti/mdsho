@@ -1,6 +1,7 @@
 name: sideload
 
 # Builds a signed sideload MSIX bundle and attaches it, with its public certificate, to a DRAFT GitHub release.
+# The package version is x.y.z.<run number> (stamped on the runner only), so each build installs over the last one.
 # Draft releases are visible only to people with write access to the repository. The tag (v<version>) is created
 # only when the draft is published by hand.
 #
@@ -105,9 +106,32 @@ jobs:
           [IO.File]::WriteAllBytes((Join-Path $env:RUNNER_TEMP "sideload.cer"), $cert.Export([Security.Cryptography.X509Certificates.X509ContentType]::Cert))
           Write-Host "Certificate OK: $($cert.Subject), valid until $($cert.NotAfter), thumbprint $($cert.Thumbprint)"
 
+      # After the tests (which check the repository's x.y.z.0), on this runner only: the 4th part of the package and
+      # assembly versions becomes this workflow's run number, so every sideload build installs over the previous one.
+      # The repository keeps x.y.z.0, the 4th part being reserved by the Microsoft Store.
+      - name: Stamp the build number
+        id: stamp
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD: ${{ github.run_number }}
+        run: |
+          $build = [int]$env:BUILD
+          if ($build -lt 1 -or $build -gt 65535) { throw "Run number $build doesn't fit the 4th version part (1 to 65535)." }
+          $packageVersion = "$env:VERSION.$build"
+          $path = (Resolve-Path src/MDSHO.Package/Package.appxmanifest).Path
+          $manifest = New-Object System.Xml.XmlDocument
+          $manifest.PreserveWhitespace = $true
+          $manifest.Load($path)
+          $manifest.Package.Identity.Version = $packageVersion
+          $manifest.Save($path)
+          "package_version=$packageVersion" >> $env:GITHUB_OUTPUT
+          "build=$build" >> $env:GITHUB_OUTPUT
+          Write-Host "Package version $packageVersion"
+
       - name: Build the signed MSIX bundle
         env:
           PFX_PASSWORD: ${{ secrets.SIDELOAD_PFX_PASSWORD }}
+          PACKAGE_VERSION: ${{ steps.stamp.outputs.package_version }}
         run: |
           $out = Join-Path $env:RUNNER_TEMP "AppPackages"
           msbuild src/MDSHO.Package/MDSHO.Package.wapproj -restore -nologo -verbosity:minimal `
@@ -117,12 +141,13 @@ jobs:
             -p:AppxPackageSigningEnabled=true `
             "-p:PackageCertificateKeyFile=$env:RUNNER_TEMP\sideload.pfx" `
             "-p:PackageCertificatePassword=$env:PFX_PASSWORD" `
-            "-p:AppxPackageDir=$out/"
+            "-p:AppxPackageDir=$out/" `
+            "-p:AssemblyVersion=$env:PACKAGE_VERSION" "-p:FileVersion=$env:PACKAGE_VERSION"
           if ($LASTEXITCODE -ne 0) { throw "MSBuild failed with exit code $LASTEXITCODE." }
 
       - name: Collect the release files
         env:
-          PACKAGE_VERSION: ${{ steps.version.outputs.package_version }}
+          PACKAGE_VERSION: ${{ steps.stamp.outputs.package_version }}
         run: |
           $out = Join-Path $env:RUNNER_TEMP "AppPackages"
           $bundle = Get-ChildItem $out -Recurse -Filter *.msixbundle | Select-Object -First 1
@@ -144,6 +169,7 @@ jobs:
       - name: Write the release notes
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          BUILD: ${{ steps.stamp.outputs.build }}
         run: |
           $lines = Get-Content CHANGELOG.md
           $start = [Array]::FindIndex($lines, [Predicate[string]] { param($l) $l -match "^## \[$([regex]::Escape($env:VERSION))\]" })
@@ -155,7 +181,7 @@ jobs:
           }
           $notes += ""
           $notes += "---"
-          $notes += "Sideload build from ``$env:GITHUB_REF_NAME`` at $env:GITHUB_SHA ([run]($env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID))."
+          $notes += "Sideload build $env:BUILD (package $env:VERSION.$env:BUILD) from ``$env:GITHUB_REF_NAME`` at $env:GITHUB_SHA ([run]($env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID))."
           $notes += "Install: trust the ``.cer`` once (Local Machine > Trusted People), then open the ``.msixbundle``. See docs/building.md."
           ($notes -join "`n").Trim() | Set-Content (Join-Path $env:RUNNER_TEMP "notes.md") -Encoding utf8
 
@@ -163,12 +189,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
+          BUILD: ${{ steps.stamp.outputs.build }}
         run: |
           $files = Get-ChildItem (Join-Path $env:RUNNER_TEMP "release") | ForEach-Object FullName
           gh release create "v$env:VERSION" @files --draft `
             --repo "${{ github.repository }}" `
             --target "$env:GITHUB_SHA" `
-            --title "MDSHO $env:VERSION" `
+            --title "MDSHO $env:VERSION (build $env:BUILD)" `
             --notes-file (Join-Path $env:RUNNER_TEMP "notes.md")
           if ($LASTEXITCODE -ne 0) { throw "Creating the draft release failed." }
 

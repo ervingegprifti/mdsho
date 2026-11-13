@@ -14,11 +14,14 @@ namespace MDSHO.Tests {
   public class ShowVersionInTitleTests {
 
     [Fact]
-    public void The_version_text_has_three_parts_after_a_v() {
+    public void The_version_text_has_three_parts_after_a_v_or_four_for_a_test_build() {
       string version = DesktopWindowViewModel.VersionText;
       if (version.Length > 0) {
-        Assert.Matches(@"^v\d+\.\d+\.\d+$", version);
+        Assert.Matches(@"^v\d+\.\d+\.\d+(\.\d+)?$", version);
       }
+      Assert.Equal("1.5.1", DesktopWindowViewModel.VersionForTitle(new System.Version(1, 5, 1, 0)));
+      Assert.Equal("1.5.1.7", DesktopWindowViewModel.VersionForTitle(new System.Version(1, 5, 1, 7)));
+      Assert.Null(DesktopWindowViewModel.VersionForTitle(null));
     }
 
     [Fact]
