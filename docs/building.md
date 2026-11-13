@@ -149,6 +149,34 @@ puts it there) and the MSBuild that comes with Visual Studio; `dotnet build` can
    ```
 3. The package appears in `<output folder>\MDSHO.Package_<version>_Sideload\`.
 
+### Alternative: build on GitHub (draft release)
+
+The `sideload` workflow (`.github/workflows/sideload.yml`) builds the same signed package on a GitHub Windows runner
+and attaches it to a **draft release**, so you don't need Visual Studio on your PC. Draft releases are visible only to
+people with write access to the repository.
+
+Set-up (once): in the repository's **Settings** → **Secrets and variables** → **Actions**, add two repository secrets:
+
+- `SIDELOAD_PFX_BASE64`: the `.pfx` from step 1, base64-encoded. This PowerShell line copies it to the clipboard:
+  ```powershell
+  [Convert]::ToBase64String([IO.File]::ReadAllBytes("<private folder>\MDSHO-sideload.pfx")) | Set-Clipboard
+  ```
+- `SIDELOAD_PFX_PASSWORD`: its password.
+
+To build: **Actions** → **sideload** → **Run workflow**, choose the branch and start it. The workflow:
+
+1. checks that the version in `Directory.Build.props` and `Package.appxmanifest` match (step 2), and stops if a release
+   for that version is already published;
+2. builds and runs the tests;
+3. checks that the certificate's subject equals the manifest's `Publisher` and that it hasn't expired;
+4. builds and signs the bundle;
+5. creates a draft release **MDSHO &lt;version&gt;** with the `.msixbundle` and the public `.cer`, and the version's
+   section of `CHANGELOG.md` as notes.
+
+Download both files from the draft on the repository's **Releases** page and install them as below. The tag
+(`v<version>`) is created only when you publish the draft. Running the workflow again for the same version adds another
+draft, so delete the drafts you no longer need.
+
 ## Install a sideload package
 
 The target PC needs Windows 10 version 1809 or later, or Windows 11, on x64.
