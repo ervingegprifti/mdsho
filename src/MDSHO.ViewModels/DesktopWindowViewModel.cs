@@ -342,6 +342,8 @@ namespace MDSHO.ViewModels {
       if (none && key == ShortcutKey.F2) {
         if (selected.IsNote) {
           ShortcutViewModel.RenameNoteEditor?.Invoke(selected);
+        } else if (selected.ShowCommand) {
+          ShortcutViewModel.RenameRunCommandEditor?.Invoke(selected);
         } else {
           selected.BeginEdit(EditField.Name);
         }

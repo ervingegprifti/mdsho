@@ -171,6 +171,126 @@ namespace MDSHO.Tests {
       });
     }
 
+    // ---- Renaming a command from the title ----
+
+    private static void PressKey(Window window, Key key) {
+      window.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(window), 0, key) { RoutedEvent = Keyboard.PreviewKeyDownEvent });
+      WpfAppHost.Pump();
+    }
+
+    [Fact]
+    public void The_title_shows_the_command_name_and_says_double_click_to_rename() {
+      WithCommand("cmd.exe", "", f => {
+        f.Command.Name = "Open logs";
+        RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
+        Shown(window, () => {
+          TextBlock title = Named<TextBlock>(window, "TextTitle");
+          Assert.Equal("Open logs", title.Text);
+          Assert.StartsWith("Open logs", window.Title);
+          Assert.Equal(RunCommandWindow.RenameTitleToolTip, title.ToolTip);
+          Assert.Equal("Double-click to rename the command", RunCommandWindow.RenameTitleToolTip);
+        });
+      });
+    }
+
+    [Fact]
+    public void Renaming_from_the_title_waits_for_Save_and_Enter_or_Esc_keep_the_window_open() {
+      WithCommand("cmd.exe", "", f => {
+        f.Command.Name = "Old name";
+        RunCommandViewModel vm = new RunCommandViewModel(f.Command, false);
+        RunCommandWindow window = new RunCommandWindow(vm);
+        OffScreen(window);
+        bool closed = false;
+        window.Closed += (s, e) => closed = true;
+        window.Show();
+        WpfAppHost.Pump();
+        TextBlock title = Named<TextBlock>(window, "TextTitle");
+        TextBox edit = Named<TextBox>(window, "TextTitleEdit");
+        window.BeginRenameTitle();
+        WpfAppHost.Pump();
+        Assert.True(window.IsRenamingTitle);
+        Assert.Equal(Visibility.Collapsed, title.Visibility);
+        Assert.Equal("Old name", edit.Text);
+        edit.Text = "New name";
+        PressKey(window, Key.Enter);
+        Assert.False(closed);
+        Assert.False(window.IsRenamingTitle);
+        Assert.Equal("New name", title.Text);
+        Assert.Equal("Old name", f.Command.Name);
+        // Esc keeps the name typed before and doesn't close the window.
+        window.BeginRenameTitle();
+        edit.Text = "Discarded";
+        PressKey(window, Key.Escape);
+        Assert.False(closed);
+        Assert.Equal("New name", title.Text);
+        // A blank name is ignored.
+        window.BeginRenameTitle();
+        edit.Text = "   ";
+        window.EndRenameTitle(save: true);
+        Assert.Equal("New name", title.Text);
+        Click(Named<Button>(window, "ButtonSave"));
+        Assert.True(closed);
+        Assert.Equal("New name", f.Command.Name);
+        Assert.Equal("New name", DataStore.Shortcuts.Get(f.Command.ID).Name);
+      });
+    }
+
+    [Fact]
+    public void A_renamed_title_is_thrown_away_on_Cancel_even_while_still_editing() {
+      WithCommand("cmd.exe", "", f => {
+        f.Command.Name = "Keep me";
+        foreach (bool stillEditing in new[] { false, true }) {
+          RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
+          OffScreen(window);
+          window.Show();
+          WpfAppHost.Pump();
+          window.BeginRenameTitle();
+          Named<TextBox>(window, "TextTitleEdit").Text = "Changed";
+          if (!stillEditing) { window.EndRenameTitle(save: true); }
+          Click(Named<Button>(window, "ButtonCancel"));
+          if (window.IsVisible) { window.Close(); }
+          Assert.Equal("Keep me", f.Command.Name);
+          Assert.Equal("Keep me", DataStore.Shortcuts.Get(f.Command.ID).Name);
+        }
+      });
+    }
+
+    [Fact]
+    public void Save_while_still_renaming_keeps_the_new_name() {
+      WithCommand("cmd.exe", "", f => {
+        f.Command.Name = "Before";
+        RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
+        OffScreen(window);
+        window.Show();
+        WpfAppHost.Pump();
+        window.BeginRenameTitle();
+        Named<TextBox>(window, "TextTitleEdit").Text = "After";
+        Click(Named<Button>(window, "ButtonSave"));
+        if (window.IsVisible) { window.Close(); }
+        Assert.Equal("After", f.Command.Name);
+      });
+    }
+
+    [Fact]
+    public void The_run_icon_stays_where_it_is_while_the_title_is_renamed() {
+      WithCommand("cmd.exe", "", f => {
+        RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
+        Shown(window, () => {
+          FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
+          TextBlock icon = Named<TextBlock>(window, "TextTitleIcon");
+          window.UpdateLayout();
+          Point before = icon.TranslatePoint(new Point(0, 0), bar);
+          double barHeight = bar.ActualHeight;
+          window.BeginRenameTitle();
+          WpfAppHost.Pump();
+          window.UpdateLayout();
+          Assert.Equal(before, icon.TranslatePoint(new Point(0, 0), bar));
+          Assert.Equal(barHeight, bar.ActualHeight);
+          window.EndRenameTitle(save: false);
+        });
+      });
+    }
+
     // ---- Run Command window ----
 
     [Fact]
@@ -211,7 +331,7 @@ namespace MDSHO.Tests {
           Button star = Named<Button>(window, "ButtonExamples");
           Assert.Null(window.FindName("ButtonMaximize"));
           Button close = Named<Button>(window, "ButtonClose");
-          Assert.Equal("Run command", title.Text);
+          Assert.Equal(f.Command.Name, title.Text);
           Assert.Equal("Examples", star.ToolTip);
           Assert.Equal("Examples", System.Windows.Automation.AutomationProperties.GetName(star));
           Assert.Equal(f.Win.Appearance.Icons.Wizard, star.Content);
@@ -827,11 +947,11 @@ namespace MDSHO.Tests {
           Assert.DoesNotContain("Run as administrator", headers);
           Assert.DoesNotContain("Set Process File Name", headers);
           Assert.DoesNotContain("Set Process Arguments", headers);
-          MenuItem setRun = items.Single(m => (m.Header as string) == "Set run command...");
+          MenuItem editRun = items.Single(m => (m.Header as string) == "Edit run command...");
           // Context menu bindings resolve when the menu opens: check what they bind to.
-          Assert.Equal(nameof(ShortcutViewModel.SetRunCommandCommand), BindingOperations.GetBinding(setRun, MenuItem.CommandProperty).Path.Path);
-          Assert.Equal(nameof(ShortcutViewModel.ShowCommand), BindingOperations.GetBinding(setRun, UIElement.VisibilityProperty).Path.Path);
-          Assert.Equal("OwningWindow.Appearance.Icons.Run", BindingOperations.GetBinding((TextBlock)setRun.Icon, TextBlock.TextProperty).Path.Path);
+          Assert.Equal(nameof(ShortcutViewModel.EditRunCommandCommand), BindingOperations.GetBinding(editRun, MenuItem.CommandProperty).Path.Path);
+          Assert.Equal(nameof(ShortcutViewModel.ShowCommand), BindingOperations.GetBinding(editRun, UIElement.VisibilityProperty).Path.Path);
+          Assert.Equal("OwningWindow.Appearance.Icons.Run", BindingOperations.GetBinding((TextBlock)editRun.Icon, TextBlock.TextProperty).Path.Path);
         } finally {
           view.Close();
           WpfAppHost.Pump();
@@ -900,7 +1020,7 @@ namespace MDSHO.Tests {
             for (int i = 1; i < visible.Count; i++) {
               Assert.False(visible[i] == "-" && visible[i - 1] == "-", "Two separators in a row: " + all);
             }
-            Assert.Equal(shortcut == f.Command, visible.Contains("Set run command..."));
+            Assert.Equal(shortcut == f.Command, visible.Contains("Edit run command..."));
           }
         } finally {
           view.Close();

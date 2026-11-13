@@ -8,11 +8,12 @@ using MDSHO.Data;
 namespace MDSHO.ViewModels {
 
   /// <summary>
-  /// The Run Command window: edits the program, working folder, arguments (one command per line), "keep window open"
-  /// and "run as administrator" of one run command. Nothing is written to the command until <see cref="Save"/>.
+  /// The Run Command window: edits the name, program, working folder, arguments (one command per line), "keep window
+  /// open" and "run as administrator" of one run command. Nothing is written to the command until <see cref="Save"/>.
   /// </summary>
   public partial class RunCommandViewModel : ObservableObject {
     private readonly ShortcutViewModel shortcut;
+    private string name;
     private string program;
     private string workingFolder;
     private string arguments;
@@ -30,6 +31,7 @@ namespace MDSHO.ViewModels {
     /// <param name="isNewCommand">True when the command was just created.</param>
     public RunCommandViewModel(ShortcutViewModel shortcut, bool isNewCommand) {
       this.shortcut = shortcut ?? throw new ArgumentNullException(nameof(shortcut));
+      this.name = shortcut.Name ?? "";
       this.program = shortcut.ProcessFileName ?? "";
       this.arguments = RunCommandLine.SplitKeepOpen(this.program, shortcut.ProcessArguments, out this.keepWindowOpen);
       if (isNewCommand) {
@@ -42,8 +44,13 @@ namespace MDSHO.ViewModels {
       this.runAsAdministrator = shortcut.ProcessRunAsAdmin;
     }
 
-    // Program, WorkingFolder and Arguments stay hand-written: they turn null into "" before storing, which a generated
-    // property cannot do.
+    // Name, Program, WorkingFolder and Arguments stay hand-written: they turn null into "" before storing, which a
+    // generated property cannot do.
+    /// <summary>The command's name, shown and renamed in the window's title.</summary>
+    public string Name {
+      get { return this.name; }
+      set { SetProperty(ref this.name, value ?? ""); }
+    }
     /// <summary>The program to run; anything can be typed.</summary>
     public string Program {
       get { return this.program; }
@@ -90,10 +97,16 @@ namespace MDSHO.ViewModels {
       get { return !string.IsNullOrWhiteSpace(this.arguments) || !string.IsNullOrWhiteSpace(this.workingFolder); }
     }
 
-    /// <summary>Writes the program, arguments (switch included), working folder and administrator choice to the command, in one transaction.</summary>
+    /// <summary>
+    /// Writes the name (unless blank), program, arguments (switch included), working folder and administrator choice to
+    /// the command, in one transaction.
+    /// </summary>
     public void Save() {
       string storedArguments = this.StoredArguments;
       using (ITransactionScope tx = DataStore.BeginTransaction()) {
+        if (!string.IsNullOrWhiteSpace(this.name) && this.shortcut.Name != this.name) {
+          this.shortcut.Name = this.name;
+        }
         if (this.shortcut.ProcessFileName != this.program) {
           this.shortcut.ProcessFileName = this.program;
         }

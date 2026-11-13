@@ -160,10 +160,11 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void A_note_menu_and_a_group_menu_have_no_separator_next_to_another_or_at_an_end() {
+    public void Note_group_and_command_menus_have_no_separator_next_to_another_or_at_an_end() {
       WithGroup(f => {
         ShortcutViewModel note = NewNoteInGroup(f);
-        foreach (ShortcutViewModel shown in new[] { note, f.Group }) {
+        ShortcutViewModel command = NewCommandInGroup(f);
+        foreach (ShortcutViewModel shown in new[] { note, f.Group, command }) {
           WithView(f, shown, (view, button) => {
             List<string> items = VisibleMenuItems(button);
             string list = string.Join(" | ", items);
@@ -195,6 +196,49 @@ namespace MDSHO.Tests {
           Assert.Equal(barHeight, bar.ActualHeight);
           window.EndRenameTitle(save: false);
         });
+      });
+    }
+
+    private static ShortcutViewModel NewCommandInGroup(Fixture f) {
+      ShortcutViewModel command = ViewModelFactory.NewProcessCommandShortcut(f.App, f.Group, null);
+      f.Group.Children.Add(command);
+      return command;
+    }
+
+    [Fact]
+    public void A_run_command_has_no_Rename_or_target_items_in_its_menu_a_file_shortcut_has_them() {
+      WithGroup(f => {
+        ShortcutViewModel command = NewCommandInGroup(f);
+        Assert.False(command.ShowRename);
+        Assert.False(command.ShowSetNameTheSameAsTarget);
+        Assert.False(command.ShowCopyTargetToMemory);
+        ShortcutViewModel file = ViewModelFactory.NewShortcut(f.App, f.Group, null, "notepad", @"C:\Windows\notepad.exe", ".exe", "");
+        Assert.True(file.ShowRename);
+        Assert.True(file.ShowSetNameTheSameAsTarget);
+        Assert.True(file.ShowCopyTargetToMemory);
+        WithView(f, command, (view, button) => {
+          List<string> items = VisibleMenuItems(button);
+          Assert.DoesNotContain("Rename", items);
+          Assert.DoesNotContain("Set name the same as target", items);
+          Assert.DoesNotContain("Copy target to memory", items);
+        });
+      });
+    }
+
+    [Fact]
+    public void F2_on_a_run_command_opens_it_to_rename_instead_of_renaming_in_the_panel() {
+      WithGroup(f => {
+        ShortcutViewModel command = NewCommandInGroup(f);
+        Action<ShortcutViewModel> old = ShortcutViewModel.RenameRunCommandEditor;
+        List<ShortcutViewModel> renamed = new List<ShortcutViewModel>();
+        ShortcutViewModel.RenameRunCommandEditor = s => renamed.Add(s);
+        try {
+          Assert.True(f.Win.HandleKey(ShortcutKey.F2, ShortcutModifiers.None, command, false));
+          Assert.Equal(new[] { command }, renamed);
+          Assert.Equal(EditField.None, command.EditField);
+        } finally {
+          ShortcutViewModel.RenameRunCommandEditor = old;
+        }
       });
     }
 

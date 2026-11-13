@@ -505,7 +505,7 @@
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator Visibility="{Binding ShowNote, Converter={StaticResource BoolToVisibility}}" />
-                                        <MenuItem Header="Set run command..." Visibility="{Binding ShowCommand, Converter={StaticResource BoolToVisibility}}" Command="{Binding SetRunCommandCommand}">
+                                        <MenuItem Header="Edit run command..." Visibility="{Binding ShowCommand, Converter={StaticResource BoolToVisibility}}" Command="{Binding EditRunCommandCommand}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Run}"/>
                                             </MenuItem.Icon>

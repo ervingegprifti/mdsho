@@ -201,8 +201,8 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void F2_begins_a_name_edit_on_the_selected_item() {
-      ShortcutViewModel s = Leaf();
+    public void F2_begins_a_name_edit_on_the_selected_group() {
+      ShortcutViewModel s = Group(); // notes and run commands are renamed in their own windows
       Assert.True(win.HandleKey(ShortcutKey.F2, ShortcutModifiers.None, s, false));
       Assert.Equal(EditField.Name, s.EditField);
     }

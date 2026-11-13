@@ -161,9 +161,9 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Set_Run_Command_opens_the_editor_for_the_existing_command() {
+    public void Edit_run_command_opens_the_editor_for_the_existing_command() {
       ShortcutViewModel cmd = Command(null, "cmd.exe", "/K x");
-      cmd.SetRunCommandCommand.Execute(null);
+      cmd.EditRunCommandCommand.Execute(null);
       var o = Assert.Single(opened);
       Assert.Same(cmd, o.Shortcut);
       Assert.False(o.IsNew);
