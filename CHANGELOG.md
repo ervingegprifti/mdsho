@@ -56,6 +56,12 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - **Double and triple click** in the Note and Comment windows: a double click selects the word without the space after
   it, a triple click selects the whole paragraph (without its line break).
 
+- **Show version in title**, under Other in a panel's Settings (on at first, shared by the panel and its clones):
+  shows the MDSHO version after the panel's title, for example "MDSHO v1.5.1". Closing Settings without Apply puts the
+  setting back. The Settings window is 7 pixels taller for it.
+- Database version 13: the windows table gets `ShowVersionInTitle` (backed up first, on for every panel). Exports
+  carry it; older exports import with it on.
+
 ### Changed
 
 - The Run command window has no maximise button any more: double-click its title bar to maximise or restore it.

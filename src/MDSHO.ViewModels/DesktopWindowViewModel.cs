@@ -31,7 +31,9 @@ namespace MDSHO.ViewModels {
     /// <summary>
     /// The version of the running application, displayed in debug builds.
     /// </summary>
-    private static readonly string appVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString();
+    private static readonly string appVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3);
+    /// <summary>The version shown after the title, for example "v1.5.1" (empty when it can't be read).</summary>
+    public static string VersionText => string.IsNullOrEmpty(appVersion) ? string.Empty : $"v{appVersion}";
 #endif
     private DesktopWindowViewModel parentWindow = null;
     private long id;
@@ -121,16 +123,16 @@ namespace MDSHO.ViewModels {
       IsDocked = true;
     }
     /// <summary>
-    /// Display the sufix (Clone) in the title if the window is a clone.
+    /// The title as shown: with the suffix (Clone) for a clone, DEBUG in Debug builds, and the version when
+    /// "Show version in title" is on.
     /// </summary>
     public string TitleDisplay {
       get {
+        string title = IsClone ? $"{Appearance.Title} (Clone)" : Appearance.Title;
 #if DEBUG
-        string versionSuffix = string.IsNullOrEmpty(appVersion) ? string.Empty : $" v{appVersion}";
-        return IsClone ? $"{Appearance.Title} (Clone) DEBUG{versionSuffix}" : $"{Appearance.Title} DEBUG{versionSuffix}";
-#else
-        return IsClone ? $"{Appearance.Title} (Clone)" : Appearance.Title;
+        title += " DEBUG";
 #endif
+        return Appearance.ShowVersionInTitle && VersionText.Length > 0 ? $"{title} {VersionText}" : title;
       }
     }
     // Shown or hidden (the views turn these into Visibility).
@@ -237,7 +239,7 @@ namespace MDSHO.ViewModels {
 
     #region EVENTS
     private void Appearance_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e) {
-      if (e.PropertyName == nameof(this.Appearance.Title)) {
+      if (e.PropertyName == nameof(this.Appearance.Title) || e.PropertyName == nameof(this.Appearance.ShowVersionInTitle)) {
         OnPropertyChanged(nameof(this.TitleDisplay)); // So to refresh the Title View with the new change.
       }
       // DesktopWindowAppearance is shared between the window and its clones. Only the window (non clone) saves it, so it is saved once and against the Windows table ID.
@@ -257,6 +259,8 @@ namespace MDSHO.ViewModels {
         DataStore.Windows.UpdateCommentWrapText(windowID, this.Appearance.CommentWrapText);
       } else if (e.PropertyName == nameof(this.Appearance.ReserveDockedSpace)) {
         DataStore.Windows.UpdateReserveDockedSpace(windowID, this.Appearance.ReserveDockedSpace);
+      } else if (e.PropertyName == nameof(this.Appearance.ShowVersionInTitle)) {
+        DataStore.Windows.UpdateShowVersionInTitle(windowID, this.Appearance.ShowVersionInTitle);
       }
     }
     private void Clones_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) {

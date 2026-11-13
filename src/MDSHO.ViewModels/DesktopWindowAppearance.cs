@@ -41,6 +41,9 @@ namespace MDSHO.ViewModels {
     /// <summary>True when the window and its clones, docked to a screen side, reserve that strip of the screen.</summary>
     [ObservableProperty]
     private bool reserveDockedSpace;
+    /// <summary>True when the title bar of the window and its clones shows the app version after the title.</summary>
+    [ObservableProperty]
+    private bool showVersionInTitle = true;
 
     #region PROPERTIES
     /// <summary>The application view model this belongs to.</summary>
