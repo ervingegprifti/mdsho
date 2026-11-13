@@ -56,7 +56,7 @@ namespace MDSHO.Tests {
     }
 
     public static IEnumerable<object[]> AllWindows() {
-      foreach (string name in new[] { "Note", "Comment", "RunCommand", "Examples", "Settings", "NoteColours", "About", "Error" }) {
+      foreach (string name in new[] { "Note", "Comment", "RunCommand", "Examples", "Settings", "Colours", "NoteColours", "About", "Error" }) {
         yield return new object[] { name };
       }
     }
@@ -68,7 +68,8 @@ namespace MDSHO.Tests {
         case "RunCommand": return new RunCommandWindow(new RunCommandViewModel(f.Command, false));
         case "Examples": return new RunCommandExamplesWindow(new RunCommandViewModel(f.Command, false));
         case "Settings": return new SettingsWindow(f.Win);
-        case "NoteColours": return new SettingsWindow(f.Note);
+        case "Colours": return new ColorsWindow(f.Win);
+        case "NoteColours": return new ColorsWindow(f.Note);
         case "About": return new AboutWindow();
         case "Error": return new ErrorWindow(new InvalidOperationException("Test error"));
         default: throw new ArgumentException(name);
@@ -161,7 +162,7 @@ namespace MDSHO.Tests {
     // ---- MDSHO's own title bar on Settings, About and Error ----
 
     public static IEnumerable<object[]> DialogWindows() {
-      foreach (string name in new[] { "Settings", "NoteColours", "About", "Error" }) {
+      foreach (string name in new[] { "Settings", "Colours", "NoteColours", "About", "Error" }) {
         yield return new object[] { name };
       }
     }
@@ -192,7 +193,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_settings_title_bar_shows_the_gear_and_note_colours_the_brush_following_the_icon_set() {
+    public void The_settings_title_bar_shows_the_gear_and_both_colours_windows_the_brush_following_the_icon_set() {
       WithFixture(f => {
         IconGlyphs icons = f.Win.Appearance.Icons;
         bool solid = icons.SolidIcons;
@@ -207,8 +208,10 @@ namespace MDSHO.Tests {
             Assert.Equal(icons.Settings, bar.Glyph);
             Assert.Equal(icons.Times, bar.CloseGlyph);
           });
-          SettingsWindow colours = new SettingsWindow(f.Note);
+          ColorsWindow colours = new ColorsWindow(f.Note);
           Shown(colours, () => Assert.Equal(icons.Brush, ((DialogTitleBar)colours.FindName("TitleBar")).Glyph));
+          ColorsWindow panelColours = new ColorsWindow(f.Win);
+          Shown(panelColours, () => Assert.Equal(icons.Brush, ((DialogTitleBar)panelColours.FindName("TitleBar")).Glyph));
         } finally {
           icons.SolidIcons = solid;
         }

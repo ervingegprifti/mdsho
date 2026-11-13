@@ -21,7 +21,7 @@ window with your own buttons, and you can have as many panels as you like, on as
 - **Groups:** fold buttons into groups, and put a value in a group's name to reuse it in the commands inside it.
 - **Clones:** show the same panel on another screen; a change in one shows in all of its clones.
 - **Docking:** dock a panel to the left or right edge of a screen.
-- **Colors:** set each panel's colors and mark buttons with a color.
+- **Colors:** set the colors of each panel and note in its Colours window, save your own defaults, and mark buttons with a color.
 - **Export and import:** save all your panels and buttons to one `.zip` file and load them back.
 
 ## Install

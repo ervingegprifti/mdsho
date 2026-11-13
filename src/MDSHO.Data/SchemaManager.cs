@@ -94,6 +94,13 @@ namespace MDSHO.Data {
           IsTopmost INTEGER NOT NULL DEFAULT 0,
           IsWrapText INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(ShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE);
+        CREATE TABLE IF NOT EXISTS DefaultColors (
+          Kind TEXT NOT NULL PRIMARY KEY,
+          BorderColor TEXT NOT NULL,
+          TitleBackgroundColor TEXT NOT NULL,
+          TitleTextColor TEXT NOT NULL,
+          BackgroundColor TEXT NOT NULL,
+          TextColor TEXT NOT NULL);
       ";
 
     /// <summary>
@@ -255,6 +262,15 @@ namespace MDSHO.Data {
         if (ColumnExists(conn, "MDSHOWindows", "ReserveDockedSpace")) {
           Execute(conn, "ALTER TABLE MDSHOWindows DROP COLUMN ReserveDockedSpace;");
         }
+      }),
+      new DbMigration(15, "Default colours: DefaultColors table (Set as default in the Colours window)", conn => {
+        Execute(conn, @"CREATE TABLE IF NOT EXISTS DefaultColors (
+          Kind TEXT NOT NULL PRIMARY KEY,
+          BorderColor TEXT NOT NULL,
+          TitleBackgroundColor TEXT NOT NULL,
+          TitleTextColor TEXT NOT NULL,
+          BackgroundColor TEXT NOT NULL,
+          TextColor TEXT NOT NULL);");
       })
     };
 

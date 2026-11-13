@@ -261,6 +261,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!--Header Icon-->
@@ -289,23 +290,28 @@
                         Style="{StaticResource StyleHeaderButton}"
                         ToolTip="Settings"
                         AutomationProperties.Name="Settings" />
-                    <Button x:Name="ButtonHeaderDockWindowLeft" Grid.Row="0" Grid.Column="3"
+                    <Button x:Name="ButtonHeaderColors" Grid.Row="0" Grid.Column="3"
+                        Content="{Binding Appearance.Icons.Brush}"
+                        Style="{StaticResource StyleHeaderButton}"
+                        ToolTip="Colours"
+                        AutomationProperties.Name="Colours" />
+                    <Button x:Name="ButtonHeaderDockWindowLeft" Grid.Row="0" Grid.Column="4"
                         Content="{Binding Appearance.Icons.DockLeft}"
                         Style="{StaticResource StyleHeaderButton}"
                         ToolTip="Dock window left"
                         AutomationProperties.Name="Dock window left" />
-                    <Button x:Name="ButtonHeaderDockWindowRight" Grid.Row="0" Grid.Column="4"
+                    <Button x:Name="ButtonHeaderDockWindowRight" Grid.Row="0" Grid.Column="5"
                         Content="{Binding Appearance.Icons.DockRight}"
                         Style="{StaticResource StyleHeaderButton}"
                         ToolTip="Dock window right"
                         AutomationProperties.Name="Dock window right" />
-                    <Button x:Name="ButtonHeaderCloneThisWindowToAllScreens" Grid.Row="0" Grid.Column="5"
+                    <Button x:Name="ButtonHeaderCloneThisWindowToAllScreens" Grid.Row="0" Grid.Column="6"
                         Content="{Binding Appearance.Icons.Clones}"
                         Style="{StaticResource StyleHeaderMostRightButton}"
                         Visibility="{Binding ShowCloneWindow, Converter={StaticResource BoolToVisibility}}"
                         ToolTip="Clone this window to all screens"
                         AutomationProperties.Name="Clone this window to all screens" />
-                    <Button x:Name="ButtonHeaderCloseWindow" Grid.Row="0" Grid.Column="5"
+                    <Button x:Name="ButtonHeaderCloseWindow" Grid.Row="0" Grid.Column="6"
                         Content="{Binding Appearance.Icons.Times}"
                         Style="{StaticResource StyleHeaderMostRightButton}"
                         Command="{Binding CloseWindowCommand}"

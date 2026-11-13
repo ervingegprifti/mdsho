@@ -1,10 +1,13 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using MDSHO.Core;
+using MDSHO.Data;
 
 namespace MDSHO.ViewModels {
 
   /// <summary>
-  /// The five colours of a note's window (#AARRGGBB). They always hold a real colour: a colour the note does not set is the
-  /// default. Stored with the note, where a default colour is saved as empty.
+  /// The five colours of a note's window (#AARRGGBB). They always hold a real colour: a colour the note does not set is
+  /// MDSHO's own default. Stored with the note, where MDSHO's own default colour is saved as empty. The note defaults
+  /// saved with "Set as default" are not MDSHO's own: a note gets them as real colours (new notes, Default colours).
   /// </summary>
   public partial class NoteColors : ObservableObject {
     /// <summary>The default border colour (the beige look of MDSHO's own windows).</summary>
@@ -48,9 +51,22 @@ namespace MDSHO.ViewModels {
       this.TextColor = OrDefault(text, DefaultText);
     }
 
-    /// <summary>Puts all five back to the default colours.</summary>
+    /// <summary>Puts all five back to the default colours: the note defaults saved with "Set as default", else MDSHO's own.</summary>
     public void ResetToDefaults() {
-      Load("", "", "", "", "");
+      ColorSet saved = DataStore.DefaultColors.Get(ColorSetKind.Note);
+      if (saved == null) {
+        Load("", "", "", "", "");
+      } else {
+        Load(saved.BorderColor, saved.TitleBackgroundColor, saved.TitleTextColor, saved.BackgroundColor, saved.TextColor);
+      }
+    }
+
+    /// <summary>Saves the five colours as the note defaults ("Set as default" in the Colours window).</summary>
+    public void SaveAsDefaults() {
+      DataStore.DefaultColors.Save(ColorSetKind.Note, new ColorSet {
+        BorderColor = this.BorderColor, TitleBackgroundColor = this.TitleBackgroundColor, TitleTextColor = this.TitleTextColor,
+        BackgroundColor = this.BackgroundColor, TextColor = this.TextColor
+      });
     }
 
     /// <summary>The value to store for a colour: empty when it is the default.</summary>
@@ -68,9 +84,9 @@ namespace MDSHO.ViewModels {
     }
   }
 
-  /// <summary>What the Settings window edits for a note: its colours (as "Appearance", like a panel's) and the note.</summary>
+  /// <summary>What the Colours window edits for a note: its colours (as "Appearance", like a panel's) and the note.</summary>
   public sealed class NoteColorsTarget {
-    /// <summary>The note's colours; the Settings window binds to Appearance.BorderColor and so on.</summary>
+    /// <summary>The note's colours; the Colours window binds to Appearance.BorderColor and so on.</summary>
     public NoteColors Appearance { get; }
     /// <summary>The note.</summary>
     public ShortcutViewModel Note { get; }

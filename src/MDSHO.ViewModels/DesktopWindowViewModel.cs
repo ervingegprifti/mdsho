@@ -244,7 +244,7 @@ namespace MDSHO.ViewModels {
         return;
       }
       long windowID = this.Appearance.ParentWindowID;
-      // Save to Database. The colours are not saved here as they change too many times while the user picks one: SettingsWindow saves them.
+      // Save to Database. The colours are not saved here as they change too many times while the user picks one: ColorsWindow saves them.
       if (e.PropertyName == nameof(this.Appearance.Title)) {
         DataStore.Windows.UpdateTitle(windowID, title: this.Appearance.Title);
       } else if (e.PropertyName == nameof(this.Appearance.SolidIcons)) {

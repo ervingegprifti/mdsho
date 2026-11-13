@@ -24,9 +24,11 @@ namespace MDSHO.Data {
       WHERE ID = @ID";
 
     private readonly IDesktopWindowCloneRepository clones;
+    private readonly IDefaultColorsRepository defaultColors;
 
-    public DesktopWindowRepository(IDesktopWindowCloneRepository clones) {
+    public DesktopWindowRepository(IDesktopWindowCloneRepository clones, IDefaultColorsRepository defaultColors) {
       this.clones = clones;
+      this.defaultColors = defaultColors;
     }
 
     #region LOAD
@@ -80,6 +82,8 @@ namespace MDSHO.Data {
 
     public DesktopWindow Create(string screenDeviceName = "", long left = 0, long top = 0) {
       return InTransaction(() => {
+        // The panel defaults saved with "Set as default", else MDSHO's own colours.
+        ColorSet colors = this.defaultColors.Get(ColorSetKind.Window);
         DesktopWindow window = new DesktopWindow(
           title: "MDSHO", // (Multi Desktop Shortcut Organizer)
           screenDeviceName: screenDeviceName,
@@ -88,11 +92,11 @@ namespace MDSHO.Data {
           width: AppConstants.InitialWindowWidth,
           height: AppConstants.InitialWindowHeight,
           solidIcons: true,
-          borderColor: AppConstants.DefaultWindowBorderColor,
-          backgroundColor: AppConstants.DefaultWindowBackgroundColor,
-          textColor: AppConstants.DefaultWindowTextColor,
-          titleBackgroundColor: AppConstants.DefaultWindowTitleBackgroundColor,
-          titleTextColor: AppConstants.DefaultWindowTitleTextColor,
+          borderColor: colors?.BorderColor ?? AppConstants.DefaultWindowBorderColor,
+          backgroundColor: colors?.BackgroundColor ?? AppConstants.DefaultWindowBackgroundColor,
+          textColor: colors?.TextColor ?? AppConstants.DefaultWindowTextColor,
+          titleBackgroundColor: colors?.TitleBackgroundColor ?? AppConstants.DefaultWindowTitleBackgroundColor,
+          titleTextColor: colors?.TitleTextColor ?? AppConstants.DefaultWindowTitleTextColor,
           notes: "Notes for this window.",
           singleClickToOpen: false);
         return Get(Add(window));

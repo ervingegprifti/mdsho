@@ -160,6 +160,12 @@ namespace MDSHO.Tests {
             settings.UpdateLayout();
             Pump();
             settings.Close();
+            ColorsWindow colors = new ColorsWindow((DesktopWindowViewModel)first.DataContext);
+            colors.ShowActivated = false;
+            colors.Show();
+            colors.UpdateLayout();
+            Pump();
+            colors.Close();
             AboutWindow about = new AboutWindow();
             about.ShowActivated = false;
             about.Show();
@@ -185,7 +191,7 @@ namespace MDSHO.Tests {
             examples.Close();
             runWindow.Close();
             Pump();
-            // A note: its Note window and the Settings window as "Note colours" (only the colours are bound there).
+            // A note: its Note window and the Colours window as "Note colours".
             Action<ShortcutViewModel> oldNoteEditor = ShortcutViewModel.OpenNoteEditor;
             ShortcutViewModel.OpenNoteEditor = s => { };
             try {
@@ -196,7 +202,7 @@ namespace MDSHO.Tests {
             ShortcutViewModel note = appVm.Windows[0].RootShortcuts.Last();
             TextEditWindow noteWindow = TextEditWindow.ForNote(note);
             ShowOffScreen(noteWindow);
-            SettingsWindow noteColours = new SettingsWindow(note);
+            ColorsWindow noteColours = new ColorsWindow(note);
             ShowOffScreen(noteColours);
             noteColours.Close();
             noteWindow.Close();

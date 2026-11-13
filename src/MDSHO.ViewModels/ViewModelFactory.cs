@@ -296,11 +296,22 @@ namespace MDSHO.ViewModels {
       ShortcutViewModel shortcut = ShortcutToViewModel(appViewModel, parentShortcut, shortcutRecord);
       return shortcut;
     }
-    /// <summary>Creates a new empty note named "New note" under a group or a window (exactly one of the two).</summary>
+    /// <summary>
+    /// Creates a new empty note named "New note" under a group or a window (exactly one of the two). It starts with the
+    /// note defaults saved with "Set as default", if any.
+    /// </summary>
     public static ShortcutViewModel NewNoteShortcut(AppViewModel appViewModel, ShortcutViewModel parentShortcut, DesktopWindowViewModel parentWindow) {
       RequireOneParent(parentShortcut, parentWindow);
-      Shortcut shortcutRecord = DataStore.Shortcuts.CreateNote(parentShortcut?.ID, parentWindow?.ID);
-      return ShortcutToViewModel(appViewModel, parentShortcut, shortcutRecord);
+      using (ITransactionScope tx = DataStore.BeginTransaction()) {
+        Shortcut shortcutRecord = DataStore.Shortcuts.CreateNote(parentShortcut?.ID, parentWindow?.ID);
+        ShortcutViewModel note = ShortcutToViewModel(appViewModel, parentShortcut, shortcutRecord);
+        if (DataStore.DefaultColors.Get(ColorSetKind.Note) != null) {
+          note.NoteColors.ResetToDefaults();
+          note.SaveNoteColors();
+        }
+        tx.Commit();
+        return note;
+      }
     }
     #endregion NEW
 

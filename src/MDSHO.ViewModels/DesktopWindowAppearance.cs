@@ -69,13 +69,25 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
 
-    /// <summary>Puts the five colours back to those of a new window (Default colours in the Settings window).</summary>
+    /// <summary>
+    /// Puts the five colours back to those of a new window (Default colours in the Colours window): the panel defaults
+    /// saved with "Set as default", else MDSHO's own colours.
+    /// </summary>
     public void ResetColorsToDefaults() {
-      this.BorderColor = MDSHO.Common.AppConstants.DefaultWindowBorderColor;
-      this.BackgroundColor = MDSHO.Common.AppConstants.DefaultWindowBackgroundColor;
-      this.TextColor = MDSHO.Common.AppConstants.DefaultWindowTextColor;
-      this.TitleBackgroundColor = MDSHO.Common.AppConstants.DefaultWindowTitleBackgroundColor;
-      this.TitleTextColor = MDSHO.Common.AppConstants.DefaultWindowTitleTextColor;
+      MDSHO.Core.ColorSet saved = MDSHO.Data.DataStore.DefaultColors.Get(MDSHO.Core.ColorSetKind.Window);
+      this.BorderColor = saved?.BorderColor ?? MDSHO.Common.AppConstants.DefaultWindowBorderColor;
+      this.BackgroundColor = saved?.BackgroundColor ?? MDSHO.Common.AppConstants.DefaultWindowBackgroundColor;
+      this.TextColor = saved?.TextColor ?? MDSHO.Common.AppConstants.DefaultWindowTextColor;
+      this.TitleBackgroundColor = saved?.TitleBackgroundColor ?? MDSHO.Common.AppConstants.DefaultWindowTitleBackgroundColor;
+      this.TitleTextColor = saved?.TitleTextColor ?? MDSHO.Common.AppConstants.DefaultWindowTitleTextColor;
+    }
+
+    /// <summary>Saves the five colours as the panel defaults ("Set as default" in the Colours window).</summary>
+    public void SaveColorsAsDefaults() {
+      MDSHO.Data.DataStore.DefaultColors.Save(MDSHO.Core.ColorSetKind.Window, new MDSHO.Core.ColorSet {
+        BorderColor = this.BorderColor, TitleBackgroundColor = this.TitleBackgroundColor, TitleTextColor = this.TitleTextColor,
+        BackgroundColor = this.BackgroundColor, TextColor = this.TextColor
+      });
     }
 
     /// <summary>Creates the settings from the stored values.</summary>

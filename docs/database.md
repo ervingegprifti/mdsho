@@ -9,14 +9,14 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 14**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 15**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
 ## Tables
 
-All tables use `ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE`, so an ID is never reused, even after a row is
-deleted. Flags are `INTEGER` columns holding `0` (no) or `1` (yes). Colors are text in the form `#AARRGGBB`.
+All tables but `DefaultColors` use `ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE`, so an ID is never reused,
+even after a row is deleted. Flags are `INTEGER` columns holding `0` (no) or `1` (yes). Colors are text in the form `#AARRGGBB`.
 
 ### MDSHOWindows
 
@@ -40,7 +40,7 @@ One row per panel (MDSHO window).
 | `SolidIcons` | INTEGER | NOT NULL | | `1` = filled icons, `0` = outline icons. |
 | `SingleClickToOpen` | INTEGER | NOT NULL | | `1` = one click opens a button, `0` = double click. |
 | `CommentWrapText` | INTEGER | NOT NULL | `0` | `1` = the Comment windows opened from this window wrap their text (the wrap text button in their title bar). Exports carry it; older exports import with it off. Added in version 11. |
-| `ShowVersionInTitle` | INTEGER | NOT NULL | `1` | `1` = the title bar of the panel and its clones shows the MDSHO version after the title, for example `MDSHO v1.5.6` ("Show version in title" in Settings). Exports carry it; older exports import with it on. Added in version 13. |
+| `ShowVersionInTitle` | INTEGER | NOT NULL | `1` | `1` = the title bar of the panel and its clones shows the MDSHO version after the title, for example `MDSHO v1.5.8` ("Show version in title" in Settings). Exports carry it; older exports import with it on. Added in version 13. |
 
 ### MDSHOWindowClones
 
@@ -85,7 +85,7 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `ProcessWorkingFolder` | TEXT | NOT NULL | `''` | Folder the run command starts in; empty = none. Added in version 4. |
 | `IsNote` | INTEGER | NOT NULL | `0` | `1` = a note button (its text is `NoteText`; no shortcut file). Added in version 7. |
 | `NoteText` | TEXT | NOT NULL | `''` | The text of a note button; empty for other buttons. Added in version 7. |
-| `NoteBorderColor` | TEXT | NOT NULL | `''` | Border colour of the note's window (`#AARRGGBB`); empty = the default colour. Added in version 10. |
+| `NoteBorderColor` | TEXT | NOT NULL | `''` | Border colour of the note's window (`#AARRGGBB`); empty = MDSHO's own default colour. Added in version 10. |
 | `NoteTitleBackgroundColor` | TEXT | NOT NULL | `''` | Title bar background colour of the note's window; empty = the default. Added in version 10. |
 | `NoteTitleTextColor` | TEXT | NOT NULL | `''` | Title text (and title button) colour of the note's window; empty = the default. Added in version 10. |
 | `NoteBackgroundColor` | TEXT | NOT NULL | `''` | Background colour of the note's window; empty = the default. Added in version 10. |
@@ -108,6 +108,21 @@ where they were after a restart. Added in version 8.
 | `IsOpen` | INTEGER | NOT NULL | `0` | `1` = the window was open (also when MDSHO or Windows closed it at exit), so it opens again at start. |
 | `IsTopmost` | INTEGER | NOT NULL | `0` | `1` = the window stays on top of other apps (the pin in its title bar). Added in version 9. |
 | `IsWrapText` | INTEGER | NOT NULL | `0` | `1` = the note's text wraps at the window's edge (the wrap text button in its title bar). Added in version 11. |
+
+### DefaultColors
+
+The default colours saved with **Set as default** in the Colours window: at most one row for panels and one for notes.
+They are what **Default colours** puts back and what new panels and new notes start with; existing panels and notes keep
+their colours. Without a row MDSHO's own colours are used. Not part of exports. Added in version 15.
+
+| Column | Type | Null | Default | Meaning |
+|---|---|---|---|---|
+| `Kind` | TEXT | NOT NULL | | Primary key: `Window` (panels) or `Note`. |
+| `BorderColor` | TEXT | NOT NULL | | Default border colour. |
+| `TitleBackgroundColor` | TEXT | NOT NULL | | Default title bar background colour. |
+| `TitleTextColor` | TEXT | NOT NULL | | Default title text colour. |
+| `BackgroundColor` | TEXT | NOT NULL | | Default background colour. |
+| `TextColor` | TEXT | NOT NULL | | Default text colour. |
 
 ## Keys and relationships
 
@@ -141,15 +156,16 @@ that worked.
 | 3 | 1.1.0 | Indexes on the foreign key columns (see [Indexes](#indexes)). |
 | 4 | 1.1.5 | `Shortcuts.ProcessRunAsAdmin` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.ProcessWorkingFolder` (`TEXT NOT NULL DEFAULT ''`) for the Run command window. |
 | 5 | 1.1.5 | `RoundedCorners` dropped from `MDSHOWindows` and `MDSHOWindowClones` (corners now follow the docked state). Uses `ALTER TABLE ... DROP COLUMN`, so no rows, IDs, indexes or foreign keys change. |
-| 6 | 1.5.6 | `Shortcuts.Notes` renamed to `Comment` (`ALTER TABLE ... RENAME COLUMN`; the text, rows, indexes and foreign keys stay). `MDSHOWindows.Notes` is unchanged. Exports made before this still import: their `notes` becomes the comment. |
-| 7 | 1.5.6 | `Shortcuts.IsNote` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.NoteText` (`TEXT NOT NULL DEFAULT ''`) for note buttons. Exports made before this still import, as normal buttons. |
-| 8 | 1.5.6 | `NoteWindows` table: the place, size and state of each note window and whether it was open, so open notes reopen where they were. |
-| 9 | 1.5.6 | `NoteWindows.IsTopmost` (`INTEGER NOT NULL DEFAULT 0`): whether a note window stays on top of other apps. |
-| 10 | 1.5.6 | The five note window colours on `Shortcuts` (`NoteBorderColor`, `NoteTitleBackgroundColor`, `NoteTitleTextColor`, `NoteBackgroundColor`, `NoteTextColor`, `TEXT NOT NULL DEFAULT ''`). Exports carry them; older exports import with the default colours. |
-| 11 | 1.5.6 | Wrap text: `NoteWindows.IsWrapText` and `MDSHOWindows.CommentWrapText` (`INTEGER NOT NULL DEFAULT 0`). |
-| 12 | 1.5.6 | `MDSHOWindows.ReserveDockedSpace` (`INTEGER NOT NULL DEFAULT 0`) for "Reserve screen space when docked", which only test builds had. Version 14 drops it again. |
-| 13 | 1.5.6 | `MDSHOWindows.ShowVersionInTitle` (`INTEGER NOT NULL DEFAULT 1`): "Show version in title", on for every panel. |
-| 14 | 1.5.6 | `MDSHOWindows.ReserveDockedSpace` dropped (`ALTER TABLE ... DROP COLUMN`, like version 5; the rows and other columns stay): "Reserve screen space when docked" was removed. Exports made before this still import. |
+| 6 | 1.5.8 | `Shortcuts.Notes` renamed to `Comment` (`ALTER TABLE ... RENAME COLUMN`; the text, rows, indexes and foreign keys stay). `MDSHOWindows.Notes` is unchanged. Exports made before this still import: their `notes` becomes the comment. |
+| 7 | 1.5.8 | `Shortcuts.IsNote` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.NoteText` (`TEXT NOT NULL DEFAULT ''`) for note buttons. Exports made before this still import, as normal buttons. |
+| 8 | 1.5.8 | `NoteWindows` table: the place, size and state of each note window and whether it was open, so open notes reopen where they were. |
+| 9 | 1.5.8 | `NoteWindows.IsTopmost` (`INTEGER NOT NULL DEFAULT 0`): whether a note window stays on top of other apps. |
+| 10 | 1.5.8 | The five note window colours on `Shortcuts` (`NoteBorderColor`, `NoteTitleBackgroundColor`, `NoteTitleTextColor`, `NoteBackgroundColor`, `NoteTextColor`, `TEXT NOT NULL DEFAULT ''`). Exports carry them; older exports import with the default colours. |
+| 11 | 1.5.8 | Wrap text: `NoteWindows.IsWrapText` and `MDSHOWindows.CommentWrapText` (`INTEGER NOT NULL DEFAULT 0`). |
+| 12 | 1.5.8 | `MDSHOWindows.ReserveDockedSpace` (`INTEGER NOT NULL DEFAULT 0`) for "Reserve screen space when docked", which only test builds had. Version 14 drops it again. |
+| 13 | 1.5.8 | `MDSHOWindows.ShowVersionInTitle` (`INTEGER NOT NULL DEFAULT 1`): "Show version in title", on for every panel. |
+| 14 | 1.5.8 | `MDSHOWindows.ReserveDockedSpace` dropped (`ALTER TABLE ... DROP COLUMN`, like version 5; the rows and other columns stay): "Reserve screen space when docked" was removed. Exports made before this still import. |
+| 15 | 1.5.8 | `DefaultColors` table: the panel and note default colours saved with **Set as default** in the Colours window (empty at first). |
 
 ### Backup before an upgrade
 

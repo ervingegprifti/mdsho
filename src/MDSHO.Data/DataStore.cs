@@ -8,12 +8,14 @@ namespace MDSHO.Data {
     public IDesktopWindowCloneRepository Clones { get; }
     public IShortcutRepository Shortcuts { get; }
     public INoteWindowRepository NoteWindows { get; }
+    public IDefaultColorsRepository DefaultColors { get; }
 
     public SqliteDataStore() {
       Clones = new DesktopWindowCloneRepository();
       Shortcuts = new ShortcutRepository();
       NoteWindows = new NoteWindowRepository();
-      Windows = new DesktopWindowRepository(Clones);
+      DefaultColors = new DefaultColorsRepository();
+      Windows = new DesktopWindowRepository(Clones, DefaultColors);
     }
 
     public ITransactionScope BeginTransaction() {
@@ -47,6 +49,8 @@ namespace MDSHO.Data {
     /// <summary>Shortcuts repository.</summary>
     public static IShortcutRepository Shortcuts { get { return Current.Shortcuts; } }
     public static INoteWindowRepository NoteWindows { get { return Current.NoteWindows; } }
+    /// <summary>The default colours saved for panels and for notes.</summary>
+    public static IDefaultColorsRepository DefaultColors { get { return Current.DefaultColors; } }
 
     /// <summary>Begin a transaction scope. Use: <c>using (var tx = DataStore.BeginTransaction()) { ...; tx.Commit(); }</c></summary>
     public static ITransactionScope BeginTransaction() {

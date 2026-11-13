@@ -12,7 +12,7 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// Default colours in a panel's Settings window: puts the five colours back to those of a new panel (Icons appearance and
+  /// Default colours in a panel's Colours window: puts the five colours back to those of a new panel (Icons appearance and
   /// Single click to open stay as they are). Apply saves them; closing without Apply puts the old colours back.
   /// </summary>
   public class PanelDefaultColoursTests {
@@ -78,16 +78,16 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_panel_settings_window_has_Default_colours_left_of_Apply() {
+    public void The_panel_colours_window_has_Default_colours_left_of_Apply() {
       WithPanel(win => {
-        SettingsWindow window = new SettingsWindow(win);
+        ColorsWindow window = new ColorsWindow(win);
         Shown(window, () => {
           Button defaults = DefaultColours(window);
           Button apply = Assert.IsAssignableFrom<Button>(window.FindName("ButtonApply"));
           Assert.Equal(Visibility.Visible, defaults.Visibility);
           Assert.Equal("Default colours", defaults.Content);
           Assert.True(defaults.TranslatePoint(new Point(0, 0), window).X < apply.TranslatePoint(new Point(0, 0), window).X);
-          Assert.Equal("Window appearance", ((Label)window.FindName("LabelAppearanceHeading")).Content);
+          Assert.Equal("Window colours", ((Label)window.FindName("LabelAppearanceHeading")).Content);
         });
       });
     }
@@ -99,7 +99,7 @@ namespace MDSHO.Tests {
         DataStore.Windows.UpdateBorderColor(win.ID, win.Appearance.BorderColor);
         win.Appearance.SolidIcons = false;
         win.Appearance.SingleClickToOpen = true;
-        SettingsWindow window = new SettingsWindow(win);
+        ColorsWindow window = new ColorsWindow(win);
         Shown(window, () => {
           Click(DefaultColours(window));
           Assert.Equal(AppConstants.DefaultWindowBorderColor, win.Appearance.BorderColor);
@@ -120,7 +120,7 @@ namespace MDSHO.Tests {
     public void Default_colours_then_closing_without_Apply_puts_the_old_colours_back() {
       WithPanel(win => {
         Paint(win.Appearance);
-        SettingsWindow window = new SettingsWindow(win);
+        ColorsWindow window = new ColorsWindow(win);
         Shown(window, () => {
           Click(DefaultColours(window));
           Assert.Equal(AppConstants.DefaultWindowTextColor, win.Appearance.TextColor);

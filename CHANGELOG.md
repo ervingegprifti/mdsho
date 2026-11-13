@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
-## [1.5.6]
+## [1.5.8]
 
 ### Added
 
@@ -30,15 +30,24 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   and a place that is off every screen moves to the middle of the main screen. The Note window has pin (keep on top of
   other apps, off for new notes and remembered per note; a thumbtack pointing left, or down while on top) and close in its title bar and no bottom bar. A note saves
   itself half a second after you stop typing and when its window closes (X or Esc), so it needs no Save button.
-  The colours button (brush) in its title bar opens **Note colours**: the Settings window with only the five colours
-  (border, title background, title text, background, text), the palette, **Default colours** and Apply. It opens beside
+  The colours button (brush) in its title bar opens **Note colours**: the Colours window with the five colours
+  (border, title background, title text, background, text), the palette, **Default colours**, **Set as default** and Apply. It opens beside
   the note, 20 pixels away: on the right when there is room, otherwise on the left. The note's window
   follows the colours live; they are saved on Apply and kept with the note (exported, imported and copied with it). A note's right-click menu has **Edit
   note...**. Notes can be renamed, marked, moved, copied, exported and imported like other buttons, and need no shortcut file. They use the new note icon on
   the button, in the Note window and in the menu. The Note and Comment windows show just the button's name as their title.
-- **Default colours** in a panel's Settings window: puts the five colours back to those of a new window (black border,
-  see-through black background, white text). Icons appearance and Single click to open stay as they are; Apply saves
-  the colours, and closing without Apply puts the old ones back.
+- **Colours window for panels**: a new brush button in a panel's title bar (and its clones'), right of the Settings gear,
+  opens **Window colours**: the five colours and the palette, which used to be in the Settings window, in the same window
+  that notes use for their colours. The Settings window keeps Icons appearance and Other, and is smaller (380 pixels
+  wide, as tall as its content; its title is "Settings: " and the panel's title). Both open 20 pixels beside the panel:
+  on its right when there is room, otherwise on its left (they used to touch the panel's right edge).
+- **Default colours** in the Colours window: puts the five colours back to the defaults (for a panel at first black
+  border, see-through black background, white text). Apply saves the colours, and closing without Apply puts the old
+  ones back.
+- **Set as default** in the Colours window, next to Default colours: saves the colours on screen as the defaults, at
+  once: from a panel's Colours window for panels, from a note's for notes. Saved defaults are what Default colours puts
+  back and what new panels and new notes start with; existing panels and notes keep their colours. They stay on this
+  PC (not in exports).
 - **Wrap text** in the Note and Comment windows: a button in the title bar (right of the colours brush in the Note
   window, left of OK in the Comment window) wraps long lines at the window's edge instead of scrolling sideways. It is
   shaded while on and off at first. Each note remembers it with its window; the Comment windows opened from a panel
@@ -59,8 +68,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   panel opens the Run command window ready to rename. A run command's right-click menu no longer has Rename, "Set name
   the same as target" or "Copy target to memory", and its "Set run command..." is now **Edit run command...**.
 - **Show version in title**, under Other in a panel's Settings (on at first, shared by the panel and its clones):
-  shows the MDSHO version after the panel's title, for example "MDSHO v1.5.6". Closing Settings without Apply puts the
-  setting back. Sideload test builds show their build number as a 4th part (for example "v1.5.6.7"); Store builds show
+  shows the MDSHO version after the panel's title, for example "MDSHO v1.5.8". Closing Settings without Apply puts the
+  setting back. Sideload test builds show their build number as a 4th part (for example "v1.5.8.7"); Store builds show
   three parts.
 - Database version 13: the windows table gets `ShowVersionInTitle` (backed up first, on for every panel). Exports
   carry it; older exports import with it on.
@@ -68,6 +77,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   "Reserve screen space when docked", which only test builds had and which was removed again: Windows lays out the
   desktop icons again every time a reserved strip changes. Exports no longer carry it; older exports that have it still
   import.
+- Database version 15: a new `DefaultColors` table for the colours saved with **Set as default** (backed up first;
+  empty at first).
 
 ### Changed
 

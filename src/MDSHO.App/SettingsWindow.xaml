@@ -1,17 +1,16 @@
-﻿<Window x:Class="MDSHO.SettingsWindow"
+<Window x:Class="MDSHO.SettingsWindow"
         xmlns:controls="clr-namespace:MDSHO.Controls"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:MDSHO"
         mc:Ignorable="d"
-        xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
         xmlns:viewmodels="clr-namespace:MDSHO.ViewModels;assembly=MDSHO.ViewModels"
         xmlns:converters="clr-namespace:MDSHO.Converters"
+        d:DataContext="{d:DesignInstance Type=viewmodels:DesktopWindowViewModel}"
         Title="Settings"
-        Width="660"
-        Height="571"
+        Width="380"
+        SizeToContent="Height"
         ResizeMode="NoResize"
         Topmost="True"
         WindowStyle="None"
@@ -24,99 +23,20 @@
         WindowState="Normal"
         UseLayoutRounding="True">
 
-    <!--MDSHO's own title bar (DialogTitleBar) and the rounded frame (RoundedWindowTemplate), like the Note window-->
+    <!--MDSHO's own title bar (DialogTitleBar) and the rounded frame (RoundedWindowTemplate), like the Colours window.
+        The panel's colours are in the Colours window (the brush button next to the gear).-->
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="32" ResizeBorderThickness="0" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
 
-    <!--Resources-->
     <Window.Resources>
         <ResourceDictionary>
             <converters:SolidIconsConverter x:Key="SolidIconsConverter"/>
-            <!-- The palette edits the view model's "#AARRGGBB" colours; the swatches show them. -->
-            <converters:HexToColorConverter x:Key="HexToColor"/>
-            <converters:HexToBrushConverter x:Key="HexToBrush"/>
             <Style x:Key="StyleSettingsCategory" TargetType="{x:Type Label}">
                 <Setter Property="FontSize" Value="16"/>
                 <Setter Property="FontWeight" Value="Normal"/>
                 <Setter Property="Padding" Value="0"/>
                 <Setter Property="Margin" Value="0,0,0,10"/>
-            </Style>
-            <Style x:Key="StylePropertyContainer" TargetType="{x:Type StackPanel}">
-                <Setter Property="Margin" Value="0"/>
-            </Style>
-            <!--The colour swatch inside each colour button-->
-            <Style x:Key="StyleSwatch" TargetType="{x:Type Border}">
-                <Setter Property="Width" Value="26"/>
-                <Setter Property="Height" Value="18"/>
-                <Setter Property="Margin" Value="0,0,10,0"/>
-                <Setter Property="BorderBrush" Value="#FF8C8778"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="VerticalAlignment" Value="Center"/>
-            </Style>
-            <!--Colour buttons: one is selected at a time; the selected one has a light-blue fill, a 2 px blue border and SemiBold text.
-                The padding shrinks by the border's 2 px so the content does not move when the selection changes.-->
-            <Style x:Key="StyleColorTarget" TargetType="{x:Type ListBoxItem}">
-                <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="BorderBrush" Value="Transparent"/>
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Padding" Value="10,7"/>
-                <Setter Property="Margin" Value="0,0,0,6"/>
-                <Setter Property="Foreground" Value="#FF333333"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                            <Border Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    Padding="{TemplateBinding Padding}"
-                                    CornerRadius="4"
-                                    SnapsToDevicePixels="True">
-                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
-                            </Border>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-                <Style.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#FFEAE7DC"/>
-                    </Trigger>
-                    <Trigger Property="IsSelected" Value="True">
-                        <Setter Property="Background" Value="#FFDCEBFA"/>
-                        <Setter Property="BorderBrush" Value="#FF1F6FC5"/>
-                        <Setter Property="BorderThickness" Value="2"/>
-                        <Setter Property="Padding" Value="8,5"/>
-                        <Setter Property="FontWeight" Value="SemiBold"/>
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
-            <!--The hue slider: only a round thumb over the rainbow behind it-->
-            <Style x:Key="StylePaletteSlider" TargetType="{x:Type Slider}">
-                <Setter Property="Focusable" Value="True"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="{x:Type Slider}">
-                            <Track x:Name="PART_Track">
-                                <Track.Thumb>
-                                    <Thumb>
-                                        <Thumb.Template>
-                                            <ControlTemplate TargetType="{x:Type Thumb}">
-                                                <Ellipse x:Name="Knob" Width="14" Height="14" Fill="White" Stroke="#FF5A5648" StrokeThickness="1"/>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsDragging" Value="True">
-                                                        <Setter TargetName="Knob" Property="Stroke" Value="#FF1F6FC5"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Thumb.Template>
-                                    </Thumb>
-                                </Track.Thumb>
-                            </Track>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
             </Style>
         </ResourceDictionary>
     </Window.Resources>
@@ -127,7 +47,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <controls:DialogTitleBar x:Name="TitleBar" Grid.Row="0" Text="{Binding Title, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"/>
-        <Grid Grid.Row="1" d:DataContext="{d:DesignInstance Type=viewmodels:DesktopWindowViewModel}">
+        <Grid Grid.Row="1">
             <Grid.RowDefinitions>
                 <!--Body-->
                 <RowDefinition Height="*"/>
@@ -135,176 +55,28 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <ScrollViewer x:Name="ScrollBody" Grid.Row="0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                <StackPanel x:Name="PanelBody" Orientation="Vertical" Margin="26">
-                    <Label x:Name="LabelAppearanceHeading" Content="Window appearance" Style="{StaticResource StyleSettingsCategory}"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <!--Colour buttons-->
-                            <ColumnDefinition Width="210"/>
-                            <ColumnDefinition Width="20"/>
-                            <!--Palette of the selected colour-->
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!--Left: the colour buttons, then Icons Appearance and Other-->
-                        <StackPanel Grid.Column="0" Orientation="Vertical">
-                        <!--The default ListBox template has a 1 px inner border: -1 lines the buttons up with the palette and the 40 px margin-->
-                        <ListBox x:Name="ListColorTargets"
-                                 Margin="-1,-1,-1,0"
-                                 SelectionMode="Single"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Padding="0"
-                                 VerticalAlignment="Top"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                 ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                                 KeyboardNavigation.TabNavigation="Once"
-                                 ItemContainerStyle="{StaticResource StyleColorTarget}"
-                                 AutomationProperties.Name="Colours">
-                            <ListBoxItem x:Name="ItemBorderColor" Tag="BorderColor" AutomationProperties.Name="Border colour">
-                                <StackPanel Orientation="Horizontal">
-                                    <Border x:Name="SwatchBorder" Style="{StaticResource StyleSwatch}" Background="{Binding Appearance.BorderColor, Converter={StaticResource HexToBrush}}"/>
-                                    <TextBlock Text="Border" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </ListBoxItem>
-                            <ListBoxItem x:Name="ItemTitleBackgroundColor" Tag="TitleBackgroundColor" AutomationProperties.Name="Title background colour">
-                                <StackPanel Orientation="Horizontal">
-                                    <Border x:Name="SwatchTitleBackground" Style="{StaticResource StyleSwatch}" Background="{Binding Appearance.TitleBackgroundColor, Converter={StaticResource HexToBrush}}"/>
-                                    <TextBlock Text="Title background" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </ListBoxItem>
-                            <ListBoxItem x:Name="ItemTitleTextColor" Tag="TitleTextColor" AutomationProperties.Name="Title text colour">
-                                <StackPanel Orientation="Horizontal">
-                                    <Border x:Name="SwatchTitleText" Style="{StaticResource StyleSwatch}" Background="{Binding Appearance.TitleTextColor, Converter={StaticResource HexToBrush}}"/>
-                                    <TextBlock Text="Title text" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </ListBoxItem>
-                            <ListBoxItem x:Name="ItemBackgroundColor" Tag="BackgroundColor" AutomationProperties.Name="Background colour">
-                                <StackPanel Orientation="Horizontal">
-                                    <Border x:Name="SwatchBackground" Style="{StaticResource StyleSwatch}" Background="{Binding Appearance.BackgroundColor, Converter={StaticResource HexToBrush}}"/>
-                                    <TextBlock Text="Background" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </ListBoxItem>
-                            <ListBoxItem x:Name="ItemTextColor" Tag="TextColor" AutomationProperties.Name="Text colour">
-                                <StackPanel Orientation="Horizontal">
-                                    <Border x:Name="SwatchText" Style="{StaticResource StyleSwatch}" Background="{Binding Appearance.TextColor, Converter={StaticResource HexToBrush}}"/>
-                                    <TextBlock Text="Text" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </ListBoxItem>
-                        </ListBox>
-                            <!--Panel windows only: hidden (and unbound) when the window edits a note's colours-->
-                            <StackPanel x:Name="PanelWindowOnly" Orientation="Vertical">
-                            <Label Content="Icons appearance" Margin="0,14,0,10" Style="{StaticResource StyleSettingsCategory}"/>
-                            <StackPanel Orientation="Vertical" Style="{StaticResource StylePropertyContainer}">
-                                <RadioButton Content="Solid icons" Margin="0,0,0,5"
-                                             IsChecked="{Binding Path=Appearance.SolidIcons, Mode=TwoWay, Converter={StaticResource SolidIconsConverter}, ConverterParameter=SolidIcons}" />
-                                <RadioButton Content="Outlined icons" Margin="0,0,0,0"
-                                             IsChecked="{Binding Path=Appearance.SolidIcons, Mode=TwoWay, Converter={StaticResource SolidIconsConverter}, ConverterParameter=OutlinedIcons}" />
-                            </StackPanel>
-
-                            <Label Content="Other" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
-                            <StackPanel Orientation="Vertical" Style="{StaticResource StylePropertyContainer}">
-                                <CheckBox x:Name="CheckSingleClickToOpen" Content="Single click to open" IsChecked="{Binding Appearance.SingleClickToOpen}" />
-                                <CheckBox x:Name="CheckShowVersionInTitle" Content="Show version in title" Margin="0,6,0,0"
-                                          ToolTip="Shows the MDSHO version after this window's title, for example MDSHO v1.5.1"
-                                          IsChecked="{Binding Appearance.ShowVersionInTitle}" />
-                            </StackPanel>
-                            </StackPanel>
-                        </StackPanel>
-
-                        <!--Always-visible palette: SettingsWindow.xaml.cs binds it to the selected button's colour-->
-                        <StackPanel Grid.Column="2" Orientation="Vertical" VerticalAlignment="Top">
-                            <Border x:Name="PanelPalette" Background="White" BorderBrush="#FFC9C3B1" BorderThickness="1" CornerRadius="4" Padding="12">
-                                <StackPanel Orientation="Vertical">
-                                    <!--Saturation (left to right) and brightness (top to bottom) of the current hue-->
-                                    <Grid x:Name="SquareSaturationValue" Height="150" ClipToBounds="True" Cursor="Cross" Focusable="True"
-                                          Background="Transparent" FocusVisualStyle="{x:Null}"
-                                          AutomationProperties.Name="Saturation and brightness">
-                                        <Border x:Name="SquareHue" Background="Red"/>
-                                        <Border>
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                    <GradientStop Color="White" Offset="0"/>
-                                                    <GradientStop Color="#00FFFFFF" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Border.Background>
-                                        </Border>
-                                        <Border>
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                    <GradientStop Color="#00000000" Offset="0"/>
-                                                    <GradientStop Color="Black" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Border.Background>
-                                        </Border>
-                                        <Border x:Name="SquareFocus" BorderBrush="#FF1F6FC5" BorderThickness="2" Visibility="Hidden"/>
-                                        <Canvas IsHitTestVisible="False">
-                                            <Grid x:Name="SquareThumb" Width="14" Height="14">
-                                                <Ellipse Stroke="#99000000" StrokeThickness="1"/>
-                                                <Ellipse Margin="1" Stroke="White" StrokeThickness="2"/>
-                                            </Grid>
-                                        </Canvas>
-                                    </Grid>
-
-                                    <!--Hue, 0 to 360, over a rainbow-->
-                                    <Grid Margin="0,10,0,0" Height="14">
-                                        <Border Height="10" CornerRadius="5" Margin="7,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                    <GradientStop Color="#FFFF0000" Offset="0"/>
-                                                    <GradientStop Color="#FFFFFF00" Offset="0.1667"/>
-                                                    <GradientStop Color="#FF00FF00" Offset="0.3333"/>
-                                                    <GradientStop Color="#FF00FFFF" Offset="0.5"/>
-                                                    <GradientStop Color="#FF0000FF" Offset="0.6667"/>
-                                                    <GradientStop Color="#FFFF00FF" Offset="0.8333"/>
-                                                    <GradientStop Color="#FFFF0000" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Border.Background>
-                                        </Border>
-                                        <Slider x:Name="SliderHue" Minimum="0" Maximum="360" SmallChange="1" LargeChange="15"
-                                                IsMoveToPointEnabled="True" AutomationProperties.Name="Hue"
-                                                Value="{Binding Color.HSV_H, ElementName=PickerColor, Mode=TwoWay}"
-                                                Style="{StaticResource StylePaletteSlider}"/>
-                                    </Grid>
-
-                                    <!--Alpha (transparency), from the colour picker library; shares the hex box's colour state-->
-                                    <colorpicker:AlphaSlider x:Name="SliderAlpha" Margin="0,8,0,0"
-                                                             ColorState="{Binding ColorState, ElementName=PickerColor, Mode=TwoWay}"
-                                                             AutomationProperties.Name="Transparency"/>
-
-                                    <!--Current colour, hex (#AARRGGBB) and the R G B A values-->
-                                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                        <Border x:Name="SwatchCurrent" Width="26" Height="22" BorderBrush="#FF8C8778" BorderThickness="1" CornerRadius="2"
-                                                VerticalAlignment="Center"/>
-                                        <colorpicker:HexColorTextBox x:Name="PickerColor" Width="96" Margin="8,0,0,0" VerticalAlignment="Center"
-                                                                     ShowAlpha="True" HexRepresentation="ARGB"
-                                                                     AutomationProperties.Name="Hex colour"/>
-                                    </StackPanel>
-                                    <TextBlock x:Name="TextRgba" Margin="0,6,0,0" Foreground="#FF5A5648" FontSize="11"/>
-                                </StackPanel>
-                            </Border>
-                            <TextBlock x:Name="TextEditing" Margin="0,8,0,0" Foreground="#FF5A5648" Text="Editing: Border"/>
-                        </StackPanel>
-                    </Grid>
-
+            <StackPanel x:Name="PanelBody" Grid.Row="0" Orientation="Vertical" Margin="26">
+                <Label Content="Icons appearance" Style="{StaticResource StyleSettingsCategory}"/>
+                <StackPanel Orientation="Vertical">
+                    <RadioButton Content="Solid icons" Margin="0,0,0,5"
+                                 IsChecked="{Binding Path=Appearance.SolidIcons, Mode=TwoWay, Converter={StaticResource SolidIconsConverter}, ConverterParameter=SolidIcons}" />
+                    <RadioButton Content="Outlined icons"
+                                 IsChecked="{Binding Path=Appearance.SolidIcons, Mode=TwoWay, Converter={StaticResource SolidIconsConverter}, ConverterParameter=OutlinedIcons}" />
                 </StackPanel>
-            </ScrollViewer>
+
+                <Label Content="Other" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
+                <StackPanel Orientation="Vertical">
+                    <CheckBox x:Name="CheckSingleClickToOpen" Content="Single click to open" IsChecked="{Binding Appearance.SingleClickToOpen}" />
+                    <CheckBox x:Name="CheckShowVersionInTitle" Content="Show version in title" Margin="0,6,0,0"
+                              ToolTip="Shows the MDSHO version after this window's title, for example MDSHO v1.5.1"
+                              IsChecked="{Binding Appearance.ShowVersionInTitle}" />
+                </StackPanel>
+            </StackPanel>
 
             <!--Every outer margin of the content and of the Apply bar equals the Apply button height (set in code from the real button)-->
             <Border x:Name="Footer" Grid.Row="1" Background="#DFDACB">
                 <Grid x:Name="FooterContent" Margin="26">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <!--Back to the default colours of a new panel, or of a note (saved with Apply)-->
-                    <Button x:Name="ButtonDefaultColours" Grid.Column="0" HorizontalAlignment="Left"
-                        Style="{StaticResource StyleDarkButton}" Background="#FFA09A88"
-                        Padding="22,5"
-                        Content="Default colours"
-                        Visibility="Collapsed"/>
-                    <Button x:Name="ButtonApply" Grid.Column="1"
+                    <Button x:Name="ButtonApply" HorizontalAlignment="Right"
                         Style="{StaticResource StyleDarkButton}"
                         Padding="22,5"
                         Content="Apply"/>
