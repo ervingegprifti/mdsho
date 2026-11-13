@@ -92,8 +92,15 @@ namespace MDSHO.ViewModels {
     }
     /// <summary>Works out again whether the window is docked to a side of one of the screens, from its position and size.</summary>
     public void RefreshDocked(IEnumerable<MDSHO.Common.ScreenInfo> screens) {
+      RefreshDocked(screens, reservedHere: false);
+    }
+    /// <summary>
+    /// The same, for a window that may hold its strip of the screen (<paramref name="reservedHere"/>): such a window is
+    /// docked even when another docked window beside it moved the work area's edge away from it.
+    /// </summary>
+    public void RefreshDocked(IEnumerable<MDSHO.Common.ScreenInfo> screens, bool reservedHere) {
       MDSHO.Common.ScreenRect rect = new MDSHO.Common.ScreenRect(Left, Top, Width, Height);
-      IsDocked = screens != null && screens.Any(screen => MDSHO.Common.ScreenGeometry.IsDockedToSide(rect, screen));
+      IsDocked = reservedHere || (screens != null && screens.Any(screen => MDSHO.Common.ScreenGeometry.IsDockedToSide(rect, screen)));
     }
     /// <summary>
     /// Docks the window: saves left/top/height (window or clone row) in one transaction, then changes memory,
@@ -248,6 +255,8 @@ namespace MDSHO.ViewModels {
         DataStore.Windows.UpdateSingleClickToOpen(windowID, this.Appearance.SingleClickToOpen);
       } else if (e.PropertyName == nameof(this.Appearance.CommentWrapText)) {
         DataStore.Windows.UpdateCommentWrapText(windowID, this.Appearance.CommentWrapText);
+      } else if (e.PropertyName == nameof(this.Appearance.ReserveDockedSpace)) {
+        DataStore.Windows.UpdateReserveDockedSpace(windowID, this.Appearance.ReserveDockedSpace);
       }
     }
     private void Clones_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) {

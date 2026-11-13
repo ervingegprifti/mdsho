@@ -9,17 +9,18 @@ namespace MDSHO.Data {
     private const string InsertSql = @"
       INSERT INTO MDSHOWindows (
         ID, Title, ScreenDeviceName, Left, Top, Width, Height, BorderColor, BackgroundColor, TextColor,
-        TitleBackgroundColor, TitleTextColor, Notes, SolidIcons, SingleClickToOpen, CommentWrapText)
+        TitleBackgroundColor, TitleTextColor, Notes, SolidIcons, SingleClickToOpen, CommentWrapText, ReserveDockedSpace)
       VALUES (
         NULLIF(@ID, 0), @Title, @ScreenDeviceName, @Left, @Top, @Width, @Height, @BorderColor, @BackgroundColor, @TextColor,
-        @TitleBackgroundColor, @TitleTextColor, @Notes, @SolidIcons, @SingleClickToOpen, @CommentWrapText)";
+        @TitleBackgroundColor, @TitleTextColor, @Notes, @SolidIcons, @SingleClickToOpen, @CommentWrapText, @ReserveDockedSpace)";
 
     private const string UpdateSql = @"
       UPDATE MDSHOWindows SET
         Title = @Title, ScreenDeviceName = @ScreenDeviceName, Left = @Left, Top = @Top, Width = @Width, Height = @Height,
         BorderColor = @BorderColor, BackgroundColor = @BackgroundColor, TextColor = @TextColor,
         TitleBackgroundColor = @TitleBackgroundColor, TitleTextColor = @TitleTextColor, Notes = @Notes,
-        SolidIcons = @SolidIcons, SingleClickToOpen = @SingleClickToOpen, CommentWrapText = @CommentWrapText
+        SolidIcons = @SolidIcons, SingleClickToOpen = @SingleClickToOpen, CommentWrapText = @CommentWrapText,
+        ReserveDockedSpace = @ReserveDockedSpace
       WHERE ID = @ID";
 
     private readonly IDesktopWindowCloneRepository clones;
@@ -136,6 +137,9 @@ namespace MDSHO.Data {
     }
     public void UpdateSingleClickToOpen(long id, bool singleClickToOpen) {
       Run("UPDATE MDSHOWindows SET SingleClickToOpen = @singleClickToOpen WHERE ID = @id;", new { id, singleClickToOpen });
+    }
+    public void UpdateReserveDockedSpace(long id, bool reserveDockedSpace) {
+      Run("UPDATE MDSHOWindows SET ReserveDockedSpace = @reserveDockedSpace WHERE ID = @id;", new { id, reserveDockedSpace });
     }
     public void UpdateCommentWrapText(long id, bool commentWrapText) {
       Run("UPDATE MDSHOWindows SET CommentWrapText = @commentWrapText WHERE ID = @id;", new { id, commentWrapText });

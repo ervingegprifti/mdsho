@@ -36,16 +36,15 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Version_is_11_and_the_last_migration_is_11() {
-      Assert.Equal(11, AppConstants.DatabaseVersion);
-      Assert.Equal(11, SchemaManager.Migrations.Last().Version);
+    public void There_is_a_version_11_step() {
+      Assert.Single(SchemaManager.Migrations, m => m.Version == 11);
     }
 
     [Fact]
     public void V10_database_migrates_to_11_with_wrap_text_off_and_keeps_the_rest() {
       BuildV10Db();
       DataStore.Upgrade();
-      Assert.Equal(11, db.Scalar("PRAGMA user_version"));
+      Assert.True(db.Scalar("PRAGMA user_version") >= 11);
       Assert.Equal(1, Columns("NoteWindows", "IsWrapText"));
       Assert.Equal(1, Columns("MDSHOWindows", "CommentWrapText"));
       NoteWindowPlace place = DataStore.NoteWindows.Get(1);

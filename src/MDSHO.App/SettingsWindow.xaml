@@ -206,6 +206,9 @@
                             <Label Content="Other" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
                             <StackPanel Orientation="Vertical" Style="{StaticResource StylePropertyContainer}">
                                 <CheckBox x:Name="CheckSingleClickToOpen" Content="Single click to open" IsChecked="{Binding Appearance.SingleClickToOpen}" />
+                                <CheckBox x:Name="CheckReserveDockedSpace" Content="Reserve screen space when docked" Margin="0,6,0,0"
+                                          ToolTip="While this window is docked, desktop icons and maximised programs stay out of its strip of the screen, like with the taskbar"
+                                          IsChecked="{Binding Appearance.ReserveDockedSpace}" />
                             </StackPanel>
                             </StackPanel>
                         </StackPanel>

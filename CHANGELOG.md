@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to MDSHO are documented in this file.
 
@@ -6,10 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
-## [1.4.1]
+## [1.5.0]
 
 ### Added
 
+- **Reserve screen space when docked**, under Other in a panel's Settings (off at first, shared by the panel and its
+  clones): while the panel is docked to the left or right side of a screen, it keeps that strip of the screen the way
+  the taskbar does, so desktop icons (including new files and shortcuts) and maximised programs stay out of it. Other
+  programs' windows can still be moved over it. The strip follows the panel when you make it wider or narrower and is
+  given back when the panel floats again, the setting is turned off, or MDSHO exits. Two panels docked on the same side
+  sit side by side. Closing Settings without Apply puts the setting back.
 - **Find other lost windows** in the tray menu: moves every window of another app whose title bar can't be reached on
   any screen (for example one that opened on a screen that is no longer connected) to the screen with the mouse
   pointer, keeping its size unless it is bigger than that screen, then says how many windows moved. Minimized windows,

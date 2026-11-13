@@ -45,6 +45,7 @@ namespace MDSHO.ViewModels {
         solidIcons: windowRecord.SolidIcons,
         singleClickToOpen: windowRecord.SingleClickToOpen);
       appearance.CommentWrapText = windowRecord.CommentWrapText;
+      appearance.ReserveDockedSpace = windowRecord.ReserveDockedSpace;
 
       DesktopWindowViewModel desktopWindow = new DesktopWindowViewModel(
         appViewModel: appViewModel,

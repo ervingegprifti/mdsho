@@ -38,6 +38,9 @@ namespace MDSHO.ViewModels {
     /// <summary>True when the Comment windows opened from this window (and its clones) wrap their text.</summary>
     [ObservableProperty]
     private bool commentWrapText;
+    /// <summary>True when the window and its clones, docked to a screen side, reserve that strip of the screen.</summary>
+    [ObservableProperty]
+    private bool reserveDockedSpace;
 
     #region PROPERTIES
     /// <summary>The application view model this belongs to.</summary>

@@ -7,6 +7,7 @@ using System.Windows.Interop;
 using MDSHO.Data;
 using MDSHO.Helpers;
 using System.Collections.Generic;
+using MDSHO.Common;
 
 
 namespace MDSHO {
@@ -238,6 +239,7 @@ namespace MDSHO {
 				//
 				hwndSource = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
 				hwndSource.AddHook(new HwndSourceHook(WndProc));
+				StartDockedSpace(hwndSource.Handle);
 			} catch (Exception ex) {
 				ErrorDialog.ShowDialog(ex);
 			}
@@ -265,6 +267,11 @@ namespace MDSHO {
 				SystemCloseRequested();
 				return IntPtr.Zero;
 			}
+			// The work area or the reserved strips changed: check this window's strip again.
+			if ((msg == WM_SETTINGCHANGE && wParam.ToInt64() == SPI_SETWORKAREA)
+				|| (this.dockedSpace != null && msg == AppServices.Current.AppBars.CallbackMessage && wParam.ToInt64() == ABN_POSCHANGED)) {
+				UpdateDockedSpace();
+			}
 			// Detect moving
 			if (msg == WM_MOVING) {
 				if (windowWasMoved == false) {
@@ -284,14 +291,14 @@ namespace MDSHO {
 				// check that this is the end of move and not resize operation
 				if (windowWasMoved == true) {
 					MoveWindowStoped();
-					RefreshDocked();
+					UpdateDockedSpace();
 					// set it back to false for the next move
 					windowWasMoved = false;
 				}
 				// check that this is the end of resize and not move operation
 				if (windowWasResized == true) {
 					SizeWindowStoped();
-					RefreshDocked();
+					UpdateDockedSpace();
 					// set it back to false for the next resize
 					windowWasResized = false;
 				}
@@ -329,6 +336,98 @@ namespace MDSHO {
 			}
 		}
 		#endregion MOVE & SIZE WINDOW
+
+
+		#region RESERVE DOCKED SPACE
+		// "Reserve screen space when docked": the strip of the screen this window holds while docked, and the shared
+		// appearance it watches for the setting. Made once the window has a handle; the strip is reserved only once the
+		// window is on screen (Windows ignored a strip registered before its window was shown).
+		private DockedSpace dockedSpace;
+		private DesktopWindowAppearance watchedAppearance;
+		private bool isRendered;
+		private bool isUpdatingDockedSpace;
+		// WM_SETTINGCHANGE with SPI_SETWORKAREA: the work area changed (a strip was reserved or given back, the taskbar moved).
+		private const int WM_SETTINGCHANGE = 0x001A;
+		private const int SPI_SETWORKAREA = 0x002F;
+		// The app bar message's wParam when the strips changed.
+		private const int ABN_POSCHANGED = 1;
+
+		private void StartDockedSpace(IntPtr handle) {
+			if (this.dockedSpace != null) {
+				return;
+			}
+			this.dockedSpace = new DockedSpace(AppServices.Current.AppBars, handle);
+			this.watchedAppearance = (this.DataContext as DesktopWindowViewModel)?.Appearance;
+			if (this.watchedAppearance != null) {
+				this.watchedAppearance.PropertyChanged += WatchedAppearance_PropertyChanged;
+			}
+			this.ContentRendered += (s, e) => {
+				this.isRendered = true;
+				UpdateDockedSpace();
+			};
+			this.IsVisibleChanged += (s, e) => UpdateDockedSpace();
+			this.Closed += (s, e) => {
+				if (this.watchedAppearance != null) {
+					this.watchedAppearance.PropertyChanged -= WatchedAppearance_PropertyChanged;
+				}
+				try {
+					this.dockedSpace.Release();
+				} catch (Exception ex) {
+					Common.AppLog.Warning(ex, "Could not give the reserved screen strip back");
+				}
+			};
+		}
+
+		private void WatchedAppearance_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e) {
+			if (e.PropertyName == nameof(DesktopWindowAppearance.ReserveDockedSpace)) {
+				UpdateDockedSpace();
+			}
+		}
+
+		/// <summary>
+		/// Works out again whether the window is docked and reserves its strip of the screen, moves it to the window's width,
+		/// or gives it back (setting off, floating, hidden). Also decides rounded or square corners.
+		/// </summary>
+		public void UpdateDockedSpace() {
+			DesktopWindowViewModel desktopWindow = this.DataContext as DesktopWindowViewModel;
+			if (this.dockedSpace == null || desktopWindow == null) {
+				RefreshDocked();
+				return;
+			}
+			// Reserving makes Windows send this window messages that come back here; one update at a time.
+			if (this.isUpdatingDockedSpace) {
+				return;
+			}
+			this.isUpdatingDockedSpace = true;
+			try {
+				IList<Common.ScreenInfo> screens = AppServices.Current.Screens.AllScreens();
+				Common.ScreenRect rect = new Common.ScreenRect(desktopWindow.Left, desktopWindow.Top, desktopWindow.Width, desktopWindow.Height);
+				DockSide side = DockSide.None;
+				foreach (Common.ScreenInfo screen in screens) {
+					side = Common.ScreenGeometry.SideDockedTo(rect, screen);
+					if (side != DockSide.None) {
+						break;
+					}
+				}
+				bool reserve = desktopWindow.Appearance.ReserveDockedSpace && this.isRendered && this.IsVisible;
+				DockSide held = this.dockedSpace.Update(reserve, side);
+				desktopWindow.RefreshDocked(screens, held != DockSide.None);
+			} catch (Exception ex) {
+				ErrorDialog.ShowDialog(ex);
+			} finally {
+				this.isUpdatingDockedSpace = false;
+			}
+		}
+
+		// The screen to dock on, with the strip this window holds there counted as free.
+		private Common.ScreenInfo ScreenToDockOn() {
+			Common.ScreenInfo screen = WindowLookup.GetScreenFromWindow(this);
+			if (this.dockedSpace?.Strip is Common.ScreenRect strip) {
+				screen = Common.ScreenGeometry.IncludeStrip(screen, strip);
+			}
+			return screen;
+		}
+		#endregion RESERVE DOCKED SPACE
 
 
 		#region FUNCTIONS
@@ -370,7 +469,7 @@ namespace MDSHO {
 			} else {
 				DataStore.Windows.UpdateLeftTopWidthHeight(desktopWindow.ID, desktopWindow.Left, desktopWindow.Top, desktopWindow.Width, desktopWindow.Height);
       }
-			RefreshDocked();
+			UpdateDockedSpace();
 		}
 		#endregion FUNCTIONS
 
@@ -519,9 +618,9 @@ namespace MDSHO {
 		private void DockWindowLeft() {
 			try {
 				DesktopWindowViewModel desktopWindow = (DesktopWindowViewModel)(this.DataContext);
-				Common.ScreenInfo screen = WindowLookup.GetScreenFromWindow(this);
-				Common.ScreenRect dock = Common.ScreenGeometry.DockLeft(screen, desktopWindow.Width);
+				Common.ScreenRect dock = Common.ScreenGeometry.DockLeft(ScreenToDockOn(), desktopWindow.Width);
 				desktopWindow.ApplyDock((long)dock.Left, (long)dock.Top, (long)dock.Height); // saves geometry, corners turn square
+				UpdateDockedSpace();
 			} catch (Exception ex) {
 				ErrorDialog.ShowDialog(ex);
 			}
@@ -529,9 +628,9 @@ namespace MDSHO {
 		private void DockWindowRight() {
 			try {
 				DesktopWindowViewModel desktopWindow = (DesktopWindowViewModel)(this.DataContext);
-				Common.ScreenInfo screen = WindowLookup.GetScreenFromWindow(this);
-				Common.ScreenRect dock = Common.ScreenGeometry.DockRight(screen, desktopWindow.Width);
+				Common.ScreenRect dock = Common.ScreenGeometry.DockRight(ScreenToDockOn(), desktopWindow.Width);
 				desktopWindow.ApplyDock((long)dock.Left, (long)dock.Top, (long)dock.Height); // saves geometry, corners turn square
+				UpdateDockedSpace();
 			} catch (Exception ex) {
 				ErrorDialog.ShowDialog(ex);
 			}

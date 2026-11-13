@@ -1,4 +1,4 @@
----
+﻿---
 title: Database
 permalink: /database/
 ---
@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 11**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 12**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -40,6 +40,7 @@ One row per panel (MDSHO window).
 | `SolidIcons` | INTEGER | NOT NULL | | `1` = filled icons, `0` = outline icons. |
 | `SingleClickToOpen` | INTEGER | NOT NULL | | `1` = one click opens a button, `0` = double click. |
 | `CommentWrapText` | INTEGER | NOT NULL | `0` | `1` = the Comment windows opened from this window wrap their text (the wrap text button in their title bar). Exports carry it; older exports import with it off. Added in version 11. |
+| `ReserveDockedSpace` | INTEGER | NOT NULL | `0` | `1` = while the panel or one of its clones is docked to a screen side, it reserves that strip of the screen, so desktop icons and maximised programs stay out of it ("Reserve screen space when docked" in Settings). Exports carry it; older exports import with it off. Added in version 12. |
 
 ### MDSHOWindowClones
 
@@ -140,12 +141,13 @@ that worked.
 | 3 | 1.1.0 | Indexes on the foreign key columns (see [Indexes](#indexes)). |
 | 4 | 1.1.5 | `Shortcuts.ProcessRunAsAdmin` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.ProcessWorkingFolder` (`TEXT NOT NULL DEFAULT ''`) for the Run command window. |
 | 5 | 1.1.5 | `RoundedCorners` dropped from `MDSHOWindows` and `MDSHOWindowClones` (corners now follow the docked state). Uses `ALTER TABLE ... DROP COLUMN`, so no rows, IDs, indexes or foreign keys change. |
-| 6 | 1.4.1 | `Shortcuts.Notes` renamed to `Comment` (`ALTER TABLE ... RENAME COLUMN`; the text, rows, indexes and foreign keys stay). `MDSHOWindows.Notes` is unchanged. Exports made before this still import: their `notes` becomes the comment. |
-| 7 | 1.4.1 | `Shortcuts.IsNote` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.NoteText` (`TEXT NOT NULL DEFAULT ''`) for note buttons. Exports made before this still import, as normal buttons. |
-| 8 | 1.4.1 | `NoteWindows` table: the place, size and state of each note window and whether it was open, so open notes reopen where they were. |
-| 9 | 1.4.1 | `NoteWindows.IsTopmost` (`INTEGER NOT NULL DEFAULT 0`): whether a note window stays on top of other apps. |
-| 10 | 1.4.1 | The five note window colours on `Shortcuts` (`NoteBorderColor`, `NoteTitleBackgroundColor`, `NoteTitleTextColor`, `NoteBackgroundColor`, `NoteTextColor`, `TEXT NOT NULL DEFAULT ''`). Exports carry them; older exports import with the default colours. |
-| 11 | 1.4.1 | Wrap text: `NoteWindows.IsWrapText` and `MDSHOWindows.CommentWrapText` (`INTEGER NOT NULL DEFAULT 0`). |
+| 6 | 1.5.0 | `Shortcuts.Notes` renamed to `Comment` (`ALTER TABLE ... RENAME COLUMN`; the text, rows, indexes and foreign keys stay). `MDSHOWindows.Notes` is unchanged. Exports made before this still import: their `notes` becomes the comment. |
+| 7 | 1.5.0 | `Shortcuts.IsNote` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.NoteText` (`TEXT NOT NULL DEFAULT ''`) for note buttons. Exports made before this still import, as normal buttons. |
+| 8 | 1.5.0 | `NoteWindows` table: the place, size and state of each note window and whether it was open, so open notes reopen where they were. |
+| 9 | 1.5.0 | `NoteWindows.IsTopmost` (`INTEGER NOT NULL DEFAULT 0`): whether a note window stays on top of other apps. |
+| 10 | 1.5.0 | The five note window colours on `Shortcuts` (`NoteBorderColor`, `NoteTitleBackgroundColor`, `NoteTitleTextColor`, `NoteBackgroundColor`, `NoteTextColor`, `TEXT NOT NULL DEFAULT ''`). Exports carry them; older exports import with the default colours. |
+| 11 | 1.5.0 | Wrap text: `NoteWindows.IsWrapText` and `MDSHOWindows.CommentWrapText` (`INTEGER NOT NULL DEFAULT 0`). |
+| 12 | 1.5.0 | `MDSHOWindows.ReserveDockedSpace` (`INTEGER NOT NULL DEFAULT 0`): "Reserve screen space when docked". |
 
 ### Backup before an upgrade
 

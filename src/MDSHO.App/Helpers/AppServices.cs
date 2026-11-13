@@ -33,6 +33,8 @@ namespace MDSHO.Helpers {
     public StoreActions StoreActions { get; set; }
     /// <summary>The windows of other apps, for "Find other lost windows".</summary>
     public IOtherWindowsService OtherWindows { get; set; } = new OtherWindowsService();
+    /// <summary>Screen strips reserved by docked windows ("Reserve screen space when docked").</summary>
+    public IAppBarService AppBars { get; set; } = new AppBarService();
 
     /// <summary>Creates the set from its services.</summary>
     public AppServices(IShellLauncher shell, IPackageIdentity package, IAppDataLocator appData, IAutoStartService autoStart,

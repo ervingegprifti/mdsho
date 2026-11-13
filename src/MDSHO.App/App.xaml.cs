@@ -466,6 +466,12 @@ namespace MDSHO
 
     private void ExitApplication() {
       TextEditWindow.SaveOpenNotesForExit();
+      // Docked windows give their screen strips back before anything closes.
+      try {
+        AppServices.Current.AppBars.ReleaseAll();
+      } catch (Exception ex) {
+        Common.AppLog.Warning(ex, "Could not give the reserved screen strips back");
+      }
       this.notifyIcon.Dispose();
       this.notifyIcon = null;
       this.exitApplication = true;

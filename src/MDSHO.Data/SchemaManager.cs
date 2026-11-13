@@ -36,7 +36,8 @@ namespace MDSHO.Data {
           Notes TEXT NOT NULL,
           SolidIcons INTEGER NOT NULL,
           SingleClickToOpen INTEGER NOT NULL,
-          CommentWrapText INTEGER NOT NULL DEFAULT 0);
+          CommentWrapText INTEGER NOT NULL DEFAULT 0,
+          ReserveDockedSpace INTEGER NOT NULL DEFAULT 0);
 
         CREATE TABLE MDSHOWindowClones (
           ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
@@ -237,6 +238,11 @@ namespace MDSHO.Data {
         }
         if (!ColumnExists(conn, "MDSHOWindows", "CommentWrapText")) {
           Execute(conn, "ALTER TABLE MDSHOWindows ADD COLUMN CommentWrapText INTEGER NOT NULL DEFAULT 0;");
+        }
+      }),
+      new DbMigration(12, "Reserve screen space when docked: MDSHOWindows.ReserveDockedSpace", conn => {
+        if (!ColumnExists(conn, "MDSHOWindows", "ReserveDockedSpace")) {
+          Execute(conn, "ALTER TABLE MDSHOWindows ADD COLUMN ReserveDockedSpace INTEGER NOT NULL DEFAULT 0;");
         }
       })
     };

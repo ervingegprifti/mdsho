@@ -41,6 +41,8 @@ namespace MDSHO.Core {
     void UpdateSingleClickToOpen(long id, bool singleClickToOpen);
     /// <summary>Saves whether the window's Comment windows wrap their text.</summary>
     void UpdateCommentWrapText(long id, bool commentWrapText);
+    /// <summary>Saves whether the window and its clones reserve their strip of the screen while docked.</summary>
+    void UpdateReserveDockedSpace(long id, bool reserveDockedSpace);
     /// <summary>Saves position and height.</summary>
     void UpdateLeftTopHeight(long id, long left, long top, long height);
     /// <summary>Saves position and size.</summary>

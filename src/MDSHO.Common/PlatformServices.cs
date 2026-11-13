@@ -33,6 +33,26 @@ namespace MDSHO.Common {
     string Locate();
   }
 
+  /// <summary>
+  /// Reserves strips of the screen for docked windows through Windows' app bars (the way the taskbar reserves its space):
+  /// desktop icons and maximised programs stay out of a reserved strip. Positions are physical pixels.
+  /// </summary>
+  public interface IAppBarService {
+    /// <summary>The message Windows sends a window that holds a strip when the strips change (wParam 1: position changed).</summary>
+    int CallbackMessage { get; }
+    /// <summary>
+    /// Reserves (or moves) the window's strip on the <paramref name="side"/> edge of its screen, as wide as the window.
+    /// The window must already be on screen. Returns the strip Windows gave, or null when it refused.
+    /// </summary>
+    ScreenRect? Reserve(IntPtr window, DockSide side);
+    /// <summary>Gives the window's strip back. Does nothing for a window that holds none.</summary>
+    void Release(IntPtr window);
+    /// <summary>Gives every strip back (MDSHO exits).</summary>
+    void ReleaseAll();
+    /// <summary>Where the window is on the screen.</summary>
+    ScreenRect WindowRect(IntPtr window);
+  }
+
   /// <summary>Reads the connected monitors.</summary>
   public interface IScreenService {
     /// <summary>Every connected screen.</summary>

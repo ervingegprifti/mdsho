@@ -141,12 +141,49 @@ namespace MDSHO.Common {
     /// working area height and touches its left or right edge. Allows 1 DIP for positions saved as whole numbers.
     /// </summary>
     public static bool IsDockedToSide(ScreenRect windowDip, ScreenInfo screen) {
+      return SideDockedTo(windowDip, screen) != DockSide.None;
+    }
+
+    /// <summary>
+    /// The side of the screen the window rect (DIPs) is docked to: it fills the working area height and touches its left
+    /// or right edge, from inside, or from just outside when the window reserved its own strip (which moves the edge to
+    /// the window's inner side). The window must be on the screen. Allows 1 DIP for positions saved as whole numbers.
+    /// </summary>
+    public static DockSide SideDockedTo(ScreenRect windowDip, ScreenInfo screen) {
       const double tolerance = 1.0;
       ScreenRect w = screen.WorkingAreaDip;
+      ScreenRect b = screen.BoundsDip;
       bool fullHeight = Math.Abs(windowDip.Top - w.Top) <= tolerance && Math.Abs(windowDip.Bottom - w.Bottom) <= tolerance;
-      bool atLeft = Math.Abs(windowDip.Left - w.Left) <= tolerance;
-      bool atRight = Math.Abs(windowDip.Right - w.Right) <= tolerance;
-      return fullHeight && (atLeft || atRight);
+      bool onScreen = windowDip.Left >= b.Left - tolerance && windowDip.Right <= b.Right + tolerance;
+      if (!fullHeight || !onScreen) {
+        return DockSide.None;
+      }
+      if (Math.Abs(windowDip.Left - w.Left) <= tolerance || Math.Abs(windowDip.Right - w.Left) <= tolerance) {
+        return DockSide.Left;
+      }
+      if (Math.Abs(windowDip.Right - w.Right) <= tolerance || Math.Abs(windowDip.Left - w.Right) <= tolerance) {
+        return DockSide.Right;
+      }
+      return DockSide.None;
+    }
+
+    /// <summary>
+    /// The screen with a strip the window itself reserves (physical pixels) counted as free again, so docking the window
+    /// again puts it back at the screen edge and not beside its own strip. A strip not touching the working area changes nothing.
+    /// </summary>
+    public static ScreenInfo IncludeStrip(ScreenInfo screen, ScreenRect stripPx) {
+      const double tolerance = 1.0;
+      ScreenRect w = screen.WorkingArea;
+      ScreenRect b = screen.Bounds;
+      double left = w.Left, right = w.Right;
+      if (Math.Abs(stripPx.Right - w.Left) <= tolerance && stripPx.Left >= b.Left - tolerance) {
+        left = stripPx.Left;
+      } else if (Math.Abs(stripPx.Left - w.Right) <= tolerance && stripPx.Right <= b.Right + tolerance) {
+        right = stripPx.Right;
+      } else {
+        return screen;
+      }
+      return new ScreenInfo(screen.DeviceName, b, new ScreenRect(left, w.Top, right - left, w.Height), screen.Scale, screen.IsPrimary);
     }
 
     /// <summary>True if the title-bar strip of the window rect (DIPs) sufficiently intersects the working area of any screen.</summary>
