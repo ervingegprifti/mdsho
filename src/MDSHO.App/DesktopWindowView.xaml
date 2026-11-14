@@ -159,7 +159,7 @@
         </Grid.ColumnDefinitions>
 
         <!--Header-->
-        <!--https://chriscavanagh.wordpress.com/2008/10/03/wpf-easy-rounded-corners-for-anything/-->
+        <!--Rounded corners: https://learn.microsoft.com/en-us/dotnet/api/system.windows.controls.border.cornerradius-->
         <Border x:Name="BorderHeaderRoundedCorners" Grid.Row="0" Grid.Column="0"
             BorderThickness="1,1,1,0"
             CornerRadius="{Binding IsDocked, Converter={StaticResource DockedCornerRadius}, ConverterParameter='5,5,0,0'}"
@@ -323,7 +323,7 @@
         </Border>
 
         <!--Body-->
-        <!--https://chriscavanagh.wordpress.com/2008/10/03/wpf-easy-rounded-corners-for-anything/-->
+        <!--Rounded corners: https://learn.microsoft.com/en-us/dotnet/api/system.windows.controls.border.cornerradius-->
         <Border x:Name="BorderBodyRoundedCorners" Grid.Row="1" Grid.Column="0"
             BorderThickness="1,0,1,1"
             CornerRadius="{Binding IsDocked, Converter={StaticResource DockedCornerRadius}, ConverterParameter='0,0,5,5'}"
@@ -349,7 +349,8 @@
                     <!--Look the gong-wpf-dragdrop-file-sample-main example-->
 
                     <TreeView.Resources>
-                        <!--https://stackoverflow.com/questions/17814308/treeview-shows-blue-for-selected-item-->
+                        <!--Hide the system selection colour. See SystemColors.HighlightBrushKey and InactiveSelectionHighlightBrushKey:
+                        https://learn.microsoft.com/en-us/dotnet/api/system.windows.systemcolors.highlightbrushkey-->
                         <!--Active selected item background color-->
                         <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="Transparent" />
                         <!--Inactive selected item background color-->

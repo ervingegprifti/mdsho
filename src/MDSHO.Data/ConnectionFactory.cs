@@ -7,7 +7,7 @@ namespace MDSHO.Data {
   /// Creates the connections to the SQLite database. The path is resolved on every call (so the
   /// <c>Paths.DatabaseFilePathOverride</c> test hook is respected) and every connection enforces foreign keys.<br /><br />
   /// References:<br />
-  /// <see href="https://docs.microsoft.com/en-us/dotnet/standard/data/sqlite/connection-strings">Connection strings</see><br />
+  /// <see href="https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/connection-strings">Connection strings</see><br />
   /// </summary>
   internal static class ConnectionFactory {
     private static long openCount;

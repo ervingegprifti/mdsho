@@ -13,8 +13,8 @@ namespace MDSHO.Infrastructure {
 
     /// <summary>Writes a .lnk file pointing at the target, opening in a normal window, with the given working folder.</summary>
     public void CreateLnk(string lnkFilePath, string targetPath, string workingFolder) {
-      // The COM interface IShellLink requires admin access which end users may not have; the late-bound Windows Script Host
-      // object below works without it. (https://stackoverflow.com/questions/2934420)
+      // Uses the Windows Script Host shortcut object, late-bound, so no COM interop reference or IShellLink declarations
+      // are needed. WshShortcut: https://learn.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/windows-scripting/xk6kst2k(v=vs.84)
       Type wshShellType = Type.GetTypeFromProgID("WScript.Shell", throwOnError: true);
       dynamic wshShell = Activator.CreateInstance(wshShellType);
       dynamic wshShortcut = null;
