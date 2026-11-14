@@ -134,15 +134,6 @@ namespace MDSHO.Tests {
       WpfAppHost.Pump();
     }
 
-    [Fact]
-    public void A_note_has_no_Rename_in_its_menu_other_buttons_do() {
-      WithGroup(f => {
-        ShortcutViewModel note = NewNoteInGroup(f);
-        Assert.False(note.ShowRename);
-        Assert.True(f.Group.ShowRename);
-      });
-    }
-
     /// <summary>The visible items of an open menu, in order: a Separator shows as "-".</summary>
     private static List<string> VisibleMenuItems(FrameworkElement owner) {
       ContextMenu menu = owner.ContextMenu;
@@ -206,19 +197,17 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void A_run_command_has_no_Rename_or_target_items_in_its_menu_a_file_shortcut_has_them() {
+    public void A_run_command_has_Rename_but_no_target_items_in_its_menu_a_file_shortcut_has_them() {
       WithGroup(f => {
         ShortcutViewModel command = NewCommandInGroup(f);
-        Assert.False(command.ShowRename);
         Assert.False(command.ShowSetNameTheSameAsTarget);
         Assert.False(command.ShowCopyTargetToMemory);
         ShortcutViewModel file = ViewModelFactory.NewShortcut(f.App, f.Group, null, "notepad", @"C:\Windows\notepad.exe", ".exe", "");
-        Assert.True(file.ShowRename);
         Assert.True(file.ShowSetNameTheSameAsTarget);
         Assert.True(file.ShowCopyTargetToMemory);
         WithView(f, command, (view, button) => {
           List<string> items = VisibleMenuItems(button);
-          Assert.DoesNotContain("Rename", items);
+          Assert.Contains("Rename", items);
           Assert.DoesNotContain("Set name the same as target", items);
           Assert.DoesNotContain("Copy target to memory", items);
         });
@@ -226,39 +215,22 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void F2_on_a_run_command_opens_it_to_rename_instead_of_renaming_in_the_panel() {
-      WithGroup(f => {
-        ShortcutViewModel command = NewCommandInGroup(f);
-        Action<ShortcutViewModel> old = ShortcutViewModel.RenameRunCommandEditor;
-        List<ShortcutViewModel> renamed = new List<ShortcutViewModel>();
-        ShortcutViewModel.RenameRunCommandEditor = s => renamed.Add(s);
-        try {
-          Assert.True(f.Win.HandleKey(ShortcutKey.F2, ShortcutModifiers.None, command, false));
-          Assert.Equal(new[] { command }, renamed);
-          Assert.Equal(EditField.None, command.EditField);
-        } finally {
-          ShortcutViewModel.RenameRunCommandEditor = old;
-        }
-      });
-    }
-
-    [Fact]
-    public void F2_on_a_note_opens_it_to_rename_instead_of_renaming_in_the_panel() {
+    public void Rename_and_F2_rename_a_note_and_a_run_command_in_the_panel_like_other_buttons() {
       WithGroup(f => {
         ShortcutViewModel note = NewNoteInGroup(f);
-        Action<ShortcutViewModel> old = ShortcutViewModel.RenameNoteEditor;
-        List<ShortcutViewModel> renamed = new List<ShortcutViewModel>();
-        ShortcutViewModel.RenameNoteEditor = s => renamed.Add(s);
-        try {
-          Assert.True(f.Win.HandleKey(ShortcutKey.F2, ShortcutModifiers.None, note, false));
-          Assert.Equal(new[] { note }, renamed);
-          Assert.Equal(EditField.None, note.EditField);
-          // Other buttons still rename in the panel.
-          Assert.True(f.Win.HandleKey(ShortcutKey.F2, ShortcutModifiers.None, f.Group, false));
-          Assert.Equal(EditField.Name, f.Group.EditField);
-        } finally {
-          ShortcutViewModel.RenameNoteEditor = old;
+        ShortcutViewModel command = NewCommandInGroup(f);
+        f.NotesOpened.Clear(); // a new note opens its window
+        foreach (ShortcutViewModel button in new[] { note, command, f.Group }) {
+          Assert.True(f.Win.HandleKey(ShortcutKey.F2, ShortcutModifiers.None, button, false));
+          Assert.Equal(EditField.Name, button.EditField);
+          button.CancelEditCommand.Execute(null);
+          Assert.Equal(EditField.None, button.EditField);
+          button.RenameCommand.Execute(null);
+          Assert.Equal(EditField.Name, button.EditField);
+          button.CancelEditCommand.Execute(null);
         }
+        // Nothing opens a window to rename any more.
+        Assert.Empty(f.NotesOpened);
       });
     }
 
@@ -1114,7 +1086,7 @@ namespace MDSHO.Tests {
           Assert.Equal(nameof(ShortcutViewModel.ShowComment), BindingOperations.GetBinding(comment, UIElement.VisibilityProperty).Path.Path);
           // The note's text is copied from its Note window.
           Assert.DoesNotContain(items, m => (m.Header as string) == "Copy note text");
-          Assert.Equal(new[] { "Mark", "-", "Edit note...", "-", "Cut", "Copy", "Paste", "-", "Delete" }, VisibleMenuItems(button));
+          Assert.Equal(new[] { "Mark", "-", "Rename", "-", "Edit note...", "-", "Cut", "Copy", "Paste", "-", "Delete" }, VisibleMenuItems(button));
         });
       });
     }

@@ -336,16 +336,6 @@ namespace MDSHO.ViewModels {
     /// or Enter) shows and hides its note. Set by the app; when null, <see cref="OpenNoteEditor"/> is used.
     /// </summary>
     public static Action<ShortcutViewModel> ToggleNoteEditor { get; set; }
-    /// <summary>
-    /// Renames a note button: a note is renamed in its Note window, so this opens the window with the title ready to edit
-    /// (F2 on a note). Set by the app; tests replace it.
-    /// </summary>
-    public static Action<ShortcutViewModel> RenameNoteEditor { get; set; }
-    /// <summary>
-    /// Renames a run command: a command is renamed in its Run Command window, so this opens the window with the title
-    /// ready to edit (F2 on a command). Set by the app; tests replace it.
-    /// </summary>
-    public static Action<ShortcutViewModel> RenameRunCommandEditor { get; set; }
     /// <summary>The Windows error code when the user answers No to the administrator (UAC) prompt.</summary>
     public const int ErrorCancelled = 1223;
     /// <summary>
@@ -497,11 +487,6 @@ namespace MDSHO.ViewModels {
     public bool ShowGroup => this.isGroup;
     /// <summary>True for a file, folder or web link shortcut.</summary>
     public bool ShowSetNameTheSameAsTarget => this.ShowShortcut;
-    /// <summary>True for every button but a note or a run command, which are renamed in their own windows.</summary>
-    public bool ShowRename => !this.isNote && !this.ShowCommand;
-    /// <summary>True when any of Rename, "Set name the same as target", "Copy target to memory" or Comment shows, so the
-    /// separator above them doesn't sit next to the next one (a note shows none of them).</summary>
-    public bool ShowNameItemsSeparator => this.ShowRename || this.ShowSetNameTheSameAsTarget || this.ShowCopyTargetToMemory || this.ShowComment;
     /// <summary>True for a file, folder or web link shortcut.</summary>
     public bool ShowCopyTargetToMemory => this.ShowShortcut;
     /// <summary>True for a file, folder or web link shortcut (not for groups and commands).</summary>

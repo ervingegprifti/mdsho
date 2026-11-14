@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
-## [1.5.8]
+## [1.5.9]
 
 ### Added
 
@@ -59,17 +59,17 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   it, a triple click selects the whole paragraph (without its line break).
 
 - **Rename a note in its Note window**: double-click the note's title (its tooltip says so) to edit it in place;
-  Enter or clicking away saves, Esc keeps the old name. F2 on a note in its panel opens the Note window ready to rename.
-  Dragging the title still moves the window, and a double click elsewhere on the title bar still maximises and restores.
-  Notes have no Rename in their right-click menu any more.
+  Enter or clicking away saves, Esc keeps the old name. Dragging the title still moves the window, and a double click
+  elsewhere on the title bar still maximises and restores. Rename in the right-click menu and F2 still rename the note
+  on its button in the panel, like any other button.
 - **Rename a run command in its Run command window**: the window's title is now the command's name (was "Run
   command"); double-click it to edit it in place, the same way as a note. Enter or clicking away keeps the new name,
-  Esc the old one; **Save** writes it and **Cancel** throws it away with the other changes. F2 on a command in its
-  panel opens the Run command window ready to rename. A run command's right-click menu no longer has Rename, "Set name
-  the same as target" or "Copy target to memory", and its "Set run command..." is now **Edit run command...**.
+  Esc the old one; **Save** writes it and **Cancel** throws it away with the other changes. Rename in the right-click
+  menu and F2 still rename the command on its button in the panel. A run command's right-click menu no longer has "Set
+  name the same as target" or "Copy target to memory", and its "Set run command..." is now **Edit run command...**.
 - **Show version in title**, under Other in a panel's Settings (on at first, shared by the panel and its clones):
-  shows the MDSHO version after the panel's title, for example "MDSHO v1.5.8". Closing Settings without Apply puts the
-  setting back. Sideload test builds show their build number as a 4th part (for example "v1.5.8.7"); Store builds show
+  shows the MDSHO version after the panel's title, for example "MDSHO v1.5.9". Closing Settings without Apply puts the
+  setting back. Sideload test builds show their build number as a 4th part (for example "v1.5.9.7"); Store builds show
   three parts.
 - Database version 13: the windows table gets `ShowVersionInTitle` (backed up first, on for every panel). Exports
   carry it; older exports import with it on.
