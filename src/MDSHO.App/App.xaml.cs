@@ -11,8 +11,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
-// Creating a background application with WPF
-// https://www.thomasclaudiushuber.com/2015/08/22/creating-a-background-application-with-wpf/
+// Runs in the background with a tray icon; closing the main window hides it instead of exiting.
+// https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.notifyicon
+// https://learn.microsoft.com/en-us/dotnet/api/system.windows.window.closing
 
 namespace MDSHO
 {
@@ -108,8 +109,9 @@ namespace MDSHO
 
 
     #region GLOBAL EXCEPTION HANDLING
-    // https://stackoverflow.com/questions/1472498/wpf-global-exception-handler
-    // https://stackoverflow.com/questions/793100/globally-catch-exceptions-in-a-wpf-application
+    // https://learn.microsoft.com/en-us/dotnet/api/system.appdomain.unhandledexception
+    // https://learn.microsoft.com/en-us/dotnet/api/system.windows.application.dispatcherunhandledexception
+    // https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskscheduler.unobservedtaskexception
     private void UnhandledExceptionsEvents() {
       AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
       // Only one UI-thread handler: Dispatcher.UnhandledException and Application.DispatcherUnhandledException fire for the same exception.

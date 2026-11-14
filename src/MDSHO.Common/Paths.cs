@@ -24,7 +24,7 @@ namespace MDSHO.Common {
     /// Get the user app data local path. Aapplies to current user local only.<br />
     /// No need for Administrator access to write on this folder.<br /><br />
     /// References:<br />
-    /// <see href="https://www.codeproject.com/Tips/370232/Where-should-I-store-my-data">Where Should I Store My Data?</see><br />
+    /// <see href="https://learn.microsoft.com/en-us/dotnet/api/system.environment.specialfolder">Environment.SpecialFolder</see><br />
     /// </summary>
     /// <returns>
     /// C:\Users\USER\AppData\Local
