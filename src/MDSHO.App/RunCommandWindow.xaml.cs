@@ -81,21 +81,8 @@ namespace MDSHO {
     /// <param name="shortcut">The run command.</param>
     /// <param name="isNewCommand">True when the command was just created (cmd.exe and "keep window open" are preset).</param>
     public static void ShowFor(ShortcutViewModel shortcut, bool isNewCommand) {
-      Show(shortcut, isNewCommand, rename: false);
-    }
-
-    /// <summary>F2 on a command in its panel: opens the window with the title ready to rename.</summary>
-    public static void RenameFor(ShortcutViewModel shortcut) {
-      Show(shortcut, isNewCommand: false, rename: true);
-    }
-
-    private static void Show(ShortcutViewModel shortcut, bool isNewCommand, bool rename) {
       try {
-        RunCommandWindow window = Create(shortcut, isNewCommand, FindOwner(shortcut));
-        if (rename) {
-          window.Loaded += (s, e) => window.BeginRenameTitle();
-        }
-        window.ShowDialog();
+        Create(shortcut, isNewCommand, FindOwner(shortcut)).ShowDialog();
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
       }

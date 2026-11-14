@@ -340,13 +340,7 @@ namespace MDSHO.ViewModels {
         return false;
       }
       if (none && key == ShortcutKey.F2) {
-        if (selected.IsNote) {
-          ShortcutViewModel.RenameNoteEditor?.Invoke(selected);
-        } else if (selected.ShowCommand) {
-          ShortcutViewModel.RenameRunCommandEditor?.Invoke(selected);
-        } else {
-          selected.BeginEdit(EditField.Name);
-        }
+        selected.BeginEdit(EditField.Name);
       } else if (none && key == ShortcutKey.Delete) {
         selected.DeleteShortcutCommand.Execute(null);
       } else if (ctrl && key == ShortcutKey.X) {

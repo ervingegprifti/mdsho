@@ -138,12 +138,6 @@ namespace MDSHO {
       this.titleRename?.End(save);
     }
 
-    /// <summary>F2 on a note in its panel: opens (or brings back) its Note window with the title ready to rename.</summary>
-    public static void RenameNoteFor(ShortcutViewModel shortcut) {
-      ShowNoteFor(shortcut);
-      FindOpenNoteWindow(shortcut)?.BeginRenameTitle();
-    }
-
     /// <summary>True when the text was saved; for a comment false after Cancel, X or Esc.</summary>
     public bool Saved { get; private set; }
 

@@ -361,17 +361,17 @@
                         <ContextMenu>
                             <MenuItem Header="New group" Command="{Binding NewGroupShortcutCommand}">
                                 <MenuItem.Icon>
-                                    <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Plus}"/>
+                                    <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Shortcuts}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
                             <MenuItem Header="New command" Command="{Binding NewProcessCommandShortcutCommand}">
                                 <MenuItem.Icon>
-                                    <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Plus}"/>
+                                    <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Run}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
                             <MenuItem Header="New note" Command="{Binding NewNoteShortcutCommand}">
                                 <MenuItem.Icon>
-                                    <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Plus}"/>
+                                    <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Note}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
                             <Separator/>
@@ -402,17 +402,17 @@
                                     <ContextMenu>
                                         <MenuItem Header="New group" Command="{Binding NewGroupShortcutCommand}" Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}">
                                             <MenuItem.Icon>
-                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Plus}"/>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Shortcuts}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="New command" Command="{Binding NewProcessCommandShortcutCommand}" Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}">
                                             <MenuItem.Icon>
-                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Plus}"/>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Run}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <MenuItem Header="New note" Command="{Binding NewNoteShortcutCommand}" Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}">
                                             <MenuItem.Icon>
-                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Plus}"/>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Note}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}"/>
@@ -491,8 +491,8 @@
                                                 </MenuItem.Icon>
                                             </MenuItem>
                                         </MenuItem>
-                                        <Separator Visibility="{Binding ShowNameItemsSeparator, Converter={StaticResource BoolToVisibility}}"/>
-                                        <MenuItem Header="Rename" Command="{Binding RenameCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" Visibility="{Binding ShowRename, Converter={StaticResource BoolToVisibility}}">
+                                        <Separator/>
+                                        <MenuItem Header="Rename" Command="{Binding RenameCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Rename}"/>
                                             </MenuItem.Icon>
