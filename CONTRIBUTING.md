@@ -1,8 +1,19 @@
 # Contributing to MDSHO
 
-Thanks for your interest. Bug reports and pull requests are welcome.
+MDSHO does not accept code contributions: pull requests and patches from outside the project are not merged. Bug
+reports and suggestions are welcome in [Issues](https://github.com/ervingegprifti/mdsho/issues).
 
-## Build and test
+Keeping all the code from one author keeps the [dual licensing](COMMERCIAL-LICENSE.md) (GPLv3 and commercial) simple.
+The GPLv3 still lets you fork MDSHO and change your own copy.
+
+## Reporting a bug or suggesting a change
+
+- Say what you did, what happened and what you expected, and which MDSHO version you use (shown after a panel's title,
+  or in About).
+- Please don't post code meant as a fix: fixes are written by the author, and code posted in an issue is not copied
+  into MDSHO.
+
+## Build and test your own copy
 
 Requires the .NET SDK pinned in `global.json` and Windows (WPF).
 
@@ -13,20 +24,8 @@ dotnet test MDSHO.Cli.slnf
 
 `MDSHO.Cli.slnf` excludes the MSIX packaging project, which the dotnet CLI cannot build. Warnings are treated as errors.
 
-## Expectations
+## How MDSHO is developed
 
 - **Tests first.** Write a failing test, see it fail, then implement until it passes. Bug fixes need a regression test.
 - **Style.** Follow `.editorconfig`; keep changes focused. Source files use CRLF line endings (see `.gitattributes`).
-- Keep pull requests small and describe the user-visible change. Add a line to `CHANGELOG.md` under `[Unreleased]` when it affects users.
-
-## Contributor grant
-
-By submitting a contribution (pull request, patch or any other form) you agree that:
-
-1. you license it under the [GPLv3](LICENSE), the same license as the project;
-2. you also grant the author, Ervin Gegprifti, a perpetual, worldwide, irrevocable, royalty-free right to use, modify, sublicense and relicense your contribution under any terms, including commercial and proprietary licenses (this is what allows the [dual licensing](COMMERCIAL-LICENSE.md) of MDSHO);
-3. you have the right to submit the contribution, and it does not include code you do not have the right to license in this way.
-
-Your contribution is given without payment. You will not receive any payment, royalty or share of income from MDSHO, including from commercial licenses or a sale of the project, and the author may sell, license or transfer MDSHO without your consent.
-
-If you cannot agree to this, please open an issue instead of a pull request.
+- Every user-visible change gets a line in `CHANGELOG.md`, under the version in progress.

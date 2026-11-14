@@ -49,4 +49,4 @@ The name "MDSHO", its logo and the MDSHOFont icon font are not covered by the GP
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) (build, tests, contributor grant).
+MDSHO does not accept code contributions; bug reports and suggestions are welcome in [Issues](https://github.com/ervingegprifti/mdsho/issues). See [CONTRIBUTING.md](CONTRIBUTING.md), which also shows how to build and test your own copy.
