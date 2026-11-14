@@ -2,6 +2,8 @@
 
 Multi Desktop Shortcut Organizer: a WPF app (.NET 10, x64) for organizing desktop shortcuts across multiple desktops/screens.
 
+<a href="https://apps.microsoft.com/detail/9P8DNCD0PPG8"><img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft" width="200"></a>
+
 ## Layout
 
 ```
