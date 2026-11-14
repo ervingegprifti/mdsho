@@ -1,6 +1,6 @@
 # Commercial License
 
-MDSHO is free software, available under the [GNU General Public License v3.0](LICENSE) (GPLv3).
+MDSHO is open source, available under the [GNU General Public License v3.0](LICENSE) (GPLv3).
 
 If you want to use MDSHO in a way the GPLv3 does not allow, you can ask the author for a separate commercial license. Typical examples:
 

@@ -26,6 +26,17 @@ The solution is `MDSHO.slnx` at the repository root. The projects are:
 `MDSHO.Cli.slnf` is a solution filter with every project except MDSHO.Package, for building and testing with the
 `dotnet` command line. See [Building MDSHO](building.md).
 
+Other folders and files at the repository root:
+
+| Path | What it contains |
+|---|---|
+| `assets/Font` | The MDSHOFont icon font and the SVG sources of its icons. |
+| `assets/Logo` | The logo (`logo.svg`) and its PNG and ICO versions. |
+| `docs` | This documentation, published with GitHub Pages. |
+| `Directory.Build.props` | Build settings shared by all projects, including the app version. |
+| `Directory.Packages.props` | NuGet package versions for all projects (central package management). |
+| `global.json` | The pinned .NET SDK version. |
+
 ## Dependencies
 
 Which MDSHO projects each project references:
