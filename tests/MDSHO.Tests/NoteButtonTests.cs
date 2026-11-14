@@ -1068,6 +1068,39 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
+    public void New_group_command_and_note_show_the_icon_of_the_button_they_make_in_both_menus() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        WithView(f, note, (view, button) => {
+          TreeView tree = (TreeView)view.FindName("TreeViewShortcuts");
+          TreeViewItem groupItem = WpfAppHost.VisualDescendants<TreeViewItem>(tree).Single(i => i.DataContext == f.Group);
+          Button groupButton = WpfAppHost.VisualDescendants<Button>(groupItem).First(b => b.DataContext == f.Group);
+          (string header, string icon)[] expected = { ("New group", "Shortcuts"), ("New command", "Run"), ("New note", "Note") };
+          // Empty space of the panel (bound to the window) and a group's menu (bound to the group's window).
+          foreach ((ContextMenu menu, string prefix) in new[] { (tree.ContextMenu, "Appearance.Icons."), (groupButton.ContextMenu, "OwningWindow.Appearance.Icons.") }) {
+            foreach ((string header, string icon) in expected) {
+              MenuItem item = menu.Items.OfType<MenuItem>().Single(m => (m.Header as string) == header);
+              Assert.Equal(prefix + icon, BindingOperations.GetBinding((TextBlock)item.Icon, TextBlock.TextProperty).Path.Path);
+            }
+          }
+          // And they show the glyphs of the panel's icon set (here the group's menu, opened).
+          groupButton.ContextMenu.PlacementTarget = groupButton;
+          groupButton.ContextMenu.IsOpen = true;
+          WpfAppHost.Pump();
+          try {
+            IconGlyphs icons = f.Win.Appearance.Icons;
+            string[] glyphs = expected.Select(e => ((TextBlock)groupButton.ContextMenu.Items.OfType<MenuItem>().Single(m => (m.Header as string) == e.header).Icon).Text).ToArray();
+            Assert.Equal(new[] { icons.Shortcuts, icons.Run, icons.Note }, glyphs);
+            Assert.DoesNotContain(icons.Plus, glyphs);
+          } finally {
+            groupButton.ContextMenu.IsOpen = false;
+            WpfAppHost.Pump();
+          }
+        });
+      });
+    }
+
+    [Fact]
     public void Menus_have_New_note_and_a_note_has_Edit_note_but_no_Copy_note_text() {
       WithGroup(f => {
         ShortcutViewModel note = NewNoteInGroup(f);

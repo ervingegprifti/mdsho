@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
-## [1.5.9]
+## [1.5.10]
 
 ### Added
 
@@ -68,8 +68,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   menu and F2 still rename the command on its button in the panel. A run command's right-click menu no longer has "Set
   name the same as target" or "Copy target to memory", and its "Set run command..." is now **Edit run command...**.
 - **Show version in title**, under Other in a panel's Settings (on at first, shared by the panel and its clones):
-  shows the MDSHO version after the panel's title, for example "MDSHO v1.5.9". Closing Settings without Apply puts the
-  setting back. Sideload test builds show their build number as a 4th part (for example "v1.5.9.7"); Store builds show
+  shows the MDSHO version after the panel's title, for example "MDSHO v1.5.10". Closing Settings without Apply puts the
+  setting back. Sideload test builds show their build number as a 4th part (for example "v1.5.10.7"); Store builds show
   three parts.
 - Database version 13: the windows table gets `ShowVersionInTitle` (backed up first, on for every panel). Exports
   carry it; older exports import with it on.
@@ -82,6 +82,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 
 ### Changed
 
+- **New group**, **New command** and **New note** in the right-click menus show the icon of the button they make (the
+  group, run and note icons) instead of a plus. **New window** keeps the plus.
 - The Run command window has no maximise button any more: double-click its title bar to maximise or restore it.
 - The Note, Comment, Run command, Examples, Settings (and Note colours), About and Error windows have rounded corners
   on Windows 10 too, drawn the way the panels draw theirs, square while maximised. Their border now shows on Windows 11
