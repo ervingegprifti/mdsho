@@ -5,15 +5,15 @@ permalink: /terms/
 
 # MDSHO Terms and Conditions
 
-Last updated: 9 November 2026
+Last updated: 14 November 2026
 
 These terms apply to the MDSHO app (Multi Desktop Shortcut Organizer). By installing or using MDSHO you agree to them.
 They are written in plain English and are not legal advice.
 
-## Free software
+## Distribution and source code
 
-MDSHO is free. It is distributed free through the Microsoft Store and as source code on
-[GitHub](https://github.com/ervingegprifti/mdsho).
+MDSHO is distributed through the Microsoft Store, which shows its current price. Its source code is open source on
+[GitHub](https://github.com/ervingegprifti/mdsho), under the licence below.
 
 ## Licence
 
