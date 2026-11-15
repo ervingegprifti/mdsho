@@ -39,16 +39,16 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Version_is_15_and_the_last_migration_is_15() {
-      Assert.Equal(15, AppConstants.DatabaseVersion);
-      Assert.Equal(15, SchemaManager.Migrations.Last().Version);
+    public void Version_15_is_a_known_step() {
+      Assert.True(AppConstants.DatabaseVersion >= 15);
+      Assert.Single(SchemaManager.Migrations, m => m.Version == 15);
     }
 
     [Fact]
     public void V14_database_migrates_to_15_with_an_empty_DefaultColors_table_and_keeps_the_rest() {
       BuildV14Db();
       DataStore.Upgrade();
-      Assert.Equal(15, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(1, Tables("DefaultColors"));
       Assert.Equal(0, db.Scalar("SELECT count(*) FROM DefaultColors"));
       Assert.Equal("W1", DataStore.Windows.GetAll().Single().Title);

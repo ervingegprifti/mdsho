@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.6.0]
+
+### Added
+
+- **Bring panels to front**, a keyboard shortcut for all panels: press **Ctrl+Shift+Alt+M** anywhere in Windows and
+  every visible panel and clone comes to the front above the other windows (a minimized one is restored), with the
+  keyboard focus on the first panel's selected button (or its first button), so the arrow keys and Enter pick a button.
+  Press the shortcut again, or Esc in a panel, and the panels go back exactly where they were behind the other windows
+  and the window you were using gets the focus back. Opening a button (a shortcut, a run command or a note) from the
+  panels also sends them back, leaving the focus to what it opened. Switching to another app ends it without moving
+  anything, so the next press brings the panels up again. Esc still cancels typing a name, a title or a command line
+  first. Ctrl+Shift+Alt+M was chosen because it clashes with no app shortcut, menu key or AltGr character.
+- **Keyboard shortcut** section in the Settings window, below Other: **Bring panels to front** with a shortcut box
+  showing the current shortcut, for example "Ctrl + Shift + Alt + M". Click the box and press the new shortcut; it needs
+  Ctrl, Alt or Win with a letter, digit, F1 to F24, a number pad digit, an arrow or an editing key (otherwise the hint
+  says "Add Ctrl, Alt or Win to the key." in red), and Esc cancels. **Default** puts back Ctrl+Shift+Alt+M and **Off**
+  turns the shortcut off. The change takes effect on Apply; closing the window without Apply changes nothing. If
+  another app already uses the shortcut, the hint says so in red, the window stays open and the old shortcut keeps
+  working. The shortcut is one setting for the whole app, kept on this PC: it is the same in every panel's Settings and
+  is not part of exports, and an import keeps it. If the saved shortcut can't be registered when MDSHO starts (another
+  app took it), MDSHO starts normally without a message and the Settings window shows the red hint.
+- **Bring panels to front** as the first item of the tray menu, followed by a separator, with the current shortcut at
+  the right (nothing when it is off or doesn't work). It works also when the shortcut is off.
+
+### Changed
+
+- The database is now at version 16: a new `AppSettings` table holds settings of the whole app on this PC, starting
+  with the Bring panels to front shortcut. As with every upgrade, the database is backed up first.
+
 ## [1.5.10] - 2026-11-14
 
 ### Added

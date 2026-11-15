@@ -332,6 +332,11 @@ namespace MDSHO.ViewModels {
     /// <summary>Opens the Note window for a note button (set by the app; tests replace it).</summary>
     public static Action<ShortcutViewModel> OpenNoteEditor { get; set; }
     /// <summary>
+    /// Called after a button opened something (a shortcut, a run command or a note). The app uses it to send panels that
+    /// were brought to front with the keyboard shortcut back behind the other windows. Null = nothing to tell.
+    /// </summary>
+    public static Action Opened { get; set; }
+    /// <summary>
     /// Opens the Note window for a note button, or closes it when it is open: triggering the button (click or double click,
     /// or Enter) shows and hides its note. Set by the app; when null, <see cref="OpenNoteEditor"/> is used.
     /// </summary>
@@ -761,12 +766,14 @@ namespace MDSHO.ViewModels {
       if (this.isNote) {
         // A note runs nothing: triggering it shows the note, or hides it when it is open.
         (ToggleNoteEditor ?? OpenNoteEditor)?.Invoke(this);
+        Opened?.Invoke();
         return;
       }
       // The target may have been deleted or restored since the icon was drawn.
       RefreshTargetKind();
       if (this.StartProcessAction != null) {
         this.StartProcessAction(this, runAsAdministrator);
+        Opened?.Invoke();
         return;
       }
       try {
@@ -784,9 +791,11 @@ namespace MDSHO.ViewModels {
             // Resolved now, so a renamed group takes effect at the next run.
             StartRunCommand(CreateRunCommandStartInfo(this.ProcessFileName, this.ProcessArguments, this.ProcessWorkingFolder,
               runAsAdministrator || this.ProcessRunAsAdmin, this.ParentGroupValue));
+            Opened?.Invoke();
           } else {
             string shortcutsPath = Common.Paths.GetShortcutFilePath(this.Guid, this.Ext);
             ProcessStarter(new ProcessStartInfo { UseShellExecute = true, FileName = shortcutsPath });
+            Opened?.Invoke();
           }
         }
 

@@ -101,6 +101,9 @@ namespace MDSHO.Data {
           TitleTextColor TEXT NOT NULL,
           BackgroundColor TEXT NOT NULL,
           TextColor TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS AppSettings (
+          Key TEXT NOT NULL PRIMARY KEY,
+          Value TEXT NOT NULL);
       ";
 
     /// <summary>
@@ -271,6 +274,11 @@ namespace MDSHO.Data {
           TitleTextColor TEXT NOT NULL,
           BackgroundColor TEXT NOT NULL,
           TextColor TEXT NOT NULL);");
+      }),
+      new DbMigration(16, "App settings: AppSettings table (the Bring panels to front shortcut)", conn => {
+        Execute(conn, @"CREATE TABLE IF NOT EXISTS AppSettings (
+          Key TEXT NOT NULL PRIMARY KEY,
+          Value TEXT NOT NULL);");
       })
     };
 

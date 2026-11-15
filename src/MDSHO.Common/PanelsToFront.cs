@@ -1,0 +1,120 @@
+using System;
+using System.Collections.Generic;
+
+namespace MDSHO.Common {
+
+  /// <summary>
+  /// The windows <see cref="PanelsToFront"/> works with, by window handle. The app implements it with its panels and
+  /// Win32 (z-order, foreground window); tests use fakes.
+  /// </summary>
+  public interface IPanelWindows {
+    /// <summary>The window in front (the one with the keyboard focus), or zero.</summary>
+    IntPtr Foreground();
+    /// <summary>True for a panel or any other MDSHO window (a note, Settings, ...).</summary>
+    bool IsAppWindow(IntPtr window);
+    /// <summary>The visible panels (main panels and clones), the top one of the z-order first.</summary>
+    IList<IntPtr> Panels();
+    /// <summary>The window right above this one in the z-order, or zero when it is the top one.</summary>
+    IntPtr WindowAbove(IntPtr window);
+    /// <summary>True while the window exists.</summary>
+    bool IsAlive(IntPtr window);
+    /// <summary>True for an always-on-top window.</summary>
+    bool IsTopmost(IntPtr window);
+    /// <summary>Restores these panels, brings them above every other window in this order and gives the first one the keyboard focus.</summary>
+    void Raise(IList<IntPtr> panels);
+    /// <summary>Puts the panel right behind <paramref name="insertAfter"/> (zero = on top of the normal windows) without activating it.</summary>
+    void PlaceBehind(IntPtr panel, IntPtr insertAfter);
+    /// <summary>Brings the window to the front with the keyboard focus.</summary>
+    void Activate(IntPtr window);
+  }
+
+  /// <summary>
+  /// "Bring panels to front": the first press of the shortcut (or the tray menu item) brings every visible panel above the
+  /// other windows and gives the first one the focus. The second press, Esc in a panel, or opening a button puts each panel
+  /// back where it was in the z-order; the press and Esc also give the focus back to the window that was in front.
+  /// Switching to another app ends it without moving anything.
+  /// </summary>
+  public sealed class PanelsToFront {
+    private readonly IPanelWindows windows;
+    // Each raised panel and the window that was right above it, the top panel first.
+    private List<(IntPtr Panel, IntPtr Above)> places = new List<(IntPtr, IntPtr)>();
+    private IntPtr previousForeground;
+
+    /// <summary>Works with these windows.</summary>
+    public PanelsToFront(IPanelWindows windows) {
+      this.windows = windows ?? throw new ArgumentNullException(nameof(windows));
+    }
+
+    /// <summary>True while the panels are in front because of the shortcut or the tray menu item.</summary>
+    public bool IsInFront { get; private set; }
+
+    /// <summary>The shortcut or the tray menu item: brings the panels to front, or sends them back when they are.</summary>
+    public void Toggle() {
+      if (IsInFront) {
+        SendBack(giveFocusBack: true);
+      } else {
+        BringToFront();
+      }
+    }
+
+    /// <summary>Esc in a panel: sends the panels back when they were brought to front and nothing is being typed. True = handled.</summary>
+    public bool HandleEscape(bool isEditing) {
+      if (!IsInFront || isEditing) {
+        return false;
+      }
+      SendBack(giveFocusBack: true);
+      return true;
+    }
+
+    /// <summary>A button opened something: the panels go back, and the focus stays with what opened.</summary>
+    public void ButtonOpened() {
+      if (IsInFront) {
+        SendBack(giveFocusBack: false);
+      }
+    }
+
+    /// <summary>The user switched to another app: the panels stay where they are now and the next press brings them up again.</summary>
+    public void AppDeactivated() {
+      IsInFront = false;
+      places = new List<(IntPtr, IntPtr)>();
+      previousForeground = IntPtr.Zero;
+    }
+
+    private void BringToFront() {
+      IList<IntPtr> panels = windows.Panels();
+      if (panels.Count == 0) {
+        return;
+      }
+      IntPtr foreground = windows.Foreground();
+      // An MDSHO window in front (a note, Settings) is not activated again on the way back.
+      previousForeground = foreground != IntPtr.Zero && !windows.IsAppWindow(foreground) ? foreground : IntPtr.Zero;
+      places = new List<(IntPtr, IntPtr)>();
+      foreach (IntPtr panel in panels) {
+        places.Add((panel, windows.WindowAbove(panel)));
+      }
+      windows.Raise(panels);
+      IsInFront = true;
+    }
+
+    private void SendBack(bool giveFocusBack) {
+      List<(IntPtr Panel, IntPtr Above)> back = places;
+      IntPtr focus = previousForeground;
+      AppDeactivated();
+      // Top panel first, so a panel that was right below another one can go back behind it.
+      foreach ((IntPtr panel, IntPtr above) in back) {
+        if (windows.IsAlive(panel)) {
+          windows.PlaceBehind(panel, InsertAfter(above));
+        }
+      }
+      if (giveFocusBack && focus != IntPtr.Zero && windows.IsAlive(focus)) {
+        windows.Activate(focus);
+      }
+    }
+
+    // Behind the window that was above the panel; on top of the normal windows when that window is gone or always on
+    // top (placing a normal window behind an always-on-top one would make it always on top too).
+    private IntPtr InsertAfter(IntPtr above) {
+      return above != IntPtr.Zero && windows.IsAlive(above) && !windows.IsTopmost(above) ? above : IntPtr.Zero;
+    }
+  }
+}

@@ -9,13 +9,13 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 15**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 16**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
 ## Tables
 
-All tables but `DefaultColors` use `ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE`, so an ID is never reused,
+All tables but `DefaultColors` and `AppSettings` use `ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE`, so an ID is never reused,
 even after a row is deleted. Flags are `INTEGER` columns holding `0` (no) or `1` (yes). Colors are text in the form `#AARRGGBB`.
 
 ### MDSHOWindows
@@ -124,6 +124,22 @@ their colours. Without a row MDSHO's own colours are used. Not part of exports. 
 | `BackgroundColor` | TEXT | NOT NULL | | Default background colour. |
 | `TextColor` | TEXT | NOT NULL | | Default text colour. |
 
+### AppSettings
+
+Settings of the whole app on this PC, one row per setting. Without a row the setting has its default. Not part of
+exports, and an import that replaces the data keeps them. Added in version 16.
+
+| Column | Type | Null | Default | Meaning |
+|---|---|---|---|---|
+| `Key` | TEXT | NOT NULL | | Primary key: the setting's name. |
+| `Value` | TEXT | NOT NULL | | The setting's value as text. |
+
+#### The settings
+
+| Key | Value |
+|---|---|
+| `BringToFrontShortcut` | The **Bring panels to front** keyboard shortcut (Settings > Keyboard shortcut), for example `Ctrl+Shift+Alt+M`, or `Off`. Without a row: `Ctrl+Shift+Alt+M`. |
+
 ## Keys and relationships
 
 Foreign keys are switched on for every connection, and all of them use `ON DELETE CASCADE`:
@@ -166,6 +182,7 @@ that worked.
 | 13 | 1.5.10 | `MDSHOWindows.ShowVersionInTitle` (`INTEGER NOT NULL DEFAULT 1`): "Show version in title", on for every panel. |
 | 14 | 1.5.10 | `MDSHOWindows.ReserveDockedSpace` dropped (`ALTER TABLE ... DROP COLUMN`, like version 5; the rows and other columns stay): "Reserve screen space when docked" was removed. Exports made before this still import. |
 | 15 | 1.5.10 | `DefaultColors` table: the panel and note default colours saved with **Set as default** in the Colours window (empty at first). |
+| 16 | 1.6.0 | `AppSettings` table: settings of the whole app on this PC, starting with the **Bring panels to front** keyboard shortcut (empty at first). |
 
 ### Backup before an upgrade
 
