@@ -59,7 +59,7 @@ namespace MDSHO.Tests {
       ShortcutViewModel g = Group();
       ShortcutViewModel child = Command(g);
       child.ProcessFileName = "cmd.exe";
-      child.ProcessArguments = "/K echo {}";
+      child.ProcessArguments = "/K echo {=1}";
       List<string> raisedGroup = Record(g), raisedChild = Record(child);
       g.Name = "Servers {alpha}";
       Assert.Contains(nameof(ShortcutViewModel.Name), raisedGroup);
@@ -110,7 +110,8 @@ namespace MDSHO.Tests {
       Assert.Equal("", s.ProcessWorkingFolder);
       Assert.Empty(raised);
       s.ProcessWorkingFolder = @"C:\Work";
-      Assert.Equal(new[] { nameof(s.ProcessWorkingFolder) }, raised);
+      // The folder also refreshes the group-value error (and so the tooltip).
+      Assert.Equal(new[] { nameof(s.ProcessWorkingFolder), nameof(s.RunCommandError), nameof(s.HasToolTip), nameof(s.ShowCommentDivider), nameof(s.HasRunCommandError) }, raised);
       Assert.Equal(@"C:\Work", Row(s).ProcessWorkingFolder);
       s.ProcessWorkingFolder = null;
       Assert.Equal("", s.ProcessWorkingFolder);
@@ -167,7 +168,7 @@ namespace MDSHO.Tests {
       g.Name = "Box {beta}";
       ShortcutViewModel s = Command(null);
       s.ProcessFileName = "cmd.exe";
-      s.ProcessArguments = "/K echo {}";
+      s.ProcessArguments = "/K echo {=1}";
       List<string> raised = Record(s);
       s.SetParentInMemory(g, null);
       foreach (string name in new[] { nameof(s.ParentShortcut), nameof(s.ParentWindowID), nameof(s.ResolvedProcessArguments), nameof(s.ToolTipText) }) {
@@ -256,8 +257,10 @@ namespace MDSHO.Tests {
       Assert.Equal("", vm.Arguments);
       vm.KeepWindowOpen = false;
       vm.RunAsAdministrator = true;
-      Assert.Equal(new[] { nameof(vm.WorkingFolder), nameof(vm.Preview), nameof(vm.Arguments), nameof(vm.Preview),
-        nameof(vm.KeepWindowOpen), nameof(vm.Preview), nameof(vm.RunAsAdministrator), nameof(vm.Preview) }, raised);
+      // The arguments and folder also refresh the group-value error.
+      string[] text = { nameof(vm.Preview), nameof(vm.Error), nameof(vm.HasError), nameof(vm.IsNoGroupValuesError) };
+      Assert.Equal(new[] { nameof(vm.WorkingFolder) }.Concat(text).Append(nameof(vm.Arguments)).Concat(text)
+        .Concat(new[] { nameof(vm.KeepWindowOpen), nameof(vm.Preview), nameof(vm.RunAsAdministrator), nameof(vm.Preview) }), raised);
     }
     #endregion RUN COMMAND WINDOW
 

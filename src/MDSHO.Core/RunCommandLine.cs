@@ -189,18 +189,18 @@ namespace MDSHO.Core {
     }
 
     /// <summary>
-    /// The "Will run as" text: the command line that runs (lines joined, <c>{}</c> filled with the group value), then
+    /// The "Will run as" text: the command line that runs (lines joined, group values filled in), then
     /// "In folder: ..." when a working folder is set and "As administrator" when it runs elevated, each on its own line.
     /// </summary>
     /// <param name="fileName">The program.</param>
     /// <param name="storedArguments">The arguments as they are saved (switch included).</param>
-    /// <param name="groupValue">The value of the parent group, or null.</param>
+    /// <param name="groupValues">The values of the parent group, or null to fill in nothing.</param>
     /// <param name="workingFolder">The working folder, or empty.</param>
     /// <param name="runAsAdministrator">True when it runs elevated.</param>
-    public static string Describe(string fileName, string storedArguments, string groupValue, string workingFolder, bool runAsAdministrator) {
-      StringBuilder text = new StringBuilder(CommandLine(fileName, JoinLines(fileName, GroupValue.ResolveArguments(storedArguments ?? "", groupValue))));
+    public static string Describe(string fileName, string storedArguments, IReadOnlyList<GroupValueItem> groupValues, string workingFolder, bool runAsAdministrator) {
+      StringBuilder text = new StringBuilder(CommandLine(fileName, JoinLines(fileName, GroupValue.Fill(storedArguments ?? "", groupValues))));
       if (!string.IsNullOrWhiteSpace(workingFolder)) {
-        text.Append(Environment.NewLine).Append("In folder: ").Append(GroupValue.ResolveArguments(workingFolder.Trim(), groupValue));
+        text.Append(Environment.NewLine).Append("In folder: ").Append(GroupValue.Fill(workingFolder.Trim(), groupValues));
       }
       if (runAsAdministrator) {
         text.Append(Environment.NewLine).Append("As administrator");

@@ -146,9 +146,22 @@ namespace MDSHO {
     private void ButtonSave_Click(object sender, RoutedEventArgs e) {
       // A name still being typed in the title counts.
       EndRenameTitle(save: true);
-      this.viewModel.Save();
+      // Refused while there is a syntax error: the view model shows "Fix the error to save.".
+      if (!this.viewModel.Save()) {
+        return;
+      }
       this.Saved = true;
       Close();
+    }
+
+    // A group value button: inserts its token at the caret of the arguments box and puts the focus back there.
+    private void GroupValueButton_Click(object sender, RoutedEventArgs e) {
+      if (!(sender is FrameworkElement element) || !(element.DataContext is Core.GroupValueItem item)) {
+        return;
+      }
+      int caret = this.viewModel.InsertGroupValue(item, this.TextArguments.SelectionStart, this.TextArguments.SelectionLength);
+      this.TextArguments.CaretIndex = caret;
+      this.TextArguments.Focus();
     }
 
     // Esc works like Cancel (a ComboBox list that is open closes first). While renaming the title, Enter and Esc only

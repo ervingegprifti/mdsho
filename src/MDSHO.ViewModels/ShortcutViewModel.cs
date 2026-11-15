@@ -71,7 +71,7 @@ namespace MDSHO.ViewModels {
     // IsGroupExpanded, which saves in OnIsGroupExpandedChanged.
     /// <summary>The group this shortcut is in; null for a shortcut at the window root.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ResolvedProcessArguments), nameof(ToolTipText))]
+    [NotifyPropertyChangedFor(nameof(ResolvedProcessArguments), nameof(ToolTipText), nameof(RunCommandError), nameof(HasRunCommandError))]
     private ShortcutViewModel parentShortcut;
     /// <summary>ID of the window the shortcut sits directly in, or null.</summary>
     [ObservableProperty]
@@ -120,7 +120,7 @@ namespace MDSHO.ViewModels {
       return string.Join(Environment.NewLine, lines.Take(CommentPreviewLines)) + Environment.NewLine + "…";
     }
     /// <summary>True when the tooltip has something to show: the target or command line, or the comment.</summary>
-    public bool HasToolTip => !string.IsNullOrEmpty(this.ToolTipText) || this.HasComment;
+    public bool HasToolTip => !string.IsNullOrEmpty(this.ToolTipText) || this.HasComment || this.HasRunCommandError;
     /// <summary>True when the tooltip shows both the target or command line and the comment, with a divider between them.</summary>
     public bool ShowCommentDivider => !string.IsNullOrEmpty(this.ToolTipText) && this.HasComment;
     /// <summary>True when the shortcut carries a colour mark.</summary>
@@ -143,7 +143,7 @@ namespace MDSHO.ViewModels {
     private string processFileName;
     /// <summary>Arguments of the program of a command shortcut.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Target), nameof(ResolvedProcessArguments), nameof(ToolTipText))]
+    [NotifyPropertyChangedFor(nameof(Target), nameof(ResolvedProcessArguments), nameof(ToolTipText), nameof(RunCommandError), nameof(HasRunCommandError))]
     private string processArguments;
     /// <summary>True when the run command always starts as administrator; saved at once.</summary>
     [ObservableProperty]
@@ -343,20 +343,20 @@ namespace MDSHO.ViewModels {
     /// <summary>The Windows error code when the user answers No to the administrator (UAC) prompt.</summary>
     public const int ErrorCancelled = 1223;
     /// <summary>
-    /// The start information of a run command: the arguments with <c>{}</c> filled with the group value and the lines
-    /// joined for the program, "runas" when elevated, and the working folder (with <c>{}</c> filled) only when one is set.
+    /// The start information of a run command: the arguments with the group values filled in and the lines joined for the
+    /// program, "runas" when elevated, and the working folder (values filled in) only when one is set.
     /// </summary>
-    public static ProcessStartInfo CreateRunCommandStartInfo(string fileName, string storedArguments, string workingFolder, bool runAsAdministrator, string groupValue) {
+    public static ProcessStartInfo CreateRunCommandStartInfo(string fileName, string storedArguments, string workingFolder, bool runAsAdministrator, IReadOnlyList<GroupValueItem> groupValues) {
       ProcessStartInfo startInfo = new ProcessStartInfo {
         UseShellExecute = true,
         FileName = fileName,
-        Arguments = RunCommandLine.JoinLines(fileName, GroupValue.ResolveArguments(storedArguments, groupValue))
+        Arguments = RunCommandLine.JoinLines(fileName, GroupValue.Fill(storedArguments, groupValues))
       };
       if (runAsAdministrator) {
         startInfo.Verb = "runas";
       }
       if (!string.IsNullOrWhiteSpace(workingFolder)) {
-        startInfo.WorkingDirectory = GroupValue.ResolveArguments(workingFolder.Trim(), groupValue);
+        startInfo.WorkingDirectory = GroupValue.Fill(workingFolder.Trim(), groupValues);
       }
       return startInfo;
     }
@@ -381,31 +381,49 @@ namespace MDSHO.ViewModels {
         throw;
       }
     }
-    /// <summary>The folder the run command starts in (<c>{}</c> is filled with the group value); empty = none. Saved at once.</summary>
+    /// <summary>The folder the run command starts in (group values are filled in); empty = none. Saved at once.</summary>
     public string ProcessWorkingFolder {
       get {
         return this.processWorkingFolder;
       }
       // Hand-written: null is stored as "", which a generated property cannot do.
-      set { SetProperty(ref this.processWorkingFolder, value ?? ""); }
-    }
-    /// <summary>The value of the direct parent group (see <see cref="GroupValue"/>), or null when there is none.</summary>
-    public string ParentGroupValue {
-      get {
-        string value = null;
-        if (this.parentShortcut != null && this.parentShortcut.IsGroup) {
-          GroupValue.TryParse(this.parentShortcut.Name, out value);
+      set {
+        if (SetProperty(ref this.processWorkingFolder, value ?? "")) {
+          OnPropertyChanged(nameof(this.RunCommandError));
+          OnPropertyChanged(nameof(this.HasRunCommandError));
         }
-        return value;
       }
     }
+    /// <summary>The values of the direct parent group (see <see cref="GroupValue"/>); empty when there are none.</summary>
+    public IReadOnlyList<GroupValueItem> ParentGroupValues {
+      get {
+        if (this.parentShortcut != null && this.parentShortcut.IsGroup) {
+          return GroupValue.Parse(this.parentShortcut.Name);
+        }
+        return System.Array.Empty<GroupValueItem>();
+      }
+    }
+    /// <summary>The group-value syntax error of a run command's arguments or working folder, or null.</summary>
+    public string RunCommandError {
+      get {
+        if (!this.isProcessCommand || this.isGroup) {
+          return null;
+        }
+        return GroupValue.FindError(this.ProcessArguments, this.ProcessWorkingFolder, this.ParentGroupValues);
+      }
+    }
+    /// <summary>True when the run command has a syntax error; it then does not run.</summary>
+    public bool HasRunCommandError => this.RunCommandError != null;
+    /// <summary>The line below the error when a run command with an error is started.</summary>
+    public const string RunCommandNotRunText = "The command did not run. Right-click it and choose Edit run command... to fix it.";
     /// <summary>
-    /// The arguments a run command starts with: its stored arguments with every <c>{}</c> replaced by the value of its
-    /// direct parent group (see <see cref="GroupValue"/>), and the lines joined for the program (see <see cref="RunCommandLine.JoinLines"/>).
+    /// The arguments a run command starts with: its stored arguments with the values of its direct parent group filled in
+    /// (none while it has an error), and the lines joined for the program (see <see cref="RunCommandLine.JoinLines"/>).
     /// </summary>
     public string ResolvedProcessArguments {
       get {
-        return RunCommandLine.JoinLines(this.ProcessFileName, GroupValue.ResolveArguments(this.ProcessArguments, this.ParentGroupValue));
+        IReadOnlyList<GroupValueItem> values = this.HasRunCommandError ? null : this.ParentGroupValues;
+        return RunCommandLine.JoinLines(this.ProcessFileName, GroupValue.Fill(this.ProcessArguments, values));
       }
     }
     /// <summary>
@@ -428,6 +446,8 @@ namespace MDSHO.ViewModels {
     private void RaiseCommandLineChanged() {
       OnPropertyChanged(nameof(this.ResolvedProcessArguments));
       OnPropertyChanged(nameof(this.ToolTipText));
+      OnPropertyChanged(nameof(this.RunCommandError));
+      OnPropertyChanged(nameof(this.HasRunCommandError));
     }
     /// <summary>Opens the edit box of one field (a field being edited is committed first) and selects the item.</summary>
     public void BeginEdit(EditField field) {
@@ -576,7 +596,7 @@ namespace MDSHO.ViewModels {
         DataStore.Shortcuts.UpdateComment(this.ID, this.Comment ?? "");
       } else if (e.PropertyName == nameof(this.NoteText)) {
         DataStore.Shortcuts.UpdateNoteText(this.ID, this.NoteText ?? "");
-      } else if (e.PropertyName == nameof(this.ToolTipText)) {
+      } else if (e.PropertyName == nameof(this.ToolTipText) || e.PropertyName == nameof(this.HasRunCommandError)) {
         OnPropertyChanged(nameof(this.HasToolTip));
         OnPropertyChanged(nameof(this.ShowCommentDivider));
       }
@@ -787,9 +807,14 @@ namespace MDSHO.ViewModels {
               Dialogs.ShowMessage(NoProgramMessage, NoProgramCaption);
               return;
             }
+            string error = this.RunCommandError;
+            if (error != null) {
+              Dialogs.ShowError(this.Name, error, RunCommandNotRunText);
+              return;
+            }
             // Resolved now, so a renamed group takes effect at the next run.
             StartRunCommand(CreateRunCommandStartInfo(this.ProcessFileName, this.ProcessArguments, this.ProcessWorkingFolder,
-              runAsAdministrator || this.ProcessRunAsAdmin, this.ParentGroupValue));
+              runAsAdministrator || this.ProcessRunAsAdmin, this.ParentGroupValues));
             Opened?.Invoke();
           } else {
             string shortcutsPath = Common.Paths.GetShortcutFilePath(this.Guid, this.Ext);

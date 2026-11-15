@@ -295,7 +295,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Window_opens_without_binding_errors() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         BindingErrorListener listener = new BindingErrorListener();
         SourceLevels oldLevel = PresentationTraceSources.DataBindingSource.Switch.Level;
         PresentationTraceSources.Refresh();
@@ -321,7 +321,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Title_bar_has_title_star_and_close_from_left_to_right_and_no_maximise_button() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         RunCommandViewModel vm = new RunCommandViewModel(f.Command, false);
         RunCommandWindow window = new RunCommandWindow(vm);
         Shown(window, () => {
@@ -390,7 +390,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Body_controls_are_set_up_as_agreed() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
         Shown(window, () => {
           ComboBox program = Named<ComboBox>(window, "ComboProgram");
@@ -403,7 +403,7 @@ namespace MDSHO.Tests {
           TextBox args = Named<TextBox>(window, "TextArguments");
           Assert.True(args.AcceptsReturn);
           Assert.Equal("Consolas", args.FontFamily.Source);
-          Assert.Equal("ping {}", args.Text);
+          Assert.Equal("ping {=1}", args.Text);
           Assert.True(Named<CheckBox>(window, "CheckKeepOpen").IsChecked);
           Assert.False(Named<CheckBox>(window, "CheckRunAsAdmin").IsChecked);
           TextBox preview = Named<TextBox>(window, "TextPreview");
@@ -431,10 +431,10 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Typing_updates_the_preview_live() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
         Shown(window, () => {
-          Named<TextBox>(window, "TextArguments").Text = "ping {}\r\nipconfig";
+          Named<TextBox>(window, "TextArguments").Text = "ping {=1}\r\nipconfig";
           WpfAppHost.Pump();
           Assert.Equal("cmd.exe /K ping SRV01 & ipconfig", Named<TextBox>(window, "TextPreview").Text);
           Named<ComboBox>(window, "ComboProgram").Text = "notepad.exe";
@@ -446,7 +446,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Arguments_box_takes_the_extra_height() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
         Shown(window, () => {
           TextBox args = Named<TextBox>(window, "TextArguments");
@@ -464,7 +464,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Preview_grows_to_about_four_lines_then_scrolls() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
         Shown(window, () => {
           TextBox preview = Named<TextBox>(window, "TextPreview");
@@ -481,7 +481,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Cancel_X_and_Escape_close_without_saving() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         foreach (string how in new[] { "cancel", "x", "esc" }) {
           RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
           OffScreen(window);
@@ -498,23 +498,23 @@ namespace MDSHO.Tests {
           if (!closed) { window.Close(); }
           Assert.True(closed, how + " should close the window");
           Assert.False(window.Saved);
-          Assert.Equal("/K ping {}", f.Command.ProcessArguments);
+          Assert.Equal("/K ping {=1}", f.Command.ProcessArguments);
           Assert.False(f.Command.ProcessRunAsAdmin);
-          Assert.Equal("/K ping {}", DataStore.Shortcuts.Get(f.Command.ID).ProcessArguments);
+          Assert.Equal("/K ping {=1}", DataStore.Shortcuts.Get(f.Command.ID).ProcessArguments);
         }
       });
     }
 
     [Fact]
     public void Save_writes_and_closes() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
         OffScreen(window);
         bool closed = false;
         window.Closed += (s, e) => closed = true;
         window.Show();
         WpfAppHost.Pump();
-        Named<TextBox>(window, "TextArguments").Text = "tracert {}";
+        Named<TextBox>(window, "TextArguments").Text = "tracert {=1}";
         Named<CheckBox>(window, "CheckKeepOpen").IsChecked = false;
         Named<TextBox>(window, "TextWorkingFolder").Text = @"C:\Work";
         WpfAppHost.Pump();
@@ -523,13 +523,13 @@ namespace MDSHO.Tests {
         Assert.True(closed);
         Assert.True(window.Saved);
         Shortcut row = DataStore.Shortcuts.Get(f.Command.ID);
-        Assert.Equal(("/C tracert {}", @"C:\Work"), (row.ProcessArguments, row.ProcessWorkingFolder));
+        Assert.Equal(("/C tracert {=1}", @"C:\Work"), (row.ProcessArguments, row.ProcessWorkingFolder));
       });
     }
 
     [Fact]
     public void Test_run_button_starts_through_the_seam_only() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
         Shown(window, () => {
           Named<TextBox>(window, "TextArguments").Text = "ipconfig";
@@ -537,7 +537,126 @@ namespace MDSHO.Tests {
           Click(Named<Button>(window, "ButtonTestRun"));
           ProcessStartInfo psi = Assert.Single(f.Started);
           Assert.Equal(("cmd.exe", "/K ipconfig"), (psi.FileName, psi.Arguments));
-          Assert.Equal("/K ping {}", DataStore.Shortcuts.Get(f.Command.ID).ProcessArguments);
+          Assert.Equal("/K ping {=1}", DataStore.Shortcuts.Get(f.Command.ID).ProcessArguments);
+        });
+      });
+    }
+
+    // ---- Group values and syntax errors ----
+
+    private static bool IsRed(Brush brush) {
+      Color c = Assert.IsType<SolidColorBrush>(brush).Color;
+      return c.R >= 150 && c.G <= 80 && c.B <= 80;
+    }
+
+    [Fact]
+    public void A_syntax_error_shows_a_red_line_under_the_arguments_and_a_red_border() {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
+        RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
+        Shown(window, () => {
+          TextBox args = Named<TextBox>(window, "TextArguments");
+          TextBlock error = Named<TextBlock>(window, "TextArgumentsError");
+          Assert.NotEqual(Visibility.Visible, error.Visibility);
+          Assert.False(IsRed(args.BorderBrush));
+          Assert.Equal("cmd.exe /K ping SRV01", Named<TextBox>(window, "TextPreview").Text);
+
+          args.Text = "ping {}";
+          WpfAppHost.Pump();
+          Assert.Equal(Visibility.Visible, error.Visibility);
+          Assert.Equal("{} is no longer supported. Use {=1}.", error.Text);
+          Assert.True(IsRed(error.Foreground));
+          Assert.True(IsRed(args.BorderBrush));
+          Assert.True(Position(error, window).Y > Position(args, window).Y + args.ActualHeight - 1, "The error is below the arguments.");
+
+          args.Text = "ping {=1}";
+          WpfAppHost.Pump();
+          Assert.NotEqual(Visibility.Visible, error.Visibility);
+          Assert.False(IsRed(args.BorderBrush));
+        });
+      });
+    }
+
+    [Fact]
+    public void Save_and_test_run_refuse_while_there_is_an_error() {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
+        RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
+        OffScreen(window);
+        bool closed = false;
+        window.Closed += (s, e) => closed = true;
+        window.Show();
+        try {
+          WpfAppHost.Pump();
+          TextBlock footer = Named<TextBlock>(window, "TextFooterError");
+          Assert.NotEqual(Visibility.Visible, footer.Visibility);
+          Named<TextBox>(window, "TextArguments").Text = "ping {=7}";
+          WpfAppHost.Pump();
+          Click(Named<Button>(window, "ButtonSave"));
+          Assert.False(closed);
+          Assert.False(window.Saved);
+          Assert.Equal("/K ping {=1}", DataStore.Shortcuts.Get(f.Command.ID).ProcessArguments);
+          Assert.Equal(Visibility.Visible, footer.Visibility);
+          Assert.Equal("Fix the error to save.", footer.Text);
+          Assert.True(IsRed(footer.Foreground));
+
+          Click(Named<Button>(window, "ButtonTestRun"));
+          Assert.Empty(f.Started);
+          Assert.Equal("Fix the error to run.", footer.Text);
+
+          Named<TextBox>(window, "TextArguments").Text = "ping {=1}";
+          WpfAppHost.Pump();
+          Assert.NotEqual(Visibility.Visible, footer.Visibility);
+        } finally {
+          if (!closed) { window.Close(); }
+          WpfAppHost.Pump();
+        }
+      });
+    }
+
+    [Fact]
+    public void Group_values_line_lists_the_values_and_clicking_one_inserts_it_at_the_caret() {
+      WithCommand("cmd.exe", "/K ping ", f => {
+        f.Command.ParentShortcut.Name = "Prod {SRV01} {user=admin}";
+        RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
+        Shown(window, () => {
+          TextBox args = Named<TextBox>(window, "TextArguments");
+          Assert.Equal("Group values: click one to insert it", Named<TextBlock>(window, "TextGroupValuesLabel").Text);
+          Assert.Equal(Visibility.Visible, Named<TextBlock>(window, "TextGroupValuesLabel").Visibility);
+          Assert.NotEqual(Visibility.Visible, Named<TextBlock>(window, "TextNoGroupValues").Visibility);
+          ItemsControl list = Named<ItemsControl>(window, "ListGroupValues");
+          Assert.True(Position(list, window).Y > Position(args, window).Y + args.ActualHeight - 1, "The values are below the arguments.");
+          Button[] buttons = WpfAppHost.VisualDescendants<Button>(list).ToArray();
+          Assert.Equal(new[] { "{=1} SRV01", "{=2} {=user} admin" }, buttons.Select(b => b.Content as string).ToArray());
+
+          args.Text = "ping  -n 1";
+          args.CaretIndex = 5;
+          Click(buttons[1]);
+          Assert.Equal("ping {=user} -n 1", args.Text);
+          Assert.Equal(12, args.CaretIndex);
+          Click(buttons[0]);
+          Assert.Equal("ping {=user}{=1} -n 1", args.Text);
+          Assert.Equal("cmd.exe /K ping adminSRV01 -n 1", Named<TextBox>(window, "TextPreview").Text);
+        });
+      });
+    }
+
+    [Fact]
+    public void A_group_without_values_shows_a_hint_that_turns_red_when_a_token_is_used() {
+      WithCommand("cmd.exe", "/K ping {}", f => {
+        f.Command.ParentShortcut.Name = "Plain";
+        RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
+        Shown(window, () => {
+          TextBlock hint = Named<TextBlock>(window, "TextNoGroupValues");
+          Assert.Equal(Visibility.Visible, hint.Visibility);
+          Assert.Equal("This group has no values. Put them in braces in its name.", hint.Text);
+          Assert.False(IsRed(hint.Foreground));
+          Assert.NotEqual(Visibility.Visible, Named<TextBlock>(window, "TextGroupValuesLabel").Visibility);
+          Assert.NotEqual(Visibility.Visible, Named<TextBlock>(window, "TextArgumentsError").Visibility);
+          Assert.Equal("cmd.exe /K ping {}", Named<TextBox>(window, "TextPreview").Text);
+
+          Named<TextBox>(window, "TextArguments").Text = "ping {=1}";
+          WpfAppHost.Pump();
+          Assert.True(IsRed(hint.Foreground));
+          Assert.Equal("This command uses group values, but its group has none.", Named<TextBlock>(window, "TextArgumentsError").Text);
         });
       });
     }
@@ -585,7 +704,7 @@ namespace MDSHO.Tests {
         Shown(window, () => {
           ListBox list = Named<ListBox>(window, "ListExamples");
           RunCommandExample ping = RunCommandExamples.All.Single(e => e.Name == "Ping a computer");
-          Assert.Equal(new[] { ping.Description, "Runs: cmd.exe /K ping {}" }, ExampleToolTipTexts(list, ping));
+          Assert.Equal(new[] { ping.Description, "Runs: cmd.exe /K ping {=1}" }, ExampleToolTipTexts(list, ping));
           // The bottom bar has no description and no hint any more: only Use.
           Assert.Null(window.FindName("TextDescription"));
           Assert.Null(window.FindName("TextRuns"));
@@ -680,7 +799,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Run_command_window_finds_the_view_of_the_commands_own_window_as_owner() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         DesktopWindowView view = new DesktopWindowView(f.Win) { ShowActivated = false, Left = -10000, Top = -10000 };
         try {
           view.Show();
@@ -721,7 +840,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Run_command_window_opens_over_the_active_clone_where_the_command_was_clicked() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         WithParentAndClone(f, (parent, clone) => clone, (parent, clone) => {
           Assert.Same(clone, RunCommandWindow.FindOwner(f.Command));
         });
@@ -730,7 +849,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Run_command_window_opens_over_the_parent_when_the_parent_is_active() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         WithParentAndClone(f, (parent, clone) => parent, (parent, clone) => {
           Assert.Same(parent, RunCommandWindow.FindOwner(f.Command));
         });
@@ -739,7 +858,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Run_command_window_ignores_an_active_window_of_another_panel_when_its_own_panel_is_open() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         DesktopWindowView other = OffScreenView(f.App.AddWindow("OTHER", 0, 0));
         try {
           WithParentAndClone(f, (parent, clone) => other, (parent, clone) => {
@@ -753,7 +872,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void New_run_command_from_a_clones_menu_opens_over_that_clone() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         WithParentAndClone(f, (parent, clone) => clone, (parent, clone) => {
           ShortcutViewModel created = null;
           ShortcutViewModel.OpenRunCommandEditor = (s, isNew) => created = s;
@@ -766,7 +885,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Run_command_window_opens_centred_in_the_work_area_of_the_owners_screen() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         DesktopWindowView view = new DesktopWindowView(f.Win) { ShowActivated = false, Left = -10000, Top = -10000 };
         List<Window> asked = new List<Window>();
         try {
@@ -790,7 +909,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Run_command_window_without_an_owner_centres_on_the_screen() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         RunCommandWindow window = RunCommandWindow.Create(f.Command, false, null);
         Assert.Null(window.Owner);
         Assert.Equal(WindowStartupLocation.CenterScreen, window.WindowStartupLocation);
@@ -800,7 +919,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Examples_window_opens_centred_on_the_run_command_window_at_80_percent_of_its_size() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
         Shown(window, () => {
           window.Left = -9000;
@@ -822,7 +941,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Examples_window_never_gets_smaller_than_its_minimum() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
         Shown(window, () => {
           window.Left = -9000;
@@ -885,7 +1004,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Run_command_window_is_placed_in_physical_pixels_on_a_screen_with_another_scale() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         DesktopWindowView view = OffScreenView(f.Win);
         try {
           WpfAppHost.Pump();
@@ -906,7 +1025,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Examples_window_is_placed_in_physical_pixels_centred_on_the_run_command_window() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
         Shown(window, () => WithFakeHandles(fake => WithScreen(LeftScreen150, new List<Window>(), () => {
           // The owner's handle is on the 150 % screen, in physical pixels.
@@ -928,7 +1047,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Context_menus_have_Set_Run_Command_and_no_Sample_Commands() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         DesktopWindowView view = new DesktopWindowView(f.Win) { ShowActivated = false, Left = -10000, Top = -10000 };
         try {
           view.Show();
@@ -961,7 +1080,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Run_command_button_in_the_panel_shows_the_run_icon() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         DesktopWindowView view = new DesktopWindowView(f.Win) { ShowActivated = false, Left = -10000, Top = -10000 };
         try {
           view.Show();
@@ -997,7 +1116,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Shortcut_context_menu_has_no_stray_separators_for_a_command_or_a_group() {
-      WithCommand("cmd.exe", "/K ping {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
         DesktopWindowView view = new DesktopWindowView(f.Win) { ShowActivated = false, Left = -10000, Top = -10000 };
         try {
           view.Show();
@@ -1039,7 +1158,7 @@ namespace MDSHO.Tests {
     public void Render_pictures_when_asked() {
       string folder = Environment.GetEnvironmentVariable("MDSHO_SCREENSHOT_DIR");
       if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) { return; }
-      WithCommand("cmd.exe", "/K ping {}\r\ntracert {}", f => {
+      WithCommand("cmd.exe", "/K ping {=1}\r\ntracert {=1}", f => {
         // Outside MDSHO.exe the icon font's application pack URI finds nothing; point it at the MDSHO assembly for the pictures only.
         object oldFont = System.Windows.Application.Current.Resources["IconFont"];
         System.Windows.Application.Current.Resources["IconFont"] = new FontFamily(new Uri("pack://application:,,,/MDSHO;component/"), "./Assets/Fonts/#MDSHOFont");
@@ -1052,7 +1171,7 @@ namespace MDSHO.Tests {
     }
 
     private static void RenderBoth(Fixture f, string folder) {
-      f.Command.ProcessWorkingFolder = @"C:\Logs\{}";
+      f.Command.ProcessWorkingFolder = @"C:\Logs\{=1}";
       RunCommandViewModel vm = new RunCommandViewModel(f.Command, false);
       RunCommandWindow window = new RunCommandWindow(vm);
       Shown(window, () => Save(window, Path.Combine(folder, "run-command-window.png")));

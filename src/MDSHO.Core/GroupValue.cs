@@ -1,59 +1,212 @@
 using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace MDSHO.Core {
 
+  /// <summary>One value of a group name, e.g. <c>{SRV01}</c> or <c>{user=admin}</c>.</summary>
+  public sealed class GroupValueItem {
+    /// <summary>Creates a value.</summary>
+    public GroupValueItem(int number, string name, string value) {
+      this.Number = number;
+      this.Name = name;
+      this.Value = value;
+    }
+    /// <summary>Its place in the name, from 1 (used as <c>{=1}</c>).</summary>
+    public int Number { get; }
+    /// <summary>Its name (used as <c>{=name}</c>), or null when it has none.</summary>
+    public string Name { get; }
+    /// <summary>The value, as typed.</summary>
+    public string Value { get; }
+    /// <summary>The token a click inserts: <c>{=name}</c> for a named value, else <c>{=1}</c>.</summary>
+    public string Token => this.Name != null ? "{=" + this.Name + "}" : NumberToken;
+    /// <summary>What the values line shows, e.g. <c>{=1} SRV01</c> or <c>{=2} {=user} admin</c>.</summary>
+    public string Label => this.Name != null ? NumberToken + " {=" + this.Name + "} " + this.Value : NumberToken + " " + this.Value;
+    private string NumberToken => "{=" + this.Number + "}";
+  }
+
   /// <summary>
-  /// The "group value": a group whose name holds one value in braces, e.g. <c>Test {SRV01}</c>, acts as a small profile.
-  /// Run commands directly inside that group get the value in place of every <c>{}</c> in their arguments, so renaming
-  /// the group retargets all of its commands.
+  /// Group values: a group name holds values in braces, e.g. <c>Prod {SRV01} {user=admin}</c>. Run commands directly
+  /// inside the group use them in their arguments and working folder as <c>{=1}</c>…<c>{=9}</c> or <c>{=name}</c>.
   /// </summary>
   /// <remarks>
-  /// Rules:
   /// <list type="bullet">
-  /// <item>The value is the text between the first <c>{</c> of the group name and the first <c>}</c> after it, kept
-  /// verbatim (spaces included, nothing trimmed). So <c>A {first} B {second}</c> gives <c>first</c>, and a nested name
-  /// such as <c>{a{b}}</c> gives <c>a{b</c>.</item>
-  /// <item>No value when the name has no <c>{</c>, the first <c>{</c> has no <c>}</c> after it (<c>Test {SRV</c>), or the
-  /// first pair is empty (<c>Test {}</c>); a later pair is not looked at.</item>
-  /// <item>In the arguments, only the exact token <c>{}</c> is replaced, every occurrence, with the value as it is (no
-  /// quotes added). Without a value the arguments are used unchanged, <c>{}</c> included.</item>
+  /// <item>Each non-empty <c>{…}</c> of the name is one value, numbered from the left, up to 9. <c>{}</c> is not a value.</item>
+  /// <item><c>{name=value}</c> names a value when the text before the first <c>=</c> is a valid name; names ignore case
+  /// and the first of two equal names counts.</item>
+  /// <item>Tokens are replaced by the value as is. <c>{}</c> is never replaced; it is an error when the group has values.</item>
   /// </list>
   /// </remarks>
   public static class GroupValue {
+    /// <summary>The most values a group name can hold.</summary>
+    public const int MaxValues = 9;
+    /// <summary>The error for <c>{}</c> in a command whose group has values.</summary>
+    public const string OldTokenMessage = "{} is no longer supported. Use {=1}.";
+    /// <summary>The error for a token when the group has no values or the command is not in a group.</summary>
+    public const string NoValuesMessage = "This command uses group values, but its group has none.";
 
-    /// <summary>The token in run-command arguments that is replaced with the group value.</summary>
-    public const string Token = "{}";
+    private const string OldToken = "{}";
+    private const string TokenStart = "{=";
+    private static readonly Regex NamePattern = new Regex("^[A-Za-z_][A-Za-z0-9_]*$", RegexOptions.CultureInvariant);
 
-    /// <summary>Reads the value of a group from its name.</summary>
-    /// <param name="groupName">The group name as typed, e.g. <c>Test {SRV01}</c>.</param>
-    /// <param name="value">The text inside the first brace pair, or null when there is no value.</param>
-    /// <returns>True when the name holds a (non-empty) value.</returns>
-    public static bool TryParse(string groupName, out string value) {
-      value = null;
-      if (string.IsNullOrEmpty(groupName)) {
-        return false;
-      }
-      int open = groupName.IndexOf('{');
-      if (open < 0) {
-        return false;
-      }
-      int close = groupName.IndexOf('}', open + 1);
-      if (close < 0 || close == open + 1) {
-        return false;
-      }
-      value = groupName.Substring(open + 1, close - open - 1);
-      return true;
+    /// <summary>The error for a number higher than the values count.</summary>
+    public static string NoNumberMessage(int number) {
+      return $"The group has no value {number}.";
     }
 
-    /// <summary>Puts the group value in place of every <c>{}</c> in run-command arguments.</summary>
-    /// <param name="arguments">The arguments as stored (may be null).</param>
-    /// <param name="value">The group value, or null when there is none.</param>
-    /// <returns>The arguments to run; unchanged when <paramref name="value"/> or <paramref name="arguments"/> is null.</returns>
-    public static string ResolveArguments(string arguments, string value) {
-      if (arguments == null || value == null) {
-        return arguments;
+    /// <summary>The error for an unknown name.</summary>
+    public static string NoNameMessage(string name) {
+      return $"The group has no value named \"{name}\".";
+    }
+
+    /// <summary>The error for a malformed token, which is quoted.</summary>
+    public static string InvalidTokenMessage(string token) {
+      return $"\"{token}\" is not valid. Use {{=1}} or {{=name}}.";
+    }
+
+    /// <summary>Reads the values of a group name; empty when it has none.</summary>
+    public static IReadOnlyList<GroupValueItem> Parse(string groupName) {
+      List<GroupValueItem> values = new List<GroupValueItem>();
+      if (string.IsNullOrEmpty(groupName)) {
+        return values;
       }
-      return arguments.Replace(Token, value, StringComparison.Ordinal);
+      HashSet<string> names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+      int index = 0;
+      while (values.Count < MaxValues) {
+        int open = groupName.IndexOf('{', index);
+        if (open < 0) {
+          break;
+        }
+        int close = groupName.IndexOf('}', open + 1);
+        if (close < 0) {
+          break;
+        }
+        index = close + 1;
+        string content = groupName.Substring(open + 1, close - open - 1);
+        if (content.Length == 0) {
+          continue;
+        }
+        string name = null;
+        string value = content;
+        int equals = content.IndexOf('=');
+        if (equals > 0 && NamePattern.IsMatch(content.Substring(0, equals))) {
+          name = content.Substring(0, equals);
+          value = content.Substring(equals + 1);
+          if (!names.Add(name)) {
+            name = null;
+          }
+        }
+        values.Add(new GroupValueItem(values.Count + 1, name, value));
+      }
+      return values;
+    }
+
+    /// <summary>
+    /// The first syntax error in the text, from the left, or null when it is fine. <paramref name="values"/> is null or
+    /// empty when the command is not in a group or its group has no values.
+    /// </summary>
+    public static string FindError(string text, IReadOnlyList<GroupValueItem> values) {
+      string error = null;
+      Scan(text, values, (token, _) => {
+        error = token.Error;
+        return error == null;
+      });
+      return error;
+    }
+
+    /// <summary>The first syntax error in the arguments, else in the working folder, or null when both are fine.</summary>
+    public static string FindError(string arguments, string workingFolder, IReadOnlyList<GroupValueItem> values) {
+      return FindError(arguments, values) ?? FindError(workingFolder, values);
+    }
+
+    /// <summary>Replaces every valid token by its value; anything else, <c>{}</c> included, is left as it is. Null stays null.</summary>
+    public static string Fill(string text, IReadOnlyList<GroupValueItem> values) {
+      if (text == null || values == null || values.Count == 0) {
+        return text;
+      }
+      System.Text.StringBuilder result = new System.Text.StringBuilder();
+      int copied = 0;
+      Scan(text, values, (token, start) => {
+        if (token.Value != null) {
+          result.Append(text, copied, start - copied).Append(token.Value);
+          copied = start + token.Length;
+        }
+        return true;
+      });
+      return result.Append(text, copied, text.Length - copied).ToString();
+    }
+
+    /// <summary>True when the text has a <c>{=</c> token, valid or not.</summary>
+    public static bool UsesValues(string text) {
+      return text != null && text.Contains(TokenStart, StringComparison.Ordinal);
+    }
+
+    private sealed class Token {
+      public int Length;
+      public string Value;
+      public string Error;
+    }
+
+    // Calls found(token, start) for each {=…} and {} from the left, until it returns false.
+    private static void Scan(string text, IReadOnlyList<GroupValueItem> values, Func<Token, int, bool> found) {
+      if (string.IsNullOrEmpty(text)) {
+        return;
+      }
+      bool hasValues = values != null && values.Count > 0;
+      int i = 0;
+      while (i < text.Length) {
+        Token token = null;
+        if (string.CompareOrdinal(text, i, TokenStart, 0, TokenStart.Length) == 0) {
+          token = ReadToken(text, i, values, hasValues);
+        } else if (string.CompareOrdinal(text, i, OldToken, 0, OldToken.Length) == 0) {
+          token = new Token { Length = OldToken.Length, Error = hasValues ? OldTokenMessage : null };
+        }
+        if (token == null) {
+          i++;
+          continue;
+        }
+        if ((token.Error != null || token.Value != null) && !found(token, i)) {
+          return;
+        }
+        i += token.Length;
+      }
+    }
+
+    private static Token ReadToken(string text, int start, IReadOnlyList<GroupValueItem> values, bool hasValues) {
+      int lineEnd = text.IndexOfAny(new[] { '\r', '\n' }, start);
+      if (lineEnd < 0) {
+        lineEnd = text.Length;
+      }
+      int close = text.IndexOf('}', start, lineEnd - start);
+      if (close < 0) {
+        // Unclosed: quote it up to the first space or the end of the line.
+        int end = start + TokenStart.Length;
+        while (end < lineEnd && !char.IsWhiteSpace(text[end])) {
+          end++;
+        }
+        return new Token { Length = end - start, Error = InvalidTokenMessage(text.Substring(start, end - start)) };
+      }
+      int length = close - start + 1;
+      string content = text.Substring(start + TokenStart.Length, close - start - TokenStart.Length);
+      bool isNumber = content.Length == 1 && content[0] >= '1' && content[0] <= '9';
+      if (!isNumber && !NamePattern.IsMatch(content)) {
+        return new Token { Length = length, Error = InvalidTokenMessage(text.Substring(start, length)) };
+      }
+      if (!hasValues) {
+        return new Token { Length = length, Error = NoValuesMessage };
+      }
+      if (isNumber) {
+        int number = content[0] - '0';
+        return number <= values.Count
+          ? new Token { Length = length, Value = values[number - 1].Value }
+          : new Token { Length = length, Error = NoNumberMessage(number) };
+      }
+      foreach (GroupValueItem item in values) {
+        if (string.Equals(item.Name, content, StringComparison.OrdinalIgnoreCase)) {
+          return new Token { Length = length, Value = item.Value };
+        }
+      }
+      return new Token { Length = length, Error = NoNameMessage(content) };
     }
   }
 }

@@ -18,7 +18,7 @@ window with your own buttons, and you can have as many panels as you like, on as
 - **Notes:** buttons that hold a note of their own. The note opens in its own window, which you can keep on top,
   colour and wrap, and it saves itself as you type. Opening the button again closes it.
 - **Comments:** add a comment to any button or group; it shows in the button's tooltip.
-- **Groups:** fold buttons into groups, and put a value in a group's name to reuse it in the commands inside it.
+- **Groups:** fold buttons into groups, and put values in a group's name, like `Prod {SRV01} {user=admin}`, to reuse them in the commands inside it as `{=1}` or `{=user}`.
 - **Clones:** show the same panel on another screen; a change in one shows in all of its clones.
 - **Docking:** dock a panel to the left or right edge of a screen.
 - **Screen setups:** MDSHO remembers where your panels and notes were for each set of connected screens. Undock your

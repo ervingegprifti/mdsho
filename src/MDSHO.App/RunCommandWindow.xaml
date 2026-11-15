@@ -8,9 +8,9 @@
         d:DataContext="{d:DesignInstance Type=viewmodels:RunCommandViewModel}"
         Title="Run command"
         Width="560"
-        Height="580"
+        Height="620"
         MinWidth="420"
-        MinHeight="500"
+        MinHeight="540"
         WindowStyle="None"
         AllowsTransparency="True"
         Template="{StaticResource RoundedWindowTemplate}"
@@ -121,6 +121,8 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Style="{StaticResource StyleFieldLabel}" Text="Program"/>
@@ -168,18 +170,71 @@
                          Padding="2"
                          VerticalScrollBarVisibility="Auto"
                          HorizontalScrollBarVisibility="Auto"
-                         Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}"/>
+                         Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}">
+                    <TextBox.Style>
+                        <Style TargetType="TextBox">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasError}" Value="True">
+                                    <Setter Property="BorderBrush" Value="{StaticResource ErrorBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+                <!--Keeps the red border while the box has focus, where the theme draws its own focus border-->
+                <Border Grid.Row="5" BorderThickness="1" BorderBrush="{StaticResource ErrorBrush}" IsHitTestVisible="False"
+                        Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}"/>
 
-                <CheckBox x:Name="CheckKeepOpen" Grid.Row="6" Margin="0,10,0,0"
+                <!--The group-value syntax error, in red under the arguments-->
+                <TextBlock x:Name="TextArgumentsError" Grid.Row="6" Margin="0,4,0,0" TextWrapping="Wrap"
+                           Foreground="{StaticResource ErrorBrush}"
+                           Text="{Binding Error, Mode=OneWay}"
+                           Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}"/>
+
+                <!--The group's values: a click inserts one at the caret in the arguments. Without values, a hint (red when one is used)-->
+                <StackPanel Grid.Row="7" Margin="0,6,0,0">
+                    <TextBlock x:Name="TextGroupValuesLabel" Foreground="#FF555555" Text="{x:Static viewmodels:RunCommandViewModel.GroupValuesLabel}"
+                               Visibility="{Binding HasGroupValues, Converter={StaticResource BoolToVisibility}}"/>
+                    <ItemsControl x:Name="ListGroupValues" ItemsSource="{Binding GroupValues}" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Content="{Binding Label}" Margin="0,3,6,0" Padding="6,1" FontFamily="Consolas" Focusable="False"
+                                        Cursor="Hand" ToolTip="{Binding Token}" Click="GroupValueButton_Click"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock x:Name="TextNoGroupValues" TextWrapping="Wrap" Text="{x:Static viewmodels:RunCommandViewModel.NoGroupValuesText}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#FF555555"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasGroupValues}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsNoGroupValuesError}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+
+                <CheckBox x:Name="CheckKeepOpen" Grid.Row="8" Margin="0,10,0,0"
                           Content="Keep window open after it runs"
                           IsChecked="{Binding KeepWindowOpen}"
                           IsEnabled="{Binding IsKeepOpenEnabled}"/>
-                <CheckBox x:Name="CheckRunAsAdmin" Grid.Row="7" Margin="0,6,0,0"
+                <CheckBox x:Name="CheckRunAsAdmin" Grid.Row="9" Margin="0,6,0,0"
                           Content="Run as administrator"
                           IsChecked="{Binding RunAsAdministrator}"/>
 
-                <TextBlock Grid.Row="8" Style="{StaticResource StyleFieldLabel}" Margin="0,12,0,3" Text="Will run as"/>
-                <TextBox x:Name="TextPreview" Grid.Row="9"
+                <TextBlock Grid.Row="10" Style="{StaticResource StyleFieldLabel}" Margin="0,12,0,3" Text="Will run as"/>
+                <TextBox x:Name="TextPreview" Grid.Row="11"
                          IsReadOnly="True"
                          TextWrapping="Wrap"
                          MinLines="1"
@@ -205,6 +260,20 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Button x:Name="ButtonTestRun" Grid.Column="0" Style="{StaticResource StyleSecondaryButton}" Content="&#x25B6; Test run" ToolTip="Runs what is on screen now, without saving"/>
+                <!--"Fix the error to save." or "Fix the error to run." after a refused Save or Test run-->
+                <TextBlock x:Name="TextFooterError" Grid.Column="1" Margin="12,0" VerticalAlignment="Center" TextWrapping="Wrap"
+                           Foreground="{StaticResource ErrorBrush}"
+                           Text="{Binding FooterError}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding FooterError}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
                 <Button x:Name="ButtonSave" Grid.Column="2" Style="{StaticResource StyleDarkButton}" Content="Save" IsDefault="True" Margin="0,0,8,0"/>
                 <Button x:Name="ButtonCancel" Grid.Column="3" Style="{StaticResource StyleSecondaryButton}" Content="Cancel" IsCancel="True"/>
             </Grid>

@@ -42,6 +42,7 @@ namespace MDSHO.ViewModels {
       }
       this.workingFolder = shortcut.ProcessWorkingFolder ?? "";
       this.runAsAdministrator = shortcut.ProcessRunAsAdmin;
+      this.GroupValues = shortcut.ParentGroupValues;
     }
 
     // Name, Program, WorkingFolder and Arguments stay hand-written: they turn null into "" before storing, which a
@@ -64,12 +65,52 @@ namespace MDSHO.ViewModels {
     /// <summary>The folder the program starts in; empty = none.</summary>
     public string WorkingFolder {
       get { return this.workingFolder; }
-      set { if (SetProperty(ref this.workingFolder, value ?? "")) { OnPropertyChanged(nameof(this.Preview)); } }
+      set { if (SetProperty(ref this.workingFolder, value ?? "")) { RaiseTextChanged(); } }
     }
     /// <summary>The arguments as typed, one command per line, without the keep-open switch.</summary>
     public string Arguments {
       get { return this.arguments; }
-      set { if (SetProperty(ref this.arguments, value ?? "")) { OnPropertyChanged(nameof(this.Preview)); } }
+      set { if (SetProperty(ref this.arguments, value ?? "")) { RaiseTextChanged(); } }
+    }
+    // The arguments or folder changed: the preview and the error follow, and a fixed error clears the footer message.
+    private void RaiseTextChanged() {
+      OnPropertyChanged(nameof(this.Preview));
+      OnPropertyChanged(nameof(this.Error));
+      OnPropertyChanged(nameof(this.HasError));
+      OnPropertyChanged(nameof(this.IsNoGroupValuesError));
+      if (this.FooterError != null && !this.HasError) {
+        this.FooterError = null;
+      }
+    }
+    /// <summary>The values of the command's group, for the values line.</summary>
+    public IReadOnlyList<GroupValueItem> GroupValues { get; }
+    /// <summary>True when the group has values; otherwise the window shows <see cref="NoGroupValuesText"/>.</summary>
+    public bool HasGroupValues => this.GroupValues.Count > 0;
+    /// <summary>The text before the values.</summary>
+    public const string GroupValuesLabel = "Group values: click one to insert it";
+    /// <summary>The text shown when the group has no values.</summary>
+    public const string NoGroupValuesText = "This group has no values. Put them in braces in its name.";
+    /// <summary>True when the group has no values but the arguments or folder use one; the hint is then red.</summary>
+    public bool IsNoGroupValuesError => !this.HasGroupValues && (GroupValue.UsesValues(this.arguments) || GroupValue.UsesValues(this.workingFolder));
+    /// <summary>The group-value syntax error of the arguments or working folder, or null.</summary>
+    public string Error => GroupValue.FindError(this.arguments, this.workingFolder, this.GroupValues);
+    /// <summary>True when there is a syntax error; Save and Test run then refuse.</summary>
+    public bool HasError => this.Error != null;
+    /// <summary>"Fix the error to save." or "Fix the error to run." after a refused Save or Test run; null otherwise.</summary>
+    [ObservableProperty]
+    private string footerError;
+    /// <summary>The footer text after Save is refused.</summary>
+    public const string FixToSaveText = "Fix the error to save.";
+    /// <summary>The footer text after Test run is refused.</summary>
+    public const string FixToRunText = "Fix the error to run.";
+
+    /// <summary>Puts a value's token in the arguments at the caret, over any selected text.</summary>
+    /// <returns>The caret position after the token.</returns>
+    public int InsertGroupValue(GroupValueItem item, int caretIndex, int selectionLength) {
+      int start = Math.Clamp(caretIndex, 0, this.arguments.Length);
+      int length = Math.Clamp(selectionLength, 0, this.arguments.Length - start);
+      this.Arguments = this.arguments.Substring(0, start) + item.Token + this.arguments.Substring(start + length);
+      return start + item.Token.Length;
     }
     /// <summary>True when the program has a keep-open switch (cmd or PowerShell); otherwise the checkbox is disabled.</summary>
     public bool IsKeepOpenEnabled {
@@ -79,9 +120,12 @@ namespace MDSHO.ViewModels {
     public string StoredArguments {
       get { return RunCommandLine.ApplyKeepOpen(this.program, this.arguments, this.keepWindowOpen); }
     }
-    /// <summary>The "Will run as" text: the final command line with the group value, plus the folder and administrator lines.</summary>
+    /// <summary>
+    /// The "Will run as" text: the final command line with the group values filled in (left unfilled while there is an
+    /// error), plus the folder and administrator lines.
+    /// </summary>
     public string Preview {
-      get { return RunCommandLine.Describe(this.program, this.StoredArguments, this.shortcut.ParentGroupValue, this.workingFolder, this.runAsAdministrator); }
+      get { return RunCommandLine.Describe(this.program, this.StoredArguments, this.HasError ? null : this.GroupValues, this.workingFolder, this.runAsAdministrator); }
     }
     /// <summary>The programs offered in the Program list.</summary>
     public IReadOnlyList<RunCommandProgram> Programs { get { return RunCommandLine.KnownPrograms; } }
@@ -99,9 +143,14 @@ namespace MDSHO.ViewModels {
 
     /// <summary>
     /// Writes the name (unless blank), program, arguments (switch included), working folder and administrator choice to
-    /// the command, in one transaction.
+    /// the command, in one transaction. Refused while there is a syntax error.
     /// </summary>
-    public void Save() {
+    /// <returns>True when saved.</returns>
+    public bool Save() {
+      if (this.HasError) {
+        this.FooterError = FixToSaveText;
+        return false;
+      }
       string storedArguments = this.StoredArguments;
       using (ITransactionScope tx = DataStore.BeginTransaction()) {
         if (!string.IsNullOrWhiteSpace(this.name) && this.shortcut.Name != this.name) {
@@ -117,14 +166,19 @@ namespace MDSHO.ViewModels {
         this.shortcut.ProcessRunAsAdmin = this.runAsAdministrator;
         tx.Commit();
       }
+      return true;
     }
 
     /// <summary>
-    /// Starts what is on screen (not saved), with the group value, through <see cref="ShortcutViewModel.ProcessStarter"/>;
-    /// a declined administrator prompt is ignored. TestRunCommand runs it.
+    /// Starts what is on screen (not saved), with the group values, through <see cref="ShortcutViewModel.ProcessStarter"/>;
+    /// a declined administrator prompt is ignored. Refused while there is a syntax error. TestRunCommand runs it.
     /// </summary>
     [RelayCommand]
     public void TestRun() {
+      if (this.HasError) {
+        this.FooterError = FixToRunText;
+        return;
+      }
       if (string.IsNullOrWhiteSpace(this.program)) {
         // No program chosen yet: the same plain hint as running the command, not an error.
         Dialogs.ShowMessage(ShortcutViewModel.NoProgramMessage, ShortcutViewModel.NoProgramCaption);
@@ -132,7 +186,7 @@ namespace MDSHO.ViewModels {
       }
       try {
         ShortcutViewModel.StartRunCommand(ShortcutViewModel.CreateRunCommandStartInfo(
-          this.program, this.StoredArguments, this.workingFolder, this.runAsAdministrator, this.shortcut.ParentGroupValue));
+          this.program, this.StoredArguments, this.workingFolder, this.runAsAdministrator, this.GroupValues));
       } catch (System.ComponentModel.Win32Exception ex) {
         Dialogs.ShowMessage($"Error code: {ex.ErrorCode} \n{ex.Message}. \nPlease make sure the program is correct!", "Test run");
       } catch (InvalidOperationException ex) {
