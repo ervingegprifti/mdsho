@@ -27,6 +27,8 @@ window with your own buttons, and you can have as many panels as you like, on as
 - **Bring panels to front:** press **Ctrl+Shift+Alt+M** (or use the first item of the tray menu) to bring every panel
   above your other windows, then pick a button with the arrow keys and Enter. Press it again, or Esc, to send them back.
   Change or turn off the shortcut in a panel's Settings under **Keyboard shortcut**.
+- **Window theme:** MDSHO's own windows, comments and menus follow Windows' light or dark mode. Choose Light or Dark
+  instead in a panel's Settings under **Window theme**. Panels and notes keep their own colours.
 - **Colors:** set the colors of each panel and note in its Colours window, save your own defaults, and mark buttons with a color.
 - **Export and import:** save all your panels and buttons to one `.zip` file and load them back.
 

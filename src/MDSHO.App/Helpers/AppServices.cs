@@ -49,6 +49,12 @@ namespace MDSHO.Helpers {
       set { this.screenSetups = value; }
     }
     private ScreenSetupTracker screenSetups;
+    /// <summary>The "Window theme" setting. Made on first use.</summary>
+    public WindowThemeSetting WindowTheme {
+      get { return this.windowTheme ??= new WindowThemeSetting(new WindowsAppMode()); }
+      set { this.windowTheme = value; }
+    }
+    private WindowThemeSetting windowTheme;
     /// <summary>"Bring panels to front". Null until the app has started.</summary>
     public PanelsToFront PanelsToFront { get; set; }
 

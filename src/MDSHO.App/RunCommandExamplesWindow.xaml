@@ -1,6 +1,7 @@
 ﻿<Window x:Class="MDSHO.RunCommandExamplesWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:helpers="clr-namespace:MDSHO.Helpers"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewmodels="clr-namespace:MDSHO.ViewModels;assembly=MDSHO.ViewModels"
@@ -16,10 +17,12 @@
         Template="{StaticResource RoundedWindowTemplate}"
         ResizeMode="CanResize"
         ShowInTaskbar="False"
-        Background="#FFF4F3ED"
-        BorderBrush="#FFB9B39F"
+        Background="{DynamicResource Theme.WindowBackground}"
+        BorderBrush="{DynamicResource Theme.WindowBorder}"
         BorderThickness="1"
-        UseLayoutRounding="True">
+        UseLayoutRounding="True"
+        Foreground="{DynamicResource Theme.Text}"
+        helpers:WindowThemes.IsThemed="True">
 
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="32" ResizeBorderThickness="5" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
@@ -28,7 +31,7 @@
     <Window.Resources>
         <Style x:Key="StyleTitleBarButton" TargetType="{x:Type Button}">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#FF333333"/>
+            <Setter Property="Foreground" Value="{DynamicResource Theme.TextStrong}"/>
             <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="Width" Value="40"/>
@@ -44,10 +47,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#FFCDC7B4" />
+                                <Setter Property="Background" Value="{DynamicResource Theme.BarButtonHover}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#FFBDB6A0" />
+                                <Setter Property="Background" Value="{DynamicResource Theme.BarButtonPressed}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -64,27 +67,27 @@
         </Grid.RowDefinitions>
 
         <!--Title bar: title and close (no Cancel button: X and Esc close the popup)-->
-        <Border x:Name="TitleBar" Grid.Row="0" Background="#FFDFDACB">
+        <Border x:Name="TitleBar" Grid.Row="0" Background="{DynamicResource Theme.BarBackground}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="TextTitle" Grid.Column="0" Text="Examples" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"/>
+                <TextBlock x:Name="TextTitle" Grid.Column="0" Text="Examples" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource Theme.TextStrong}"/>
                 <Button x:Name="ButtonClose" Grid.Column="1" Style="{StaticResource StyleTitleBarButton}" Content="{Binding Icons.Times}" ToolTip="Close" AutomationProperties.Name="Close"/>
             </Grid>
         </Border>
 
         <!--Body: the grouped list fills it, with the look of the Note window's editor (window colour, no border, 10 px padding).
             What an example does and the command it runs show in its tooltip.-->
-        <Grid x:Name="Body" Grid.Row="1" Background="#FFF4F3ED">
+        <Grid x:Name="Body" Grid.Row="1" Background="{DynamicResource Theme.WindowBackground}">
             <Grid x:Name="BodyContent">
-                <ListBox x:Name="ListExamples" DisplayMemberPath="Name" Padding="10" BorderThickness="0" Background="#FFF4F3ED" IsSynchronizedWithCurrentItem="False">
+                <ListBox x:Name="ListExamples" DisplayMemberPath="Name" Padding="10" BorderThickness="0" Background="{DynamicResource Theme.WindowBackground}" IsSynchronizedWithCurrentItem="False">
                     <ListBox.GroupStyle>
                         <GroupStyle>
                             <GroupStyle.HeaderTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="#FF555555" Margin="2,6,0,2"/>
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource Theme.TextMuted}" Margin="2,6,0,2"/>
                                 </DataTemplate>
                             </GroupStyle.HeaderTemplate>
                         </GroupStyle>
@@ -97,7 +100,7 @@
                                     <ToolTip>
                                         <StackPanel MaxWidth="320">
                                             <TextBlock Text="{Binding Description}" TextWrapping="Wrap"/>
-                                            <TextBlock Text="{Binding RunsText}" TextWrapping="Wrap" FontFamily="Consolas" Foreground="#FF666666" Margin="0,4,0,0"/>
+                                            <TextBlock Text="{Binding RunsText}" TextWrapping="Wrap" FontFamily="Consolas" Foreground="{DynamicResource Theme.ToolTipSecondaryText}" Margin="0,4,0,0"/>
                                         </StackPanel>
                                     </ToolTip>
                                 </Setter.Value>
@@ -109,7 +112,7 @@
         </Grid>
 
         <!--Footer: Use only; every outer margin equals the button height (set in code from the real button)-->
-        <Border x:Name="Footer" Grid.Row="2" Background="#FFDFDACB">
+        <Border x:Name="Footer" Grid.Row="2" Background="{DynamicResource Theme.BarBackground}">
             <Grid x:Name="FooterContent" Margin="26">
                 <Button x:Name="ButtonUse" HorizontalAlignment="Right" Style="{StaticResource StyleDarkButton}" Content="Use" IsDefault="True" IsEnabled="False"/>
             </Grid>

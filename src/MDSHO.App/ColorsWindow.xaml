@@ -2,6 +2,7 @@
         xmlns:controls="clr-namespace:MDSHO.Controls"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:helpers="clr-namespace:MDSHO.Helpers"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MDSHO"
@@ -17,12 +18,14 @@
         WindowStyle="None"
         AllowsTransparency="True"
         Template="{StaticResource RoundedWindowTemplate}"
-        BorderBrush="#FFB9B39F"
+        BorderBrush="{DynamicResource Theme.WindowBorder}"
         BorderThickness="1"
-        Background="#FFF4F3ED"
+        Background="{DynamicResource Theme.WindowBackground}"
         ShowInTaskbar="True"
         WindowState="Normal"
-        UseLayoutRounding="True">
+        UseLayoutRounding="True"
+        Foreground="{DynamicResource Theme.Text}"
+        helpers:WindowThemes.IsThemed="True">
 
     <!--MDSHO's own title bar (DialogTitleBar) and the rounded frame (RoundedWindowTemplate), like the Note window-->
     <WindowChrome.WindowChrome>
@@ -37,6 +40,7 @@
             <converters:HexToBrushConverter x:Key="HexToBrush"/>
             <Style x:Key="StyleSettingsCategory" TargetType="{x:Type Label}">
                 <Setter Property="FontSize" Value="16"/>
+                <Setter Property="Foreground" Value="{DynamicResource Theme.Text}"/>
                 <Setter Property="FontWeight" Value="Normal"/>
                 <Setter Property="Padding" Value="0"/>
                 <Setter Property="Margin" Value="0,0,0,10"/>
@@ -49,7 +53,7 @@
                 <Setter Property="Width" Value="26"/>
                 <Setter Property="Height" Value="18"/>
                 <Setter Property="Margin" Value="0,0,10,0"/>
-                <Setter Property="BorderBrush" Value="#FF8C8778"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Theme.SwatchBorder}"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="VerticalAlignment" Value="Center"/>
             </Style>
@@ -61,7 +65,7 @@
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Padding" Value="10,7"/>
                 <Setter Property="Margin" Value="0,0,0,6"/>
-                <Setter Property="Foreground" Value="#FF333333"/>
+                <Setter Property="Foreground" Value="{DynamicResource Theme.TextStrong}"/>
                 <Setter Property="Cursor" Value="Hand"/>
                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                 <Setter Property="Template">
@@ -80,11 +84,11 @@
                 </Setter>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#FFEAE7DC"/>
+                        <Setter Property="Background" Value="{DynamicResource Theme.ItemHover}"/>
                     </Trigger>
                     <Trigger Property="IsSelected" Value="True">
-                        <Setter Property="Background" Value="#FFDCEBFA"/>
-                        <Setter Property="BorderBrush" Value="#FF1F6FC5"/>
+                        <Setter Property="Background" Value="{DynamicResource Theme.ItemSelected}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource Theme.Accent}"/>
                         <Setter Property="BorderThickness" Value="2"/>
                         <Setter Property="Padding" Value="8,5"/>
                         <Setter Property="FontWeight" Value="SemiBold"/>
@@ -196,7 +200,7 @@
 
                         <!--Always-visible palette: ColorsWindow.xaml.cs binds it to the selected button's colour-->
                         <StackPanel Grid.Column="2" Orientation="Vertical" VerticalAlignment="Top">
-                            <Border x:Name="PanelPalette" Background="White" BorderBrush="#FFC9C3B1" BorderThickness="1" CornerRadius="4" Padding="12">
+                            <Border x:Name="PanelPalette" Background="{DynamicResource Theme.InputBackground}" BorderBrush="{DynamicResource Theme.PaletteBorder}" BorderThickness="1" CornerRadius="4" Padding="12">
                                 <StackPanel Orientation="Vertical">
                                     <!--Saturation (left to right) and brightness (top to bottom) of the current hue-->
                                     <Grid x:Name="SquareSaturationValue" Height="150" ClipToBounds="True" Cursor="Cross" Focusable="True"
@@ -229,7 +233,7 @@
                                     </Grid>
 
                                     <!--Hue, 0 to 360, over a rainbow-->
-                                    <Grid Margin="0,10,0,0" Height="14">
+                                    <Grid x:Name="GridHue" Margin="0,10,0,0" Height="14">
                                         <Border Height="10" CornerRadius="5" Margin="7,0">
                                             <Border.Background>
                                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
@@ -256,16 +260,16 @@
 
                                     <!--Current colour, hex (#AARRGGBB) and the R G B A values-->
                                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                        <Border x:Name="SwatchCurrent" Width="26" Height="22" BorderBrush="#FF8C8778" BorderThickness="1" CornerRadius="2"
+                                        <Border x:Name="SwatchCurrent" Width="26" Height="22" BorderBrush="{DynamicResource Theme.SwatchBorder}" BorderThickness="1" CornerRadius="2"
                                                 VerticalAlignment="Center"/>
                                         <colorpicker:HexColorTextBox x:Name="PickerColor" Width="96" Margin="8,0,0,0" VerticalAlignment="Center"
                                                                      ShowAlpha="True" HexRepresentation="ARGB"
                                                                      AutomationProperties.Name="Hex colour"/>
                                     </StackPanel>
-                                    <TextBlock x:Name="TextRgba" Margin="0,6,0,0" Foreground="#FF5A5648" FontSize="11"/>
+                                    <TextBlock x:Name="TextRgba" Margin="0,6,0,0" Foreground="{DynamicResource Theme.TextSecondary}" FontSize="11"/>
                                 </StackPanel>
                             </Border>
-                            <TextBlock x:Name="TextEditing" Margin="0,8,0,0" Foreground="#FF5A5648" Text="Editing: Border"/>
+                            <TextBlock x:Name="TextEditing" Margin="0,8,0,0" Foreground="{DynamicResource Theme.TextSecondary}" Text="Editing: Border"/>
                         </StackPanel>
                     </Grid>
 
@@ -273,7 +277,7 @@
             </ScrollViewer>
 
             <!--Every outer margin of the content and of the Apply bar equals the Apply button height (set in code from the real button)-->
-            <Border x:Name="Footer" Grid.Row="1" Background="#DFDACB">
+            <Border x:Name="Footer" Grid.Row="1" Background="{DynamicResource Theme.BarBackground}">
                 <Grid x:Name="FooterContent" Margin="26">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -283,12 +287,12 @@
                     </Grid.ColumnDefinitions>
                     <!--Back to the default colours (the saved defaults, else MDSHO's own); saved with Apply-->
                     <Button x:Name="ButtonDefaultColours" Grid.Column="0" HorizontalAlignment="Left"
-                        Style="{StaticResource StyleDarkButton}" Background="#FFA09A88"
+                        Style="{StaticResource StyleDarkButton}" Background="{DynamicResource Theme.SecondaryButton}"
                         Padding="22,5"
                         Content="Default colours"/>
                     <!--Saves the colours on screen as the defaults of panels, or of notes, at once-->
                     <Button x:Name="ButtonSetAsDefault" Grid.Column="1" HorizontalAlignment="Left" Margin="8,0,0,0"
-                        Style="{StaticResource StyleDarkButton}" Background="#FFA09A88"
+                        Style="{StaticResource StyleDarkButton}" Background="{DynamicResource Theme.SecondaryButton}"
                         Padding="22,5"
                         Content="Set as default"/>
                     <Button x:Name="ButtonApply" Grid.Column="3"

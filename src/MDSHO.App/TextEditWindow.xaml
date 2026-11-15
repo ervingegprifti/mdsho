@@ -22,6 +22,10 @@
     </WindowChrome.WindowChrome>
 
     <Window.Resources>
+        <!--Shades instead of fixed colours, so the highlights work on any title bar colour of a note. A comment removes
+            these two, so it gets the window theme's shades (TextEditWindow.UseWindowTheme).-->
+        <SolidColorBrush x:Key="Theme.TitleButtonHover" Color="#1F000000"/>
+        <SolidColorBrush x:Key="Theme.TitleButtonPressed" Color="#33000000"/>
         <Style x:Key="StyleTitleBarButton" TargetType="{x:Type Button}">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="#FF333333"/>
@@ -39,12 +43,11 @@
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!--Shades instead of fixed colours, so the highlights work on any title bar colour of a note-->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#1F000000" />
+                                <Setter Property="Background" Value="{DynamicResource Theme.TitleButtonHover}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#33000000" />
+                                <Setter Property="Background" Value="{DynamicResource Theme.TitleButtonPressed}" />
                             </Trigger>
                             <!--OK with no change to save is greyed out (faded, so it keeps the title text colour)-->
                             <Trigger Property="IsEnabled" Value="False">

@@ -72,4 +72,14 @@ namespace MDSHO.Common {
     /// <summary>Writes a .url (Internet shortcut) file for the address.</summary>
     void CreateUrl(string urlFilePath, string url);
   }
+
+  /// <summary>Windows' app mode (Settings > Personalisation > Colours): light or dark.</summary>
+  public interface IWindowsAppMode : IDisposable {
+    /// <summary>True when Windows apps use the light mode. Never throws.</summary>
+    bool AppsUseLightTheme();
+    /// <summary>Raised after the mode changed. Can come on another thread.</summary>
+    event Action Changed;
+    /// <summary>Starts listening.</summary>
+    void Start();
+  }
 }

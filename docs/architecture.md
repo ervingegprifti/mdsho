@@ -253,6 +253,26 @@ Settings). The parts:
 - The places are in the `ScreenSetups` and `ScreenSetupPlaces` tables and the setting in `AppSettings` (see
   [Database](database.md#screensetups)): on this PC only, not exported, and kept by an import that replaces the data.
 
+## Window theme
+
+**Window theme** in Settings (Same as Windows, Light or Dark) changes MDSHO's own windows and menus: Settings, Colours
+(but not its colour swatches and palette), Run command, Examples, About, the error windows, the Comment window, the
+right-click menus and the tray menu. Panels, clones and notes keep their own colours. Settings shows a choice at once
+(`WindowThemeSetting.Preview`); Apply saves it and closing without Apply goes back. The parts:
+
+- `src/MDSHO.ViewModels/WindowThemeSetting.cs`: the choice, saved in `AppSettings` (`WindowTheme`), and the theme in
+  use. Same as Windows asks `IWindowsAppMode`, which `src/MDSHO.Infrastructure/WindowsAppMode.cs` reads from
+  `HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\AppsUseLightTheme` and watches through
+  `SystemEvents.UserPreferenceChanged`.
+- `src/MDSHO.App/Themes/Light.xaml` and `Dark.xaml`: the same `Theme.*` brushes. Light has the colours the windows
+  always had and no styles; Dark also styles the right-click menus. The windows use the brushes through
+  `DynamicResource`, so they change at once.
+- `src/MDSHO.App/Helpers/WindowThemes.cs`: puts Light or Dark in the app's resources, follows the setting, and adds
+  `Themes/DarkControls.xaml` (dark text boxes, combo boxes, check boxes, radio buttons, buttons and lists) only to the
+  windows marked `WindowThemes.IsThemed="True"`, and only in Dark. It also gives the WinForms tray menu
+  `DarkTrayMenuRenderer` and light icons in Dark, and the Windows look in Light. Tooltips keep the Windows look.
+- `WindowThemeAppTests` fails if a themed window gets a hard-coded colour.
+
 ## Database upgrades
 
 The database carries its schema version (`PRAGMA user_version`). At start-up, `src/MDSHO.Data/SchemaManager.cs`:

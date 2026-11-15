@@ -32,6 +32,8 @@ namespace MDSHO.Tests {
       Services.BringToFront = new BringToFrontShortcut(Hotkeys);
       // Screen setups never wait on a real timer in tests.
       Services.ScreenSetups = new ScreenSetupTracker(Services.Screens, new ScreenSetupTests.FakeTimer());
+      // The window theme never reads or watches the real Windows setting in tests.
+      Services.WindowTheme = new WindowThemeSetting(new FakeWindowsAppMode());
       AppServices.Current = Services;
     }
 
