@@ -54,6 +54,16 @@
     /// <summary>Name of the folder where the automatic backup before an import is kept (Debug build).</summary>
     public const string ImportBackupsDebugFolderName = "ImportBackupsDebug";
 
+    // Automatic backups folder name, in the user's profile folder: MSIX removes the app's own data folder on uninstall,
+    // and antivirus ransomware shields and Controlled folder access block writes to Documents.
+    /// <summary>Name of the default folder of the automatic backups, in the user's profile folder (Release build).</summary>
+    public const string BackupsFolderName = "mdsho-backups";
+    /// <summary>Name of the default folder of the automatic backups, in the user's profile folder (Debug build).</summary>
+    public const string BackupsDebugFolderName = "mdsho-backups-debug";
+    /// <summary>Default backup folder names of 1.12.0 and 1.12.1 (Release, Debug). A saved folder with one of these names in
+    /// the profile or Documents folder counts as no folder chosen; files in it are never moved or deleted.</summary>
+    public static readonly string[] OldBackupsFolderNames = { "MDSHO backups", "MDSHO backups (debug)" };
+
     /// <summary>Width in device independent pixels of a new window or clone.</summary>
     public const int InitialWindowWidth = 300;
     /// <summary>Height in device independent pixels of a new window or clone.</summary>
@@ -78,4 +88,4 @@
     public const string UrlExtension = ".url";
   }
 
-}
+}

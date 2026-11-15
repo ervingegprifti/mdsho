@@ -55,6 +55,17 @@ namespace MDSHO.Helpers {
       set { this.windowTheme = value; }
     }
     private WindowThemeSetting windowTheme;
+    /// <summary>Automatic backups. Made on first use.</summary>
+    public BackupService Backups {
+      get {
+        return this.backups ??= new BackupService(System.TimeProvider.System, System.Environment.MachineName,
+          System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), Data.DataExporter.AppVersion(),
+          new DispatcherOneShotTimer(), action => System.Threading.Tasks.Task.Run(action),
+          System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments));
+      }
+      set { this.backups = value; }
+    }
+    private BackupService backups;
     /// <summary>"Bring panels to front". Null until the app has started.</summary>
     public PanelsToFront PanelsToFront { get; set; }
 

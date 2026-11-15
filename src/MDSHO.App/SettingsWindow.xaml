@@ -35,12 +35,26 @@
     <Window.Resources>
         <ResourceDictionary>
             <converters:SolidIconsConverter x:Key="SolidIconsConverter"/>
+            <!--A page or group title. The first one lines up with the top of the first page in the list.-->
             <Style x:Key="StyleSettingsCategory" TargetType="{x:Type Label}">
-                <Setter Property="FontSize" Value="16"/>
-                <Setter Property="Foreground" Value="{DynamicResource Theme.Text}"/>
-                <Setter Property="FontWeight" Value="Normal"/>
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="Foreground" Value="{DynamicResource Theme.TextStrong}"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Padding" Value="0"/>
                 <Setter Property="Margin" Value="0,0,0,10"/>
+            </Style>
+            <!--A short hint, 4 px under its own control.-->
+            <Style x:Key="StyleSettingsHint" TargetType="{x:Type TextBlock}">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Foreground" Value="{DynamicResource Theme.TextSecondary}"/>
+                <Setter Property="Margin" Value="0,4,0,0"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+            </Style>
+            <!--The buttons on the pages: filled like Apply, 26 px high.-->
+            <Style x:Key="StyleSettingsButton" TargetType="{x:Type Button}" BasedOn="{StaticResource StyleDarkButton}">
+                <Setter Property="Height" Value="26"/>
+                <Setter Property="Padding" Value="14,0"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
             </Style>
             <!--A page on the right. Hidden pages keep their space, so the window fits the tallest page and never changes height.
                 Tag is the page's item in the list.-->
@@ -132,7 +146,7 @@
 
                 <!--The pages. To add one, add an item here and a panel in PanelBody whose Tag is that item.-->
                 <Border x:Name="BorderSettingsPages" Grid.Column="0" Width="140" BorderThickness="0,0,1,0" BorderBrush="{DynamicResource Theme.BarBackground}">
-                    <ListBox x:Name="ListSettingsPages" Background="Transparent" BorderThickness="0" Padding="0,8"
+                    <ListBox x:Name="ListSettingsPages" Background="Transparent" BorderThickness="0" Padding="0,26"
                              SelectionMode="Single"
                              KeyboardNavigation.TabNavigation="Once" KeyboardNavigation.DirectionalNavigation="Contained"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled"
@@ -142,10 +156,12 @@
                         <ListBoxItem x:Name="PageItemGeneral" Content="General"/>
                         <ListBoxItem x:Name="PageItemKeyboard" Content="Keyboard"/>
                         <ListBoxItem x:Name="PageItemScreens" Content="Screens"/>
+                        <ListBoxItem x:Name="PageItemBackups" Content="Backups"/>
                     </ListBox>
                 </Border>
 
-                <!--Only the chosen page shows; all pages share this cell.-->
+                <!--Only the chosen page shows; all pages share this cell. Its margin is the Apply button height (set in code);
+                    16 px between groups.-->
                 <Grid x:Name="PanelBody" Grid.Column="1" Margin="26">
                     <StackPanel x:Name="PageAppearance" Style="{StaticResource StyleSettingsPage}" Tag="{Binding ElementName=PageItemAppearance}">
                         <Label Content="Icons appearance" Style="{StaticResource StyleSettingsCategory}"/>
@@ -157,12 +173,12 @@
                         </StackPanel>
 
                         <!--App-wide. Set in code; saved and applied on Apply.-->
-                        <Label Content="Window theme" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
+                        <Label Content="Window theme" Margin="0,16,0,10" Style="{StaticResource StyleSettingsCategory}"/>
                         <StackPanel x:Name="PanelWindowTheme" Orientation="Vertical">
                             <RadioButton x:Name="RadioThemeSameAsWindows" Content="Same as Windows" Margin="0,0,0,5"/>
                             <RadioButton x:Name="RadioThemeLight" Content="Light" Margin="0,0,0,5"/>
                             <RadioButton x:Name="RadioThemeDark" Content="Dark"/>
-                            <TextBlock x:Name="TextWindowThemeHint" TextWrapping="Wrap" Margin="0,6,0,0" Foreground="{DynamicResource Theme.TextSecondary}"
+                            <TextBlock x:Name="TextWindowThemeHint" Style="{StaticResource StyleSettingsHint}"
                                        Text="For MDSHO's own windows and menus, on this PC. Panels and notes keep their own colours."/>
                         </StackPanel>
                     </StackPanel>
@@ -179,7 +195,7 @@
                         <!--App-wide. DataContext is a ShortcutRecorder, set in code.-->
                         <Label Content="Keyboard shortcut" Style="{StaticResource StyleSettingsCategory}"/>
                         <StackPanel x:Name="PanelShortcut" Orientation="Vertical" d:DataContext="{d:DesignInstance Type=viewmodels:ShortcutRecorder}">
-                            <TextBlock x:Name="TextShortcutLabel" Text="Bring panels to front" Margin="0,0,0,6"/>
+                            <TextBlock x:Name="TextShortcutLabel" Text="Bring panels to front" Margin="0,0,0,4"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -191,16 +207,16 @@
                                         Style="{StaticResource StyleShortcutBox}"
                                         AutomationProperties.Name="Bring panels to front shortcut"
                                         ToolTip="Click, then press the new shortcut"/>
-                                <Button x:Name="ButtonShortcutDefault" Grid.Column="1" Margin="8,0,0,0" Padding="12,5"
-                                        Style="{StaticResource StyleDarkButton}" Background="{DynamicResource Theme.SecondaryButton}"
+                                <Button x:Name="ButtonShortcutDefault" Grid.Column="1" Margin="6,0,0,0"
+                                        Style="{StaticResource StyleSettingsButton}"
                                         ToolTip="Ctrl + Shift + Alt + M"
                                         Content="Default"/>
-                                <Button x:Name="ButtonShortcutOff" Grid.Column="2" Margin="8,0,0,0" Padding="12,5"
-                                        Style="{StaticResource StyleDarkButton}" Background="{DynamicResource Theme.SecondaryButton}"
+                                <Button x:Name="ButtonShortcutOff" Grid.Column="2" Margin="6,0,0,0"
+                                        Style="{StaticResource StyleSettingsButton}"
                                         ToolTip="No shortcut"
                                         Content="Off"/>
                             </Grid>
-                            <TextBlock x:Name="TextShortcutHint" Text="{Binding Hint}" TextWrapping="Wrap" Margin="0,6,0,0">
+                            <TextBlock x:Name="TextShortcutHint" Text="{Binding Hint}" TextWrapping="Wrap" Margin="0,4,0,0" FontSize="12">
                                 <TextBlock.Style>
                                     <Style TargetType="{x:Type TextBlock}">
                                         <Setter Property="Foreground" Value="{DynamicResource Theme.TextSecondary}"/>
@@ -219,14 +235,61 @@
                         <Label Content="Screen setups" Style="{StaticResource StyleSettingsCategory}"/>
                         <StackPanel Orientation="Vertical">
                             <CheckBox x:Name="CheckRememberScreenSetups" Content="Remember places for each screen setup"/>
-                            <TextBlock x:Name="TextScreenSetupsHint" TextWrapping="Wrap" Margin="0,6,0,0" Foreground="{DynamicResource Theme.TextSecondary}"
+                            <TextBlock x:Name="TextScreenSetupsHint" Style="{StaticResource StyleSettingsHint}"
                                        Text="For all panels and notes, on this PC. When screens are connected or disconnected, they move to where they were last time with those screens."/>
                         </StackPanel>
+                    </StackPanel>
+                    <StackPanel x:Name="PageBackups" Style="{StaticResource StyleSettingsPage}" Tag="{Binding ElementName=PageItemBackups}">
+                        <!--App-wide, on this PC. Set in code; on/off, folder and keep count saved on Apply. Back up now acts at once.-->
+                        <Label Content="Backups" Style="{StaticResource StyleSettingsCategory}"/>
+                        <CheckBox x:Name="CheckBackupOn" Content="Back up my data every day"/>
+                        <TextBlock x:Name="TextBackupOnHint" Style="{StaticResource StyleSettingsHint}" Text="Only when something changed."/>
+
+                        <TextBlock x:Name="TextBackupFolderLabel" Text="Folder" Margin="0,16,0,4" Foreground="{DynamicResource Theme.TextSecondary}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TextBackupFolder" Grid.Column="0" IsReadOnly="True" VerticalContentAlignment="Center" Padding="4,0" Height="26"
+                                     AutomationProperties.Name="Backup folder"/>
+                            <Button x:Name="ButtonBackupFolderChange" Grid.Column="1" Margin="6,0,0,0" Width="32" Padding="0"
+                                    Style="{StaticResource StyleSettingsButton}"
+                                    ToolTip="Change folder" AutomationProperties.Name="Change folder"
+                                    Content="..."/>
+                            <Button x:Name="ButtonBackupFolderOpen" Grid.Column="2" Margin="6,0,0,0"
+                                    Style="{StaticResource StyleSettingsButton}"
+                                    ToolTip="Open the folder in Explorer"
+                                    Content="Open"/>
+                        </Grid>
+                        <TextBlock x:Name="TextBackupFolderHint" Style="{StaticResource StyleSettingsHint}" Text="Pick a OneDrive or Google Drive folder to keep a copy in the cloud."/>
+
+                        <StackPanel x:Name="PanelBackupKeep" Orientation="Horizontal" Margin="0,16,0,0">
+                            <ComboBox x:Name="ComboBackupKeep" MinWidth="56" VerticalAlignment="Center"
+                                      AutomationProperties.Name="Latest backups of this PC to keep"/>
+                            <TextBlock x:Name="TextBackupKeep" Text="latest backups of this PC to keep" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!--Last backup, the red line after a failure, the hint, then Back up now. The space for two lines of the red
+                            line is always kept (it ends in "..." and shows in full in its tooltip), so the window never grows.-->
+                        <Grid x:Name="BackupStatusSpace" Margin="0,16,0,0" Height="116">
+                            <StackPanel VerticalAlignment="Top">
+                                <TextBlock x:Name="TextLastBackup"/>
+                                <TextBlock x:Name="TextBackupError" Style="{StaticResource StyleSettingsHint}" Visibility="Collapsed"
+                                           TextTrimming="CharacterEllipsis" MaxHeight="32"
+                                           Foreground="{DynamicResource Theme.HintErrorText}"/>
+                                <TextBlock x:Name="TextBackupRestoreHint" Style="{StaticResource StyleSettingsHint}" Text="Restore one with Import data."/>
+                                <Button x:Name="ButtonBackUpNow" Margin="0,16,0,0" HorizontalAlignment="Left"
+                                        Style="{StaticResource StyleSettingsButton}" Content="Back up now"/>
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
                 </Grid>
             </Grid>
 
-            <!--Every outer margin of the content and of the Apply bar equals the Apply button height (set in code from the real button)-->
+            <!--Like the other windows: every outer margin of the page and of the Apply bar equals the Apply button height (set in
+                code from the real button).-->
             <Border x:Name="Footer" Grid.Row="1" Background="{DynamicResource Theme.BarBackground}">
                 <Grid x:Name="FooterContent" Margin="26">
                     <Button x:Name="ButtonApply" HorizontalAlignment="Right"

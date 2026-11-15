@@ -11,7 +11,7 @@ namespace MDSHO {
 
   /// <summary>
   /// A panel's Settings window, in pages chosen from the list on the left. Changes show live; closing without Apply undoes them.
-  /// The shortcut, the screen setups setting and the window theme are app-wide and change only on Apply.
+  /// The shortcut, the screen setups setting, the window theme and the backup settings are app-wide and change only on Apply.
   /// </summary>
   public partial class SettingsWindow : Window {
     private readonly IconGlyphs icons;
@@ -20,6 +20,12 @@ namespace MDSHO {
 
     /// <summary>The AppSettings key of the page Settings opens on: the page's name, for example "Keyboard".</summary>
     public const string PageSettingKey = "SettingsPage";
+
+    /// <summary>Asks for a folder, starting in the one given; returns null when cancelled. Tests replace it.</summary>
+    public static System.Func<string, string> PickFolder { get; set; } = start => {
+      Microsoft.Win32.OpenFolderDialog dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Backup folder", InitialDirectory = System.IO.Directory.Exists(start) ? start : "" };
+      return dialog.ShowDialog() == true ? dialog.FolderName : null;
+    };
 
     /// <summary>The modifier keys held now. Tests replace it.</summary>
     public static System.Func<System.Windows.Input.ModifierKeys> KeyboardModifiers { get; set; } = () => System.Windows.Input.Keyboard.Modifiers;
@@ -36,11 +42,13 @@ namespace MDSHO {
       // Opens on the page used last, on this PC.
       ShowPage(ReadSavedPage());
       this.Closed += (s, e) => SavePage();
-      // Every outer margin of the content and of the Apply bar equals the Apply button height, like in the Note window.
+      // Every outer margin of the page and of the Apply bar equals the Apply button height, like Run command and Colours.
+      // The list starts at the same height, so its first item lines up with the page title.
       this.ButtonApply.SizeChanged += (s, e) => {
         Thickness margin = new Thickness(this.ButtonApply.ActualHeight);
         this.PanelBody.Margin = margin;
         this.FooterContent.Margin = margin;
+        this.ListSettingsPages.Padding = new Thickness(0, margin.Top, 0, margin.Top);
       };
       // The window icon and the title bar's gear follow the window's Solid icons setting, also while it is changed here.
       this.icons = a.Icons;
@@ -82,6 +90,37 @@ namespace MDSHO {
       this.RadioThemeLight.Checked += preview;
       this.RadioThemeDark.Checked += preview;
       this.Closed += (s, e) => AppServices.Current.WindowTheme.Preview(null);
+      // Backups: on/off, folder and keep count are saved on Apply; Back up now acts at once, with the folder shown.
+      BackupService backups = AppServices.Current.Backups;
+      this.CheckBackupOn.IsChecked = backups.IsOn;
+      this.TextBackupFolder.Text = backups.Folder;
+      foreach (int keep in BackupService.KeepChoices) {
+        this.ComboBackupKeep.Items.Add(keep);
+      }
+      this.ComboBackupKeep.SelectedItem = backups.Keep;
+      ShowBackupState(backups);
+      this.ButtonBackupFolderChange.Click += (s, e) => {
+        string chosen = PickFolder(this.TextBackupFolder.Text);
+        if (!string.IsNullOrEmpty(chosen)) {
+          this.TextBackupFolder.Text = chosen;
+        }
+      };
+      this.ButtonBackupFolderOpen.Click += (s, e) => {
+        try {
+          System.IO.Directory.CreateDirectory(this.TextBackupFolder.Text);
+          AppServices.Current.Shell.OpenFolder(this.TextBackupFolder.Text);
+        } catch (System.Exception ex) {
+          ErrorDialog.ShowDialog("The backup folder could not be opened.", ex);
+        }
+      };
+      this.ButtonBackUpNow.Click += (s, e) => {
+        backups.BackUpNow(this.TextBackupFolder.Text, (int)this.ComboBackupKeep.SelectedItem);
+        ShowBackupState(backups);
+      };
+      // An hourly backup can finish while Settings is open, on another thread.
+      System.Action backupsChanged = () => this.Dispatcher.BeginInvoke(new System.Action(() => ShowBackupState(backups)));
+      backups.Changed += backupsChanged;
+      this.Closed += (s, e) => backups.Changed -= backupsChanged;
 
       this.ButtonApply.Click += (s, e) => {
         try {
@@ -109,6 +148,17 @@ namespace MDSHO {
             AppServices.Current.WindowTheme.SetChoice(theme);
           } else {
             AppServices.Current.WindowTheme.Preview(null);
+          }
+        } catch (System.Exception ex) {
+          ErrorDialog.ShowDialog(ex);
+          return;
+        }
+        try {
+          bool on = this.CheckBackupOn.IsChecked == true;
+          string folder = this.TextBackupFolder.Text;
+          int keep = (int)this.ComboBackupKeep.SelectedItem;
+          if (on != backups.IsOn || folder != backups.Folder || keep != backups.Keep) {
+            backups.Save(on, folder, keep);
           }
         } catch (System.Exception ex) {
           ErrorDialog.ShowDialog(ex);
@@ -151,6 +201,15 @@ namespace MDSHO {
       if (this.recorder.KeyPressed(modifiers, key)) {
         e.Handled = true;
       }
+    }
+
+    // "Last backup: ..." and, after a failure, the red line.
+    private void ShowBackupState(BackupService backups) {
+      this.TextLastBackup.Text = backups.LastBackupText;
+      string error = backups.LastErrorText;
+      this.TextBackupError.Text = error ?? "";
+      this.TextBackupError.ToolTip = error;
+      this.TextBackupError.Visibility = error == null ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void ShowWindowTheme(WindowThemeChoice choice) {

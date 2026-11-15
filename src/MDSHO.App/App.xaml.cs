@@ -92,10 +92,13 @@ namespace MDSHO
         SetWindows();
 
         // Note windows that were open come back where they were; at exit (also when Windows shuts down or restarts)
-        // unsaved typing in them is saved and they stay marked as open.
+        // unsaved typing in them is saved and they stay marked as open. Then changed data is backed up.
         TextEditWindow.ReopenOpenNotes(this.DataContext);
         this.DataContext.OpenFirstStartNote();
-        this.SessionEnding += (s, args) => TextEditWindow.SaveOpenNotesForExit();
+        this.SessionEnding += (s, args) => {
+          TextEditWindow.SaveOpenNotesForExit();
+          BackUpOnExit();
+        };
 
         this.MainWindow = this.windows.Main();
         MainWindow.Closing += MainWindow_Closing;
@@ -108,6 +111,7 @@ namespace MDSHO
 
         StartBringPanelsToFront();
         StartScreenSetups();
+        StartBackups();
         CreateContextMenu();
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
@@ -185,6 +189,8 @@ namespace MDSHO
       try {
         return DatabaseStartup.TryUpgrade(
           () => {
+            // A new MDSHO that raises the database version first backs up the old data (never stops startup).
+            AppServices.Current.Backups.BackUpBeforeUpgrade();
             this.host.Services.GetRequiredService<Core.IDataStore>().Upgrade();
             // Stored paths of dropped .lnk/.url files still pointing into the old shortcuts folder.
             Data.DataNamesUpgrade.FixShortcutTargetsInAppDataFolder();
@@ -272,6 +278,24 @@ namespace MDSHO
       }
     }
     #endregion BRING PANELS TO FRONT
+
+    /// <summary>On the way out: backs up when the data changed since the last backup. Never throws.</summary>
+    public static void BackUpOnExit() {
+      try {
+        AppServices.Current.Backups.RunOnExit();
+      } catch (Exception ex) {
+        Common.AppLog.Error(ex, "The backup on exit failed");
+      }
+    }
+
+    /// <summary>At startup: checks for a due backup now and then every hour.</summary>
+    private static void StartBackups() {
+      try {
+        AppServices.Current.Backups.Start();
+      } catch (Exception ex) {
+        Common.AppLog.Error(ex, "Automatic backups could not be started");
+      }
+    }
 
     #region SCREEN SETUPS
     /// <summary>Every panel, clone and open note window.</summary>
@@ -622,7 +646,9 @@ namespace MDSHO
         Microsoft.Win32.OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog {
           Title = "Import MDSHO data",
           Filter = "MDSHO export (*.zip)|*.zip",
-          CheckFileExists = true
+          CheckFileExists = true,
+          // Opens in the backup folder, so a backup is easy to restore.
+          InitialDirectory = ImportStartFolder()
         };
         if (dialog.ShowDialog() != true) {
           return;
@@ -634,12 +660,7 @@ namespace MDSHO
           ErrorDialog.ShowDialog(ex.Message, ex);
           return;
         }
-        string question =
-          "This file contains " + manifest.Counts.Windows + " windows, " + manifest.Counts.Clones + " clones, " + manifest.Counts.Shortcuts + " shortcuts, exported " +
-          manifest.ExportedAtUtc.ToLocalTime().ToString("g") + " from MDSHO " + manifest.AppVersion + ".\n\n" +
-          "Yes = Replace: replace ALL current windows and shortcuts with this file. A backup of your current data is saved first.\n" +
-          "No = Add as new windows: keep your current data and add the imported windows next to it.\n" +
-          "Cancel = do nothing.";
+        string question = ImportQuestion.Text(manifest, TimeZoneInfo.Local);
         MessageBoxResult answer = MessageBox.Show(question, "Import MDSHO data", MessageBoxButton.YesNoCancel, MessageBoxImage.Question, MessageBoxResult.Yes);
         if (answer == MessageBoxResult.Cancel || answer == MessageBoxResult.None) {
           return;
@@ -667,6 +688,16 @@ namespace MDSHO
       }
     }
 
+    // The backup folder when it exists, else "" (the dialog's own choice).
+    private static string ImportStartFolder() {
+      try {
+        return AppServices.Current.Backups.ImportStartFolder() ?? "";
+      } catch (Exception ex) {
+        Common.AppLog.Warning(ex, "The backup folder could not be found for Import data");
+        return "";
+      }
+    }
+
     /// <summary>Exits and starts the same program again once this instance has released the single instance mutex (see OnExit).</summary>
     private void RestartApplication() {
       this.restartAfterExit = true;
@@ -677,6 +708,7 @@ namespace MDSHO
 
     private void ExitApplication() {
       TextEditWindow.SaveOpenNotesForExit();
+      BackUpOnExit();
       this.notifyIcon.Dispose();
       this.notifyIcon = null;
       this.exitApplication = true;
@@ -723,6 +755,11 @@ namespace MDSHO
       }
       try {
         AppServices.Current.DisplayChanges.Dispose();
+      } catch (Exception ex) {
+        Debug.WriteLine(ex);
+      }
+      try {
+        AppServices.Current.Backups.Stop();
       } catch (Exception ex) {
         Debug.WriteLine(ex);
       }

@@ -123,6 +123,7 @@ MDSHO stores everything for the current Windows user in one folder, `%LOCALAPPDA
 | Shortcut files of the buttons (`.lnk`, `.url`) | `shortcuts\` | `shortcuts-debug\` |
 | Backups made before an import that replaces the data | `ImportBackups\` | `ImportBackupsDebug\` |
 | Backups made before a database upgrade | `mdsho.sqlite3.bak-v<N>-<timestamp>` | `mdsho-debug.sqlite3.bak-v<N>-<timestamp>` |
+| Automatic backups (see [Automatic backups](#automatic-backups)) | `%USERPROFILE%\mdsho-backups\` | `%USERPROFILE%\mdsho-backups-debug\` |
 | Log files (see [Logging](#logging)) | `logs\mdsho-<yyyyMMdd>.log` | the same folder |
 
 Debug builds use their own names so that running the code from Visual Studio never changes the data of the installed
@@ -193,6 +194,29 @@ commits, so a failed import leaves the existing data as it was. MDSHO restarts a
 from older MDSHO versions still import; missing newer fields get their defaults.
 
 The code is in `src/MDSHO.Data/DataExporter.cs`, `DataImporter.cs` and `DataPortability.cs`.
+
+## Automatic backups
+
+`src/MDSHO.ViewModels/BackupService.cs` writes the same zip as Export data to a local folder, by default
+`%USERPROFILE%\mdsho-backups` (MSIX deletes the app's own data folder on uninstall, and antivirus ransomware
+shields and Windows' Controlled folder access block writes to Documents). There is no cloud
+API: a OneDrive or Google Drive folder gives a cloud copy. The manifest also holds the PC name (`pcName`, optional).
+
+- It checks at start and every hour. A backup is due when backups are on, the last one is 24 hours old or more, and
+  `DataExporter.DataHash()` (a SHA-256 of data.json and the shortcut files, without the export time) changed.
+- On exit (Exit, and Windows sign-out or shutdown through `SessionEnding`), after open notes are saved, `App` calls
+  `RunOnExit()`: a backup when backups are on and the hash changed, whatever the last one's age. It runs on the way out,
+  shares the lock, and a failure is only logged and saved for Settings.
+- Files are `MDSHO-backup-<PC>-yyyy-MM-dd-HHmmss.zip`. After each one, the oldest of this PC's regular backups past the
+  keep count are deleted; other PCs' files and upgrade backups are never touched, so several PCs can share a folder.
+- Before a database upgrade, `App` calls `BackUpBeforeUpgrade()`, whatever the on/off setting:
+  `MDSHO-backup-<PC>-before-<version>-yyyy-MM-dd-HHmmss.zip`, read from the old tables as they are, with the old
+  database version in the manifest. A failure is logged and MDSHO starts anyway.
+- A failure shows no popup: it is logged and saved (`BackupLastError`) for the red line in Settings > Backups. A denied
+  write says the antivirus or Windows blocked MDSHO. A denied delete of an old backup is only logged.
+- A saved folder that is an old default (`MDSHO backups` in the profile or Documents folder, from 1.12.0 and 1.12.1)
+  counts as no folder chosen, so the current default applies; files there are left alone.
+- The settings are in `AppSettings` (see [Database](database.md)). Import data's file dialog opens in the backup folder.
 
 ## Bring panels to front
 
@@ -276,11 +300,15 @@ right-click menus and the tray menu. Panels, clones and notes keep their own col
 ## Settings window
 
 `src/MDSHO.App/SettingsWindow.xaml` has a list of pages on the left (`ListSettingsPages`: Appearance, General,
-Keyboard, Screens) and shows the chosen page on the right. All pages share one cell of `PanelBody`; hidden pages keep
+Keyboard, Screens, Backups) and shows the chosen page on the right. All pages share one cell of `PanelBody`; hidden pages keep
 their space, so the window fits the tallest page and its height never changes. Apply saves every page at once; when the
 shortcut is taken it switches to the Keyboard page. The page used last is saved in `AppSettings` (`SettingsPage`).
 To add a page, add a `ListBoxItem` to the list and a panel in `PanelBody` with `Style="{StaticResource StyleSettingsPage}"`
 and its `Tag` bound to that item.
+Like Run command and Colours, every outer margin of the page and of the Apply bar (`Footer`, on `Theme.BarBackground`)
+equals the Apply button height, set in code; the list starts at that height too, so its first item lines up with the
+page title (`StyleSettingsCategory`, 15 px semibold). Groups are 16 px apart, and a hint (`StyleSettingsHint`, 12 px)
+sits 4 px under its control. Buttons on the pages use `StyleSettingsButton` (filled like Apply, 26 px high).
 
 ## Database upgrades
 

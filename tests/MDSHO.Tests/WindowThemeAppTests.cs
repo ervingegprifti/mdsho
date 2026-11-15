@@ -628,7 +628,7 @@ namespace MDSHO.Tests {
       using (ThemeSetup t = new ThemeSetup()) {
         WithSettings(window => {
           List<Label> labels = WpfAppHost.VisualDescendants<Label>(window).ToList();
-          Assert.Equal(new[] { "Icons appearance", "Window theme", "Other", "Keyboard shortcut", "Screen setups" }, labels.Select(l => l.Content as string).ToArray());
+          Assert.Equal(new[] { "Icons appearance", "Window theme", "Other", "Keyboard shortcut", "Screen setups", "Backups" }, labels.Select(l => l.Content as string).ToArray());
           Assert.Equal(window.FindResource("StyleSettingsCategory"), labels.Last().Style);
           RadioButton system = Named<RadioButton>(window, "RadioThemeSameAsWindows");
           RadioButton light = Named<RadioButton>(window, "RadioThemeLight");

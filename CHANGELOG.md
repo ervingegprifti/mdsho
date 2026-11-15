@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.12.3]
+
+### Added
+
+- **Automatic backups**: MDSHO backs up your data every day it changes, when you exit MDSHO after a change, and always
+  before a database upgrade, to an `mdsho-backups` folder in your user folder, or a folder you choose. See Settings >
+  Backups.
+
+### Changed
+
+- **Settings** is tidier: one button style, even spacing and short hints under each setting.
+
 ## [1.11.0]
 
 ### Changed

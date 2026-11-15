@@ -141,7 +141,13 @@ exports, and an import that replaces the data keeps them. Added in version 16.
 | `BringToFrontShortcut` | The **Bring panels to front** keyboard shortcut (Settings > Keyboard), for example `Ctrl+Shift+Alt+M`, or `Off`. Without a row: `Ctrl+Shift+Alt+M`. |
 | `RememberScreenSetupPlaces` | **Remember places for each screen setup** (Settings > Screens): `On` or `Off`. Without a row: on. Added in version 17. |
 | `WindowTheme` | **Window theme** (Settings > Appearance): `SameAsWindows`, `Light` or `Dark`. Without a row, or with any other value: `SameAsWindows`. Added in 1.10.1; the database version stays 17. |
-| `SettingsPage` | The Settings page used last, which Settings opens on: `Appearance`, `General`, `Keyboard` or `Screens`. Without a row, or with any other value: `Appearance`. Added in 1.11.0; the database version stays 17. |
+| `SettingsPage` | The Settings page used last, which Settings opens on: `Appearance`, `General`, `Keyboard`, `Screens` or `Backups` (from 1.12.3). Without a row, or with any other value: `Appearance`. Added in 1.11.0; the database version stays 17. |
+| `BackupOn` | **Back up my data every day** (Settings > Backups): `On` or `Off`. Without a row: on. Added in 1.12.3; the database version stays 17. |
+| `BackupFolder` | The backup folder (Settings > Backups). Without a row, empty, or an old default (`MDSHO backups` in the profile or Documents folder): `%USERPROFILE%\mdsho-backups` (`mdsho-backups-debug` in the Debug build). Added in 1.12.3; the database version stays 17. |
+| `BackupKeep` | How many regular backups of this PC to keep: `3`, `5`, `10`, `20` or `30`. Without a row, or with any other value: `10`. Added in 1.12.3; the database version stays 17. |
+| `BackupLastTime` | When the last regular backup was written (UTC, round-trip format). Added in 1.12.3; the database version stays 17. |
+| `BackupLastHash` | A SHA-256 of the data in the last regular backup, to tell when the data changed. Added in 1.12.3; the database version stays 17. |
+| `BackupLastError` | Why the last backup failed, shown in red in Settings; empty after a success. Added in 1.12.3; the database version stays 17. |
 
 ### ScreenSetups
 

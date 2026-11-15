@@ -55,6 +55,17 @@ namespace MDSHO.Data {
     public ExportCounts Counts { get; set; } = new ExportCounts();
     /// <summary>Names of the shortcut files that did not exist at export time (not an error).</summary>
     public List<string> MissingFiles { get; set; } = new List<string>();
+    /// <summary>The PC that made the file (automatic backups only). Optional: older files and Export data leave it out.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string PcName { get; set; }
+  }
+
+  /// <summary>Options of an export.</summary>
+  public sealed class ExportOptions {
+    /// <summary>The PC name written to the manifest; null leaves it out.</summary>
+    public string PcName { get; set; }
+    /// <summary>The database still has an older version: read it as it is, and write that version to the manifest.</summary>
+    public bool BeforeUpgrade { get; set; }
   }
 
   /// <summary>What an import did.</summary>
