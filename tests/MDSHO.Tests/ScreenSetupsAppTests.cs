@@ -214,16 +214,17 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Settings_has_a_Screen_setups_section_below_Keyboard_shortcut_with_the_checkbox_on_and_the_hint() {
+    public void Settings_has_a_Screen_setups_section_on_the_Screens_page_with_the_checkbox_on_and_the_hint() {
       using (TempDb db = new TempDb())
       using (Setup s = new Setup()) {
         WithSettings(window => {
           List<Label> labels = WpfAppHost.VisualDescendants<Label>(window).ToList();
-          Assert.Equal(new[] { "Icons appearance", "Other", "Keyboard shortcut", "Screen setups", "Window theme" }, labels.Select(l => l.Content as string).ToArray());
+          Assert.Equal(new[] { "Icons appearance", "Window theme", "Other", "Keyboard shortcut", "Screen setups" }, labels.Select(l => l.Content as string).ToArray());
           Assert.Equal(window.FindResource("StyleSettingsCategory"), labels.Last().Style);
           CheckBox check = Named<CheckBox>(window, "CheckRememberScreenSetups");
           Assert.Equal("Remember places for each screen setup", check.Content);
           Assert.True(check.IsChecked);
+          Assert.True(Named<FrameworkElement>(window, "PageScreens").IsAncestorOf(check));
           TextBlock hint = Named<TextBlock>(window, "TextScreenSetupsHint");
           Assert.Equal("For all panels and notes, on this PC. When screens are connected or disconnected, they move to where they were last time with those screens.", hint.Text);
           // The same style as the shortcut hint.
@@ -231,7 +232,7 @@ namespace MDSHO.Tests {
           Assert.Equal(TextWrapping.Wrap, hint.TextWrapping);
           Assert.Equal(shortcutHint.Margin, hint.Margin);
           Assert.Equal(shortcutHint.Foreground.ToString(), hint.Foreground.ToString());
-          Assert.Equal(380, window.Width);
+          Assert.Equal(560, window.Width);
           // The checkbox fits on one line.
           check.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
           Assert.True(check.DesiredSize.Width <= check.ActualWidth + 0.5, "The checkbox is clipped.");

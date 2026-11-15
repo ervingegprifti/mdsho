@@ -273,6 +273,15 @@ right-click menus and the tray menu. Panels, clones and notes keep their own col
   `DarkTrayMenuRenderer` and light icons in Dark, and the Windows look in Light. Tooltips keep the Windows look.
 - `WindowThemeAppTests` fails if a themed window gets a hard-coded colour.
 
+## Settings window
+
+`src/MDSHO.App/SettingsWindow.xaml` has a list of pages on the left (`ListSettingsPages`: Appearance, General,
+Keyboard, Screens) and shows the chosen page on the right. All pages share one cell of `PanelBody`; hidden pages keep
+their space, so the window fits the tallest page and its height never changes. Apply saves every page at once; when the
+shortcut is taken it switches to the Keyboard page. The page used last is saved in `AppSettings` (`SettingsPage`).
+To add a page, add a `ListBoxItem` to the list and a panel in `PanelBody` with `Style="{StaticResource StyleSettingsPage}"`
+and its `Tag` bound to that item.
+
 ## Database upgrades
 
 The database carries its schema version (`PRAGMA user_version`). At start-up, `src/MDSHO.Data/SchemaManager.cs`:

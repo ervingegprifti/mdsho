@@ -9,7 +9,7 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// The real Settings window of a panel, shown off screen: Icons appearance and Other, then Apply. The colours are in the
+  /// The real Settings window of a panel, shown off screen: its pages (see SettingsPagesTests), then Apply. The colours are in the
   /// Colours window (the brush button next to the gear, see ColorsWindowTests).
   /// </summary>
   public class SettingsWindowTests {
@@ -47,10 +47,10 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Settings_has_Icons_appearance_and_Other_and_no_colours() {
+    public void Settings_has_its_sections_and_no_colours() {
       WithSettings((window, w) => {
         List<string> headings = WpfAppHost.VisualDescendants<Label>(window).Select(l => l.Content as string).ToList();
-        Assert.Equal(new[] { "Icons appearance", "Other", "Keyboard shortcut", "Screen setups", "Window theme" }, headings);
+        Assert.Equal(new[] { "Icons appearance", "Window theme", "Other", "Keyboard shortcut", "Screen setups" }, headings);
         Assert.Null(window.FindName("ListColorTargets"));
         Assert.Null(window.FindName("PickerColor"));
         Assert.Null(window.FindName("ButtonDefaultColours"));
@@ -87,7 +87,8 @@ namespace MDSHO.Tests {
         Assert.True(h > 10, "Apply height " + h);
         Assert.Equal(new Thickness(22, 5, 22, 5), apply.Padding);
         Point topLeft = body.TranslatePoint(new Point(0, 0), client);
-        Assert.Equal(h, topLeft.X, 1);
+        double list = Named<FrameworkElement>(window, "BorderSettingsPages").ActualWidth;
+        Assert.Equal(list + h, topLeft.X, 1);
         Assert.Equal(h, topLeft.Y, 1);
         Assert.Equal(client.ActualWidth - h, topLeft.X + body.ActualWidth, 1);
         // The window is just tall enough that the content's bottom margin is the button height too.

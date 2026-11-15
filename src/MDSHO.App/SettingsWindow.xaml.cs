@@ -1,17 +1,25 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
+using MDSHO.Common;
+using MDSHO.Data;
 using MDSHO.Helpers;
 using MDSHO.ViewModels;
 
 namespace MDSHO {
 
   /// <summary>
-  /// A panel's Settings window. Changes show live; closing without Apply undoes them.
+  /// A panel's Settings window, in pages chosen from the list on the left. Changes show live; closing without Apply undoes them.
   /// The shortcut, the screen setups setting and the window theme are app-wide and change only on Apply.
   /// </summary>
   public partial class SettingsWindow : Window {
     private readonly IconGlyphs icons;
     private bool closeWithoutApply = true;
     private readonly ShortcutRecorder recorder;
+
+    /// <summary>The AppSettings key of the page Settings opens on: the page's name, for example "Keyboard".</summary>
+    public const string PageSettingKey = "SettingsPage";
 
     /// <summary>The modifier keys held now. Tests replace it.</summary>
     public static System.Func<System.Windows.Input.ModifierKeys> KeyboardModifiers { get; set; } = () => System.Windows.Input.Keyboard.Modifiers;
@@ -25,6 +33,9 @@ namespace MDSHO {
       this.Title += " DEBUG";
 #endif
       this.DataContext = desktopWindow;
+      // Opens on the page used last, on this PC.
+      ShowPage(ReadSavedPage());
+      this.Closed += (s, e) => SavePage();
       // Every outer margin of the content and of the Apply bar equals the Apply button height, like in the Note window.
       this.ButtonApply.SizeChanged += (s, e) => {
         Thickness margin = new Thickness(this.ButtonApply.ActualHeight);
@@ -76,6 +87,7 @@ namespace MDSHO {
         try {
           // Another app holds the new shortcut: stay open and show the red hint.
           if (!this.recorder.Apply()) {
+            this.PageItemKeyboard.IsSelected = true;
             return;
           }
         } catch (System.Exception ex) {
@@ -105,6 +117,32 @@ namespace MDSHO {
         this.closeWithoutApply = false;
         Close();
       };
+    }
+
+    private IEnumerable<ListBoxItem> PageItems => this.ListSettingsPages.Items.OfType<ListBoxItem>();
+
+    // Selects the page with this name, else the first page (Appearance).
+    private void ShowPage(string name) {
+      this.ListSettingsPages.SelectedItem = PageItems.FirstOrDefault(i => (string)i.Content == name) ?? PageItems.First();
+    }
+
+    private static string ReadSavedPage() {
+      try {
+        return DataStore.AppSettings.Get(PageSettingKey);
+      } catch (System.Exception ex) {
+        AppLog.Warning(ex, "The Settings page could not be read; Settings opens on Appearance");
+        return null;
+      }
+    }
+
+    private void SavePage() {
+      try {
+        if (this.ListSettingsPages.SelectedItem is ListBoxItem item) {
+          DataStore.AppSettings.Set(PageSettingKey, (string)item.Content);
+        }
+      } catch (System.Exception ex) {
+        AppLog.Warning(ex, "The Settings page could not be saved");
+      }
     }
 
     // While recording, every key goes to the recorder, so Space or Enter don't click the box again.

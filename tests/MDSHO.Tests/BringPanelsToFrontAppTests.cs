@@ -186,15 +186,16 @@ namespace MDSHO.Tests {
     private static string Text(Button button) { return Convert.ToString(button.Content); }
 
     [Fact]
-    public void Settings_has_a_Keyboard_shortcut_section_below_Other() {
+    public void Settings_has_a_Keyboard_shortcut_section_on_the_Keyboard_page() {
       using (TempDb db = new TempDb())
       using (Setup s = new Setup()) {
         s.Shortcut.Start();
         WithSettings(s, window => {
           List<string> headings = WpfAppHost.VisualDescendants<Label>(window).Select(l => l.Content as string).ToList();
-          Assert.Equal(new[] { "Icons appearance", "Other", "Keyboard shortcut", "Screen setups", "Window theme" }, headings);
+          Assert.Equal(new[] { "Icons appearance", "Window theme", "Other", "Keyboard shortcut", "Screen setups" }, headings);
           Label heading = WpfAppHost.VisualDescendants<Label>(window).Single(l => (l.Content as string) == "Keyboard shortcut");
           Assert.Equal(window.FindResource("StyleSettingsCategory"), heading.Style);
+          Assert.True(Named<FrameworkElement>(window, "PageKeyboard").IsAncestorOf(heading));
           Assert.Equal("Bring panels to front", Named<TextBlock>(window, "TextShortcutLabel").Text);
           Assert.Equal("Ctrl + Shift + Alt + M", Text(Named<Button>(window, "ButtonShortcutBox")));
           Assert.Equal("Default", Text(Named<Button>(window, "ButtonShortcutDefault")));
@@ -202,7 +203,7 @@ namespace MDSHO.Tests {
           TextBlock hint = Named<TextBlock>(window, "TextShortcutHint");
           Assert.Equal("For all panels, on this PC. Press it again or Esc to send them back.", hint.Text);
           Assert.Equal(TextWrapping.Wrap, hint.TextWrapping);
-          Assert.Equal(380, window.Width);
+          Assert.Equal(560, window.Width);
         });
       }
     }
@@ -299,8 +300,15 @@ namespace MDSHO.Tests {
           TextBlock hint = Named<TextBlock>(window, "TextShortcutHint");
           Click(box);
           PressKey(box, Key.K, ModifierKeys.Control | ModifierKeys.Alt);
+          // Apply from another page goes to the Keyboard page, so the red hint is seen.
+          ListBox pages = Named<ListBox>(window, "ListSettingsPages");
+          pages.SelectedIndex = 0;
+          WpfAppHost.Pump();
+          Assert.False(hint.IsVisible);
           Click(Named<Button>(window, "ButtonApply"));
           Assert.True(window.IsVisible);
+          Assert.Equal("Keyboard", ((ListBoxItem)pages.SelectedItem).Content);
+          Assert.True(hint.IsVisible);
           Assert.Equal("Another app already uses this shortcut. Choose another one.", hint.Text);
           Assert.Equal(Colors.Red, ((SolidColorBrush)hint.Foreground).Color);
           Assert.Equal(Hotkey.Default, s.Service.Registered);

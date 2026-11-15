@@ -623,16 +623,17 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Settings_has_a_Window_theme_section_after_Screen_setups_with_Same_as_Windows_chosen_and_the_hint() {
+    public void Settings_has_a_Window_theme_section_on_the_Appearance_page_with_Same_as_Windows_chosen_and_the_hint() {
       using (TempDb db = new TempDb())
       using (ThemeSetup t = new ThemeSetup()) {
         WithSettings(window => {
           List<Label> labels = WpfAppHost.VisualDescendants<Label>(window).ToList();
-          Assert.Equal(new[] { "Icons appearance", "Other", "Keyboard shortcut", "Screen setups", "Window theme" }, labels.Select(l => l.Content as string).ToArray());
+          Assert.Equal(new[] { "Icons appearance", "Window theme", "Other", "Keyboard shortcut", "Screen setups" }, labels.Select(l => l.Content as string).ToArray());
           Assert.Equal(window.FindResource("StyleSettingsCategory"), labels.Last().Style);
           RadioButton system = Named<RadioButton>(window, "RadioThemeSameAsWindows");
           RadioButton light = Named<RadioButton>(window, "RadioThemeLight");
           RadioButton dark = Named<RadioButton>(window, "RadioThemeDark");
+          Assert.True(Named<FrameworkElement>(window, "PageAppearance").IsAncestorOf(dark));
           Assert.Equal(new object[] { "Same as Windows", "Light", "Dark" }, new[] { system.Content, light.Content, dark.Content });
           Assert.True(system.IsChecked);
           Assert.False(light.IsChecked);

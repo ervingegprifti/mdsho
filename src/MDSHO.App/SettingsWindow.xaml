@@ -10,7 +10,7 @@
         xmlns:converters="clr-namespace:MDSHO.Converters"
         d:DataContext="{d:DesignInstance Type=viewmodels:DesktopWindowViewModel}"
         Title="Settings"
-        Width="380"
+        Width="560"
         SizeToContent="Height"
         ResizeMode="NoResize"
         Topmost="True"
@@ -41,6 +41,43 @@
                 <Setter Property="FontWeight" Value="Normal"/>
                 <Setter Property="Padding" Value="0"/>
                 <Setter Property="Margin" Value="0,0,0,10"/>
+            </Style>
+            <!--A page on the right. Hidden pages keep their space, so the window fits the tallest page and never changes height.
+                Tag is the page's item in the list.-->
+            <Style x:Key="StyleSettingsPage" TargetType="{x:Type FrameworkElement}">
+                <Setter Property="Visibility" Value="Hidden"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Tag.IsSelected, RelativeSource={RelativeSource Self}}" Value="True">
+                        <Setter Property="Visibility" Value="Visible"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+            <!--An item of the page list: a 3 px accent bar on the left when selected.-->
+            <Style x:Key="StyleSettingsPageItem" TargetType="{x:Type ListBoxItem}">
+                <Setter Property="Foreground" Value="{DynamicResource Theme.Text}"/>
+                <Setter Property="AutomationProperties.Name" Value="{Binding Content, RelativeSource={RelativeSource Self}}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                            <Border x:Name="ItemBorder" Background="Transparent">
+                                <Grid>
+                                    <Border x:Name="SelectionBar" Width="3" HorizontalAlignment="Left" Background="{DynamicResource Theme.Accent}" Visibility="Hidden"/>
+                                    <ContentPresenter Margin="14,7"/>
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource Theme.ItemHover}"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource Theme.ItemSelected}"/>
+                                    <Setter TargetName="SelectionBar" Property="Visibility" Value="Visible"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
             <!--The shortcut box looks like a text box. Its border darkens while recording.-->
             <Style x:Key="StyleShortcutBox" TargetType="{x:Type Button}">
@@ -87,79 +124,107 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <StackPanel x:Name="PanelBody" Grid.Row="0" Orientation="Vertical" Margin="26">
-                <Label Content="Icons appearance" Style="{StaticResource StyleSettingsCategory}"/>
-                <StackPanel Orientation="Vertical">
-                    <RadioButton Content="Solid icons" Margin="0,0,0,5"
-                                 IsChecked="{Binding Path=Appearance.SolidIcons, Mode=TwoWay, Converter={StaticResource SolidIconsConverter}, ConverterParameter=SolidIcons}" />
-                    <RadioButton Content="Outlined icons"
-                                 IsChecked="{Binding Path=Appearance.SolidIcons, Mode=TwoWay, Converter={StaticResource SolidIconsConverter}, ConverterParameter=OutlinedIcons}" />
-                </StackPanel>
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                <Label Content="Other" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
-                <StackPanel Orientation="Vertical">
-                    <CheckBox x:Name="CheckSingleClickToOpen" Content="Single click to open" IsChecked="{Binding Appearance.SingleClickToOpen}" />
-                    <CheckBox x:Name="CheckShowVersionInTitle" Content="Show version in title" Margin="0,6,0,0"
-                              ToolTip="Shows the MDSHO version after this window's title, for example MDSHO v1.5.1"
-                              IsChecked="{Binding Appearance.ShowVersionInTitle}" />
-                </StackPanel>
+                <!--The pages. To add one, add an item here and a panel in PanelBody whose Tag is that item.-->
+                <Border x:Name="BorderSettingsPages" Grid.Column="0" Width="140" BorderThickness="0,0,1,0" BorderBrush="{DynamicResource Theme.BarBackground}">
+                    <ListBox x:Name="ListSettingsPages" Background="Transparent" BorderThickness="0" Padding="0,8"
+                             SelectionMode="Single"
+                             KeyboardNavigation.TabNavigation="Once" KeyboardNavigation.DirectionalNavigation="Contained"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                             ItemContainerStyle="{StaticResource StyleSettingsPageItem}"
+                             AutomationProperties.Name="Settings pages">
+                        <ListBoxItem x:Name="PageItemAppearance" Content="Appearance"/>
+                        <ListBoxItem x:Name="PageItemGeneral" Content="General"/>
+                        <ListBoxItem x:Name="PageItemKeyboard" Content="Keyboard"/>
+                        <ListBoxItem x:Name="PageItemScreens" Content="Screens"/>
+                    </ListBox>
+                </Border>
 
-                <!--App-wide. DataContext is a ShortcutRecorder, set in code.-->
-                <Label Content="Keyboard shortcut" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
-                <StackPanel x:Name="PanelShortcut" Orientation="Vertical" d:DataContext="{d:DesignInstance Type=viewmodels:ShortcutRecorder}">
-                    <TextBlock x:Name="TextShortcutLabel" Text="Bring panels to front" Margin="0,0,0,6"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <!--Click the box, then press the new shortcut.-->
-                        <Button x:Name="ButtonShortcutBox" Grid.Column="0" Content="{Binding BoxText}"
-                                Style="{StaticResource StyleShortcutBox}"
-                                AutomationProperties.Name="Bring panels to front shortcut"
-                                ToolTip="Click, then press the new shortcut"/>
-                        <Button x:Name="ButtonShortcutDefault" Grid.Column="1" Margin="8,0,0,0" Padding="12,5"
-                                Style="{StaticResource StyleDarkButton}" Background="{DynamicResource Theme.SecondaryButton}"
-                                ToolTip="Ctrl + Shift + Alt + M"
-                                Content="Default"/>
-                        <Button x:Name="ButtonShortcutOff" Grid.Column="2" Margin="8,0,0,0" Padding="12,5"
-                                Style="{StaticResource StyleDarkButton}" Background="{DynamicResource Theme.SecondaryButton}"
-                                ToolTip="No shortcut"
-                                Content="Off"/>
-                    </Grid>
-                    <TextBlock x:Name="TextShortcutHint" Text="{Binding Hint}" TextWrapping="Wrap" Margin="0,6,0,0">
-                        <TextBlock.Style>
-                            <Style TargetType="{x:Type TextBlock}">
-                                <Setter Property="Foreground" Value="{DynamicResource Theme.TextSecondary}"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HintIsError}" Value="True">
-                                        <Setter Property="Foreground" Value="{DynamicResource Theme.HintErrorText}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </StackPanel>
+                <!--Only the chosen page shows; all pages share this cell.-->
+                <Grid x:Name="PanelBody" Grid.Column="1" Margin="26">
+                    <StackPanel x:Name="PageAppearance" Style="{StaticResource StyleSettingsPage}" Tag="{Binding ElementName=PageItemAppearance}">
+                        <Label Content="Icons appearance" Style="{StaticResource StyleSettingsCategory}"/>
+                        <StackPanel Orientation="Vertical">
+                            <RadioButton Content="Solid icons" Margin="0,0,0,5"
+                                         IsChecked="{Binding Path=Appearance.SolidIcons, Mode=TwoWay, Converter={StaticResource SolidIconsConverter}, ConverterParameter=SolidIcons}" />
+                            <RadioButton Content="Outlined icons"
+                                         IsChecked="{Binding Path=Appearance.SolidIcons, Mode=TwoWay, Converter={StaticResource SolidIconsConverter}, ConverterParameter=OutlinedIcons}" />
+                        </StackPanel>
 
-                <!--App-wide. Set in code; saved on Apply.-->
-                <Label Content="Screen setups" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
-                <StackPanel Orientation="Vertical">
-                    <CheckBox x:Name="CheckRememberScreenSetups" Content="Remember places for each screen setup"/>
-                    <TextBlock x:Name="TextScreenSetupsHint" TextWrapping="Wrap" Margin="0,6,0,0" Foreground="{DynamicResource Theme.TextSecondary}"
-                               Text="For all panels and notes, on this PC. When screens are connected or disconnected, they move to where they were last time with those screens."/>
-                </StackPanel>
-
-                <!--App-wide. Set in code; saved and applied on Apply.-->
-                <Label Content="Window theme" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
-                <StackPanel x:Name="PanelWindowTheme" Orientation="Vertical">
-                    <RadioButton x:Name="RadioThemeSameAsWindows" Content="Same as Windows" Margin="0,0,0,5"/>
-                    <RadioButton x:Name="RadioThemeLight" Content="Light" Margin="0,0,0,5"/>
-                    <RadioButton x:Name="RadioThemeDark" Content="Dark"/>
-                    <TextBlock x:Name="TextWindowThemeHint" TextWrapping="Wrap" Margin="0,6,0,0" Foreground="{DynamicResource Theme.TextSecondary}"
-                               Text="For MDSHO's own windows and menus, on this PC. Panels and notes keep their own colours."/>
-                </StackPanel>
-            </StackPanel>
+                        <!--App-wide. Set in code; saved and applied on Apply.-->
+                        <Label Content="Window theme" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
+                        <StackPanel x:Name="PanelWindowTheme" Orientation="Vertical">
+                            <RadioButton x:Name="RadioThemeSameAsWindows" Content="Same as Windows" Margin="0,0,0,5"/>
+                            <RadioButton x:Name="RadioThemeLight" Content="Light" Margin="0,0,0,5"/>
+                            <RadioButton x:Name="RadioThemeDark" Content="Dark"/>
+                            <TextBlock x:Name="TextWindowThemeHint" TextWrapping="Wrap" Margin="0,6,0,0" Foreground="{DynamicResource Theme.TextSecondary}"
+                                       Text="For MDSHO's own windows and menus, on this PC. Panels and notes keep their own colours."/>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel x:Name="PageGeneral" Style="{StaticResource StyleSettingsPage}" Tag="{Binding ElementName=PageItemGeneral}">
+                        <Label Content="Other" Style="{StaticResource StyleSettingsCategory}"/>
+                        <StackPanel Orientation="Vertical">
+                            <CheckBox x:Name="CheckSingleClickToOpen" Content="Single click to open" IsChecked="{Binding Appearance.SingleClickToOpen}" />
+                            <CheckBox x:Name="CheckShowVersionInTitle" Content="Show version in title" Margin="0,6,0,0"
+                                      ToolTip="Shows the MDSHO version after this window's title, for example MDSHO v1.5.1"
+                                      IsChecked="{Binding Appearance.ShowVersionInTitle}" />
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel x:Name="PageKeyboard" Style="{StaticResource StyleSettingsPage}" Tag="{Binding ElementName=PageItemKeyboard}">
+                        <!--App-wide. DataContext is a ShortcutRecorder, set in code.-->
+                        <Label Content="Keyboard shortcut" Style="{StaticResource StyleSettingsCategory}"/>
+                        <StackPanel x:Name="PanelShortcut" Orientation="Vertical" d:DataContext="{d:DesignInstance Type=viewmodels:ShortcutRecorder}">
+                            <TextBlock x:Name="TextShortcutLabel" Text="Bring panels to front" Margin="0,0,0,6"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <!--Click the box, then press the new shortcut.-->
+                                <Button x:Name="ButtonShortcutBox" Grid.Column="0" Content="{Binding BoxText}"
+                                        Style="{StaticResource StyleShortcutBox}"
+                                        AutomationProperties.Name="Bring panels to front shortcut"
+                                        ToolTip="Click, then press the new shortcut"/>
+                                <Button x:Name="ButtonShortcutDefault" Grid.Column="1" Margin="8,0,0,0" Padding="12,5"
+                                        Style="{StaticResource StyleDarkButton}" Background="{DynamicResource Theme.SecondaryButton}"
+                                        ToolTip="Ctrl + Shift + Alt + M"
+                                        Content="Default"/>
+                                <Button x:Name="ButtonShortcutOff" Grid.Column="2" Margin="8,0,0,0" Padding="12,5"
+                                        Style="{StaticResource StyleDarkButton}" Background="{DynamicResource Theme.SecondaryButton}"
+                                        ToolTip="No shortcut"
+                                        Content="Off"/>
+                            </Grid>
+                            <TextBlock x:Name="TextShortcutHint" Text="{Binding Hint}" TextWrapping="Wrap" Margin="0,6,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="{x:Type TextBlock}">
+                                        <Setter Property="Foreground" Value="{DynamicResource Theme.TextSecondary}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HintIsError}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource Theme.HintErrorText}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel x:Name="PageScreens" Style="{StaticResource StyleSettingsPage}" Tag="{Binding ElementName=PageItemScreens}">
+                        <!--App-wide. Set in code; saved on Apply.-->
+                        <Label Content="Screen setups" Style="{StaticResource StyleSettingsCategory}"/>
+                        <StackPanel Orientation="Vertical">
+                            <CheckBox x:Name="CheckRememberScreenSetups" Content="Remember places for each screen setup"/>
+                            <TextBlock x:Name="TextScreenSetupsHint" TextWrapping="Wrap" Margin="0,6,0,0" Foreground="{DynamicResource Theme.TextSecondary}"
+                                       Text="For all panels and notes, on this PC. When screens are connected or disconnected, they move to where they were last time with those screens."/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Grid>
 
             <!--Every outer margin of the content and of the Apply bar equals the Apply button height (set in code from the real button)-->
             <Border x:Name="Footer" Grid.Row="1" Background="{DynamicResource Theme.BarBackground}">
