@@ -305,7 +305,7 @@ namespace MDSHO {
       SaveNotePlace(isOpen: true);
     }
 
-    /// <summary>The normal (not minimized or maximized) place and size of the window; empty when it isn't known yet.</summary>
+    /// <summary>The normal (not maximized) place and size. Empty if not known yet.</summary>
     public Rect NormalBounds {
       get {
         Rect normal = this.WindowState == WindowState.Normal
@@ -315,10 +315,7 @@ namespace MDSHO {
       }
     }
 
-    /// <summary>
-    /// Moves the window's normal place and size to <paramref name="bounds"/> (a screen setup's saved place). A maximized
-    /// window is maximized again on its new screen; a minimized one keeps its state and comes back there.
-    /// </summary>
+    /// <summary>Moves the normal place. A maximized window is maximized again on its new screen.</summary>
     public void MoveNormalBoundsTo(Rect bounds) {
       bool maximized = this.WindowState == WindowState.Maximized;
       if (maximized) {
@@ -350,7 +347,7 @@ namespace MDSHO {
         // A place that can't be saved must never break the note window.
         AppLog.Warning(ex, "Could not save the place of a note window");
       }
-      // And as its place in the current screen setup (ignored while the screens change). Never throws.
+      // Also save it for the current screen setup.
       AppServices.Current.ScreenSetups.Remember(new NoteWindowPlacedItem(this));
     }
 

@@ -38,7 +38,7 @@
                 <Setter Property="Padding" Value="0"/>
                 <Setter Property="Margin" Value="0,0,0,10"/>
             </Style>
-            <!--The shortcut box: looks like a text box; its border darkens while it has the keyboard focus (recording).-->
+            <!--The shortcut box looks like a text box. Its border darkens while recording.-->
             <Style x:Key="StyleShortcutBox" TargetType="{x:Type Button}">
                 <Setter Property="Background" Value="White"/>
                 <Setter Property="Foreground" Value="Black"/>
@@ -100,7 +100,7 @@
                               IsChecked="{Binding Appearance.ShowVersionInTitle}" />
                 </StackPanel>
 
-                <!--One shortcut for the whole app, on this PC (DataContext: a ShortcutRecorder, set in code). Takes effect on Apply.-->
+                <!--App-wide. DataContext is a ShortcutRecorder, set in code.-->
                 <Label Content="Keyboard shortcut" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
                 <StackPanel x:Name="PanelShortcut" Orientation="Vertical" d:DataContext="{d:DesignInstance Type=viewmodels:ShortcutRecorder}">
                     <TextBlock x:Name="TextShortcutLabel" Text="Bring panels to front" Margin="0,0,0,6"/>
@@ -110,7 +110,7 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <!--Click the box (or Enter / Space on it), then press the new shortcut.-->
+                        <!--Click the box, then press the new shortcut.-->
                         <Button x:Name="ButtonShortcutBox" Grid.Column="0" Content="{Binding BoxText}"
                                 Style="{StaticResource StyleShortcutBox}"
                                 AutomationProperties.Name="Bring panels to front shortcut"
@@ -138,7 +138,7 @@
                     </TextBlock>
                 </StackPanel>
 
-                <!--Places per screen setup, for the whole app on this PC. Set in code; takes effect on Apply.-->
+                <!--App-wide. Set in code; saved on Apply.-->
                 <Label Content="Screen setups" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
                 <StackPanel Orientation="Vertical">
                     <CheckBox x:Name="CheckRememberScreenSetups" Content="Remember places for each screen setup"/>

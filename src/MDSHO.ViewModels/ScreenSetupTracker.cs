@@ -8,46 +8,32 @@ using MDSHO.Data;
 
 namespace MDSHO.ViewModels {
 
-  /// <summary>A panel, clone or open note window whose place is remembered per screen setup.</summary>
+  /// <summary>A panel, clone or open note whose place is saved per screen setup.</summary>
   public interface IPlacedItem {
-    /// <summary>Panel, clone or note.</summary>
     PlacedKind Kind { get; }
-    /// <summary>The panel's, clone's or note button's database ID.</summary>
+    /// <summary>The panel's, clone's or note button's ID.</summary>
     long ID { get; }
-    /// <summary>Its normal (not maximized) place and size now, in DIPs.</summary>
+    /// <summary>Its normal place now, in DIPs.</summary>
     ScreenRect Rect { get; }
-    /// <summary>The screen it was last saved on; used only when it is on no screen now.</summary>
+    /// <summary>Its last saved screen. Used only when it is on no screen.</summary>
     string ScreenDeviceName { get; }
-    /// <summary>Moves (and resizes) it to <paramref name="target"/> and saves that as its own place too.</summary>
+    /// <summary>Moves it and saves that as its own place too.</summary>
     void MoveTo(ItemPlace target, IList<ScreenInfo> screens);
   }
 
-  /// <summary>A screen setup as the tray menu lists it.</summary>
-  /// <param name="Name">Its name, numbered when another setup has the same one.</param>
-  /// <param name="IsCurrent">True for the screens connected now.</param>
+  /// <summary>A screen setup in the tray list.</summary>
   public sealed record KnownScreenSetup(string Name, bool IsCurrent);
 
   /// <summary>
-  /// Remembers, for each screen setup (the set of connected screens), where every panel, clone and open note window was, and
-  /// moves them there when the screens change. Saved on this PC only (not exported).
-  /// <list type="bullet">
-  /// <item>Places are saved for the current setup at the moments they are saved anyway (end of a move or resize, dock,
-  /// centre, a note window settling), from <see cref="Start"/> on. They are saved also while "Remember places for each screen setup" is off, so turning
-  /// it on again starts from the latest places.</item>
-  /// <item>A display change waits <see cref="SettleDelay"/> for things to settle. Nothing is saved while it waits or while
-  /// the moves are applied, and a save from screens that changed without an event is dropped, so Windows piling the
-  /// windows onto the remaining screen never overwrites a setup's places.</item>
-  /// <item>A known setup puts every item back at its place for that setup (docked panels docked again); a new one leaves
-  /// things where Windows put them. Either way an item off every screen is pulled back. With the setting off, nothing
-  /// moves, exactly as before.</item>
-  /// </list>
+  /// Saves window places per screen setup and moves the windows back when the screens change.
+  /// Places are saved even while the setting is off; only the moving stops.
   /// </summary>
   public sealed class ScreenSetupTracker {
-    /// <summary>The key of the setting in the AppSettings table: <c>On</c> or <c>Off</c>; no row = on.</summary>
+    /// <summary>The AppSettings key: "On" or "Off". No row means on.</summary>
     public const string SettingKey = "RememberScreenSetupPlaces";
-    /// <summary>How long a display change waits for further changes before the windows move.</summary>
+    /// <summary>How long to wait after a display change before moving windows.</summary>
     public static readonly TimeSpan SettleDelay = TimeSpan.FromMilliseconds(1500);
-    /// <summary>How many setups are kept: adding one more forgets the least recently used one (never the current one).</summary>
+    /// <summary>How many setups to keep. The current one is never forgotten.</summary>
     public const int MaxSetups = 10;
 
     private readonly IScreenService screens;
@@ -56,19 +42,18 @@ namespace MDSHO.ViewModels {
     private long currentID;
     private bool started;
 
-    /// <summary>Reads the screens from <paramref name="screens"/> and waits for display changes to settle on <paramref name="timer"/>.</summary>
     public ScreenSetupTracker(IScreenService screens, IOneShotTimer timer) {
       this.screens = screens ?? throw new ArgumentNullException(nameof(screens));
       this.debouncer = new Debouncer(timer ?? throw new ArgumentNullException(nameof(timer)), SettleDelay, Settled);
     }
 
-    /// <summary>The clock for the last-used times; tests replace it.</summary>
+    /// <summary>The clock for last-used times. Tests replace it.</summary>
     public Func<DateTime> UtcNow { get; set; } = () => DateTime.UtcNow;
 
-    /// <summary>Every panel, clone and open note window now (the app sets it at startup).</summary>
+    /// <summary>Every panel, clone and open note. The app sets it at startup.</summary>
     public Func<IEnumerable<IPlacedItem>> Items { get; set; } = () => Array.Empty<IPlacedItem>();
 
-    /// <summary>"Remember places for each screen setup" (Settings): on unless it was turned off.</summary>
+    /// <summary>"Remember places for each screen setup". On unless turned off.</summary>
     public bool Enabled {
       get {
         if (this.enabled == null) {
@@ -84,17 +69,17 @@ namespace MDSHO.ViewModels {
       }
     }
 
-    /// <summary>The setup of the connected screens, as last identified; null before the first save or <see cref="Start"/>.</summary>
+    /// <summary>The current setup, or null before <see cref="Start"/>.</summary>
     public ScreenSetup Current { get; private set; }
-    /// <summary>True while the windows are being moved to their places.</summary>
+    /// <summary>True while windows are being moved.</summary>
     public bool IsApplying { get; private set; }
-    /// <summary>True while a display change waits to settle.</summary>
+    /// <summary>True while waiting for a display change to settle.</summary>
     public bool IsChangePending => this.debouncer.Pending;
 
-    /// <summary>Raised when the setting or the known setups changed.</summary>
+    /// <summary>Raised when the setting or the list of setups changes.</summary>
     public event Action Changed;
 
-    /// <summary>Settings, Apply: turns "Remember places for each screen setup" on or off and saves it.</summary>
+    /// <summary>Saves the setting.</summary>
     public void SetEnabled(bool on) {
       DataStore.AppSettings.Set(SettingKey, on ? "On" : "Off");
       this.enabled = on;
@@ -102,10 +87,7 @@ namespace MDSHO.ViewModels {
       Changed?.Invoke();
     }
 
-    /// <summary>
-    /// At startup, after the windows opened: cleans up places of items that are gone, then uses the saved places when the
-    /// screens are a known setup (and the setting is on) and saves the places for this setup. Never throws.
-    /// </summary>
+    /// <summary>At startup, after the windows open: tidies the data, then applies the current setup. Never throws.</summary>
     public void Start() {
       this.started = true;
       try {
@@ -124,14 +106,14 @@ namespace MDSHO.ViewModels {
       Settled();
     }
 
-    /// <summary>Screens were connected or disconnected, or a resolution changed: waits for things to settle, then moves the windows.</summary>
+    /// <summary>The screens changed: waits for them to settle, then moves the windows.</summary>
     public void DisplayChanged() {
       this.debouncer.Trigger();
     }
 
     /// <summary>
-    /// Saves where <paramref name="item"/> is now as its place in the current setup. Ignored before <see cref="Start"/> (note
-    /// windows reopen before it, and a known setup's places must win), while a change waits and while windows move. Never throws.
+    /// Saves where the item is now. Ignored before <see cref="Start"/>, because notes reopen before it and would
+    /// overwrite the saved places. Also ignored while the screens change or windows move. Never throws.
     /// </summary>
     public void Remember(IPlacedItem item) {
       if (item == null || !this.started || IsApplying || IsChangePending) {
@@ -148,10 +130,7 @@ namespace MDSHO.ViewModels {
       }
     }
 
-    /// <summary>
-    /// "Put panels back for this setup": moves every item to its saved place in the current setup (an item without one is
-    /// only pulled onto a screen when it is off screen). Returns how many moved; nothing moves when the setting is off.
-    /// </summary>
+    /// <summary>"Put panels back for this setup". Returns how many windows moved.</summary>
     public int PutBack() {
       if (!Enabled || IsChangePending) {
         return 0;
@@ -163,7 +142,7 @@ namespace MDSHO.ViewModels {
       return ApplyAndSave(now, move: true);
     }
 
-    /// <summary>"Forget the other setups": deletes every setup but the current one, with their places.</summary>
+    /// <summary>"Forget the other setups".</summary>
     public void ForgetOthers() {
       IList<ScreenInfo> now = this.screens.AllScreens();
       if (!IsCurrentSetup(now)) {
@@ -174,11 +153,7 @@ namespace MDSHO.ViewModels {
       Changed?.Invoke();
     }
 
-    /// <summary>
-    /// The known setups, most recently used first, with the current one marked. Two different setups can have the same
-    /// name (the same resolutions arranged differently, for example a monitor left or right of the laptop); the one added
-    /// later is numbered, for example "2 screens: 1920×1080, 2560×1440 (2)".
-    /// </summary>
+    /// <summary>The known setups, most recently used first. A repeated name gets a number, for example "(2)".</summary>
     public IList<KnownScreenSetup> KnownSetups() {
       string currentKey = Current?.Key ?? ScreenSetup.From(this.screens.AllScreens()).Key;
       Dictionary<string, int> seen = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -192,17 +167,14 @@ namespace MDSHO.ViewModels {
         .Select(n => new KnownScreenSetup(n.name, n.setup.Key == currentKey)).ToList();
     }
 
-    // Older first: by last-used time (empty = never), then by ID (added later = newer).
+    // Oldest first: by last-used time, then by ID.
     private static readonly IComparer<ScreenSetupRecord> Recency = Comparer<ScreenSetupRecord>.Create((a, b) => {
       int byTime = string.CompareOrdinal(a.LastUsed ?? "", b.LastUsed ?? "");
       return byTime != 0 ? byTime : a.ID.CompareTo(b.ID);
     });
 
-    /// <summary>
-    /// At startup: setups whose keys now mean the same screens (keys written by 1.7.0 with device names and exact offsets,
-    /// see <see cref="ScreenSetup.FromLegacyKey"/>) become one, under the new key. The most recently used one stays, with
-    /// its places; places it lacks are taken from the others, the more recently used first.
-    /// </summary>
+    // Turns 1.7.0 keys into new ones and merges setups that end up the same. The most recently used one wins;
+    // it takes any places it lacks from the others.
     private static void MergeDuplicates() {
       List<ScreenSetupRecord> all = DataStore.ScreenSetups.GetAll();
       var groups = all.Select(r => (record: r, setup: ScreenSetup.FromLegacyKey(r.Key)))
@@ -233,8 +205,8 @@ namespace MDSHO.ViewModels {
       AppLog.Information("Screen setups moved to the new keys; {Count} duplicates merged", merged);
     }
 
-    // The current setup was just used: records the time (later than any recorded, so the order is right even when the
-    // clock is coarse or was set back), then forgets the least recently used setups beyond MaxSetups.
+    // Stamps the current setup as used, then forgets the oldest setups beyond MaxSetups.
+    // The stamp is always later than any other, even if the clock is coarse or was set back.
     private void MarkUsed() {
       List<ScreenSetupRecord> all = DataStore.ScreenSetups.GetAll();
       DateTime stamp = UtcNow().ToUniversalTime();
@@ -253,7 +225,7 @@ namespace MDSHO.ViewModels {
       }
     }
 
-    // The screens settled (or the app started): identify the setup, move the windows when it is known, save the places.
+    // Finds the setup, moves the windows if the setting is on, and saves the places.
     private void Settled() {
       try {
         IList<ScreenInfo> now = this.screens.AllScreens();
@@ -276,7 +248,7 @@ namespace MDSHO.ViewModels {
       }
     }
 
-    // Moves every item to its place in the current setup (when asked), then saves where every item is for this setup.
+    // Moves each item to its saved place if asked, then saves every item's place.
     private int ApplyAndSave(IList<ScreenInfo> now, bool move) {
       List<IPlacedItem> items = Items().ToList();
       int moved = 0;
@@ -306,8 +278,8 @@ namespace MDSHO.ViewModels {
       return moved;
     }
 
-    // True when the screens are still the current setup (identifying it the first time). Screens that changed without an
-    // event (yet) start the wait instead.
+    // False if the screens changed without an event yet. Windows can move windows before the event comes,
+    // so we start the wait instead of saving into the wrong setup.
     private bool IsCurrentSetup(IList<ScreenInfo> now) {
       if (now.Count == 0) {
         return false;
@@ -346,25 +318,20 @@ namespace MDSHO.ViewModels {
     }
   }
 
-  /// <summary>A panel or a clone as a <see cref="IPlacedItem"/>: moving it moves its view model (and so its window) and saves its own place.</summary>
+  /// <summary>A panel or clone as a placed item. Moving it moves its view model.</summary>
   public sealed class DesktopWindowPlacedItem : IPlacedItem {
     private readonly DesktopWindowViewModel window;
 
-    /// <summary>The item of this panel or clone.</summary>
     public DesktopWindowPlacedItem(DesktopWindowViewModel window) {
       this.window = window ?? throw new ArgumentNullException(nameof(window));
     }
 
-    /// <summary>Panel or clone.</summary>
     public PlacedKind Kind => this.window.IsClone ? PlacedKind.Clone : PlacedKind.Panel;
-    /// <summary>The panel's or clone's ID.</summary>
     public long ID => this.window.ID;
-    /// <summary>Where it is (DIPs).</summary>
     public ScreenRect Rect => new ScreenRect(this.window.Left, this.window.Top, this.window.Width, this.window.Height);
-    /// <summary>The screen it was last saved on.</summary>
     public string ScreenDeviceName => this.window.ScreenDeviceName;
 
-    /// <summary>Moves it and saves the place in its own row (MDSHOWindows or MDSHOWindowClones), so a restart opens it there too.</summary>
+    /// <summary>Moves it and saves the place in its own row, so a restart opens it there.</summary>
     public void MoveTo(ItemPlace target, IList<ScreenInfo> screens) {
       long left = (long)Math.Round(target.Rect.Left);
       long top = (long)Math.Round(target.Rect.Top);

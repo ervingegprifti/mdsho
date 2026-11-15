@@ -5,16 +5,15 @@ using MDSHO.ViewModels;
 namespace MDSHO {
 
   /// <summary>
-  /// The Settings window of a panel (the gear in its title bar): Icons appearance, Other, Keyboard shortcut and Screen
-  /// setups. Changes show live; Apply keeps them, closing without Apply puts them back. The keyboard shortcut and
-  /// "Remember places for each screen setup" (both for the whole app) change only on Apply. The panel's colours are in the <see cref="ColorsWindow"/>.
+  /// A panel's Settings window. Changes show live; closing without Apply undoes them.
+  /// The shortcut and the screen setups setting are app-wide and change only on Apply.
   /// </summary>
   public partial class SettingsWindow : Window {
     private readonly IconGlyphs icons;
     private bool closeWithoutApply = true;
     private readonly ShortcutRecorder recorder;
 
-    /// <summary>The modifier keys held while a key is pressed; tests replace it.</summary>
+    /// <summary>The modifier keys held now. Tests replace it.</summary>
     public static System.Func<System.Windows.Input.ModifierKeys> KeyboardModifiers { get; set; } = () => System.Windows.Input.Keyboard.Modifiers;
 
     /// <summary>Creates the Settings window for a panel window and remembers the current settings so closing without Apply restores them.</summary>
@@ -49,7 +48,7 @@ namespace MDSHO {
           a.ShowVersionInTitle = old.showVersionInTitle;
         }
       };
-      // Keyboard shortcut: one for the whole app. The box records a new one; nothing changes until Apply.
+      // Keyboard shortcut: nothing changes until Apply.
       this.recorder = new ShortcutRecorder(AppServices.Current.BringToFront);
       this.PanelShortcut.DataContext = this.recorder;
       this.ButtonShortcutBox.Click += (s, e) => {
@@ -57,18 +56,18 @@ namespace MDSHO {
         this.ButtonShortcutBox.Focus();
       };
       this.ButtonShortcutBox.PreviewKeyDown += ShortcutBox_PreviewKeyDown;
-      // A click elsewhere ends recording without a change.
+      // A click elsewhere stops recording.
       this.ButtonShortcutBox.LostKeyboardFocus += (s, e) => this.recorder.Cancel();
       this.ButtonShortcutDefault.Click += (s, e) => this.recorder.UseDefault();
       this.ButtonShortcutOff.Click += (s, e) => this.recorder.TurnOff();
-      // Closing while recording lets the saved shortcut work again.
+      // Closing while recording makes the saved shortcut work again.
       this.Closed += (s, e) => this.recorder.Cancel();
-      // Screen setups: one setting for the whole app, saved only on Apply.
+      // Screen setups: saved only on Apply.
       this.CheckRememberScreenSetups.IsChecked = AppServices.Current.ScreenSetups.Enabled;
 
       this.ButtonApply.Click += (s, e) => {
         try {
-          // A new shortcut another app holds: the window stays open with the red hint, and the old one keeps working.
+          // Another app holds the new shortcut: stay open and show the red hint.
           if (!this.recorder.Apply()) {
             return;
           }
@@ -90,7 +89,7 @@ namespace MDSHO {
       };
     }
 
-    // Every key goes to the recorder while it records (Esc cancels), so Space or Enter don't click the box again.
+    // While recording, every key goes to the recorder, so Space or Enter don't click the box again.
     private void ShortcutBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e) {
       (Common.HotkeyModifiers modifiers, int key) = KeyInput.ToHotkey(e.Key, e.SystemKey, KeyboardModifiers());
       if (this.recorder.KeyPressed(modifiers, key)) {

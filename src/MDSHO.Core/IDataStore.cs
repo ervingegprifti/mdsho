@@ -14,9 +14,9 @@
     INoteWindowRepository NoteWindows { get; }
     /// <summary>The default colours saved for panels and for notes.</summary>
     IDefaultColorsRepository DefaultColors { get; }
-    /// <summary>Settings of the whole app on this PC (not part of exports).</summary>
+    /// <summary>App-wide settings on this PC.</summary>
     IAppSettingsRepository AppSettings { get; }
-    /// <summary>The screen setups seen on this PC and the places of the panels, clones and notes in each (not part of exports).</summary>
+    /// <summary>Screen setups and window places on this PC.</summary>
     IScreenSetupRepository ScreenSetups { get; }
     /// <summary>Begin a transaction scope (joins the current one on this thread, if any).</summary>
     ITransactionScope BeginTransaction();

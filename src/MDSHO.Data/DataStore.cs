@@ -55,9 +55,9 @@ namespace MDSHO.Data {
     public static INoteWindowRepository NoteWindows { get { return Current.NoteWindows; } }
     /// <summary>The default colours saved for panels and for notes.</summary>
     public static IDefaultColorsRepository DefaultColors { get { return Current.DefaultColors; } }
-    /// <summary>Settings of the whole app on this PC.</summary>
+    /// <summary>App-wide settings on this PC.</summary>
     public static IAppSettingsRepository AppSettings { get { return Current.AppSettings; } }
-    /// <summary>The screen setups seen on this PC and the places in each.</summary>
+    /// <summary>Screen setups and window places on this PC.</summary>
     public static IScreenSetupRepository ScreenSetups { get { return Current.ScreenSetups; } }
 
     /// <summary>Begin a transaction scope. Use: <c>using (var tx = DataStore.BeginTransaction()) { ...; tx.Commit(); }</c></summary>

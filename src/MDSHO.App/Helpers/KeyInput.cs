@@ -20,8 +20,8 @@ namespace MDSHO.Helpers {
     }
 
     /// <summary>
-    /// A pressed key as the Win32 virtual key and modifiers RegisterHotKey uses. With Alt held WPF reports
-    /// <see cref="Key.System"/>; the real key is then <paramref name="systemKey"/>.
+    /// A pressed key as a Win32 virtual key and modifiers.
+    /// With Alt held, WPF reports Key.System and the real key is in <paramref name="systemKey"/>.
     /// </summary>
     public static (Common.HotkeyModifiers Modifiers, int Key) ToHotkey(Key key, Key systemKey, ModifierKeys modifiers) {
       Key real = key == Key.System ? systemKey : key;
