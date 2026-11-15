@@ -27,6 +27,8 @@ namespace MDSHO.ViewModels {
     }
     /// <summary>All real windows (not clones); each one holds its own clones.</summary>
     public ObservableCollection<DesktopWindowViewModel> Windows { get; set; } = new ObservableCollection<DesktopWindowViewModel>();
+    /// <summary>The welcome note added on a brand-new database; null otherwise or once it was opened.</summary>
+    public ShortcutViewModel FirstStartNote { get; set; }
     #endregion PROPERTIES
 
     /// <summary>Creates an empty application view model.</summary>
@@ -35,6 +37,14 @@ namespace MDSHO.ViewModels {
     }
 
     #region Methods
+    /// <summary>Opens the welcome note of a brand-new database, once.</summary>
+    public void OpenFirstStartNote() {
+      ShortcutViewModel note = this.FirstStartNote;
+      this.FirstStartNote = null;
+      if (note != null) {
+        ShortcutViewModel.OpenNoteEditor?.Invoke(note);
+      }
+    }
     /// <summary>Creates a new window in the database, adds its view model to Windows and returns it.</summary>
     public DesktopWindowViewModel AddWindow(string screenDeviceName, long left, long top) {
       // Create the new MDSHO window into the database.

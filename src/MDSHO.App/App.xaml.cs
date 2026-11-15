@@ -91,6 +91,7 @@ namespace MDSHO
         // Note windows that were open come back where they were; at exit (also when Windows shuts down or restarts)
         // unsaved typing in them is saved and they stay marked as open.
         TextEditWindow.ReopenOpenNotes(this.DataContext);
+        this.DataContext.OpenFirstStartNote();
         this.SessionEnding += (s, args) => TextEditWindow.SaveOpenNotesForExit();
 
         this.MainWindow = this.windows.Main();

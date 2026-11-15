@@ -161,11 +161,20 @@ namespace MDSHO.ViewModels {
     #region HIERARCHY
     /// <summary>Loads everything from the database and builds the application view model.</summary>
     public static AppViewModel CreateAppViewModel() {
+      return CreateAppViewModel(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+    }
+    /// <summary>Loads everything and builds the app view model; a brand-new database first gets the first-start samples.</summary>
+    public static AppViewModel CreateAppViewModel(string documentsFolder) {
       AppViewModel appViewModel = new AppViewModel();
       List<DesktopWindow> windowRecords = null;
+      long? welcomeNoteID = null;
       string errorMessage = "";
       try {
-        windowRecords = DataStore.Windows.LoadAll();
+        windowRecords = DataStore.Windows.LoadAll(out bool brandNew);
+        if (brandNew) {
+          welcomeNoteID = FirstStartSamples.AddTo(windowRecords[0].ID, documentsFolder);
+          windowRecords = DataStore.Windows.LoadAll();
+        }
       } catch (Exception ex) {
         errorMessage = ex.ToString();
       }
@@ -173,6 +182,10 @@ namespace MDSHO.ViewModels {
         throw new Exception("Database must be updated. " + errorMessage);
       } else {
         appViewModel.Windows = WindowsToViewModels(appViewModel: appViewModel, windowRecords: windowRecords);
+        if (welcomeNoteID != null) {
+          appViewModel.FirstStartNote = appViewModel.Windows.SelectMany(w => w.RootShortcuts).SelectMany(g => g.Children)
+            .FirstOrDefault(s => s.ID == welcomeNoteID);
+        }
       }
       return appViewModel;
     }

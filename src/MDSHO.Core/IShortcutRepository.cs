@@ -5,7 +5,7 @@ namespace MDSHO.Core {
   /// <summary>
   /// Persistence of <see cref="Shortcut"/> (Shortcuts table). A shortcut belongs either to a window (root shortcut:
   /// ParentWindowID set) or to a group (ParentShortcutID set), never both. Positions count from 0 per parent.
-  /// Returned entities have an empty <see cref="Shortcut.Shortcuts"/> list; whole trees come from <see cref="IDesktopWindowRepository.LoadAll"/>.
+  /// Returned entities have an empty <see cref="Shortcut.Shortcuts"/> list; whole trees come from <see cref="IDesktopWindowRepository.LoadAll()"/>.
   /// </summary>
   public interface IShortcutRepository {
     /// <summary>The shortcut row or null.</summary>

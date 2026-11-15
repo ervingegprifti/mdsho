@@ -33,11 +33,17 @@ namespace MDSHO.Data {
 
     #region LOAD
     public List<DesktopWindow> LoadAll() {
+      return LoadAll(out _);
+    }
+
+    public List<DesktopWindow> LoadAll(out bool brandNew) {
+      bool isNew = false;
       // One scope = one connection and one consistent snapshot for all the queries below.
-      return InTransaction(() => {
+      List<DesktopWindow> loaded = InTransaction(() => {
         List<DesktopWindow> windows = GetAll();
         if (windows.Count == 0) {
-          // This is the first time the application is run, so we just create the first DesktopWindow to start with.
+          // Screen setups survive an import that replaces the data, so an imported file without panels is not new.
+          isNew = One<long>("SELECT (SELECT COUNT(*) FROM Shortcuts) + (SELECT COUNT(*) FROM ScreenSetups)") == 0;
           windows.Add(Create());
         }
         List<Shortcut> allShortcuts = Many<Shortcut>("SELECT " + ShortcutRepository.SelectColumns + " FROM Shortcuts ORDER BY Position ASC, ID ASC");
@@ -68,6 +74,8 @@ namespace MDSHO.Data {
         }
         return windows;
       });
+      brandNew = isNew;
+      return loaded;
     }
     #endregion LOAD
 
