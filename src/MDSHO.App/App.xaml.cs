@@ -86,6 +86,9 @@ namespace MDSHO
         // Get the data context for the application.
         this.DataContext = this.host.Services.GetRequiredService<AppViewModel>();
 
+        // MDSHO's own windows and menus follow the Window theme setting (Same as Windows, Light or Dark).
+        StartWindowTheme();
+
         SetWindows();
 
         // Note windows that were open come back where they were; at exit (also when Windows shuts down or restarts)
@@ -244,6 +247,15 @@ namespace MDSHO
       }
     }
 
+    /// <summary>At startup: applies the window theme and follows the setting and Windows' app mode.</summary>
+    private static void StartWindowTheme() {
+      try {
+        Helpers.WindowThemes.Follow(AppServices.Current.WindowTheme);
+      } catch (Exception ex) {
+        Common.AppLog.Warning(ex, "The window theme could not be applied");
+      }
+    }
+
     /// <summary>At startup: connects "Bring panels to front" and registers the shortcut.</summary>
     private void StartBringPanelsToFront() {
       try {
@@ -398,9 +410,25 @@ namespace MDSHO
           continue;
         }
         System.Drawing.Image old = item.Image;
-        item.Image = Helpers.GlyphIcon.ToBitmap(glyph, menu.ImageScalingSize.Height);
+        item.Image = Helpers.GlyphIcon.ToBitmap(glyph, menu.ImageScalingSize.Height, TrayIconColor());
         old?.Dispose();
       }
+    }
+    /// <summary>The colour of the tray menu's icons: the Windows menu icon colour, or the dark theme's.</summary>
+    private static System.Windows.Media.Color TrayIconColor() {
+      return Helpers.WindowThemes.Current == WindowThemeKind.Dark ? Helpers.WindowThemes.MediaColor("Theme.MenuIcon") : Helpers.GlyphIcon.MenuColor;
+    }
+    /// <summary>Gives the tray menu the window theme in use, with its icons drawn again in the theme's colour.</summary>
+    public static void ApplyThemeToTrayMenu(System.Windows.Forms.ContextMenuStrip menu, IconGlyphs icons) {
+      Helpers.WindowThemes.ApplyTo(menu);
+      foreach (System.Windows.Forms.ToolStripItem item in menu.Items) {
+        System.Drawing.Image old = item.Image;
+        if (old != null && Helpers.GlyphIcon.GlyphOf(old) != null) {
+          item.Image = null;
+          old.Dispose();
+        }
+      }
+      UpdateTrayIcons(menu, icons);
     }
     /// <summary>The tray menu; its icons follow the first desktop window's solid/outline setting.</summary>
     public static System.Windows.Forms.ContextMenuStrip CreateTrayMenu(App app) {
@@ -441,6 +469,14 @@ namespace MDSHO
       menu.Items.Add("Exit application").Click += (s, e) => app.ExitApplication(silent: false);
       UpdateTrayIcons(menu, icons());
       menu.Opening += (s, e) => UpdateTrayIcons(menu, icons());
+      // The window theme: dark or the Windows look, now and whenever it changes, also for submenu items made on opening.
+      Helpers.WindowThemes.ApplyTo(menu);
+      foreach (System.Windows.Forms.ToolStripMenuItem submenu in menu.Items.OfType<System.Windows.Forms.ToolStripMenuItem>().Where(i => i.HasDropDown)) {
+        submenu.DropDownOpening += (s, e) => Helpers.WindowThemes.ApplyTo(submenu.DropDown);
+      }
+      Action applyTheme = () => ApplyThemeToTrayMenu(menu, icons());
+      Helpers.WindowThemes.Applied += applyTheme;
+      menu.Disposed += (s, e) => Helpers.WindowThemes.Applied -= applyTheme;
       return menu;
     }
     /// <summary>Opens Explorer on the folder that really holds the database and the shortcuts (the package's private folder when Windows redirected it).</summary>

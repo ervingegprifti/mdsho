@@ -42,6 +42,22 @@ namespace MDSHO.Tests {
       public List<ProcessStartInfo> Started = new List<ProcessStartInfo>();
     }
 
+    /// <summary>A cmd command in a new window of a new app, in the current temp database. Call it on the WPF thread.</summary>
+    public static ShortcutViewModel NewCommand() {
+      Action<ShortcutViewModel, bool> oldEditor = ShortcutViewModel.OpenRunCommandEditor;
+      ShortcutViewModel.OpenRunCommandEditor = (s, isNew) => { };
+      try {
+        AppViewModel app = new AppViewModel();
+        DesktopWindowViewModel win = app.AddWindow("TEST", 0, 0);
+        ShortcutViewModel command = ViewModelFactory.NewProcessCommandShortcut(app, null, win);
+        win.RootShortcuts.Add(command);
+        command.ProcessFileName = "cmd.exe";
+        return command;
+      } finally {
+        ShortcutViewModel.OpenRunCommandEditor = oldEditor;
+      }
+    }
+
     /// <summary>Temp database, a group "T {SRV01}" with a cmd command, process starts recorded; runs <paramref name="body"/> on the WPF thread.</summary>
     private static void WithCommand(string fileName, string arguments, Action<Fixture> body) {
       WpfAppHost.Run(() => {

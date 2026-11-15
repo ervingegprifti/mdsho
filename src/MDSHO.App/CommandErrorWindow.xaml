@@ -2,6 +2,7 @@
         xmlns:controls="clr-namespace:MDSHO.Controls"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:helpers="clr-namespace:MDSHO.Helpers"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
@@ -14,11 +15,13 @@
         WindowStyle="None"
         AllowsTransparency="True"
         Template="{StaticResource RoundedWindowTemplate}"
-        BorderBrush="#FFB9B39F"
+        BorderBrush="{DynamicResource Theme.WindowBorder}"
         BorderThickness="1"
         WindowStartupLocation="CenterScreen"
-        Background="#FFF4F3ED"
-        UseLayoutRounding="True">
+        Background="{DynamicResource Theme.WindowBackground}"
+        UseLayoutRounding="True"
+        Foreground="{DynamicResource Theme.Text}"
+        helpers:WindowThemes.IsThemed="True">
 
     <!--The look of the error window, with only OK-->
     <WindowChrome.WindowChrome>
@@ -34,11 +37,11 @@
         <controls:DialogTitleBar x:Name="TitleBar" Grid.Row="0" Text="{Binding Title, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"/>
 
         <StackPanel x:Name="PanelMessage" Grid.Row="1" Margin="26">
-            <TextBlock x:Name="TextError" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource ErrorBrush}" TextWrapping="Wrap"/>
-            <TextBlock x:Name="TextDetail" Margin="0,10,0,0" Foreground="#FF555555" TextWrapping="Wrap"/>
+            <TextBlock x:Name="TextError" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Theme.ErrorText}" TextWrapping="Wrap"/>
+            <TextBlock x:Name="TextDetail" Margin="0,10,0,0" Foreground="{DynamicResource Theme.TextMuted}" TextWrapping="Wrap"/>
         </StackPanel>
 
-        <Border x:Name="ButtonBar" Grid.Row="2" Background="#dddddd" Padding="26">
+        <Border x:Name="ButtonBar" Grid.Row="2" Background="{DynamicResource Theme.ButtonBarBackground}" Padding="26">
             <Button x:Name="ButtonOK" HorizontalAlignment="Right" Style="{StaticResource StyleDarkButton}" Content="OK" MinWidth="80" IsDefault="True" IsCancel="True"/>
         </Border>
     </Grid>

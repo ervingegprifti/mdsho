@@ -8,7 +8,7 @@
         <!--The same title bar button as in the Note window-->
         <Style x:Key="StyleTitleBarButton" TargetType="{x:Type Button}">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#FF333333"/>
+            <Setter Property="Foreground" Value="{DynamicResource Theme.TextStrong}"/>
             <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="Width" Value="40"/>
@@ -24,10 +24,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#1F000000" />
+                                <Setter Property="Background" Value="{DynamicResource Theme.TitleButtonHover}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#33000000" />
+                                <Setter Property="Background" Value="{DynamicResource Theme.TitleButtonPressed}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -37,16 +37,16 @@
     </UserControl.Resources>
 
     <!--Icon and title on the left, close on the right; the rest of the bar drags the window (WindowChrome caption)-->
-    <Border Background="#FFDFDACB">
+    <Border Background="{DynamicResource Theme.BarBackground}">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock x:Name="TextGlyph" FontFamily="{StaticResource IconFont}" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"
+                <TextBlock x:Name="TextGlyph" FontFamily="{StaticResource IconFont}" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource Theme.TextStrong}"
                            Text="{Binding Glyph, RelativeSource={RelativeSource AncestorType={x:Type controls:DialogTitleBar}}}"/>
-                <TextBlock x:Name="TextTitle" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333" TextTrimming="CharacterEllipsis"
+                <TextBlock x:Name="TextTitle" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource Theme.TextStrong}" TextTrimming="CharacterEllipsis"
                            Text="{Binding Text, RelativeSource={RelativeSource AncestorType={x:Type controls:DialogTitleBar}}}"/>
             </StackPanel>
             <Button x:Name="ButtonClose" Grid.Column="1" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"

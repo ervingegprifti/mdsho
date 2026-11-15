@@ -449,6 +449,26 @@ namespace MDSHO {
       UseNoteColours();
     }
 
+    /// <summary>A comment has the window theme's colours (Light is its old look); a note keeps its own colours.</summary>
+    private void UseWindowTheme() {
+      // Without the window's black shades, the title bar buttons use the theme's.
+      this.Resources.Remove("Theme.TitleButtonHover");
+      this.Resources.Remove("Theme.TitleButtonPressed");
+      SetResourceReference(BackgroundProperty, "Theme.WindowBackground");
+      SetResourceReference(BorderBrushProperty, "Theme.WindowBorder");
+      this.TitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "Theme.BarBackground");
+      this.TextTitle.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
+      this.TextTitleIcon.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonWrap, this.ButtonOk, this.ButtonClose }) {
+        button.SetResourceReference(ForegroundProperty, "Theme.TextStrong");
+      }
+      this.Body.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "Theme.WindowBackground");
+      this.TextComment.SetResourceReference(System.Windows.Controls.Control.BackgroundProperty, "Theme.WindowBackground");
+      this.TextComment.SetResourceReference(System.Windows.Controls.Control.ForegroundProperty, "Theme.Text");
+      this.TextComment.SetResourceReference(System.Windows.Controls.Primitives.TextBoxBase.CaretBrushProperty, "Theme.Text");
+      Helpers.WindowThemes.SetIsThemed(this, true);
+    }
+
     /// <summary>The window follows the note's five colours live: border, title bar, title text and buttons, background, text.</summary>
     private void UseNoteColours() {
       NoteColors colors = this.shortcut.NoteColors;
@@ -472,6 +492,7 @@ namespace MDSHO {
 
     /// <summary>A comment has OK and close in its title bar: OK saves and closes, X and Esc close without saving.</summary>
     private void UseCommentTitleBar() {
+      UseWindowTheme();
       this.ButtonOk.Visibility = Visibility.Visible;
       this.ButtonClose.ToolTip = "Close without saving (Esc)";
       System.Windows.Automation.AutomationProperties.SetName(this.ButtonClose, "Close without saving");
@@ -515,7 +536,7 @@ namespace MDSHO {
       System.Windows.Automation.AutomationProperties.SetName(this.ButtonPin, tip);
       if (pinned) {
         // A shade, so the pinned look works on any title bar colour.
-        this.ButtonPin.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0, 0, 0));
+        this.ButtonPin.SetResourceReference(BackgroundProperty, "Theme.TitleButtonPressed");
       } else {
         this.ButtonPin.ClearValue(BackgroundProperty);
       }
@@ -533,7 +554,7 @@ namespace MDSHO {
       System.Windows.Automation.AutomationProperties.SetName(this.ButtonWrap, tip);
       if (wrap) {
         // The same shade as the pin while on.
-        this.ButtonWrap.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0, 0, 0));
+        this.ButtonWrap.SetResourceReference(BackgroundProperty, "Theme.TitleButtonPressed");
       } else {
         this.ButtonWrap.ClearValue(BackgroundProperty);
       }

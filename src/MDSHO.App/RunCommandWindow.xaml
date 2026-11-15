@@ -1,6 +1,7 @@
 ﻿<Window x:Class="MDSHO.RunCommandWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:helpers="clr-namespace:MDSHO.Helpers"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewmodels="clr-namespace:MDSHO.ViewModels;assembly=MDSHO.ViewModels"
@@ -17,10 +18,12 @@
         ResizeMode="CanResize"
         Topmost="True"
         ShowInTaskbar="True"
-        Background="#FFF4F3ED"
-        BorderBrush="#FFB9B39F"
+        Background="{DynamicResource Theme.WindowBackground}"
+        BorderBrush="{DynamicResource Theme.WindowBorder}"
         BorderThickness="1"
-        UseLayoutRounding="True">
+        UseLayoutRounding="True"
+        Foreground="{DynamicResource Theme.Text}"
+        helpers:WindowThemes.IsThemed="True">
 
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="32" ResizeBorderThickness="5" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
@@ -29,7 +32,7 @@
     <Window.Resources>
         <Style x:Key="StyleTitleBarButton" TargetType="{x:Type Button}">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#FF333333"/>
+            <Setter Property="Foreground" Value="{DynamicResource Theme.TextStrong}"/>
             <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="Width" Value="40"/>
@@ -45,10 +48,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#FFCDC7B4" />
+                                <Setter Property="Background" Value="{DynamicResource Theme.BarButtonHover}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#FFBDB6A0" />
+                                <Setter Property="Background" Value="{DynamicResource Theme.BarButtonPressed}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -56,16 +59,11 @@
             </Setter>
         </Style>
         <Style x:Key="StyleSecondaryButton" TargetType="{x:Type Button}" BasedOn="{StaticResource StyleDarkButton}">
-            <Setter Property="Background" Value="#FFA09A88"/>
+            <Setter Property="Background" Value="{DynamicResource Theme.SecondaryButton}"/>
         </Style>
         <Style x:Key="StyleFieldLabel" TargetType="{x:Type TextBlock}">
             <Setter Property="Margin" Value="0,8,0,3"/>
-            <Setter Property="Foreground" Value="#FF333333"/>
-        </Style>
-        <Style x:Key="StyleBrowseButton" TargetType="{x:Type Button}">
-            <Setter Property="Margin" Value="6,0,0,0"/>
-            <Setter Property="Padding" Value="10,2"/>
-            <Setter Property="MinWidth" Value="80"/>
+            <Setter Property="Foreground" Value="{DynamicResource Theme.TextStrong}"/>
         </Style>
     </Window.Resources>
 
@@ -80,7 +78,7 @@
         </Grid.RowDefinitions>
 
         <!--Title bar: the command's name, examples (wizard), close. Double-clicking the title bar maximises and restores the window-->
-        <Border x:Name="TitleBar" Grid.Row="0" Background="#FFDFDACB">
+        <Border x:Name="TitleBar" Grid.Row="0" Background="{DynamicResource Theme.BarBackground}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -93,9 +91,9 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock x:Name="TextTitleIcon" Grid.Column="0" Text="{Binding Icons.Run}" FontFamily="{StaticResource IconFont}" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"/>
+                    <TextBlock x:Name="TextTitleIcon" Grid.Column="0" Text="{Binding Icons.Run}" FontFamily="{StaticResource IconFont}" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource Theme.TextStrong}"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock x:Name="TextTitle" Text="{Binding Name}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"/>
+                        <TextBlock x:Name="TextTitle" Text="{Binding Name}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource Theme.TextStrong}"/>
                         <!--The command is renamed here: double-click the title text (Rename and F2 in the panel rename the button). Enter or leaving keeps
                             the new name, Esc the old one; Save writes it, Cancel throws it away.-->
                         <TextBox x:Name="TextTitleEdit" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="14" MinWidth="160" Padding="1,0"
@@ -108,7 +106,7 @@
         </Border>
 
         <!--Body-->
-        <Grid x:Name="Body" Grid.Row="1" Background="#FFF4F3ED">
+        <Grid x:Name="Body" Grid.Row="1" Background="{DynamicResource Theme.WindowBackground}">
             <Grid x:Name="BodyContent" Margin="26">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -141,12 +139,12 @@
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{Binding FileName}"/>
-                                    <TextBlock Text="{Binding FriendlyName}" Foreground="Gray" Margin="10,0,0,0"/>
+                                    <TextBlock Text="{Binding FriendlyName}" Foreground="{DynamicResource Theme.TextFaint}" Margin="10,0,0,0"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                    <Button x:Name="ButtonBrowseProgram" Grid.Column="1" Style="{StaticResource StyleBrowseButton}" Content="Browse..."/>
+                    <Button x:Name="ButtonBrowseProgram" Grid.Column="1" Margin="6,0,0,0" Padding="10,2" MinWidth="80" Content="Browse..."/>
                 </Grid>
 
                 <TextBlock Grid.Row="2" Style="{StaticResource StyleFieldLabel}" Text="Working folder (optional)"/>
@@ -157,7 +155,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBox x:Name="TextWorkingFolder" Grid.Column="0" Padding="2,3" VerticalContentAlignment="Center"
                              Text="{Binding WorkingFolder, UpdateSourceTrigger=PropertyChanged}"/>
-                    <Button x:Name="ButtonBrowseFolder" Grid.Column="1" Style="{StaticResource StyleBrowseButton}" Content="Browse..."/>
+                    <Button x:Name="ButtonBrowseFolder" Grid.Column="1" Margin="6,0,0,0" Padding="10,2" MinWidth="80" Content="Browse..."/>
                 </Grid>
 
                 <TextBlock Grid.Row="4" Style="{StaticResource StyleFieldLabel}" Text="Arguments (one command per line)"/>
@@ -172,28 +170,33 @@
                          HorizontalScrollBarVisibility="Auto"
                          Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}">
                     <TextBox.Style>
+                        <!--Its own style replaces the dark text box style, so it sets the theme colours itself (the Windows ones in Light)-->
                         <Style TargetType="TextBox">
+                            <Setter Property="Background" Value="{DynamicResource Theme.InputBackground}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Theme.InputText}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource Theme.TextBoxBorder}"/>
+                            <Setter Property="CaretBrush" Value="{DynamicResource Theme.InputText}"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding HasError}" Value="True">
-                                    <Setter Property="BorderBrush" Value="{StaticResource ErrorBrush}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource Theme.ErrorText}"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </TextBox.Style>
                 </TextBox>
                 <!--Keeps the red border while the box has focus, where the theme draws its own focus border-->
-                <Border Grid.Row="5" BorderThickness="1" BorderBrush="{StaticResource ErrorBrush}" IsHitTestVisible="False"
+                <Border Grid.Row="5" BorderThickness="1" BorderBrush="{DynamicResource Theme.ErrorText}" IsHitTestVisible="False"
                         Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}"/>
 
                 <!--The group-value syntax error, in red under the arguments-->
                 <TextBlock x:Name="TextArgumentsError" Grid.Row="6" Margin="0,4,0,0" TextWrapping="Wrap"
-                           Foreground="{StaticResource ErrorBrush}"
+                           Foreground="{DynamicResource Theme.ErrorText}"
                            Text="{Binding Error, Mode=OneWay}"
                            Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}"/>
 
                 <!--The group's values: a click inserts one at the caret in the arguments. Without values, a hint (red when one is used)-->
                 <StackPanel Grid.Row="7" Margin="0,6,0,0">
-                    <TextBlock x:Name="TextGroupValuesLabel" Foreground="#FF555555" Text="{x:Static viewmodels:RunCommandViewModel.GroupValuesLabel}"
+                    <TextBlock x:Name="TextGroupValuesLabel" Foreground="{DynamicResource Theme.TextMuted}" Text="{x:Static viewmodels:RunCommandViewModel.GroupValuesLabel}"
                                Visibility="{Binding HasGroupValues, Converter={StaticResource BoolToVisibility}}"/>
                     <ItemsControl x:Name="ListGroupValues" ItemsSource="{Binding GroupValues}" Focusable="False">
                         <ItemsControl.ItemsPanel>
@@ -211,13 +214,13 @@
                     <TextBlock x:Name="TextNoGroupValues" TextWrapping="Wrap" Text="{x:Static viewmodels:RunCommandViewModel.NoGroupValuesText}">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="#FF555555"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Theme.TextMuted}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding HasGroupValues}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding IsNoGroupValuesError}" Value="True">
-                                        <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource Theme.ErrorText}"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -242,7 +245,7 @@
                          FontFamily="Consolas"
                          FontSize="13"
                          Padding="2"
-                         Background="#FFEAE7DC"
+                         Background="{DynamicResource Theme.ReadOnlyBackground}"
                          VerticalScrollBarVisibility="Auto"
                          HorizontalScrollBarVisibility="Disabled"
                          Text="{Binding Preview, Mode=OneWay}"/>
@@ -251,7 +254,7 @@
 
         <!--Footer: Test run on the left, Save and Cancel on the right-->
         <!--Every outer margin of the fields and of the bottom bar equals the button height (set in code from the real button)-->
-        <Border x:Name="Footer" Grid.Row="2" Background="#FFDFDACB">
+        <Border x:Name="Footer" Grid.Row="2" Background="{DynamicResource Theme.BarBackground}">
             <Grid x:Name="FooterContent" Margin="26">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -262,7 +265,7 @@
                 <Button x:Name="ButtonTestRun" Grid.Column="0" Style="{StaticResource StyleSecondaryButton}" Content="&#x25B6; Test run" ToolTip="Runs what is on screen now, without saving"/>
                 <!--"Fix the error to save." or "Fix the error to run." after a refused Save or Test run-->
                 <TextBlock x:Name="TextFooterError" Grid.Column="1" Margin="12,0" VerticalAlignment="Center" TextWrapping="Wrap"
-                           Foreground="{StaticResource ErrorBrush}"
+                           Foreground="{DynamicResource Theme.ErrorText}"
                            Text="{Binding FooterError}">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">

@@ -6,7 +6,7 @@ namespace MDSHO {
 
   /// <summary>
   /// A panel's Settings window. Changes show live; closing without Apply undoes them.
-  /// The shortcut and the screen setups setting are app-wide and change only on Apply.
+  /// The shortcut, the screen setups setting and the window theme are app-wide and change only on Apply.
   /// </summary>
   public partial class SettingsWindow : Window {
     private readonly IconGlyphs icons;
@@ -64,6 +64,13 @@ namespace MDSHO {
       this.Closed += (s, e) => this.recorder.Cancel();
       // Screen setups: saved only on Apply.
       this.CheckRememberScreenSetups.IsChecked = AppServices.Current.ScreenSetups.Enabled;
+      // Window theme: shown at once, saved on Apply; closing without Apply goes back.
+      ShowWindowTheme(AppServices.Current.WindowTheme.Choice);
+      RoutedEventHandler preview = (s, e) => AppServices.Current.WindowTheme.Preview(ChosenWindowTheme());
+      this.RadioThemeSameAsWindows.Checked += preview;
+      this.RadioThemeLight.Checked += preview;
+      this.RadioThemeDark.Checked += preview;
+      this.Closed += (s, e) => AppServices.Current.WindowTheme.Preview(null);
 
       this.ButtonApply.Click += (s, e) => {
         try {
@@ -84,6 +91,17 @@ namespace MDSHO {
           ErrorDialog.ShowDialog(ex);
           return;
         }
+        try {
+          WindowThemeChoice theme = ChosenWindowTheme();
+          if (theme != AppServices.Current.WindowTheme.Choice) {
+            AppServices.Current.WindowTheme.SetChoice(theme);
+          } else {
+            AppServices.Current.WindowTheme.Preview(null);
+          }
+        } catch (System.Exception ex) {
+          ErrorDialog.ShowDialog(ex);
+          return;
+        }
         this.closeWithoutApply = false;
         Close();
       };
@@ -95,6 +113,19 @@ namespace MDSHO {
       if (this.recorder.KeyPressed(modifiers, key)) {
         e.Handled = true;
       }
+    }
+
+    private void ShowWindowTheme(WindowThemeChoice choice) {
+      this.RadioThemeSameAsWindows.IsChecked = choice == WindowThemeChoice.SameAsWindows;
+      this.RadioThemeLight.IsChecked = choice == WindowThemeChoice.Light;
+      this.RadioThemeDark.IsChecked = choice == WindowThemeChoice.Dark;
+    }
+
+    private WindowThemeChoice ChosenWindowTheme() {
+      if (this.RadioThemeLight.IsChecked == true) {
+        return WindowThemeChoice.Light;
+      }
+      return this.RadioThemeDark.IsChecked == true ? WindowThemeChoice.Dark : WindowThemeChoice.SameAsWindows;
     }
 
     // The window icon and the title bar's icon (the gear) and close glyph, in the window's icon set.

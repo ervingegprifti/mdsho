@@ -50,7 +50,7 @@ namespace MDSHO.Tests {
     public void Settings_has_Icons_appearance_and_Other_and_no_colours() {
       WithSettings((window, w) => {
         List<string> headings = WpfAppHost.VisualDescendants<Label>(window).Select(l => l.Content as string).ToList();
-        Assert.Equal(new[] { "Icons appearance", "Other", "Keyboard shortcut", "Screen setups" }, headings);
+        Assert.Equal(new[] { "Icons appearance", "Other", "Keyboard shortcut", "Screen setups", "Window theme" }, headings);
         Assert.Null(window.FindName("ListColorTargets"));
         Assert.Null(window.FindName("PickerColor"));
         Assert.Null(window.FindName("ButtonDefaultColours"));
@@ -62,7 +62,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void Icons_appearance_and_single_click_to_open_still_work() {
       WithSettings((window, w) => {
-        List<RadioButton> radios = WpfAppHost.VisualDescendants<RadioButton>(window).ToList();
+        List<RadioButton> radios = WpfAppHost.VisualDescendants<RadioButton>(window).Take(2).ToList();
         Assert.Equal(new[] { "Solid icons", "Outlined icons" }, radios.Select(r => (string)r.Content).ToArray());
         radios[1].IsChecked = true;
         WpfAppHost.Pump();

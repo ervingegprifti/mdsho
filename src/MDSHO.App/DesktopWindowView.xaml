@@ -423,7 +423,7 @@
                                         <MenuItem Header="Mark">
                                             <MenuItem.ItemsPanel>
                                                 <ItemsPanelTemplate>
-                                                    <VirtualizingStackPanel Margin="0,0,0,0" Background="#FFEEEEEE" Orientation="Horizontal" />
+                                                    <VirtualizingStackPanel Margin="0,0,0,0" Background="{DynamicResource Theme.MarkPanel}" Orientation="Horizontal" />
                                                 </ItemsPanelTemplate>
                                             </MenuItem.ItemsPanel>
                                             <MenuItem.ItemContainerStyle>
@@ -432,7 +432,7 @@
                                                     <Setter Property="CommandParameter" Value="{Binding Tag, RelativeSource={RelativeSource Self}}"/>
                                                     <Setter Property="Width" Value="23"/>
                                                     <Setter Property="BorderThickness" Value="1"/>
-                                                    <Setter Property="BorderBrush" Value="LightGray"/>
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource Theme.MarkBorder}"/>
                                                     <Setter Property="Margin" Value="1"/>
                                                 </Style>
                                             </MenuItem.ItemContainerStyle>
