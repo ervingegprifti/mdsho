@@ -45,6 +45,14 @@ namespace MDSHO.Common {
     ScreenInfo ScreenAtCursor();
   }
 
+  /// <summary>Tells when screens are connected or disconnected, or a resolution changes.</summary>
+  public interface IDisplayChangeWatcher : IDisposable {
+    /// <summary>Raised after the display settings changed, possibly on another thread and several times in a row.</summary>
+    event Action Changed;
+    /// <summary>Starts listening.</summary>
+    void Start();
+  }
+
   /// <summary>The Windows clipboard.</summary>
   public interface IClipboardService {
     /// <summary>Puts text on the clipboard.</summary>

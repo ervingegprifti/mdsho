@@ -34,16 +34,16 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Version_is_16_and_the_last_migration_is_16() {
-      Assert.Equal(16, AppConstants.DatabaseVersion);
-      Assert.Equal(16, SchemaManager.Migrations.Last().Version);
+    public void Version_16_is_a_known_step() {
+      Assert.True(AppConstants.DatabaseVersion >= 16);
+      Assert.Single(SchemaManager.Migrations, m => m.Version == 16);
     }
 
     [Fact]
     public void V15_database_migrates_to_16_with_an_empty_AppSettings_table_and_keeps_the_rest() {
       BuildV15Db();
       DataStore.Upgrade();
-      Assert.Equal(16, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(1, Tables("AppSettings"));
       Assert.Equal(0, db.Scalar("SELECT count(*) FROM AppSettings"));
       Assert.Equal("W1", DataStore.Windows.GetAll().Single().Title);

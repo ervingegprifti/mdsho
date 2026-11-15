@@ -30,6 +30,8 @@ namespace MDSHO.Tests {
         clipboard, uriLauncher, new ShellLinkWriter(), new StoreActions(new StoreActionsHost(clipboard, shell, uriLauncher)));
       Services.HotkeyService = Hotkeys;
       Services.BringToFront = new BringToFrontShortcut(Hotkeys);
+      // Screen setups never wait on a real timer in tests.
+      Services.ScreenSetups = new ScreenSetupTracker(Services.Screens, new ScreenSetupTests.FakeTimer());
       AppServices.Current = Services;
     }
 

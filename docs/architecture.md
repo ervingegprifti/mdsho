@@ -216,6 +216,43 @@ the other windows; pressing it again, Esc in a panel or opening a button sends t
   released at exit) and `WindowZOrder.cs` (z-order and foreground window calls) are the thin Win32 part;
   `src/MDSHO.App/Helpers/WpfPanelWindows.cs` raises the panels (Topmost on and off) and focuses the first one's buttons.
 
+## Places per screen setup
+
+MDSHO remembers, for each screen setup (each set of connected screens), where every panel, clone and open note window
+was, and moves them there when the screens change (on by default; **Remember places for each screen setup** in
+Settings). The parts:
+
+- `src/MDSHO.Common/ScreenSetups.cs`: plain logic. `ScreenSetup` identifies a setup from the screens' resolutions,
+  which one is primary, and each screen's column and row (how many screens are entirely left of it and above it), for
+  example `1920x1080*@c0r0|2560x1440@c1r0`. Device names, which Windows renumbers, and exact offsets don't count. It
+  names the setup ("2 screens: 1920×1080, 2560×1440", primary screen first, then left to right) and turns a 1.7.0 key
+  (device names and bounds) into the new one (`FromLegacyKey`). `ScreenSetupPlacement` says which screen a window is mostly on
+  and whether it is docked left or right, and chooses where it goes: its saved place (a docked one docked again to that
+  screen's working area), otherwise where it is, and pulled onto a screen when its title bar can't be reached
+  (`ScreenGeometry.EnsureOnScreen`, the startup rule). A docked panel goes to the screen under its saved place, since a
+  saved device name may be out of date. `Debouncer` counts several display changes within 1.5 seconds
+  as one.
+- `src/MDSHO.ViewModels/ScreenSetupTracker.cs`: the tracker, created by `AppServices` and started after the windows and
+  notes open. It saves places (`Remember`) for the current setup; panels and clones call it where their own place is
+  saved (end of a move or resize, dock, centre, Find MDSHO lost windows, a new panel or clone), note windows when their
+  place is saved. On a display change it waits, then identifies the setup: a known one moves every item to its saved
+  place, a new one only pulls items that are off screen back; then it saves every item's place for that setup. With
+  the setting off it still tracks the setup and saves places, but moves nothing. It never saves while a change is
+  waiting or while it moves the windows, and drops a save when the screens no longer match the current setup (Windows
+  can move windows before the event comes), so one setup's moves never land in another setup's places. Each time a
+  setup becomes the current one it records the time (`LastUsed`) and forgets the least recently used setups beyond
+  `MaxSetups` (10), never the current one. At startup it first merges setups whose keys now mean the same screens (1.7.0
+  keys), keeping the most recently used one's places. The tray menu's **Screen setups** submenu uses `KnownSetups` (most
+  recently used first), `PutBack` and `ForgetOthers`.
+- `DesktopWindowPlacedItem` (same file) moves a panel or clone through its view model and saves its own row too;
+  `src/MDSHO.App/Helpers/NoteWindowPlacedItem.cs` moves a note window's normal bounds (a maximized note is maximized
+  again on its new screen).
+- `src/MDSHO.Infrastructure/DisplayChangeWatcher.cs` listens to `SystemEvents.DisplaySettingsChanged` (Windows'
+  `WM_DISPLAYCHANGE`); the app passes each event to the tracker on the UI thread, and
+  `src/MDSHO.App/Helpers/DispatcherOneShotTimer.cs` is the wait.
+- The places are in the `ScreenSetups` and `ScreenSetupPlaces` tables and the setting in `AppSettings` (see
+  [Database](database.md#screensetups)): on this PC only, not exported, and kept by an import that replaces the data.
+
 ## Database upgrades
 
 The database carries its schema version (`PRAGMA user_version`). At start-up, `src/MDSHO.Data/SchemaManager.cs`:

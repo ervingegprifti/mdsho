@@ -21,6 +21,9 @@ window with your own buttons, and you can have as many panels as you like, on as
 - **Groups:** fold buttons into groups, and put a value in a group's name to reuse it in the commands inside it.
 - **Clones:** show the same panel on another screen; a change in one shows in all of its clones.
 - **Docking:** dock a panel to the left or right edge of a screen.
+- **Screen setups:** MDSHO remembers where your panels and notes were for each set of connected screens. Undock your
+  laptop and dock it again, and they go back where they were with those screens. The tray menu's **Screen setups** lists
+  the setups MDSHO knows and can put the panels back; turn it off in a panel's Settings under **Screen setups**.
 - **Bring panels to front:** press **Ctrl+Shift+Alt+M** (or use the first item of the tray menu) to bring every panel
   above your other windows, then pick a button with the arrow keys and Enter. Press it again, or Esc, to send them back.
   Change or turn off the shortcut in a panel's Settings under **Keyboard shortcut**.

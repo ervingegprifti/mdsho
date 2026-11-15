@@ -137,6 +137,14 @@
                         </TextBlock.Style>
                     </TextBlock>
                 </StackPanel>
+
+                <!--Places per screen setup, for the whole app on this PC. Set in code; takes effect on Apply.-->
+                <Label Content="Screen setups" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
+                <StackPanel Orientation="Vertical">
+                    <CheckBox x:Name="CheckRememberScreenSetups" Content="Remember places for each screen setup"/>
+                    <TextBlock x:Name="TextScreenSetupsHint" TextWrapping="Wrap" Margin="0,6,0,0" Foreground="#FF5A5648"
+                               Text="For all panels and notes, on this PC. When screens are connected or disconnected, they move to where they were last time with those screens."/>
+                </StackPanel>
             </StackPanel>
 
             <!--Every outer margin of the content and of the Apply bar equals the Apply button height (set in code from the real button)-->

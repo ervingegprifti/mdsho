@@ -311,6 +311,7 @@ namespace MDSHO {
 				} else {
 					DataStore.Windows.UpdateLeftTopScreenDeviceName(desktopWindow.ID, desktopWindow.Left, desktopWindow.Top, screenDeviceName);
 				}
+				App.RememberPlace(desktopWindow);
 			} catch (Exception ex) {
 				ErrorDialog.ShowDialog(ex);
 			}
@@ -326,6 +327,7 @@ namespace MDSHO {
 				} else {
 					DataStore.Windows.UpdateWidthHeightScreenDeviceName(desktopWindow.ID, desktopWindow.Width, desktopWindow.Height, screenDeviceName);
 				}
+				App.RememberPlace(desktopWindow);
 			} catch (Exception ex) {
 				ErrorDialog.ShowDialog(ex);
 			}
@@ -384,6 +386,7 @@ namespace MDSHO {
 				DataStore.Windows.UpdateLeftTopWidthHeight(desktopWindow.ID, desktopWindow.Left, desktopWindow.Top, desktopWindow.Width, desktopWindow.Height);
       }
 			RefreshDocked();
+			App.RememberPlace(desktopWindow);
 		}
 		#endregion FUNCTIONS
 
@@ -443,6 +446,7 @@ namespace MDSHO {
 			foreach (DesktopWindowViewModel cloneWindow in newCloneWindows) {
 				DesktopWindowView windowView = new DesktopWindowView(cloneWindow);
 				windowView.Show();
+				App.RememberPlace(cloneWindow);
 			}
 		}
 		private static string GetScreenDeviceNameOfWindow(DesktopWindowViewModel desktopWindow) {
@@ -579,6 +583,7 @@ namespace MDSHO {
 				Common.ScreenInfo screen = WindowLookup.GetScreenFromWindow(this);
 				Common.ScreenRect dock = Common.ScreenGeometry.DockLeft(screen, desktopWindow.Width);
 				desktopWindow.ApplyDock((long)dock.Left, (long)dock.Top, (long)dock.Height); // saves geometry, corners turn square
+				App.RememberPlace(desktopWindow);
 			} catch (Exception ex) {
 				ErrorDialog.ShowDialog(ex);
 			}
@@ -589,6 +594,7 @@ namespace MDSHO {
 				Common.ScreenInfo screen = WindowLookup.GetScreenFromWindow(this);
 				Common.ScreenRect dock = Common.ScreenGeometry.DockRight(screen, desktopWindow.Width);
 				desktopWindow.ApplyDock((long)dock.Left, (long)dock.Top, (long)dock.Height); // saves geometry, corners turn square
+				App.RememberPlace(desktopWindow);
 			} catch (Exception ex) {
 				ErrorDialog.ShowDialog(ex);
 			}

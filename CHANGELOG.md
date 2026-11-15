@@ -6,6 +6,55 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.7.1]
+
+### Added
+
+- **Places per screen setup**: MDSHO now remembers where every panel, clone and open note window was for each screen
+  setup, that is each set of connected screens. A setup is identified by the screens' resolutions, which one is
+  primary, and how they are arranged (which screen is left of, right of, above or below which), not by the names Windows
+  gives the screens, which change when screens are reconnected, and not by exact offsets, so dragging a monitor a little
+  in Display settings is still the same setup (two identical monitors swapped count as the same setup too). When you undock a
+  laptop, Windows piles all windows onto the laptop screen, and before this version docking again didn't bring them
+  back. Now, when screens are connected or disconnected or a resolution changes, MDSHO waits a moment (1.5 seconds, so
+  several changes in a row count as one) and then:
+  - with screens it has seen before, moves every panel, clone and open note window back to where it was last time with
+    those screens. Docked panels are docked again on their screen (with the full height of its working area, also when
+    the taskbar changed). A panel, clone or note opened since then has no place for that setup: it stays where it is,
+    and is only pulled onto a screen if it is off every screen;
+  - with screens it hasn't seen before, leaves things where Windows put them, pulls anything that is off every screen
+    back onto a screen, and remembers the places for those screens from then on.
+
+  Places are saved at the same moments as before: when you stop moving or resizing a panel, dock or centre it, find lost
+  windows, create a panel or a clone, and shortly after a note window moves. Nothing is saved while the screens are
+  changing or while MDSHO moves the windows, so the moves never overwrite the places of another setup. When MDSHO starts
+  with screens it knows, the panels, clones and open notes go to their places for those screens. The places stay on this
+  PC: they are not part of exports, and an import that replaces the data keeps them.
+- **Screen setups** submenu in the tray menu, right after Bring panels to front. It lists the screen setups MDSHO knows,
+  most recently used first, for example "2 screens: 1920×1080, 2560×1440" (the primary screen first, then the others
+  from left to right), with a check mark on the current one. Only two different setups with the same name get a number,
+  for example a monitor on the right and then on the left of the laptop: "2 screens: 1920×1080, 2560×1440 (2)" is the
+  one seen later. MDSHO keeps the 10 most recently used setups: an 11th forgets the least recently used one with its
+  places, and never the current one. The list is information only. Below it, **Put panels back for this setup** moves everything to its saved place for the current
+  screens, and **Forget the other setups** deletes every setup but the current one (greyed out when there is no other).
+- **Screen setups** section in the Settings window, below Keyboard shortcut: **Remember places for each screen setup**,
+  on at first, with the hint "For all panels and notes, on this PC. When screens are connected or disconnected, they move
+  to where they were last time with those screens." It is one setting for the whole app on this PC, takes effect on
+  Apply, and closing without Apply changes nothing. When it is off, MDSHO behaves exactly as before: nothing moves when
+  the screens change, and the two actions of the tray submenu are greyed out (the list still shows). Places keep being
+  saved while it is off, so turning it on again starts from where the windows are now, not from where they were when it
+  was turned off.
+
+### Changed
+
+- The database is now at version 17: the new `ScreenSetups` and `ScreenSetupPlaces` tables hold the screen setups and
+  the places of the panels, clones and note windows in each. As with every upgrade, the database is backed up first.
+  Places of panels, clones and notes that were deleted are cleaned up when MDSHO starts.
+- For the 1.7.0 test build only: its database gets the new last-used time of each setup at the next start, and the
+  setups it saved several times for the same screens (because Windows had renumbered them, or a monitor had moved a
+  little) are merged into one, keeping the places of the most recently used one (the last one added, since 1.7.0 didn't
+  record when a setup was used) and taking places it lacks from the others.
+
 ## [1.6.1]
 
 ### Added

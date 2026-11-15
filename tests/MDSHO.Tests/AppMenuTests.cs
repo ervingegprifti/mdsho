@@ -61,9 +61,9 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Tray_menu_has_no_rate_share_and_no_product_name() {
-      // The separator after "Bring panels to front" has no text.
+      // The separator after "Screen setups" has no text.
       Assert.Equal(new[] {
-        "Bring panels to front", "", "New window", "Find MDSHO lost windows", "Find other lost windows", "Start with Windows", "Export data...", "Import data...", "Browse app data", "About", "Exit application"
+        "Bring panels to front", "Screen setups", "", "New window", "Find MDSHO lost windows", "Find other lost windows", "Start with Windows", "Export data...", "Import data...", "Browse app data", "About", "Exit application"
       }, TrayTexts());
     }
 

@@ -83,15 +83,17 @@ namespace MDSHO.Tests {
     // ---- Tray menu ----
 
     [Fact]
-    public void The_tray_menu_starts_with_Bring_panels_to_front_and_a_separator() {
+    public void The_tray_menu_starts_with_Bring_panels_to_front() {
       using (TempDb db = new TempDb())
       using (Setup s = new Setup()) {
         s.Shortcut.Start();
         OnStaThread(() => {
           using (System.Windows.Forms.ContextMenuStrip menu = App.CreateTrayMenu(null)) {
             Assert.Equal("Bring panels to front", BringItem(menu).Text);
-            Assert.IsType<System.Windows.Forms.ToolStripSeparator>(menu.Items[1]);
-            Assert.Equal("New window", menu.Items[2].Text);
+            // "Screen setups" comes right after it, then the separator.
+            Assert.Equal("Screen setups", menu.Items[1].Text);
+            Assert.IsType<System.Windows.Forms.ToolStripSeparator>(menu.Items[2]);
+            Assert.Equal("New window", menu.Items[3].Text);
           }
         });
       }
@@ -190,8 +192,8 @@ namespace MDSHO.Tests {
         s.Shortcut.Start();
         WithSettings(s, window => {
           List<string> headings = WpfAppHost.VisualDescendants<Label>(window).Select(l => l.Content as string).ToList();
-          Assert.Equal(new[] { "Icons appearance", "Other", "Keyboard shortcut" }, headings);
-          Label heading = WpfAppHost.VisualDescendants<Label>(window).Last();
+          Assert.Equal(new[] { "Icons appearance", "Other", "Keyboard shortcut", "Screen setups" }, headings);
+          Label heading = WpfAppHost.VisualDescendants<Label>(window).Single(l => (l.Content as string) == "Keyboard shortcut");
           Assert.Equal(window.FindResource("StyleSettingsCategory"), heading.Style);
           Assert.Equal("Bring panels to front", Named<TextBlock>(window, "TextShortcutLabel").Text);
           Assert.Equal("Ctrl + Shift + Alt + M", Text(Named<Button>(window, "ButtonShortcutBox")));

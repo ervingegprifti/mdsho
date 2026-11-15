@@ -17,5 +17,9 @@ namespace MDSHO.Helpers {
     public static ScreenRect ToScreenRect(this Rect rect) {
       return rect.IsEmpty ? ScreenRect.Empty : new ScreenRect(rect.X, rect.Y, rect.Width, rect.Height);
     }
+    /// <summary>The WPF rectangle; <see cref="ScreenRect.Empty"/> becomes WPF's empty rectangle.</summary>
+    public static Rect ToRect(this ScreenRect rect) {
+      return rect.IsEmpty ? Rect.Empty : new Rect(rect.X, rect.Y, rect.Width, rect.Height);
+    }
   }
 }
