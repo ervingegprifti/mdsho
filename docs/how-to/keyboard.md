@@ -1,0 +1,54 @@
+---
+title: Use the keyboard
+permalink: /how-to/keyboard/
+---
+
+[MDSHO](../index.md) › How-to
+
+# Use the keyboard
+
+This page helps you reach your panels and buttons without the mouse.
+
+## Bring panels to front
+
+1. Press **Ctrl+Shift+Alt+M**. Every panel comes above your other windows.
+2. Pick a button with the arrow keys and press Enter to open it. The panels go back behind your windows.
+3. To send them back without opening anything, press **Ctrl+Shift+Alt+M** again, or Esc.
+
+You can also choose **Bring panels to front**, the first item in the menu of the MDSHO icon in the taskbar's
+notification area.
+
+## Change the shortcut
+
+1. Open a panel's **Settings** and choose **Keyboard**.
+2. Click the box under **Bring panels to front**, then press the new shortcut. Use Ctrl, Alt or Win with a key.
+3. Click **Apply**.
+
+Click **Default** for Ctrl+Shift+Alt+M, or **Off** for no shortcut. If another app already uses the shortcut, MDSHO
+says so; choose another one.
+
+## Keys in a panel
+
+Select a button first, with a click or the arrow keys.
+
+| Key | What it does |
+| --- | --- |
+| Enter | Opens the button, or folds or unfolds a group. |
+| F2 | Renames the button. |
+| Delete | Deletes the button, after asking. |
+| Ctrl+X | Cuts the button. |
+| Ctrl+C | Copies the button. |
+| Ctrl+V | Pastes into the selected group, or into the group the selected button is in. |
+
+## Rename
+
+1. Select a button or group and press F2, or right-click it and choose **Rename**.
+2. Type the new name.
+3. Press Enter to keep it, or Esc to cancel.
+
+To rename a panel, right-click its title and choose **Rename window title**.
+
+## Notes and comments
+
+- In a note, Esc closes the note. It is already saved.
+- In a comment, Ctrl+Enter saves it and Esc closes it without saving.
