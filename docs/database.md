@@ -138,9 +138,10 @@ exports, and an import that replaces the data keeps them. Added in version 16.
 
 | Key | Value |
 |---|---|
-| `BringToFrontShortcut` | The **Bring panels to front** keyboard shortcut (Settings > Keyboard shortcut), for example `Ctrl+Shift+Alt+M`, or `Off`. Without a row: `Ctrl+Shift+Alt+M`. |
-| `RememberScreenSetupPlaces` | **Remember places for each screen setup** (Settings > Screen setups): `On` or `Off`. Without a row: on. Added in version 17. |
-| `WindowTheme` | **Window theme** (Settings > Window theme): `SameAsWindows`, `Light` or `Dark`. Without a row, or with any other value: `SameAsWindows`. Added in 1.10.1; the database version stays 17. |
+| `BringToFrontShortcut` | The **Bring panels to front** keyboard shortcut (Settings > Keyboard), for example `Ctrl+Shift+Alt+M`, or `Off`. Without a row: `Ctrl+Shift+Alt+M`. |
+| `RememberScreenSetupPlaces` | **Remember places for each screen setup** (Settings > Screens): `On` or `Off`. Without a row: on. Added in version 17. |
+| `WindowTheme` | **Window theme** (Settings > Appearance): `SameAsWindows`, `Light` or `Dark`. Without a row, or with any other value: `SameAsWindows`. Added in 1.10.1; the database version stays 17. |
+| `SettingsPage` | The Settings page used last, which Settings opens on: `Appearance`, `General`, `Keyboard` or `Screens`. Without a row, or with any other value: `Appearance`. Added in 1.11.0; the database version stays 17. |
 
 ### ScreenSetups
 

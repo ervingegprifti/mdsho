@@ -23,12 +23,12 @@ window with your own buttons, and you can have as many panels as you like, on as
 - **Docking:** dock a panel to the left or right edge of a screen.
 - **Screen setups:** MDSHO remembers where your panels and notes were for each set of connected screens. Undock your
   laptop and dock it again, and they go back where they were with those screens. The tray menu's **Screen setups** lists
-  the setups MDSHO knows and can put the panels back; turn it off in a panel's Settings under **Screen setups**.
+  the setups MDSHO knows and can put the panels back; turn it off in a panel's Settings on the **Screens** page.
 - **Bring panels to front:** press **Ctrl+Shift+Alt+M** (or use the first item of the tray menu) to bring every panel
   above your other windows, then pick a button with the arrow keys and Enter. Press it again, or Esc, to send them back.
-  Change or turn off the shortcut in a panel's Settings under **Keyboard shortcut**.
+  Change or turn off the shortcut in a panel's Settings on the **Keyboard** page.
 - **Window theme:** MDSHO's own windows, comments and menus follow Windows' light or dark mode. Choose Light or Dark
-  instead in a panel's Settings under **Window theme**. Panels and notes keep their own colours.
+  instead in a panel's Settings on the **Appearance** page. Panels and notes keep their own colours.
 - **Colors:** set the colors of each panel and note in its Colours window, save your own defaults, and mark buttons with a color.
 - **Export and import:** save all your panels and buttons to one `.zip` file and load them back.
 
