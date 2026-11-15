@@ -19,6 +19,21 @@ namespace MDSHO.Helpers {
       }
     }
 
+    /// <summary>
+    /// A pressed key as the Win32 virtual key and modifiers RegisterHotKey uses. With Alt held WPF reports
+    /// <see cref="Key.System"/>; the real key is then <paramref name="systemKey"/>.
+    /// </summary>
+    public static (Common.HotkeyModifiers Modifiers, int Key) ToHotkey(Key key, Key systemKey, ModifierKeys modifiers) {
+      Key real = key == Key.System ? systemKey : key;
+      int virtualKey = real == Key.None ? 0 : KeyInterop.VirtualKeyFromKey(real);
+      Common.HotkeyModifiers hotkeyModifiers = Common.HotkeyModifiers.None;
+      if ((modifiers & ModifierKeys.Control) != 0) { hotkeyModifiers |= Common.HotkeyModifiers.Control; }
+      if ((modifiers & ModifierKeys.Shift) != 0) { hotkeyModifiers |= Common.HotkeyModifiers.Shift; }
+      if ((modifiers & ModifierKeys.Alt) != 0) { hotkeyModifiers |= Common.HotkeyModifiers.Alt; }
+      if ((modifiers & ModifierKeys.Windows) != 0) { hotkeyModifiers |= Common.HotkeyModifiers.Win; }
+      return (hotkeyModifiers, virtualKey);
+    }
+
     /// <summary>None, Ctrl alone, or any other combination.</summary>
     public static ShortcutModifiers ToShortcutModifiers(ModifierKeys modifiers) {
       if (modifiers == ModifierKeys.None) {

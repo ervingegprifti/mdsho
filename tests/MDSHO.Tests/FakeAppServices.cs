@@ -28,8 +28,13 @@ namespace MDSHO.Tests {
       FakeUriLauncher uriLauncher = new FakeUriLauncher(Launched);
       Services = new AppServices(shell, package, new AppDataLocator(package), new AutoStartService(package), new ScreenService(),
         clipboard, uriLauncher, new ShellLinkWriter(), new StoreActions(new StoreActionsHost(clipboard, shell, uriLauncher)));
+      Services.HotkeyService = Hotkeys;
+      Services.BringToFront = new BringToFrontShortcut(Hotkeys);
       AppServices.Current = Services;
     }
+
+    /// <summary>The global hotkey seam: nothing is registered in Windows.</summary>
+    public FakeHotkeyService Hotkeys { get; } = new FakeHotkeyService();
 
     /// <summary>The folders opened in Explorer (the quotes removed).</summary>
     public List<string> OpenedFolders {

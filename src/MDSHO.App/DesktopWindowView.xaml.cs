@@ -53,6 +53,7 @@ namespace MDSHO {
 		private void InitializeWindowEvents() {
       this.Loaded += DesktopWindowView_Loaded;
       this.StateChanged += DesktopWindowView_StateChanged;
+      this.PreviewKeyDown += DesktopWindowView_PreviewKeyDown;
 		}
     private void InitializeControlEvents() {
       // Header
@@ -479,6 +480,50 @@ namespace MDSHO {
 			} catch (Exception ex) {
 				ErrorDialog.ShowDialog(ex);
 			}
+		}
+		/// <summary>
+		/// Esc sends the panels back when they were brought to front with the keyboard shortcut or the tray menu. While a name,
+		/// title or command line is being typed, Esc stays with the edit box (it cancels the edit). Otherwise Esc does nothing
+		/// in a panel, as before.
+		/// </summary>
+		private void DesktopWindowView_PreviewKeyDown(object sender, KeyEventArgs e) {
+			if (e.Key != Key.Escape) {
+				return;
+			}
+			try {
+				bool isEditing = Keyboard.FocusedElement is TextBox || (this.DataContext as DesktopWindowViewModel)?.IsEditingTitle == true;
+				if (AppServices.Current.PanelsToFront?.HandleEscape(isEditing) == true) {
+					e.Handled = true;
+				}
+			} catch (Exception ex) {
+				ErrorDialog.ShowDialog(ex);
+			}
+		}
+
+		/// <summary>Gives the keyboard focus to the selected button, or to the first one, so arrow keys and Enter pick a button.</summary>
+		public void FocusButtons() {
+			TreeView tree = this.TreeViewShortcuts;
+			TreeViewItem item = (tree.SelectedItem != null ? FindContainer(tree, tree.SelectedItem) : null)
+				?? (tree.Items.Count > 0 ? tree.ItemContainerGenerator.ContainerFromIndex(0) as TreeViewItem : null);
+			if (item == null || !item.Focus()) {
+				tree.Focus();
+			}
+		}
+
+		// The container of an item at any depth among the expanded groups.
+		private static TreeViewItem FindContainer(ItemsControl parent, object item) {
+			if (parent.ItemContainerGenerator.ContainerFromItem(item) is TreeViewItem direct) {
+				return direct;
+			}
+			foreach (object child in parent.Items) {
+				if (parent.ItemContainerGenerator.ContainerFromItem(child) is TreeViewItem childContainer && childContainer.IsExpanded) {
+					TreeViewItem found = FindContainer(childContainer, item);
+					if (found != null) {
+						return found;
+					}
+				}
+			}
+			return null;
 		}
 		#endregion KEYBOARD SHORTCUTS
 

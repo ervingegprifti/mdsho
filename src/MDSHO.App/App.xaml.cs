@@ -101,6 +101,7 @@ namespace MDSHO
         this.notifyIcon.Icon = MDSHO.Properties.Resources.logo;
         this.notifyIcon.Visible = true;
 
+        StartBringPanelsToFront();
         CreateContextMenu();
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
@@ -218,6 +219,51 @@ namespace MDSHO
     }
 
 
+    #region BRING PANELS TO FRONT
+    /// <summary>
+    /// Makes <paramref name="panels"/> the app's "Bring panels to front" (the tray menu item and Esc in a panel use it), and
+    /// opening a button sends panels that were brought to front back.
+    /// </summary>
+    public static void ConnectPanelsToFront(Common.PanelsToFront panels) {
+      AppServices.Current.PanelsToFront = panels;
+      ShortcutViewModel.Opened = () => {
+        try {
+          panels.ButtonOpened();
+        } catch (Exception ex) {
+          ErrorDialog.ShowDialog(ex);
+        }
+      };
+    }
+
+    /// <summary>The tray menu item and the keyboard shortcut: brings the panels to front, or sends them back when they are.</summary>
+    public static void BringPanelsToFront() {
+      try {
+        AppServices.Current.PanelsToFront?.Toggle();
+      } catch (Exception ex) {
+        ErrorDialog.ShowDialog(ex);
+      }
+    }
+
+    /// <summary>
+    /// At startup: connects "Bring panels to front" to the panels and registers the saved shortcut. A shortcut another app
+    /// holds is not an error here: the Settings window shows it in red.
+    /// </summary>
+    private void StartBringPanelsToFront() {
+      try {
+        Common.PanelsToFront panels = new Common.PanelsToFront(new WpfPanelWindows());
+        ConnectPanelsToFront(panels);
+        // Switching to another app ends "in front": the next press brings the panels up again.
+        this.Deactivated += (s, args) => panels.AppDeactivated();
+        BringToFrontShortcut shortcut = AppServices.Current.BringToFront;
+        shortcut.Pressed += BringPanelsToFront;
+        shortcut.Start();
+      } catch (Exception ex) {
+        // Never stop startup for the shortcut.
+        Common.AppLog.Error(ex, "Bring panels to front could not be started");
+      }
+    }
+    #endregion BRING PANELS TO FRONT
+
     #region CONTEXT MENU
     /// <summary>The icon set (solid or outline) of the first desktop window, which the tray menu and About from the tray follow; solid when there is no window.</summary>
     public static IconGlyphs FirstWindowIcons(AppViewModel appViewModel) {
@@ -259,6 +305,18 @@ namespace MDSHO
     /// </summary>
     public static System.Windows.Forms.ContextMenuStrip CreateTrayMenu(App app, Func<IconGlyphs> icons) {
       System.Windows.Forms.ContextMenuStrip menu = new System.Windows.Forms.ContextMenuStrip();
+      // Bring panels to front, with the current shortcut at the right (none when Off or when it doesn't work). It works
+      // without the shortcut too.
+      BringToFrontShortcut shortcut = AppServices.Current.BringToFront;
+      System.Windows.Forms.ToolStripMenuItem bringToFrontMenuItem = new System.Windows.Forms.ToolStripMenuItem("Bring panels to front") { ShowShortcutKeys = true };
+      bringToFrontMenuItem.Click += (s, e) => BringPanelsToFront();
+      Action showShortcut = () => bringToFrontMenuItem.ShortcutKeyDisplayString = shortcut.MenuText;
+      showShortcut();
+      shortcut.Changed += showShortcut;
+      menu.Disposed += (s, e) => shortcut.Changed -= showShortcut;
+      menu.Opening += (s, e) => showShortcut();
+      menu.Items.Add(bringToFrontMenuItem);
+      menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
       menu.Items.Add("New window").Click += (s, e) => app.NewWindow(null);
       menu.Items.Add("Find MDSHO lost windows").Click += (s, e) => app.FindWindows();
       menu.Items.Add("Find other lost windows").Click += (s, e) => FindOtherLostWindows();
@@ -506,6 +564,12 @@ namespace MDSHO
       Common.AppLog.CloseAndFlush();
       Common.IShellLauncher shell = AppServices.Current.Shell;
       Common.IPackageIdentity package = AppServices.Current.Package;
+      // Release the global shortcut's keys.
+      try {
+        AppServices.Current.BringToFront.Dispose();
+      } catch (Exception ex) {
+        Debug.WriteLine(ex);
+      }
       try {
         this.host?.Dispose();
       } catch (Exception ex) {

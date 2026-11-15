@@ -38,6 +38,34 @@
                 <Setter Property="Padding" Value="0"/>
                 <Setter Property="Margin" Value="0,0,0,10"/>
             </Style>
+            <!--The shortcut box: looks like a text box; its border darkens while it has the keyboard focus (recording).-->
+            <Style x:Key="StyleShortcutBox" TargetType="{x:Type Button}">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="Foreground" Value="Black"/>
+                <Setter Property="BorderBrush" Value="#FFB9B39F"/>
+                <Setter Property="Padding" Value="8,5"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="BoxBorder" CornerRadius="3" BorderThickness="1" Padding="{TemplateBinding Padding}"
+                                    BorderBrush="{TemplateBinding BorderBrush}" Background="{TemplateBinding Background}">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="BoxBorder" Property="BorderBrush" Value="Gray"/>
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#FF424242"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -70,6 +98,44 @@
                     <CheckBox x:Name="CheckShowVersionInTitle" Content="Show version in title" Margin="0,6,0,0"
                               ToolTip="Shows the MDSHO version after this window's title, for example MDSHO v1.5.1"
                               IsChecked="{Binding Appearance.ShowVersionInTitle}" />
+                </StackPanel>
+
+                <!--One shortcut for the whole app, on this PC (DataContext: a ShortcutRecorder, set in code). Takes effect on Apply.-->
+                <Label Content="Keyboard shortcut" Margin="0,20,0,10" Style="{StaticResource StyleSettingsCategory}"/>
+                <StackPanel x:Name="PanelShortcut" Orientation="Vertical" d:DataContext="{d:DesignInstance Type=viewmodels:ShortcutRecorder}">
+                    <TextBlock x:Name="TextShortcutLabel" Text="Bring panels to front" Margin="0,0,0,6"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <!--Click the box (or Enter / Space on it), then press the new shortcut.-->
+                        <Button x:Name="ButtonShortcutBox" Grid.Column="0" Content="{Binding BoxText}"
+                                Style="{StaticResource StyleShortcutBox}"
+                                AutomationProperties.Name="Bring panels to front shortcut"
+                                ToolTip="Click, then press the new shortcut"/>
+                        <Button x:Name="ButtonShortcutDefault" Grid.Column="1" Margin="8,0,0,0" Padding="12,5"
+                                Style="{StaticResource StyleDarkButton}" Background="#FFA09A88"
+                                ToolTip="Ctrl + Shift + Alt + M"
+                                Content="Default"/>
+                        <Button x:Name="ButtonShortcutOff" Grid.Column="2" Margin="8,0,0,0" Padding="12,5"
+                                Style="{StaticResource StyleDarkButton}" Background="#FFA09A88"
+                                ToolTip="No shortcut"
+                                Content="Off"/>
+                    </Grid>
+                    <TextBlock x:Name="TextShortcutHint" Text="{Binding Hint}" TextWrapping="Wrap" Margin="0,6,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="Foreground" Value="#FF5A5648"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HintIsError}" Value="True">
+                                        <Setter Property="Foreground" Value="Red"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </StackPanel>
             </StackPanel>
 
