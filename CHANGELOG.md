@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.9.0]
+
+### Changed
+
+- **Group values**: a group name can hold up to 9 values, such as `Prod {SRV01} {user=admin}`. Run commands in the group
+  use them as `{=1}`, `{=2}` or by name as `{=user}`. The Run command window lists the group's values; click one to
+  insert it.
+- `{}` is replaced by `{=1}` and is no longer filled in. Old commands that use `{}` show an error until they are
+  edited, and they don't run.
+- Mistakes in group values show as errors in the Run command window, in the button's tooltip, and when you run the
+  command.
+
 ## [1.8.0]
 
 ### Added

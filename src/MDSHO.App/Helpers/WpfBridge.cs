@@ -15,6 +15,8 @@ namespace MDSHO.Helpers {
         MessageBox.Show(message, caption, MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes;
       Dialogs.ShowMessage = (message, caption) =>
         MessageBox.Show(message, caption, MessageBoxButton.OK, MessageBoxImage.Exclamation);
+      Dialogs.ShowError = (caption, error, detail) =>
+        CommandErrorWindow.ShowWindow(new CommandErrorWindow(caption, error, detail));
     }
   }
 }

@@ -16,6 +16,8 @@
                     <!-- View model Show... flags: true = Visible, false = Collapsed. -->
                     <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
                     <FontFamily x:Key="IconFont">pack://application:,,,/Assets/Fonts/#MDSHOFont</FontFamily>
+                    <!-- Syntax errors (run command group values) -->
+                    <SolidColorBrush x:Key="ErrorBrush" Color="#FFC42B1C"/>
 
                     <Style x:Key="StyleMenuItemFontIcon" TargetType="{x:Type TextBlock}">
                         <Setter Property="Width" Value="16"/>

@@ -65,7 +65,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Run_fills_the_group_value_before_joining() {
-      Command(Group("Test {SRV01}"), "cmd.exe", "/K ping {}\r\ntracert {}").Run();
+      Command(Group("Test {SRV01}"), "cmd.exe", "/K ping {=1}\r\ntracert {=1}").Run();
       Assert.Equal("/K ping SRV01 & tracert SRV01", Assert.Single(started).Arguments);
     }
 
@@ -89,7 +89,7 @@ namespace MDSHO.Tests {
     public void Working_folder_is_used_with_the_group_value_only_when_set() {
       ShortcutViewModel cmd = Command(Group("T {SRV01}"), "cmd.exe", "/K dir");
       cmd.Run();
-      cmd.ProcessWorkingFolder = @"C:\Logs\{}";
+      cmd.ProcessWorkingFolder = @"C:\Logs\{=1}";
       cmd.Run();
       Assert.Equal("", started[0].WorkingDirectory);
       Assert.Equal(@"C:\Logs\SRV01", started[1].WorkingDirectory);
@@ -130,15 +130,130 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Tooltip_and_resolved_arguments_use_the_joined_form() {
-      ShortcutViewModel cmd = Command(Group("T {SRV01}"), "cmd.exe", "/K ping {}\r\nipconfig");
+      ShortcutViewModel cmd = Command(Group("T {SRV01}"), "cmd.exe", "/K ping {=1}\r\nipconfig");
       Assert.Equal("/K ping SRV01 & ipconfig", cmd.ResolvedProcessArguments);
       Assert.Equal("cmd.exe /K ping SRV01 & ipconfig", cmd.ToolTipText);
     }
 
     [Fact]
-    public void Parent_group_value_is_exposed() {
-      Assert.Equal("SRV01", Command(Group("T {SRV01}"), "cmd.exe", "").ParentGroupValue);
-      Assert.Null(Command(null, "cmd.exe", "").ParentGroupValue);
+    public void Parent_group_values_are_exposed() {
+      GroupValueItem item = Assert.Single(Command(Group("T {SRV01}"), "cmd.exe", "").ParentGroupValues);
+      Assert.Equal((1, null, "SRV01"), (item.Number, item.Name, item.Value));
+      Assert.Empty(Command(null, "cmd.exe", "").ParentGroupValues);
+      Assert.Empty(Command(Group("T"), "cmd.exe", "").ParentGroupValues);
+    }
+
+    // ---- The window's view model: group values and errors ----
+
+    [Fact]
+    public void Numbered_and_named_values_fill_the_preview_and_test_run() {
+      ShortcutViewModel cmd = Command(Group("Prod {SRV01} {user=admin}"), "cmd.exe", "");
+      RunCommandViewModel vm = new RunCommandViewModel(cmd, false);
+      vm.Arguments = "ping {=1} -u {=user} {=2}";
+      vm.WorkingFolder = @"C:\{=user}";
+      Assert.Null(vm.Error);
+      Assert.False(vm.HasError);
+      Assert.Equal("cmd.exe /C ping SRV01 -u admin admin" + Environment.NewLine + @"In folder: C:\admin", vm.Preview);
+      vm.TestRun();
+      ProcessStartInfo psi = Assert.Single(started);
+      Assert.Equal(("/C ping SRV01 -u admin admin", @"C:\admin"), (psi.Arguments, psi.WorkingDirectory));
+    }
+
+    [Fact]
+    public void Error_is_live_and_the_preview_is_left_unfilled() {
+      RunCommandViewModel vm = new RunCommandViewModel(Command(Group("T {SRV01}"), "cmd.exe", "/K ping {=1}"), false);
+      List<string> raised = new List<string>();
+      vm.PropertyChanged += (s, e) => raised.Add(e.PropertyName);
+      vm.Arguments = "ping {}";
+      Assert.Equal("{} is no longer supported. Use {=1}.", vm.Error);
+      Assert.True(vm.HasError);
+      Assert.Contains(nameof(RunCommandViewModel.Error), raised);
+      Assert.Contains(nameof(RunCommandViewModel.HasError), raised);
+      Assert.Equal("cmd.exe /K ping {}", vm.Preview);
+      vm.Arguments = "ping {=2}";
+      Assert.Equal("The group has no value 2.", vm.Error);
+      vm.Arguments = "ping {=1}";
+      vm.WorkingFolder = @"C:\{=user}";
+      Assert.Equal("The group has no value named \"user\".", vm.Error);
+      vm.WorkingFolder = "";
+      Assert.Null(vm.Error);
+      Assert.Equal("cmd.exe /K ping SRV01", vm.Preview);
+    }
+
+    [Fact]
+    public void Save_is_refused_while_there_is_an_error() {
+      ShortcutViewModel cmd = Command(Group("T {SRV01}"), "cmd.exe", "/K ping {=1}");
+      RunCommandViewModel vm = new RunCommandViewModel(cmd, false);
+      Assert.Null(vm.FooterError);
+      vm.Arguments = "ping {=us er}";
+      Assert.False(vm.Save());
+      Assert.Equal("Fix the error to save.", vm.FooterError);
+      Assert.Equal("/K ping {=1}", Row(cmd).ProcessArguments);
+      vm.Arguments = "tracert {=1}";
+      Assert.Null(vm.FooterError);
+      Assert.True(vm.Save());
+      Assert.Equal("/K tracert {=1}", Row(cmd).ProcessArguments);
+    }
+
+    [Fact]
+    public void Test_run_is_refused_while_there_is_an_error() {
+      RunCommandViewModel vm = new RunCommandViewModel(Command(null, "cmd.exe", "/K ping {=1}"), false);
+      Assert.Equal("This command uses group values, but its group has none.", vm.Error);
+      vm.TestRun();
+      Assert.Empty(started);
+      Assert.Equal("Fix the error to run.", vm.FooterError);
+      vm.Arguments = "ping localhost";
+      Assert.Null(vm.FooterError);
+      vm.TestRun();
+      Assert.Single(started);
+    }
+
+    [Fact]
+    public void Group_values_list_shows_number_name_and_value() {
+      RunCommandViewModel vm = new RunCommandViewModel(Command(Group("Prod {SRV01} {user=admin}"), "cmd.exe", ""), false);
+      Assert.True(vm.HasGroupValues);
+      Assert.Equal(new[] { "{=1} SRV01", "{=2} {=user} admin" }, vm.GroupValues.Select(v => v.Label).ToArray());
+      Assert.Equal("Group values: click one to insert it", RunCommandViewModel.GroupValuesLabel);
+    }
+
+    [Fact]
+    public void Without_values_the_hint_shows_and_turns_red_only_when_a_token_is_used() {
+      RunCommandViewModel vm = new RunCommandViewModel(Command(Group("T"), "cmd.exe", "/K ping {}"), false);
+      Assert.False(vm.HasGroupValues);
+      Assert.Empty(vm.GroupValues);
+      Assert.Equal("This group has no values. Put them in braces in its name.", RunCommandViewModel.NoGroupValuesText);
+      Assert.Null(vm.Error);
+      Assert.False(vm.IsNoGroupValuesError);
+      List<string> raised = new List<string>();
+      vm.PropertyChanged += (s, e) => raised.Add(e.PropertyName);
+      vm.Arguments = "ping {=1}";
+      Assert.True(vm.IsNoGroupValuesError);
+      Assert.Contains(nameof(RunCommandViewModel.IsNoGroupValuesError), raised);
+      vm.Arguments = "ping {=}";
+      Assert.True(vm.IsNoGroupValuesError);
+      vm.Arguments = "";
+      vm.WorkingFolder = @"C:\{=1}";
+      Assert.True(vm.IsNoGroupValuesError);
+    }
+
+    [Theory]
+    [InlineData("ping ", 5, 0, 0, "ping {=1}", 9)]
+    [InlineData("ping  -n 1", 5, 0, 1, "ping {=user} -n 1", 12)]
+    [InlineData("ping XXX", 5, 3, 0, "ping {=1}", 9)]
+    [InlineData("", 0, 0, 1, "{=user}", 7)]
+    public void Inserting_a_value_puts_its_token_at_the_caret(string arguments, int caret, int selected, int index, string expected, int newCaret) {
+      RunCommandViewModel vm = new RunCommandViewModel(Command(Group("Prod {SRV01} {user=admin}"), "cmd.exe", ""), false);
+      vm.Arguments = arguments;
+      Assert.Equal(newCaret, vm.InsertGroupValue(vm.GroupValues[index], caret, selected));
+      Assert.Equal(expected, vm.Arguments);
+    }
+
+    [Fact]
+    public void Inserting_a_value_past_the_end_appends_it() {
+      RunCommandViewModel vm = new RunCommandViewModel(Command(Group("P {A}"), "cmd.exe", ""), false);
+      vm.Arguments = "ping";
+      Assert.Equal(8, vm.InsertGroupValue(vm.GroupValues[0], 99, 5));
+      Assert.Equal("ping{=1}", vm.Arguments);
     }
 
     // ---- Opening the window ----
@@ -246,13 +361,13 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Preview_is_live_and_shows_the_final_command_line() {
-      ShortcutViewModel cmd = Command(Group("T {SRV01}"), "cmd.exe", "/K ping {}");
+      ShortcutViewModel cmd = Command(Group("T {SRV01}"), "cmd.exe", "/K ping {=1}");
       RunCommandViewModel vm = new RunCommandViewModel(cmd, false);
       Assert.Equal("cmd.exe /K ping SRV01", vm.Preview);
       List<string> raised = new List<string>();
       vm.PropertyChanged += (s, e) => raised.Add(e.PropertyName);
 
-      vm.Arguments = "ping {}\r\nipconfig";
+      vm.Arguments = "ping {=1}\r\nipconfig";
       Assert.Contains(nameof(RunCommandViewModel.Preview), raised);
       Assert.StartsWith("cmd.exe /K ping SRV01 & ipconfig", vm.Preview);
 
@@ -260,7 +375,7 @@ namespace MDSHO.Tests {
       Assert.StartsWith("cmd.exe /C ping SRV01 & ipconfig", vm.Preview);
 
       vm.RunAsAdministrator = true;
-      vm.WorkingFolder = @"C:\{}";
+      vm.WorkingFolder = @"C:\{=1}";
       Assert.Contains("As administrator", vm.Preview);
       Assert.Contains(@"In folder: C:\SRV01", vm.Preview);
     }
@@ -339,9 +454,9 @@ namespace MDSHO.Tests {
     public void Test_run_starts_what_is_on_screen_with_the_group_value_without_saving() {
       ShortcutViewModel cmd = Command(Group("T {SRV01}"), "cmd.exe", "/K ping localhost");
       RunCommandViewModel vm = new RunCommandViewModel(cmd, false);
-      vm.Arguments = "ping {}\r\ntracert {}";
+      vm.Arguments = "ping {=1}\r\ntracert {=1}";
       vm.KeepWindowOpen = false;
-      vm.WorkingFolder = @"C:\{}";
+      vm.WorkingFolder = @"C:\{=1}";
       vm.RunAsAdministrator = true;
       vm.TestRunCommand.Execute(null);
       ProcessStartInfo psi = Assert.Single(started);
@@ -411,7 +526,7 @@ namespace MDSHO.Tests {
       Assert.Equal("my own", vm.Arguments);
       confirmAnswer = true;
       Assert.True(vm.UseExample(ping));
-      Assert.Equal("ping {}", vm.Arguments);
+      Assert.Equal("ping {=1}", vm.Arguments);
     }
 
     [Fact]

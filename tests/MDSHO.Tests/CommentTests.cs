@@ -417,7 +417,9 @@ namespace MDSHO.Tests {
         List<TextBlock> texts = panel.Children.OfType<TextBlock>().ToList();
         Assert.Equal("cmd.exe /K ping SRV01", texts[0].Text);
         Assert.Contains(panel.Children.OfType<Separator>(), s => s.Visibility == Visibility.Visible);
-        Assert.Equal("Call Anna first.", texts[1].Text);
+        // texts[1] is the group-value error line, hidden without an error.
+        Assert.NotEqual(Visibility.Visible, texts[1].Visibility);
+        Assert.Equal("Call Anna first.", texts[2].Text);
         Assert.True(ToolTipService.GetIsEnabled(button));
       }));
     }

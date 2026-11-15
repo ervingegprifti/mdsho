@@ -68,7 +68,7 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `ID` | INTEGER | NOT NULL | | Primary key. |
 | `ParentShortcutID` | INTEGER | NULL | | The group this button is in (`Shortcuts.ID`); NULL for a root button. |
 | `ParentMDSHOWindowID` | INTEGER | NULL | | The panel of a root button (`MDSHOWindows.ID`); NULL inside a group. |
-| `Name` | TEXT | NOT NULL | | Name shown on the button. For a group, a `{value}` in the name is the group value used by its run commands. |
+| `Name` | TEXT | NOT NULL | | Name shown on the button. For a group, each `{value}` or `{name=value}` in the name is a group value used by its run commands. |
 | `Target` | TEXT | NOT NULL | | The file, folder or web address the shortcut opens; empty for groups and run commands. |
 | `Ext` | TEXT | NOT NULL | | Extension of the button's shortcut file (`.lnk` or `.url`); empty for groups and run commands. |
 | `Guid` | TEXT | NOT NULL | | Unique name (without extension) of the button's shortcut file in the shortcuts folder. |
@@ -80,7 +80,7 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `Position` | INTEGER | NOT NULL | | Order among buttons with the same parent, from 0. |
 | `IsProcessCommand` | INTEGER | NOT NULL | | `1` for a run command. |
 | `ProcessFileName` | TEXT | NOT NULL | | Program a run command starts, e.g. `cmd.exe`. |
-| `ProcessArguments` | TEXT | NOT NULL | | Arguments of a run command, exactly as typed (one command per line; `{}` is replaced by the group value). |
+| `ProcessArguments` | TEXT | NOT NULL | | Arguments of a run command, exactly as typed (one command per line; `{=1}` to `{=9}` and `{=name}` are replaced by group values). |
 | `ProcessRunAsAdmin` | INTEGER | NOT NULL | `0` | `1` = the run command starts as administrator (after the Windows prompt). Added in version 4. |
 | `ProcessWorkingFolder` | TEXT | NOT NULL | `''` | Folder the run command starts in; empty = none. Added in version 4. |
 | `IsNote` | INTEGER | NOT NULL | `0` | `1` = a note button (its text is `NoteText`; no shortcut file). Added in version 7. |

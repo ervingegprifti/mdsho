@@ -20,7 +20,7 @@ namespace MDSHO.Core {
     public bool KeepWindowOpen { get; set; }
     /// <summary>True when it runs as administrator.</summary>
     public bool RunAsAdministrator { get; set; }
-    /// <summary>"Runs: " and the full command line, e.g. <c>Runs: cmd.exe /K ping {}</c>.</summary>
+    /// <summary>"Runs: " and the full command line, e.g. <c>Runs: cmd.exe /K ping {=1}</c>.</summary>
     public string RunsText {
       get {
         string arguments = RunCommandLine.JoinLines(this.ProgramFileName, RunCommandLine.ApplyKeepOpen(this.ProgramFileName, this.Arguments, this.KeepWindowOpen));
@@ -40,7 +40,7 @@ namespace MDSHO.Core {
     /// <summary>All examples, in display order (grouped by <see cref="RunCommandExample.Category"/>).</summary>
     public static IReadOnlyList<RunCommandExample> All { get; } = new List<RunCommandExample> {
       new RunCommandExample {
-        Category = Cmd, Name = "Ping a computer", ProgramFileName = "cmd.exe", Arguments = "ping {}", KeepWindowOpen = true,
+        Category = Cmd, Name = "Ping a computer", ProgramFileName = "cmd.exe", Arguments = "ping {=1}", KeepWindowOpen = true,
         Description = "Checks whether a computer answers on the network; put it in a group like \"Test {SRV01}\" to fill in the name."
       },
       new RunCommandExample {
@@ -56,7 +56,7 @@ namespace MDSHO.Core {
         Description = "Runs a .cmd or .bat file; replace the path with your script's."
       },
       new RunCommandExample {
-        Category = Cmd, Name = "Run a batch script with the group value", ProgramFileName = "cmd.exe", Arguments = "\"C:\\Scripts\\script.cmd\" {}", KeepWindowOpen = true,
+        Category = Cmd, Name = "Run a batch script with the group value", ProgramFileName = "cmd.exe", Arguments = "\"C:\\Scripts\\script.cmd\" {=1}", KeepWindowOpen = true,
         Description = "Passes the group value to the script as its first argument (%1)."
       },
       new RunCommandExample {
@@ -76,7 +76,7 @@ namespace MDSHO.Core {
         Description = "Runs a .ps1 file without changing the PC's script policy; replace the path with your script's, and add its parameters after the path."
       },
       new RunCommandExample {
-        Category = PowerShell, Name = "Run a PowerShell script with the group value", ProgramFileName = "powershell.exe", Arguments = "-ExecutionPolicy Bypass -File \"C:\\Scripts\\script.ps1\" -Name {}", KeepWindowOpen = true,
+        Category = PowerShell, Name = "Run a PowerShell script with the group value", ProgramFileName = "powershell.exe", Arguments = "-ExecutionPolicy Bypass -File \"C:\\Scripts\\script.ps1\" -Name {=1}", KeepWindowOpen = true,
         Description = "Passes the group value to the script, e.g. in a group named \"Prod {SRV01}\" it runs the script with -Name SRV01."
       },
       new RunCommandExample {

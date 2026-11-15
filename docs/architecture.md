@@ -15,7 +15,7 @@ The solution is `MDSHO.slnx` at the repository root. The projects are:
 | Project | Folder | What it contains |
 |---|---|---|
 | MDSHO.Common | `src/MDSHO.Common` | Shared helpers with no data access: app constants, data folder paths, screen geometry (with its own `ScreenRect`/`ScreenPoint`), `#AARRGGBB` colour text, Microsoft Store links, start-with-Windows logic, and the interfaces of the Windows services (`PlatformServices.cs`). Plain .NET, no WPF. |
-| MDSHO.Core | `src/MDSHO.Core` | The data model (windows, clones, shortcuts), the repository and transaction interfaces, and run-command logic such as the group value. Plain .NET, no WPF and no SQLite. |
+| MDSHO.Core | `src/MDSHO.Core` | The data model (windows, clones, shortcuts), the repository and transaction interfaces, and run-command logic such as group values. Plain .NET, no WPF and no SQLite. |
 | MDSHO.Data | `src/MDSHO.Data` | SQLite storage: Dapper repositories, the transaction scope, schema creation and upgrades, export and import. Plain .NET. |
 | MDSHO.Infrastructure | `src/MDSHO.Infrastructure` | The Windows services behind those interfaces, with no UI: starting processes, links and Explorer, `.lnk`/`.url` files, package identity and the app data folder, the Start with Windows task, monitors and DPI, the clipboard, the Microsoft Store launcher, and the log file set-up. |
 | MDSHO.ViewModels | `src/MDSHO.ViewModels` | View models for the panels, clones and buttons, and the services that make and delete shortcut files. Built on CommunityToolkit.Mvvm. Plain .NET (`net10.0`) with no WPF types: see [View models without WPF](#view-models-without-wpf). |

@@ -106,6 +106,9 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
+                            <!--A run command's group-value syntax error, in red below the command line-->
+                            <TextBlock Text="{Binding RunCommandError}" TextWrapping="Wrap" Margin="0,2,0,0" Foreground="{StaticResource ErrorBrush}"
+                                       Visibility="{Binding HasRunCommandError, Converter={StaticResource BoolToVisibility}}"/>
                             <Separator Margin="0,4" Visibility="{Binding ShowCommentDivider, Converter={StaticResource BoolToVisibility}}"/>
                             <TextBlock Text="{Binding CommentPreview}" TextWrapping="Wrap" Visibility="{Binding HasComment, Converter={StaticResource BoolToVisibility}}"/>
                         </StackPanel>

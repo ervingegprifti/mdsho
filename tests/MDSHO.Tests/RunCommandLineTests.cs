@@ -136,7 +136,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Preview_joins_lines_fills_the_group_value_and_shows_folder_and_admin() {
-      string preview = RunCommandLine.Describe("cmd.exe", "/K ping {}\r\nipconfig", "SRV01", @"C:\Work\{}", true);
+      string preview = RunCommandLine.Describe("cmd.exe", "/K ping {=1}\r\nipconfig", GroupValue.Parse("T {SRV01}"), @"C:\Work\{=1}", true);
       string[] lines = preview.Split('\n').Select(l => l.TrimEnd('\r')).ToArray();
       Assert.Equal("cmd.exe /K ping SRV01 & ipconfig", lines[0]);
       Assert.Contains(@"In folder: C:\Work\SRV01", lines);
@@ -188,7 +188,7 @@ namespace MDSHO.Tests {
     }
 
     [Theory]
-    [InlineData("Ping a computer", "cmd.exe", "ping {}", true, false)]
+    [InlineData("Ping a computer", "cmd.exe", "ping {=1}", true, false)]
     [InlineData("Show network settings", "cmd.exe", "ipconfig /all", true, false)]
     [InlineData("Clear the DNS cache", "cmd.exe", "ipconfig /flushdns", true, true)]
     [InlineData("Find MDSHO in Microsoft Store", "powershell.exe", "start ms-windows-store://pdp/?ProductId=9P8DNCD0PPG8", false, false)]
@@ -199,10 +199,10 @@ namespace MDSHO.Tests {
     [InlineData("Open Microsoft Store", "explorer.exe", "ms-windows-store:", false, false)]
     [InlineData("Refresh shortcut thumbnails", "ie4uinit.exe", "-show", false, false)]
     [InlineData("Run a PowerShell script (.ps1)", "powershell.exe", "-ExecutionPolicy Bypass -File \"C:\\Scripts\\script.ps1\"", true, false)]
-    [InlineData("Run a PowerShell script with the group value", "powershell.exe", "-ExecutionPolicy Bypass -File \"C:\\Scripts\\script.ps1\" -Name {}", true, false)]
+    [InlineData("Run a PowerShell script with the group value", "powershell.exe", "-ExecutionPolicy Bypass -File \"C:\\Scripts\\script.ps1\" -Name {=1}", true, false)]
     [InlineData("Run a PowerShell 7 script (.ps1)", "pwsh.exe", "-ExecutionPolicy Bypass -File \"C:\\Scripts\\script.ps1\"", true, false)]
     [InlineData("Run a batch script (.cmd or .bat)", "cmd.exe", "\"C:\\Scripts\\script.cmd\"", true, false)]
-    [InlineData("Run a batch script with the group value", "cmd.exe", "\"C:\\Scripts\\script.cmd\" {}", true, false)]
+    [InlineData("Run a batch script with the group value", "cmd.exe", "\"C:\\Scripts\\script.cmd\" {=1}", true, false)]
     public void Each_example_has_the_agreed_values(string name, string program, string arguments, bool keepOpen, bool admin) {
       RunCommandExample e = Assert.Single(RunCommandExamples.All, x => x.Name == name);
       Assert.Equal(program, e.ProgramFileName);
@@ -217,7 +217,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void Example_runs_text_shows_the_full_command_line() {
       RunCommandExample ping = RunCommandExamples.All.Single(x => x.Name == "Ping a computer");
-      Assert.Equal("Runs: cmd.exe /K ping {}", ping.RunsText);
+      Assert.Equal("Runs: cmd.exe /K ping {=1}", ping.RunsText);
       RunCommandExample dns = RunCommandExamples.All.Single(x => x.Name == "Clear the DNS cache");
       Assert.Equal("Runs: cmd.exe /K ipconfig /flushdns (as administrator)", dns.RunsText);
       RunCommandExample store = RunCommandExamples.All.Single(x => x.Name == "Open Microsoft Store");
@@ -226,10 +226,10 @@ namespace MDSHO.Tests {
 
     [Theory]
     [InlineData("Run a PowerShell script (.ps1)", "PowerShell", "Runs: powershell.exe -NoExit -ExecutionPolicy Bypass -File \"C:\\Scripts\\script.ps1\"")]
-    [InlineData("Run a PowerShell script with the group value", "PowerShell", "Runs: powershell.exe -NoExit -ExecutionPolicy Bypass -File \"C:\\Scripts\\script.ps1\" -Name {}")]
+    [InlineData("Run a PowerShell script with the group value", "PowerShell", "Runs: powershell.exe -NoExit -ExecutionPolicy Bypass -File \"C:\\Scripts\\script.ps1\" -Name {=1}")]
     [InlineData("Run a PowerShell 7 script (.ps1)", "PowerShell", "Runs: pwsh.exe -NoExit -ExecutionPolicy Bypass -File \"C:\\Scripts\\script.ps1\"")]
     [InlineData("Run a batch script (.cmd or .bat)", "Command Prompt (cmd)", "Runs: cmd.exe /K \"C:\\Scripts\\script.cmd\"")]
-    [InlineData("Run a batch script with the group value", "Command Prompt (cmd)", "Runs: cmd.exe /K \"C:\\Scripts\\script.cmd\" {}")]
+    [InlineData("Run a batch script with the group value", "Command Prompt (cmd)", "Runs: cmd.exe /K \"C:\\Scripts\\script.cmd\" {=1}")]
     public void Script_template_runs_text_shows_the_full_command_line(string name, string category, string expected) {
       RunCommandExample e = Assert.Single(RunCommandExamples.All, x => x.Name == name);
       Assert.Equal(category, e.Category);
