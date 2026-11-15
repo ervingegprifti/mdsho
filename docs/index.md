@@ -36,6 +36,16 @@ window with your own buttons, and you can have as many panels as you like, on as
   `.zip` to an `mdsho-backups` folder in your user folder (`C:\Users\<you>\mdsho-backups`). Pick another folder, such as a OneDrive or Google Drive folder, in a panel's
   Settings on the **Backups** page. Restore a backup with **Import data**.
 
+## How-to
+
+- [Make your first panel](how-to/first-panel.md): add files, folders and web links as buttons.
+- [Run commands with group values](how-to/group-values.md): one command for many servers, users or folders.
+- [Keep notes beside your work](how-to/notes.md): note buttons, keep on top, colours.
+- [Use several screens](how-to/screens.md): clones, docking, screen setups and lost windows.
+- [Use the keyboard](how-to/keyboard.md): bring panels to front, pick a button, rename.
+- [Back up, restore and move to another PC](how-to/backups.md): backups, synced folders, import.
+- [Change the look](how-to/look.md): colours, icons and the window theme.
+
 ## Install
 
 Install MDSHO from the

@@ -18,6 +18,10 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 
 - **Settings** is tidier: one button style, even spacing and short hints under each setting.
 
+### Docs
+
+- **How-to pages** in the docs for common tasks.
+
 ## [1.11.0]
 
 ### Changed

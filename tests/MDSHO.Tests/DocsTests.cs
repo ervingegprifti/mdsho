@@ -27,10 +27,31 @@ namespace MDSHO.Tests {
       return dir.FullName;
     }
 
-    /// <summary>The Markdown files the test checks: docs/*.md and the root *.md files.</summary>
+    /// <summary>The Markdown files the test checks: docs/*.md with its subfolders, and the root *.md files.</summary>
     private static IEnumerable<string> MarkdownFiles() {
       string root = RepoRoot();
-      return Directory.GetFiles(root, "*.md").Concat(Directory.GetFiles(Path.Combine(root, "docs"), "*.md"));
+      return Directory.GetFiles(root, "*.md").Concat(Directory.GetFiles(Path.Combine(root, "docs"), "*.md", SearchOption.AllDirectories));
+    }
+
+    [Fact]
+    public void How_to_pages_are_linked_from_the_home_page_and_link_back() {
+      string docs = Path.Combine(RepoRoot(), "docs");
+      string folder = Path.Combine(docs, "how-to");
+      Assert.True(Directory.Exists(folder), "docs/how-to does not exist.");
+      string[] pages = Directory.GetFiles(folder, "*.md");
+      Assert.NotEmpty(pages);
+      List<string> homeLinks = LinkTargets(File.ReadAllLines(Path.Combine(docs, "index.md")));
+      List<string> problems = new List<string>();
+      foreach (string page in pages) {
+        string name = Path.GetFileName(page);
+        if (!homeLinks.Contains("how-to/" + name)) {
+          problems.Add("index.md does not link to how-to/" + name);
+        }
+        if (!LinkTargets(File.ReadAllLines(page)).Contains("../index.md")) {
+          problems.Add("how-to/" + name + " does not link back to ../index.md");
+        }
+      }
+      Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
     }
 
     /// <summary>Link targets of one Markdown file, outside code blocks and inline code.</summary>
