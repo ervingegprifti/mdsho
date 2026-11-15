@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
-## [1.6.0]
+## [1.6.1]
 
 ### Added
 
@@ -14,7 +14,11 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   every visible panel and clone comes to the front above the other windows (a minimized one is restored), with the
   keyboard focus on the first panel's selected button (or its first button), so the arrow keys and Enter pick a button.
   Press the shortcut again, or Esc in a panel, and the panels go back exactly where they were behind the other windows
-  and the window you were using gets the focus back. Opening a button (a shortcut, a run command or a note) from the
+  and the window you were using gets the focus back. One press always does what the screen suggests: when the panels
+  are already in front without the shortcut (you clicked a panel, or no app window covers any panel), the first press
+  sends them back behind the app windows below them, and the window right under the top panel gets the focus; with no
+  app window below, they stay where they are. Esc sends panels back only after the shortcut or the tray menu item
+  brought them up. Opening a button (a shortcut, a run command or a note) from the
   panels also sends them back, leaving the focus to what it opened. Switching to another app ends it without moving
   anything, so the next press brings the panels up again. Esc still cancels typing a name, a title or a command line
   first. Ctrl+Shift+Alt+M was chosen because it clashes with no app shortcut, menu key or AltGr character.

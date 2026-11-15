@@ -15,6 +15,9 @@ namespace MDSHO.Infrastructure {
     private const uint GW_HWNDPREV = 3;
     private const int GWL_EXSTYLE = -20;
     private const long WS_EX_TOPMOST = 0x00000008;
+    private const long WS_EX_TOOLWINDOW = 0x00000080;
+    private const long WS_EX_APPWINDOW = 0x00040000;
+    private const int DWMWA_CLOAKED = 14;
     private const uint SWP_NOSIZE = 0x0001, SWP_NOMOVE = 0x0002, SWP_NOACTIVATE = 0x0010;
     private const int SW_RESTORE = 9;
     // A z-order walk never needs more steps than there are windows; this only guards against a changing list.
@@ -42,6 +45,15 @@ namespace MDSHO.Infrastructure {
     private static extern bool SetWindowPos(IntPtr hWnd, IntPtr insertAfter, int x, int y, int cx, int cy, uint flags);
     [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder className, int maxCount);
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmGetWindowAttribute(IntPtr hWnd, int attribute, out int value, int size);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT { public int left, top, right, bottom; }
 
     /// <summary>The window in front, or zero.</summary>
     public static IntPtr Foreground() {
@@ -77,6 +89,55 @@ namespace MDSHO.Infrastructure {
         }
       }
       return IntPtr.Zero;
+    }
+
+    /// <summary>The windows shown on screen above this one (see <see cref="IsShown"/>), nearest first.</summary>
+    public static IList<IntPtr> ShownWindowsAbove(IntPtr window) {
+      return Walk(window, GW_HWNDPREV);
+    }
+
+    /// <summary>The windows shown on screen below this one (see <see cref="IsShown"/>), nearest first.</summary>
+    public static IList<IntPtr> ShownWindowsBelow(IntPtr window) {
+      return Walk(window, GW_HWNDNEXT);
+    }
+
+    private static IList<IntPtr> Walk(IntPtr window, uint direction) {
+      List<IntPtr> shown = new List<IntPtr>();
+      IntPtr current = window;
+      for (int i = 0; i < MaxWalk; i++) {
+        current = GetWindow(current, direction);
+        if (current == IntPtr.Zero) {
+          break;
+        }
+        if (IsShown(current)) {
+          shown.Add(current);
+        }
+      }
+      return shown;
+    }
+
+    /// <summary>
+    /// True for a window the user sees as a window: visible, not minimized, not cloaked (another virtual desktop, a
+    /// suspended Store app), with a size, not a tool window, and not the desktop itself (Progman / WorkerW).
+    /// </summary>
+    public static bool IsShown(IntPtr window) {
+      if (!IsWindowVisible(window) || IsIconic(window)) {
+        return false;
+      }
+      long exStyle = GetWindowLongPtr(window, GWL_EXSTYLE).ToInt64();
+      if ((exStyle & WS_EX_TOOLWINDOW) != 0 && (exStyle & WS_EX_APPWINDOW) == 0) {
+        return false;
+      }
+      if (DwmGetWindowAttribute(window, DWMWA_CLOAKED, out int cloaked, sizeof(int)) == 0 && cloaked != 0) {
+        return false;
+      }
+      if (!GetWindowRect(window, out RECT r) || r.right <= r.left || r.bottom <= r.top) {
+        return false;
+      }
+      System.Text.StringBuilder className = new System.Text.StringBuilder(64);
+      GetClassName(window, className, className.Capacity);
+      string name = className.ToString();
+      return name != "Progman" && name != "WorkerW";
     }
 
     /// <summary>These windows in z-order, the top one first (windows not found in the walk come last).</summary>

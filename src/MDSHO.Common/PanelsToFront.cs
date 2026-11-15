@@ -16,6 +16,10 @@ namespace MDSHO.Common {
     IList<IntPtr> Panels();
     /// <summary>The window right above this one in the z-order, or zero when it is the top one.</summary>
     IntPtr WindowAbove(IntPtr window);
+    /// <summary>The windows shown on screen above this one (visible, not minimized or cloaked, no tool windows or desktop), nearest first.</summary>
+    IList<IntPtr> WindowsAbove(IntPtr window);
+    /// <summary>The windows shown on screen below this one, by the same rules, nearest first.</summary>
+    IList<IntPtr> WindowsBelow(IntPtr window);
     /// <summary>True while the window exists.</summary>
     bool IsAlive(IntPtr window);
     /// <summary>True for an always-on-top window.</summary>
@@ -29,10 +33,12 @@ namespace MDSHO.Common {
   }
 
   /// <summary>
-  /// "Bring panels to front": the first press of the shortcut (or the tray menu item) brings every visible panel above the
-  /// other windows and gives the first one the focus. The second press, Esc in a panel, or opening a button puts each panel
-  /// back where it was in the z-order; the press and Esc also give the focus back to the window that was in front.
-  /// Switching to another app ends it without moving anything.
+  /// "Bring panels to front": one press of the shortcut (or the tray menu item) does what the screen suggests. When an app
+  /// window covers a panel, every visible panel comes above the other windows and the first one gets the focus; the next
+  /// press, Esc in a panel, or opening a button puts each panel back where it was in the z-order (the press and Esc also
+  /// give the focus back to the window that was in front). When the panels are already in front without the shortcut (a
+  /// panel has the focus, or no app window covers any panel), the press sends them back behind the app windows below
+  /// them. Switching to another app ends "brought to front" without moving anything.
   /// </summary>
   public sealed class PanelsToFront {
     private readonly IPanelWindows windows;
@@ -52,8 +58,68 @@ namespace MDSHO.Common {
     public void Toggle() {
       if (IsInFront) {
         SendBack(giveFocusBack: true);
+        return;
+      }
+      IList<IntPtr> panels = windows.Panels();
+      if (panels.Count == 0) {
+        return;
+      }
+      if (AlreadyInFront(panels)) {
+        SendBehindAppWindows(panels);
       } else {
-        BringToFront();
+        BringToFront(panels);
+      }
+    }
+
+    // A window that counts when deciding what is in front: another app's normal window (not always on top).
+    private bool IsOtherAppWindow(IntPtr window) {
+      return !windows.IsAppWindow(window) && !windows.IsTopmost(window);
+    }
+
+    // In front without the shortcut: a panel has the focus, or no other app's normal window is above any panel.
+    // (A focused note or Settings window decides nothing by itself: the panels may still be covered.)
+    private bool AlreadyInFront(IList<IntPtr> panels) {
+      IntPtr foreground = windows.Foreground();
+      if (foreground != IntPtr.Zero && panels.Contains(foreground)) {
+        return true;
+      }
+      foreach (IntPtr panel in panels) {
+        foreach (IntPtr above in windows.WindowsAbove(panel)) {
+          if (IsOtherAppWindow(above)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    // Each panel (top first) goes right behind the nearest other app's normal window below it; a panel whose window is
+    // the same as the panel before it goes behind that panel, so the panels keep their order. The window under the top
+    // panel that moves gets the focus. A panel with no such window below stays where it is.
+    private void SendBehindAppWindows(IList<IntPtr> panels) {
+      IntPtr focus = IntPtr.Zero;
+      IntPtr lastTarget = IntPtr.Zero;
+      IntPtr lastPanel = IntPtr.Zero;
+      foreach (IntPtr panel in panels) {
+        IntPtr target = IntPtr.Zero;
+        foreach (IntPtr below in windows.WindowsBelow(panel)) {
+          if (IsOtherAppWindow(below)) {
+            target = below;
+            break;
+          }
+        }
+        if (target == IntPtr.Zero) {
+          continue;
+        }
+        windows.PlaceBehind(panel, target == lastTarget ? lastPanel : target);
+        lastTarget = target;
+        lastPanel = panel;
+        if (focus == IntPtr.Zero) {
+          focus = target;
+        }
+      }
+      if (focus != IntPtr.Zero) {
+        windows.Activate(focus);
       }
     }
 
@@ -80,11 +146,7 @@ namespace MDSHO.Common {
       previousForeground = IntPtr.Zero;
     }
 
-    private void BringToFront() {
-      IList<IntPtr> panels = windows.Panels();
-      if (panels.Count == 0) {
-        return;
-      }
+    private void BringToFront(IList<IntPtr> panels) {
       IntPtr foreground = windows.Foreground();
       // An MDSHO window in front (a note, Settings) is not activated again on the way back.
       previousForeground = foreground != IntPtr.Zero && !windows.IsAppWindow(foreground) ? foreground : IntPtr.Zero;

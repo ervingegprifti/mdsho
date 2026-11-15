@@ -28,6 +28,9 @@ namespace MDSHO.Tests {
       public bool IsAppWindow(IntPtr window) { return window == (IntPtr)1; }
       public IList<IntPtr> Panels() { return new List<IntPtr> { (IntPtr)1 }; }
       public IntPtr WindowAbove(IntPtr window) { return IntPtr.Zero; }
+      // An app window (100) covers the panel, so a press brings it up.
+      public IList<IntPtr> WindowsAbove(IntPtr window) { return new List<IntPtr> { (IntPtr)100 }; }
+      public IList<IntPtr> WindowsBelow(IntPtr window) { return new List<IntPtr>(); }
       public bool IsAlive(IntPtr window) { return true; }
       public bool IsTopmost(IntPtr window) { return false; }
       public void Raise(IList<IntPtr> panels) { Calls.Add("raise"); }

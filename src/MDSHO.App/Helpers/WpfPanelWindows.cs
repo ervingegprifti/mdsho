@@ -23,6 +23,10 @@ namespace MDSHO.Helpers {
     /// <inheritdoc/>
     public IntPtr WindowAbove(IntPtr window) { return WindowZOrder.VisibleWindowAbove(window); }
     /// <inheritdoc/>
+    public IList<IntPtr> WindowsAbove(IntPtr window) { return WindowZOrder.ShownWindowsAbove(window); }
+    /// <inheritdoc/>
+    public IList<IntPtr> WindowsBelow(IntPtr window) { return WindowZOrder.ShownWindowsBelow(window); }
+    /// <inheritdoc/>
     public bool IsAlive(IntPtr window) { return WindowZOrder.IsAlive(window); }
     /// <inheritdoc/>
     public bool IsTopmost(IntPtr window) { return WindowZOrder.IsTopmost(window); }

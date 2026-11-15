@@ -202,9 +202,12 @@ the other windows; pressing it again, Esc in a panel or opening a button sends t
 - `src/MDSHO.Common/Hotkey.cs`: the shortcut as plain values (modifiers and a Win32 virtual key), which combinations are
   allowed (Ctrl, Alt or Win with a key whose name doesn't depend on the keyboard layout), and its text in the Settings
   box (`Ctrl + Shift + Alt + M`), the tray menu and the database (`Ctrl+Shift+Alt+M`, or `Off`).
-- `src/MDSHO.Common/PanelsToFront.cs`: bring to front and send back. It remembers the window in front and, for each
-  panel, the window right above it, so sending back puts each panel where it was in the z-order and gives the focus back.
-  Switching to another app ends it without moving anything.
+- `src/MDSHO.Common/PanelsToFront.cs`: bring to front and send back, deciding from what is on screen. When another app's
+  normal window covers a panel, it brings the panels up and remembers the window in front and, for each panel, the
+  window right above it, so sending back puts each panel where it was in the z-order and gives the focus back. When the
+  panels are already in front without it (a panel has the focus, or no other app's window is above any panel; MDSHO and
+  always-on-top windows don't count), the press sends each panel behind the nearest other app's window below it and
+  focuses the one under the top panel. Switching to another app ends it without moving anything.
 - `src/MDSHO.ViewModels/BringToFrontShortcut.cs`: the saved shortcut (the `AppSettings` table, see
   [Database](database.md#appsettings); on this PC only, not exported). It registers the shortcut at startup; when another
   app holds the keys it stays unregistered without a message, and the Settings window shows it in red.

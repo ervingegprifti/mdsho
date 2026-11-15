@@ -182,7 +182,7 @@ that worked.
 | 13 | 1.5.10 | `MDSHOWindows.ShowVersionInTitle` (`INTEGER NOT NULL DEFAULT 1`): "Show version in title", on for every panel. |
 | 14 | 1.5.10 | `MDSHOWindows.ReserveDockedSpace` dropped (`ALTER TABLE ... DROP COLUMN`, like version 5; the rows and other columns stay): "Reserve screen space when docked" was removed. Exports made before this still import. |
 | 15 | 1.5.10 | `DefaultColors` table: the panel and note default colours saved with **Set as default** in the Colours window (empty at first). |
-| 16 | 1.6.0 | `AppSettings` table: settings of the whole app on this PC, starting with the **Bring panels to front** keyboard shortcut (empty at first). |
+| 16 | 1.6.1 | `AppSettings` table: settings of the whole app on this PC, starting with the **Bring panels to front** keyboard shortcut (empty at first). |
 
 ### Backup before an upgrade
 
