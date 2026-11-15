@@ -3,7 +3,7 @@ using MDSHO.Core;
 
 namespace MDSHO.Data {
 
-  /// <summary>The ScreenSetups and ScreenSetupPlaces tables (see <see cref="IScreenSetupRepository"/>).</summary>
+  /// <summary>The ScreenSetups and ScreenSetupPlaces tables.</summary>
   internal sealed class ScreenSetupRepository : RepositoryBase, IScreenSetupRepository {
     private const string PlaceColumns = "Kind, ItemID, ScreenDeviceName, Left, Top, Width, Height, Dock";
 
@@ -40,7 +40,6 @@ namespace MDSHO.Data {
     }
 
     public void DeleteAllExcept(long setupID) {
-      // The places go with their setup (ON DELETE CASCADE).
       Run("DELETE FROM ScreenSetups WHERE ID <> @setupID", new { setupID });
     }
 
@@ -53,7 +52,6 @@ namespace MDSHO.Data {
     }
 
     public void Delete(long setupID) {
-      // The places go with their setup (ON DELETE CASCADE).
       Run("DELETE FROM ScreenSetups WHERE ID = @setupID", new { setupID });
     }
 

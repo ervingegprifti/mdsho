@@ -4,15 +4,12 @@ using MDSHO.Common;
 
 namespace MDSHO.Infrastructure {
 
-  /// <summary>
-  /// Tells when screens are connected or disconnected or a resolution changes, through
-  /// <see cref="SystemEvents.DisplaySettingsChanged"/> (Windows' WM_DISPLAYCHANGE). The event can come on another thread.
-  /// https://learn.microsoft.com/en-us/dotnet/api/microsoft.win32.systemevents.displaysettingschanged
-  /// </summary>
+  /// <summary>Tells when screens are connected or disconnected, or a resolution changes.</summary>
+  // https://learn.microsoft.com/en-us/dotnet/api/microsoft.win32.systemevents.displaysettingschanged
   public sealed class DisplayChangeWatcher : IDisplayChangeWatcher {
     private bool started;
 
-    /// <summary>Raised after the display settings changed, possibly on another thread.</summary>
+    /// <summary>Raised after a change. It can come on another thread.</summary>
     public event Action Changed;
 
     /// <summary>Starts listening.</summary>
@@ -24,7 +21,7 @@ namespace MDSHO.Infrastructure {
       SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
     }
 
-    /// <summary>Stops listening (at exit).</summary>
+    /// <summary>Stops listening.</summary>
     public void Dispose() {
       if (!this.started) {
         return;

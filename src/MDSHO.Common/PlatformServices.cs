@@ -47,7 +47,7 @@ namespace MDSHO.Common {
 
   /// <summary>Tells when screens are connected or disconnected, or a resolution changes.</summary>
   public interface IDisplayChangeWatcher : IDisposable {
-    /// <summary>Raised after the display settings changed, possibly on another thread and several times in a row.</summary>
+    /// <summary>Raised after a change. Can come on another thread, several times in a row.</summary>
     event Action Changed;
     /// <summary>Starts listening.</summary>
     void Start();

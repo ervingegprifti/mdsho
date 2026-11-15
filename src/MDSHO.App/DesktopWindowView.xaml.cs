@@ -485,11 +485,7 @@ namespace MDSHO {
 				ErrorDialog.ShowDialog(ex);
 			}
 		}
-		/// <summary>
-		/// Esc sends the panels back when they were brought to front with the keyboard shortcut or the tray menu. While a name,
-		/// title or command line is being typed, Esc stays with the edit box (it cancels the edit). Otherwise Esc does nothing
-		/// in a panel, as before.
-		/// </summary>
+		/// <summary>Esc sends the panels back after "Bring panels to front". While typing, Esc stays with the edit box.</summary>
 		private void DesktopWindowView_PreviewKeyDown(object sender, KeyEventArgs e) {
 			if (e.Key != Key.Escape) {
 				return;
@@ -504,7 +500,7 @@ namespace MDSHO {
 			}
 		}
 
-		/// <summary>Gives the keyboard focus to the selected button, or to the first one, so arrow keys and Enter pick a button.</summary>
+		/// <summary>Focuses the selected button, or the first one.</summary>
 		public void FocusButtons() {
 			TreeView tree = this.TreeViewShortcuts;
 			TreeViewItem item = (tree.SelectedItem != null ? FindContainer(tree, tree.SelectedItem) : null)
@@ -514,7 +510,7 @@ namespace MDSHO {
 			}
 		}
 
-		// The container of an item at any depth among the expanded groups.
+		// The item's container, at any depth in the open groups.
 		private static TreeViewItem FindContainer(ItemsControl parent, object item) {
 			if (parent.ItemContainerGenerator.ContainerFromItem(item) is TreeViewItem direct) {
 				return direct;

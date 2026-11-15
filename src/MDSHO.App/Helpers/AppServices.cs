@@ -33,23 +33,23 @@ namespace MDSHO.Helpers {
     public StoreActions StoreActions { get; set; }
     /// <summary>The windows of other apps, for "Find other lost windows".</summary>
     public IOtherWindowsService OtherWindows { get; set; } = new OtherWindowsService();
-    /// <summary>The global hotkey of "Bring panels to front" (registered with Windows only when asked).</summary>
+    /// <summary>The global hotkey service.</summary>
     public IGlobalHotkeyService HotkeyService { get; set; } = new GlobalHotkeyService();
-    /// <summary>The saved "Bring panels to front" shortcut, on <see cref="HotkeyService"/> (created on first use).</summary>
+    /// <summary>The "Bring panels to front" shortcut. Made on first use.</summary>
     public BringToFrontShortcut BringToFront {
       get { return this.bringToFront ??= new BringToFrontShortcut(HotkeyService); }
       set { this.bringToFront = value; }
     }
     private BringToFrontShortcut bringToFront;
-    /// <summary>Screens connected or disconnected (listened to only when started).</summary>
+    /// <summary>Tells when the screens change.</summary>
     public IDisplayChangeWatcher DisplayChanges { get; set; } = new DisplayChangeWatcher();
-    /// <summary>Places per screen setup, on <see cref="Screens"/> (created on first use).</summary>
+    /// <summary>Places per screen setup. Made on first use.</summary>
     public ScreenSetupTracker ScreenSetups {
       get { return this.screenSetups ??= new ScreenSetupTracker(Screens, new DispatcherOneShotTimer()); }
       set { this.screenSetups = value; }
     }
     private ScreenSetupTracker screenSetups;
-    /// <summary>Brings the panels to front and sends them back; null until the app has started.</summary>
+    /// <summary>"Bring panels to front". Null until the app has started.</summary>
     public PanelsToFront PanelsToFront { get; set; }
 
     /// <summary>Creates the set from its services.</summary>

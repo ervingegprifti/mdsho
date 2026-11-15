@@ -2,7 +2,7 @@ using MDSHO.Core;
 
 namespace MDSHO.Data {
 
-  /// <summary>The AppSettings table: one row per setting, keyed by its name (see <see cref="IAppSettingsRepository"/>).</summary>
+  /// <summary>The AppSettings table.</summary>
   internal sealed class AppSettingsRepository : RepositoryBase, IAppSettingsRepository {
 
     public string Get(string key) {

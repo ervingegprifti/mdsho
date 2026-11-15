@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 
 namespace MDSHO.Infrastructure {
 
-  /// <summary>Thin Win32 calls on top-level windows for "Bring panels to front": the z-order and the window in front.</summary>
+  /// <summary>Win32 calls for the z-order and the foreground window.</summary>
   public static class WindowZOrder {
     private const uint GW_HWNDNEXT = 2;
     private const uint GW_HWNDPREV = 3;
@@ -20,7 +20,7 @@ namespace MDSHO.Infrastructure {
     private const int DWMWA_CLOAKED = 14;
     private const uint SWP_NOSIZE = 0x0001, SWP_NOMOVE = 0x0002, SWP_NOACTIVATE = 0x0010;
     private const int SW_RESTORE = 9;
-    // A z-order walk never needs more steps than there are windows; this only guards against a changing list.
+    // Guards against a z-order list that changes while we walk it.
     private const int MaxWalk = 10000;
 
     [DllImport("user32.dll")]
@@ -60,7 +60,7 @@ namespace MDSHO.Infrastructure {
       return GetForegroundWindow();
     }
 
-    /// <summary>True for a window of this process (a panel, a note, a message box, the tray menu).</summary>
+    /// <summary>True for any window of this process.</summary>
     public static bool IsOwnWindow(IntPtr window) {
       if (window == IntPtr.Zero) {
         return false;
@@ -79,7 +79,7 @@ namespace MDSHO.Infrastructure {
       return (GetWindowLongPtr(window, GWL_EXSTYLE).ToInt64() & WS_EX_TOPMOST) != 0;
     }
 
-    /// <summary>The visible top-level window right above this one, or zero when none is.</summary>
+    /// <summary>The visible window right above this one, or zero.</summary>
     public static IntPtr VisibleWindowAbove(IntPtr window) {
       IntPtr above = window;
       for (int i = 0; i < MaxWalk; i++) {
@@ -91,12 +91,12 @@ namespace MDSHO.Infrastructure {
       return IntPtr.Zero;
     }
 
-    /// <summary>The windows shown on screen above this one (see <see cref="IsShown"/>), nearest first.</summary>
+    /// <summary>The windows shown above this one, nearest first.</summary>
     public static IList<IntPtr> ShownWindowsAbove(IntPtr window) {
       return Walk(window, GW_HWNDPREV);
     }
 
-    /// <summary>The windows shown on screen below this one (see <see cref="IsShown"/>), nearest first.</summary>
+    /// <summary>The windows shown below this one, nearest first.</summary>
     public static IList<IntPtr> ShownWindowsBelow(IntPtr window) {
       return Walk(window, GW_HWNDNEXT);
     }
@@ -117,8 +117,8 @@ namespace MDSHO.Infrastructure {
     }
 
     /// <summary>
-    /// True for a window the user sees as a window: visible, not minimized, not cloaked (another virtual desktop, a
-    /// suspended Store app), with a size, not a tool window, and not the desktop itself (Progman / WorkerW).
+    /// True for a window the user can see. Cloaked windows are on another virtual desktop or are suspended Store apps.
+    /// The desktop itself (Progman, WorkerW) and tool windows don't count.
     /// </summary>
     public static bool IsShown(IntPtr window) {
       if (!IsWindowVisible(window) || IsIconic(window)) {
@@ -140,7 +140,7 @@ namespace MDSHO.Infrastructure {
       return name != "Progman" && name != "WorkerW";
     }
 
-    /// <summary>These windows in z-order, the top one first (windows not found in the walk come last).</summary>
+    /// <summary>These windows in z-order, top first. Windows not found come last.</summary>
     public static IList<IntPtr> TopFirst(IEnumerable<IntPtr> windows) {
       List<IntPtr> wanted = windows.ToList();
       Dictionary<IntPtr, int> rank = new Dictionary<IntPtr, int>();
@@ -154,12 +154,12 @@ namespace MDSHO.Infrastructure {
       return wanted.OrderBy(w => rank.TryGetValue(w, out int r) ? r : int.MaxValue).ToList();
     }
 
-    /// <summary>Puts the window right behind <paramref name="insertAfter"/> (zero = HWND_TOP) without activating it.</summary>
+    /// <summary>Puts the window behind <paramref name="insertAfter"/> without activating it. Zero means on top.</summary>
     public static void PlaceBehind(IntPtr window, IntPtr insertAfter) {
       SetWindowPos(window, insertAfter, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
     }
 
-    /// <summary>Brings the window to the front with the keyboard focus (restored first when it is minimized).</summary>
+    /// <summary>Restores the window if minimized and brings it to the front with the focus.</summary>
     public static void Activate(IntPtr window) {
       if (IsIconic(window)) {
         ShowWindow(window, SW_RESTORE);

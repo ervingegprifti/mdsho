@@ -1,13 +1,10 @@
 namespace MDSHO.Core {
 
-  /// <summary>
-  /// Settings of the whole app on this PC (the AppSettings table): one text value per key. They are not part of exports,
-  /// and an import that replaces the data keeps them.
-  /// </summary>
+  /// <summary>App-wide settings on this PC, one text value per key. Not exported; kept by an import.</summary>
   public interface IAppSettingsRepository {
-    /// <summary>The saved value, or null when the setting was never saved (then its default applies).</summary>
+    /// <summary>The saved value, or null if never saved.</summary>
     string Get(string key);
-    /// <summary>Saves the value (adds the row the first time, replaces it after that).</summary>
+    /// <summary>Saves the value.</summary>
     void Set(string key, string value);
   }
 }

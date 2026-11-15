@@ -332,8 +332,7 @@ namespace MDSHO.ViewModels {
     /// <summary>Opens the Note window for a note button (set by the app; tests replace it).</summary>
     public static Action<ShortcutViewModel> OpenNoteEditor { get; set; }
     /// <summary>
-    /// Called after a button opened something (a shortcut, a run command or a note). The app uses it to send panels that
-    /// were brought to front with the keyboard shortcut back behind the other windows. Null = nothing to tell.
+    /// Called after a button opens something. The app uses it to send raised panels back.
     /// </summary>
     public static Action Opened { get; set; }
     /// <summary>

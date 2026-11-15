@@ -5,13 +5,11 @@ using MDSHO.Data;
 namespace MDSHO.ViewModels {
 
   /// <summary>
-  /// The "Bring panels to front" keyboard shortcut: one for the whole app, saved on this PC in the AppSettings table (not
-  /// exported). Without a saved value it is <see cref="Hotkey.Default"/>. It is registered as a global hotkey through
-  /// <see cref="IGlobalHotkeyService"/>; when another app holds the keys it stays unregistered (<see cref="IsBlocked"/>),
-  /// without an error, and the Settings window says so.
+  /// The saved "Bring panels to front" shortcut, registered as a global hotkey.
+  /// If another app holds the keys, it stays unregistered without an error.
   /// </summary>
   public sealed class BringToFrontShortcut : IDisposable {
-    /// <summary>The key of the setting in the AppSettings table.</summary>
+    /// <summary>The AppSettings key.</summary>
     public const string SettingKey = "BringToFrontShortcut";
 
     private readonly IGlobalHotkeyService service;
@@ -19,27 +17,26 @@ namespace MDSHO.ViewModels {
     private bool blocked;
     private bool suspended;
 
-    /// <summary>Uses this hotkey service; nothing is registered until <see cref="Start"/>.</summary>
     public BringToFrontShortcut(IGlobalHotkeyService service) {
       this.service = service ?? throw new ArgumentNullException(nameof(service));
       this.service.Pressed += OnPressed;
     }
 
-    /// <summary>The saved shortcut; null = Off.</summary>
+    /// <summary>The saved shortcut. Null means Off.</summary>
     public Hotkey Saved { get; private set; } = Hotkey.Default;
-    /// <summary>True while the saved shortcut is registered with Windows.</summary>
+    /// <summary>True while the shortcut is registered.</summary>
     public bool IsRegistered => registered;
-    /// <summary>True when Windows refused the saved shortcut, usually because another app holds the keys.</summary>
+    /// <summary>True when Windows refused the shortcut.</summary>
     public bool IsBlocked => Saved != null && blocked;
-    /// <summary>The shortcut for the tray menu: empty when Off or when it doesn't work.</summary>
+    /// <summary>The tray menu text. Empty when Off or blocked.</summary>
     public string MenuText => Saved != null && !blocked ? Saved.MenuText : "";
 
-    /// <summary>Raised when the saved keys are pressed.</summary>
+    /// <summary>Raised when the keys are pressed.</summary>
     public event Action Pressed;
-    /// <summary>Raised when the saved shortcut or whether it works changed (the tray menu shows it).</summary>
+    /// <summary>Raised when the shortcut or its state changes.</summary>
     public event Action Changed;
 
-    /// <summary>At startup: reads the saved shortcut and registers it. Never throws and never asks anything.</summary>
+    /// <summary>At startup: reads and registers the shortcut. Never throws.</summary>
     public void Start() {
       string text = null;
       try {
@@ -61,11 +58,7 @@ namespace MDSHO.ViewModels {
       }
     }
 
-    /// <summary>
-    /// Settings, Apply: registers and saves <paramref name="hotkey"/> (null = Off). False when Windows refuses the new keys;
-    /// then the old shortcut stays saved and working. Applying the saved shortcut again tries again to register it when
-    /// it was blocked.
-    /// </summary>
+    /// <summary>Registers and saves the shortcut. Null means Off. False when Windows refuses; the old one keeps working.</summary>
     public bool Apply(Hotkey hotkey) {
       if (Equals(hotkey, Saved)) {
         if (hotkey != null && !registered) {
@@ -81,7 +74,7 @@ namespace MDSHO.ViewModels {
         registered = true;
         blocked = false;
       } else {
-        // Nothing is registered after a refused Register: the old keys come back.
+        // A refused Register leaves nothing registered, so register the old keys again.
         registered = Saved != null && !blocked && TryRegister(Saved);
         return false;
       }
@@ -92,7 +85,7 @@ namespace MDSHO.ViewModels {
       return true;
     }
 
-    /// <summary>While the Settings box records a new shortcut: the saved keys reach the box instead of bringing the panels up.</summary>
+    /// <summary>Unregisters the keys while the Settings box records, so the box gets them.</summary>
     public void Suspend() {
       suspended = true;
       if (registered) {
@@ -101,7 +94,7 @@ namespace MDSHO.ViewModels {
       }
     }
 
-    /// <summary>Recording ended: the saved shortcut works again.</summary>
+    /// <summary>Registers the keys again after recording.</summary>
     public void Resume() {
       if (!suspended) {
         return;
@@ -110,7 +103,7 @@ namespace MDSHO.ViewModels {
       RegisterSaved();
     }
 
-    /// <summary>Releases the keys (at exit).</summary>
+    /// <summary>Releases the keys.</summary>
     public void Dispose() {
       service.Pressed -= OnPressed;
       registered = false;

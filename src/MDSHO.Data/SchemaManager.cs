@@ -299,8 +299,7 @@ namespace MDSHO.Data {
           Value TEXT NOT NULL);");
       }),
       new DbMigration(17, "Places per screen setup: ScreenSetups and ScreenSetupPlaces tables", conn => {
-        // No foreign key to the panels, clones or notes: an import that replaces the data deletes them and adds them again
-        // with the same IDs, and their places must stay. Places of items that are gone are cleaned up at startup.
+        // No foreign key to the windows: a replacing import re-adds them with the same IDs, and the places must stay.
         Execute(conn, @"CREATE TABLE IF NOT EXISTS ScreenSetups (
           ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
           Key TEXT NOT NULL UNIQUE,
@@ -323,10 +322,7 @@ namespace MDSHO.Data {
       })
     };
 
-    /// <summary>
-    /// ScreenSetups.LastUsed came after MDSHO 1.7.0 had created version 17 without it (1.7.0 was a test build), so it is
-    /// added here when missing: by the version 17 step, and on every start for a database already at version 17.
-    /// </summary>
+    /// <summary>Adds ScreenSetups.LastUsed if missing. The 1.7.0 test build made version 17 without it.</summary>
     private static void AddScreenSetupsLastUsed(SqliteConnection conn) {
       if (TableExists(conn, "ScreenSetups") && !ColumnExists(conn, "ScreenSetups", "LastUsed")) {
         Execute(conn, "ALTER TABLE ScreenSetups ADD COLUMN LastUsed TEXT NOT NULL DEFAULT '';");
@@ -432,7 +428,7 @@ namespace MDSHO.Data {
       RepairVersion17();
     }
 
-    // A database that a 1.7.0 test build left at version 17 gets ScreenSetups.LastUsed (see AddScreenSetupsLastUsed).
+    // Fixes a version 17 database from the 1.7.0 test build.
     private static void RepairVersion17() {
       if (ReadUserVersion() != 17) {
         return;

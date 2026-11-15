@@ -10,83 +10,33 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 
 ### Added
 
-- **Places per screen setup**: MDSHO now remembers where every panel, clone and open note window was for each screen
-  setup, that is each set of connected screens. A setup is identified by the screens' resolutions, which one is
-  primary, and how they are arranged (which screen is left of, right of, above or below which), not by the names Windows
-  gives the screens, which change when screens are reconnected, and not by exact offsets, so dragging a monitor a little
-  in Display settings is still the same setup (two identical monitors swapped count as the same setup too). When you undock a
-  laptop, Windows piles all windows onto the laptop screen, and before this version docking again didn't bring them
-  back. Now, when screens are connected or disconnected or a resolution changes, MDSHO waits a moment (1.5 seconds, so
-  several changes in a row count as one) and then:
-  - with screens it has seen before, moves every panel, clone and open note window back to where it was last time with
-    those screens. Docked panels are docked again on their screen (with the full height of its working area, also when
-    the taskbar changed). A panel, clone or note opened since then has no place for that setup: it stays where it is,
-    and is only pulled onto a screen if it is off every screen;
-  - with screens it hasn't seen before, leaves things where Windows put them, pulls anything that is off every screen
-    back onto a screen, and remembers the places for those screens from then on.
-
-  Places are saved at the same moments as before: when you stop moving or resizing a panel, dock or centre it, find lost
-  windows, create a panel or a clone, and shortly after a note window moves. Nothing is saved while the screens are
-  changing or while MDSHO moves the windows, so the moves never overwrite the places of another setup. When MDSHO starts
-  with screens it knows, the panels, clones and open notes go to their places for those screens. The places stay on this
-  PC: they are not part of exports, and an import that replaces the data keeps them.
-- **Screen setups** submenu in the tray menu, right after Bring panels to front. It lists the screen setups MDSHO knows,
-  most recently used first, for example "2 screens: 1920×1080, 2560×1440" (the primary screen first, then the others
-  from left to right), with a check mark on the current one. Only two different setups with the same name get a number,
-  for example a monitor on the right and then on the left of the laptop: "2 screens: 1920×1080, 2560×1440 (2)" is the
-  one seen later. MDSHO keeps the 10 most recently used setups: an 11th forgets the least recently used one with its
-  places, and never the current one. The list is information only. Below it, **Put panels back for this setup** moves everything to its saved place for the current
-  screens, and **Forget the other setups** deletes every setup but the current one (greyed out when there is no other).
-- **Screen setups** section in the Settings window, below Keyboard shortcut: **Remember places for each screen setup**,
-  on at first, with the hint "For all panels and notes, on this PC. When screens are connected or disconnected, they move
-  to where they were last time with those screens." It is one setting for the whole app on this PC, takes effect on
-  Apply, and closing without Apply changes nothing. When it is off, MDSHO behaves exactly as before: nothing moves when
-  the screens change, and the two actions of the tray submenu are greyed out (the list still shows). Places keep being
-  saved while it is off, so turning it on again starts from where the windows are now, not from where they were when it
-  was turned off.
+- **Places per screen setup**: MDSHO remembers where your panels, clones and open notes are for each set of connected
+  screens. When you connect or disconnect a screen, they move back to where they were last time with those screens.
+  With screens MDSHO hasn't seen before, they stay where Windows put them, and any that are off screen are moved onto
+  one. Docked panels stay docked.
+- **Screen setups** in the tray menu: lists the screen setups MDSHO knows, newest first, with a tick on the current one.
+  **Put panels back for this setup** moves everything to its saved place, and **Forget the other setups** deletes the
+  rest. MDSHO keeps the 10 most recently used setups.
+- **Remember places for each screen setup** in Settings (on at first). Turn it off to stop the moves.
 
 ### Changed
 
-- The database is now at version 17: the new `ScreenSetups` and `ScreenSetupPlaces` tables hold the screen setups and
-  the places of the panels, clones and note windows in each. As with every upgrade, the database is backed up first.
-  Places of panels, clones and notes that were deleted are cleaned up when MDSHO starts.
-- For the 1.7.0 test build only: its database gets the new last-used time of each setup at the next start, and the
-  setups it saved several times for the same screens (because Windows had renumbered them, or a monitor had moved a
-  little) are merged into one, keeping the places of the most recently used one (the last one added, since 1.7.0 didn't
-  record when a setup was used) and taking places it lacks from the others.
+- Database version 17: new tables for the screen setups and their places (backed up first). They stay on this PC and
+  aren't exported.
 
 ## [1.6.1]
 
 ### Added
 
-- **Bring panels to front**, a keyboard shortcut for all panels: press **Ctrl+Shift+Alt+M** anywhere in Windows and
-  every visible panel and clone comes to the front above the other windows (a minimized one is restored), with the
-  keyboard focus on the first panel's selected button (or its first button), so the arrow keys and Enter pick a button.
-  Press the shortcut again, or Esc in a panel, and the panels go back exactly where they were behind the other windows
-  and the window you were using gets the focus back. One press always does what the screen suggests: when the panels
-  are already in front without the shortcut (you clicked a panel, or no app window covers any panel), the first press
-  sends them back behind the app windows below them, and the window right under the top panel gets the focus; with no
-  app window below, they stay where they are. Esc sends panels back only after the shortcut or the tray menu item
-  brought them up. Opening a button (a shortcut, a run command or a note) from the
-  panels also sends them back, leaving the focus to what it opened. Switching to another app ends it without moving
-  anything, so the next press brings the panels up again. Esc still cancels typing a name, a title or a command line
-  first. Ctrl+Shift+Alt+M was chosen because it clashes with no app shortcut, menu key or AltGr character.
-- **Keyboard shortcut** section in the Settings window, below Other: **Bring panels to front** with a shortcut box
-  showing the current shortcut, for example "Ctrl + Shift + Alt + M". Click the box and press the new shortcut; it needs
-  Ctrl, Alt or Win with a letter, digit, F1 to F24, a number pad digit, an arrow or an editing key (otherwise the hint
-  says "Add Ctrl, Alt or Win to the key." in red), and Esc cancels. **Default** puts back Ctrl+Shift+Alt+M and **Off**
-  turns the shortcut off. The change takes effect on Apply; closing the window without Apply changes nothing. If
-  another app already uses the shortcut, the hint says so in red, the window stays open and the old shortcut keeps
-  working. The shortcut is one setting for the whole app, kept on this PC: it is the same in every panel's Settings and
-  is not part of exports, and an import keeps it. If the saved shortcut can't be registered when MDSHO starts (another
-  app took it), MDSHO starts normally without a message and the Settings window shows the red hint.
-- **Bring panels to front** as the first item of the tray menu, followed by a separator, with the current shortcut at
-  the right (nothing when it is off or doesn't work). It works also when the shortcut is off.
+- **Bring panels to front**: press **Ctrl+Shift+Alt+M** anywhere to bring all panels to the front, with the keyboard
+  focus on the first one. Press it again, or Esc, to send them back. Opening a button also sends them back.
+- **Keyboard shortcut** in Settings: click the box and press a new shortcut, or use **Default** or **Off**. If another
+  app already uses the shortcut, MDSHO says so.
+- **Bring panels to front** as the first item in the tray menu.
 
 ### Changed
 
-- The database is now at version 16: a new `AppSettings` table holds settings of the whole app on this PC, starting
-  with the Bring panels to front shortcut. As with every upgrade, the database is backed up first.
+- Database version 16: a new table for app settings that stay on this PC (backed up first).
 
 ## [1.5.10] - 2026-11-14
 

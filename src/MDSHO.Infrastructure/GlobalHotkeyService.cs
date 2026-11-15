@@ -10,8 +10,8 @@ using MDSHO.Common;
 namespace MDSHO.Infrastructure {
 
   /// <summary>
-  /// One global hotkey registered with Windows on a message-only window, created on first use on the calling (UI) thread.
-  /// <see cref="Pressed"/> is raised on that thread. MOD_NOREPEAT: holding the keys down raises it once.
+  /// One global hotkey on a message-only window, made on first use on the UI thread.
+  /// MOD_NOREPEAT: holding the keys down fires once.
   /// </summary>
   public sealed class GlobalHotkeyService : IGlobalHotkeyService {
     private const int WM_HOTKEY = 0x0312;
@@ -27,10 +27,8 @@ namespace MDSHO.Infrastructure {
     private MessageWindow window;
     private bool registered;
 
-    /// <inheritdoc/>
     public event Action Pressed;
 
-    /// <inheritdoc/>
     public bool Register(Hotkey hotkey) {
       if (hotkey == null) {
         throw new ArgumentNullException(nameof(hotkey));
@@ -41,7 +39,6 @@ namespace MDSHO.Infrastructure {
       return registered;
     }
 
-    /// <inheritdoc/>
     public void Unregister() {
       if (registered) {
         UnregisterHotKey(window.Handle, HotkeyId);
@@ -49,7 +46,7 @@ namespace MDSHO.Infrastructure {
       }
     }
 
-    /// <summary>Releases the keys and destroys the message window.</summary>
+    /// <summary>Releases the keys and closes the message window.</summary>
     public void Dispose() {
       Unregister();
       window?.DestroyHandle();

@@ -222,10 +222,7 @@ namespace MDSHO
 
 
     #region BRING PANELS TO FRONT
-    /// <summary>
-    /// Makes <paramref name="panels"/> the app's "Bring panels to front" (the tray menu item and Esc in a panel use it), and
-    /// opening a button sends panels that were brought to front back.
-    /// </summary>
+    /// <summary>Connects "Bring panels to front" to these panels, and sends them back when a button opens something.</summary>
     public static void ConnectPanelsToFront(Common.PanelsToFront panels) {
       AppServices.Current.PanelsToFront = panels;
       ShortcutViewModel.Opened = () => {
@@ -237,7 +234,7 @@ namespace MDSHO
       };
     }
 
-    /// <summary>The tray menu item and the keyboard shortcut: brings the panels to front, or sends them back when they are.</summary>
+    /// <summary>Brings the panels to front, or sends them back.</summary>
     public static void BringPanelsToFront() {
       try {
         AppServices.Current.PanelsToFront?.Toggle();
@@ -246,15 +243,12 @@ namespace MDSHO
       }
     }
 
-    /// <summary>
-    /// At startup: connects "Bring panels to front" to the panels and registers the saved shortcut. A shortcut another app
-    /// holds is not an error here: the Settings window shows it in red.
-    /// </summary>
+    /// <summary>At startup: connects "Bring panels to front" and registers the shortcut.</summary>
     private void StartBringPanelsToFront() {
       try {
         Common.PanelsToFront panels = new Common.PanelsToFront(new WpfPanelWindows());
         ConnectPanelsToFront(panels);
-        // Switching to another app ends "in front": the next press brings the panels up again.
+        // Switching to another app ends "in front".
         this.Deactivated += (s, args) => panels.AppDeactivated();
         BringToFrontShortcut shortcut = AppServices.Current.BringToFront;
         shortcut.Pressed += BringPanelsToFront;
@@ -267,7 +261,7 @@ namespace MDSHO
     #endregion BRING PANELS TO FRONT
 
     #region SCREEN SETUPS
-    /// <summary>Every panel, clone and open note window, for the places per screen setup.</summary>
+    /// <summary>Every panel, clone and open note window.</summary>
     public static IList<IPlacedItem> PlacedItems(AppViewModel app) {
       List<IPlacedItem> items = new List<IPlacedItem>();
       if (app != null) {
@@ -286,7 +280,7 @@ namespace MDSHO
       return items;
     }
 
-    /// <summary>Saves where a panel or clone is now as its place in the current screen setup.</summary>
+    /// <summary>Saves the panel's place for the current screen setup.</summary>
     public static void RememberPlace(DesktopWindowViewModel window) {
       try {
         if (window != null) {
@@ -297,17 +291,14 @@ namespace MDSHO
       }
     }
 
-    /// <summary>
-    /// At startup, after the windows and notes opened: uses the saved places when the screens are a known setup, then
-    /// listens for screens being connected or disconnected. Never stops startup.
-    /// </summary>
+    /// <summary>At startup, after the windows open: applies the screen setup and listens for display changes.</summary>
     private void StartScreenSetups() {
       try {
         ScreenSetupTracker tracker = AppServices.Current.ScreenSetups;
         tracker.Items = () => PlacedItems(this.DataContext);
         tracker.Start();
         Common.IDisplayChangeWatcher watcher = AppServices.Current.DisplayChanges;
-        // The event can come on another thread; the tracker works on the UI thread.
+        // The event can come on another thread.
         watcher.Changed += () => this.Dispatcher.BeginInvoke(new Action(tracker.DisplayChanged));
         watcher.Start();
       } catch (Exception ex) {
@@ -315,7 +306,6 @@ namespace MDSHO
       }
     }
 
-    /// <summary>The tray menu's "Put panels back for this setup".</summary>
     public static void PutPanelsBack() {
       try {
         AppServices.Current.ScreenSetups.PutBack();
@@ -324,7 +314,6 @@ namespace MDSHO
       }
     }
 
-    /// <summary>The tray menu's "Forget the other setups".</summary>
     public static void ForgetOtherScreenSetups() {
       try {
         AppServices.Current.ScreenSetups.ForgetOthers();
@@ -336,10 +325,7 @@ namespace MDSHO
     private const string ScreenSetupListTag = "ScreenSetup";
 
     /// <summary>
-    /// Fills the "Screen setups" submenu: the known setups (information only, the current one checked), a separator, then
-    /// "Put panels back for this setup" and "Forget the other setups", both greyed out while "Remember places for each
-    /// screen setup" is off, and Forget also when there is nothing else to forget. Only the list is replaced, so it can
-    /// run from the actions' own clicks.
+    /// Fills the "Screen setups" submenu. Only the list part is replaced, so this can run from a click on one of its items.
     /// </summary>
     public static void FillScreenSetupsMenu(System.Windows.Forms.ToolStripMenuItem submenu, System.Windows.Forms.ToolStripItem putBack, System.Windows.Forms.ToolStripItem forget) {
       ScreenSetupTracker tracker = AppServices.Current.ScreenSetups;
@@ -425,8 +411,7 @@ namespace MDSHO
     /// </summary>
     public static System.Windows.Forms.ContextMenuStrip CreateTrayMenu(App app, Func<IconGlyphs> icons) {
       System.Windows.Forms.ContextMenuStrip menu = new System.Windows.Forms.ContextMenuStrip();
-      // Bring panels to front, with the current shortcut at the right (none when Off or when it doesn't work). It works
-      // without the shortcut too.
+      // Bring panels to front, with the shortcut shown at the right.
       BringToFrontShortcut shortcut = AppServices.Current.BringToFront;
       System.Windows.Forms.ToolStripMenuItem bringToFrontMenuItem = new System.Windows.Forms.ToolStripMenuItem("Bring panels to front") { ShowShortcutKeys = true };
       bringToFrontMenuItem.Click += (s, e) => BringPanelsToFront();
@@ -436,7 +421,7 @@ namespace MDSHO
       menu.Disposed += (s, e) => shortcut.Changed -= showShortcut;
       menu.Opening += (s, e) => showShortcut();
       menu.Items.Add(bringToFrontMenuItem);
-      // The screen setups MDSHO knows on this PC, and putting the panels back for the current one.
+      // Screen setups submenu.
       menu.Items.Add(CreateScreenSetupsMenu());
       menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
       menu.Items.Add("New window").Click += (s, e) => app.NewWindow(null);
@@ -693,7 +678,7 @@ namespace MDSHO
       Common.AppLog.CloseAndFlush();
       Common.IShellLauncher shell = AppServices.Current.Shell;
       Common.IPackageIdentity package = AppServices.Current.Package;
-      // Release the global shortcut's keys and stop listening for display changes.
+      // Release the hotkey and stop listening for display changes.
       try {
         AppServices.Current.BringToFront.Dispose();
       } catch (Exception ex) {
