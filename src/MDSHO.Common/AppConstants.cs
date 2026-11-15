@@ -14,6 +14,8 @@
 
     /// <summary>The MDSHO project on GitHub (source code, issues).</summary>
     public const string ProjectUrl = "https://github.com/ervingegprifti/mdsho";
+    /// <summary>The home page of the MDSHO docs site (the user guide).</summary>
+    public const string DocsUrl = "https://ervingegprifti.github.io/mdsho/";
     /// <summary>The MDSHO Privacy Policy on the docs site.</summary>
     public const string PrivacyPolicyUrl = "https://ervingegprifti.github.io/mdsho/privacy/";
     /// <summary>The MDSHO Terms and Conditions on the docs site.</summary>

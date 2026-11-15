@@ -10,6 +10,8 @@ namespace MDSHO.Core {
     /// When there is no window yet (first run) the first one is created.
     /// </summary>
     List<DesktopWindow> LoadAll();
+    /// <summary>Like <see cref="LoadAll()"/>; <paramref name="brandNew"/> is true when the database had never held a panel, a button or a screen setup.</summary>
+    List<DesktopWindow> LoadAll(out bool brandNew);
     /// <summary>The window row (without shortcuts and clones) or null.</summary>
     DesktopWindow Get(long id);
     /// <summary>All window rows (without shortcuts and clones).</summary>

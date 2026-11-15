@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.8.0]
+
+### Added
+
+- **Getting started**: on a new install, the first panel has a group with a sample note, shortcut, run command and web
+  link, and a welcome note opens. Delete the group when you are done.
+
 ## [1.7.1]
 
 ### Added

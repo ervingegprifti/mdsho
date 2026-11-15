@@ -36,6 +36,9 @@ Install MDSHO from the
 [Microsoft Store](https://www.microsoft.com/store/productId/9P8DNCD0PPG8).
 It needs Windows 10 version 1809 or later, or Windows 11, on a 64-bit (x64) PC.
 
+The first time you start MDSHO, its panel has a **Getting started** group with a sample of each kind of button and a
+welcome note. Delete the group when you are done.
+
 You can also build it yourself from the source code; see [Building MDSHO](building.md).
 
 ## Documentation
