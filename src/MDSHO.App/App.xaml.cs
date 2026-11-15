@@ -4,6 +4,7 @@ using MDSHO.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
@@ -102,6 +103,7 @@ namespace MDSHO
         this.notifyIcon.Visible = true;
 
         StartBringPanelsToFront();
+        StartScreenSetups();
         CreateContextMenu();
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
@@ -264,6 +266,124 @@ namespace MDSHO
     }
     #endregion BRING PANELS TO FRONT
 
+    #region SCREEN SETUPS
+    /// <summary>Every panel, clone and open note window, for the places per screen setup.</summary>
+    public static IList<IPlacedItem> PlacedItems(AppViewModel app) {
+      List<IPlacedItem> items = new List<IPlacedItem>();
+      if (app != null) {
+        foreach (DesktopWindowViewModel panel in app.Windows) {
+          items.Add(new DesktopWindowPlacedItem(panel));
+          foreach (DesktopWindowViewModel clone in panel.Clones) {
+            items.Add(new DesktopWindowPlacedItem(clone));
+          }
+        }
+      }
+      foreach (TextEditWindow note in TextEditWindow.OpenNoteWindows) {
+        if (note.Shortcut != null && note.Shortcut.ID != 0) {
+          items.Add(new NoteWindowPlacedItem(note));
+        }
+      }
+      return items;
+    }
+
+    /// <summary>Saves where a panel or clone is now as its place in the current screen setup.</summary>
+    public static void RememberPlace(DesktopWindowViewModel window) {
+      try {
+        if (window != null) {
+          AppServices.Current.ScreenSetups.Remember(new DesktopWindowPlacedItem(window));
+        }
+      } catch (Exception ex) {
+        Common.AppLog.Warning(ex, "Could not save a place for the screen setup");
+      }
+    }
+
+    /// <summary>
+    /// At startup, after the windows and notes opened: uses the saved places when the screens are a known setup, then
+    /// listens for screens being connected or disconnected. Never stops startup.
+    /// </summary>
+    private void StartScreenSetups() {
+      try {
+        ScreenSetupTracker tracker = AppServices.Current.ScreenSetups;
+        tracker.Items = () => PlacedItems(this.DataContext);
+        tracker.Start();
+        Common.IDisplayChangeWatcher watcher = AppServices.Current.DisplayChanges;
+        // The event can come on another thread; the tracker works on the UI thread.
+        watcher.Changed += () => this.Dispatcher.BeginInvoke(new Action(tracker.DisplayChanged));
+        watcher.Start();
+      } catch (Exception ex) {
+        Common.AppLog.Error(ex, "Screen setups could not be started");
+      }
+    }
+
+    /// <summary>The tray menu's "Put panels back for this setup".</summary>
+    public static void PutPanelsBack() {
+      try {
+        AppServices.Current.ScreenSetups.PutBack();
+      } catch (Exception ex) {
+        ErrorDialog.ShowDialog(ex);
+      }
+    }
+
+    /// <summary>The tray menu's "Forget the other setups".</summary>
+    public static void ForgetOtherScreenSetups() {
+      try {
+        AppServices.Current.ScreenSetups.ForgetOthers();
+      } catch (Exception ex) {
+        ErrorDialog.ShowDialog(ex);
+      }
+    }
+
+    private const string ScreenSetupListTag = "ScreenSetup";
+
+    /// <summary>
+    /// Fills the "Screen setups" submenu: the known setups (information only, the current one checked), a separator, then
+    /// "Put panels back for this setup" and "Forget the other setups", both greyed out while "Remember places for each
+    /// screen setup" is off, and Forget also when there is nothing else to forget. Only the list is replaced, so it can
+    /// run from the actions' own clicks.
+    /// </summary>
+    public static void FillScreenSetupsMenu(System.Windows.Forms.ToolStripMenuItem submenu, System.Windows.Forms.ToolStripItem putBack, System.Windows.Forms.ToolStripItem forget) {
+      ScreenSetupTracker tracker = AppServices.Current.ScreenSetups;
+      IList<KnownScreenSetup> setups;
+      bool enabled;
+      try {
+        setups = tracker.KnownSetups();
+        enabled = tracker.Enabled;
+      } catch (Exception ex) {
+        Common.AppLog.Warning(ex, "The screen setups could not be listed");
+        setups = new List<KnownScreenSetup>();
+        enabled = false;
+      }
+      foreach (System.Windows.Forms.ToolStripItem old in submenu.DropDownItems.Cast<System.Windows.Forms.ToolStripItem>().Where(i => Equals(i.Tag, ScreenSetupListTag)).ToList()) {
+        submenu.DropDownItems.Remove(old);
+        old.Dispose();
+      }
+      for (int i = 0; i < setups.Count; i++) {
+        // Information only: clicking does nothing.
+        submenu.DropDownItems.Insert(i, new System.Windows.Forms.ToolStripMenuItem(setups[i].Name) { Checked = setups[i].IsCurrent, Tag = ScreenSetupListTag });
+      }
+      putBack.Enabled = enabled;
+      forget.Enabled = enabled && setups.Any(s => !s.IsCurrent);
+    }
+
+    private static System.Windows.Forms.ToolStripMenuItem CreateScreenSetupsMenu() {
+      System.Windows.Forms.ToolStripMenuItem submenu = new System.Windows.Forms.ToolStripMenuItem("Screen setups");
+      System.Windows.Forms.ToolStripMenuItem putBack = new System.Windows.Forms.ToolStripMenuItem("Put panels back for this setup");
+      System.Windows.Forms.ToolStripMenuItem forget = new System.Windows.Forms.ToolStripMenuItem("Forget the other setups");
+      Action fill = () => FillScreenSetupsMenu(submenu, putBack, forget);
+      putBack.Click += (s, e) => PutPanelsBack();
+      forget.Click += (s, e) => {
+        ForgetOtherScreenSetups();
+        fill();
+      };
+      submenu.DropDownItems.Add(new System.Windows.Forms.ToolStripSeparator());
+      submenu.DropDownItems.Add(putBack);
+      submenu.DropDownItems.Add(forget);
+      fill();
+      submenu.DropDownOpening += (s, e) => fill();
+      return submenu;
+    }
+    #endregion SCREEN SETUPS
+
     #region CONTEXT MENU
     /// <summary>The icon set (solid or outline) of the first desktop window, which the tray menu and About from the tray follow; solid when there is no window.</summary>
     public static IconGlyphs FirstWindowIcons(AppViewModel appViewModel) {
@@ -316,6 +436,8 @@ namespace MDSHO
       menu.Disposed += (s, e) => shortcut.Changed -= showShortcut;
       menu.Opening += (s, e) => showShortcut();
       menu.Items.Add(bringToFrontMenuItem);
+      // The screen setups MDSHO knows on this PC, and putting the panels back for the current one.
+      menu.Items.Add(CreateScreenSetupsMenu());
       menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
       menu.Items.Add("New window").Click += (s, e) => app.NewWindow(null);
       menu.Items.Add("Find MDSHO lost windows").Click += (s, e) => app.FindWindows();
@@ -365,6 +487,7 @@ namespace MDSHO
         DesktopWindowViewModel desktopWindow = appViewModel.AddWindow(screenDeviceName, centerLeft, centerTop);
         DesktopWindowView windowView = this.windows.DesktopWindow(desktopWindow);
         windowView.Show();
+        RememberPlace(desktopWindow);
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
       }
@@ -393,6 +516,12 @@ namespace MDSHO
           }
         }
         appViewModel.FindWindows(AppServices.Current.Screens.PrimaryScreen());
+        foreach (DesktopWindowViewModel desktopWindow in appViewModel.Windows) {
+          RememberPlace(desktopWindow);
+          foreach (DesktopWindowViewModel cloneWindow in desktopWindow.Clones) {
+            RememberPlace(cloneWindow);
+          }
+        }
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
       }
@@ -564,9 +693,14 @@ namespace MDSHO
       Common.AppLog.CloseAndFlush();
       Common.IShellLauncher shell = AppServices.Current.Shell;
       Common.IPackageIdentity package = AppServices.Current.Package;
-      // Release the global shortcut's keys.
+      // Release the global shortcut's keys and stop listening for display changes.
       try {
         AppServices.Current.BringToFront.Dispose();
+      } catch (Exception ex) {
+        Debug.WriteLine(ex);
+      }
+      try {
+        AppServices.Current.DisplayChanges.Dispose();
       } catch (Exception ex) {
         Debug.WriteLine(ex);
       }

@@ -41,6 +41,14 @@ namespace MDSHO.Helpers {
       set { this.bringToFront = value; }
     }
     private BringToFrontShortcut bringToFront;
+    /// <summary>Screens connected or disconnected (listened to only when started).</summary>
+    public IDisplayChangeWatcher DisplayChanges { get; set; } = new DisplayChangeWatcher();
+    /// <summary>Places per screen setup, on <see cref="Screens"/> (created on first use).</summary>
+    public ScreenSetupTracker ScreenSetups {
+      get { return this.screenSetups ??= new ScreenSetupTracker(Screens, new DispatcherOneShotTimer()); }
+      set { this.screenSetups = value; }
+    }
+    private ScreenSetupTracker screenSetups;
     /// <summary>Brings the panels to front and sends them back; null until the app has started.</summary>
     public PanelsToFront PanelsToFront { get; set; }
 

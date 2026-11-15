@@ -5,9 +5,9 @@ using MDSHO.ViewModels;
 namespace MDSHO {
 
   /// <summary>
-  /// The Settings window of a panel (the gear in its title bar): Icons appearance, Other and Keyboard shortcut. Changes show
-  /// live; Apply keeps them, closing without Apply puts them back. The keyboard shortcut (one for the whole app) changes
-  /// only on Apply. The panel's colours are in the <see cref="ColorsWindow"/>.
+  /// The Settings window of a panel (the gear in its title bar): Icons appearance, Other, Keyboard shortcut and Screen
+  /// setups. Changes show live; Apply keeps them, closing without Apply puts them back. The keyboard shortcut and
+  /// "Remember places for each screen setup" (both for the whole app) change only on Apply. The panel's colours are in the <see cref="ColorsWindow"/>.
   /// </summary>
   public partial class SettingsWindow : Window {
     private readonly IconGlyphs icons;
@@ -63,12 +63,23 @@ namespace MDSHO {
       this.ButtonShortcutOff.Click += (s, e) => this.recorder.TurnOff();
       // Closing while recording lets the saved shortcut work again.
       this.Closed += (s, e) => this.recorder.Cancel();
+      // Screen setups: one setting for the whole app, saved only on Apply.
+      this.CheckRememberScreenSetups.IsChecked = AppServices.Current.ScreenSetups.Enabled;
 
       this.ButtonApply.Click += (s, e) => {
         try {
           // A new shortcut another app holds: the window stays open with the red hint, and the old one keeps working.
           if (!this.recorder.Apply()) {
             return;
+          }
+        } catch (System.Exception ex) {
+          ErrorDialog.ShowDialog(ex);
+          return;
+        }
+        try {
+          bool remember = this.CheckRememberScreenSetups.IsChecked == true;
+          if (remember != AppServices.Current.ScreenSetups.Enabled) {
+            AppServices.Current.ScreenSetups.SetEnabled(remember);
           }
         } catch (System.Exception ex) {
           ErrorDialog.ShowDialog(ex);

@@ -17,7 +17,8 @@ makes no network connections of its own. Everything you create in MDSHO stays on
 ## What stays on your PC
 
 MDSHO keeps your panels (windows), their clones and positions, buttons, groups, run commands, colors and settings in a
-small database file, together with the shortcut files it makes for your buttons. All of this is kept in MDSHO's app data
+small database file (including, for each set of screens you connect, the screens' names and resolutions and where your
+panels and notes were), together with the shortcut files it makes for your buttons. All of this is kept in MDSHO's app data
 folder on your PC (`%LOCALAPPDATA%\MDSHO`, or the private folder Windows gives the installed package). You can open that
 folder with **Browse app data** in the tray menu or in a panel's title menu.
 

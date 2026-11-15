@@ -104,6 +104,24 @@ namespace MDSHO.Data {
         CREATE TABLE IF NOT EXISTS AppSettings (
           Key TEXT NOT NULL PRIMARY KEY,
           Value TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS ScreenSetups (
+          ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+          Key TEXT NOT NULL UNIQUE,
+          Name TEXT NOT NULL,
+          LastUsed TEXT NOT NULL DEFAULT '');
+        CREATE TABLE IF NOT EXISTS ScreenSetupPlaces (
+          ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+          SetupID INTEGER NOT NULL,
+          Kind INTEGER NOT NULL,
+          ItemID INTEGER NOT NULL,
+          ScreenDeviceName TEXT NOT NULL,
+          Left INTEGER NOT NULL,
+          Top INTEGER NOT NULL,
+          Width INTEGER NOT NULL,
+          Height INTEGER NOT NULL,
+          Dock INTEGER NOT NULL DEFAULT 0,
+          UNIQUE(SetupID, Kind, ItemID),
+          FOREIGN KEY(SetupID) REFERENCES ScreenSetups(ID) ON DELETE CASCADE);
       ";
 
     /// <summary>
@@ -279,8 +297,49 @@ namespace MDSHO.Data {
         Execute(conn, @"CREATE TABLE IF NOT EXISTS AppSettings (
           Key TEXT NOT NULL PRIMARY KEY,
           Value TEXT NOT NULL);");
+      }),
+      new DbMigration(17, "Places per screen setup: ScreenSetups and ScreenSetupPlaces tables", conn => {
+        // No foreign key to the panels, clones or notes: an import that replaces the data deletes them and adds them again
+        // with the same IDs, and their places must stay. Places of items that are gone are cleaned up at startup.
+        Execute(conn, @"CREATE TABLE IF NOT EXISTS ScreenSetups (
+          ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+          Key TEXT NOT NULL UNIQUE,
+          Name TEXT NOT NULL,
+          LastUsed TEXT NOT NULL DEFAULT '');
+        CREATE TABLE IF NOT EXISTS ScreenSetupPlaces (
+          ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+          SetupID INTEGER NOT NULL,
+          Kind INTEGER NOT NULL,
+          ItemID INTEGER NOT NULL,
+          ScreenDeviceName TEXT NOT NULL,
+          Left INTEGER NOT NULL,
+          Top INTEGER NOT NULL,
+          Width INTEGER NOT NULL,
+          Height INTEGER NOT NULL,
+          Dock INTEGER NOT NULL DEFAULT 0,
+          UNIQUE(SetupID, Kind, ItemID),
+          FOREIGN KEY(SetupID) REFERENCES ScreenSetups(ID) ON DELETE CASCADE);");
+        AddScreenSetupsLastUsed(conn);
       })
     };
+
+    /// <summary>
+    /// ScreenSetups.LastUsed came after MDSHO 1.7.0 had created version 17 without it (1.7.0 was a test build), so it is
+    /// added here when missing: by the version 17 step, and on every start for a database already at version 17.
+    /// </summary>
+    private static void AddScreenSetupsLastUsed(SqliteConnection conn) {
+      if (TableExists(conn, "ScreenSetups") && !ColumnExists(conn, "ScreenSetups", "LastUsed")) {
+        Execute(conn, "ALTER TABLE ScreenSetups ADD COLUMN LastUsed TEXT NOT NULL DEFAULT '';");
+      }
+    }
+
+    private static bool TableExists(SqliteConnection conn, string table) {
+      using (SqliteCommand cmd = conn.CreateCommand()) {
+        cmd.CommandText = "SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = @table";
+        cmd.Parameters.AddWithValue("@table", table);
+        return Convert.ToInt64(cmd.ExecuteScalar()) > 0;
+      }
+    }
 
     private static bool ColumnExists(SqliteConnection conn, string table, string column) {
       using (SqliteCommand cmd = conn.CreateCommand()) {
@@ -370,6 +429,24 @@ namespace MDSHO.Data {
     /// </summary>
     public static void Upgrade() {
       ApplyMigrations(Migrations);
+      RepairVersion17();
+    }
+
+    // A database that a 1.7.0 test build left at version 17 gets ScreenSetups.LastUsed (see AddScreenSetupsLastUsed).
+    private static void RepairVersion17() {
+      if (ReadUserVersion() != 17) {
+        return;
+      }
+      using (SqliteConnection conn = new SqliteConnection(ConnectionFactory.GetConnectionString())) {
+        conn.Open();
+        if (TableExists(conn, "ScreenSetups") && !ColumnExists(conn, "ScreenSetups", "LastUsed")) {
+          using (SqliteTransaction tx = conn.BeginTransaction()) {
+            AddScreenSetupsLastUsed(conn);
+            tx.Commit();
+          }
+          MDSHO.Common.AppLog.Information("Database version 17 repaired: ScreenSetups.LastUsed added");
+        }
+      }
     }
     
 

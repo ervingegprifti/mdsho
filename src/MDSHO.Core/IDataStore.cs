@@ -16,6 +16,8 @@
     IDefaultColorsRepository DefaultColors { get; }
     /// <summary>Settings of the whole app on this PC (not part of exports).</summary>
     IAppSettingsRepository AppSettings { get; }
+    /// <summary>The screen setups seen on this PC and the places of the panels, clones and notes in each (not part of exports).</summary>
+    IScreenSetupRepository ScreenSetups { get; }
     /// <summary>Begin a transaction scope (joins the current one on this thread, if any).</summary>
     ITransactionScope BeginTransaction();
     /// <summary>Create the database if missing and apply every pending schema migration (with a backup first).

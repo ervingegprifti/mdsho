@@ -50,7 +50,7 @@ namespace MDSHO.Tests {
     public void Settings_has_Icons_appearance_and_Other_and_no_colours() {
       WithSettings((window, w) => {
         List<string> headings = WpfAppHost.VisualDescendants<Label>(window).Select(l => l.Content as string).ToList();
-        Assert.Equal(new[] { "Icons appearance", "Other", "Keyboard shortcut" }, headings);
+        Assert.Equal(new[] { "Icons appearance", "Other", "Keyboard shortcut", "Screen setups" }, headings);
         Assert.Null(window.FindName("ListColorTargets"));
         Assert.Null(window.FindName("PickerColor"));
         Assert.Null(window.FindName("ButtonDefaultColours"));

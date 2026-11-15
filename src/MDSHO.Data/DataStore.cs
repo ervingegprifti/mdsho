@@ -10,6 +10,7 @@ namespace MDSHO.Data {
     public INoteWindowRepository NoteWindows { get; }
     public IDefaultColorsRepository DefaultColors { get; }
     public IAppSettingsRepository AppSettings { get; }
+    public IScreenSetupRepository ScreenSetups { get; }
 
     public SqliteDataStore() {
       Clones = new DesktopWindowCloneRepository();
@@ -17,6 +18,7 @@ namespace MDSHO.Data {
       NoteWindows = new NoteWindowRepository();
       DefaultColors = new DefaultColorsRepository();
       AppSettings = new AppSettingsRepository();
+      ScreenSetups = new ScreenSetupRepository();
       Windows = new DesktopWindowRepository(Clones, DefaultColors);
     }
 
@@ -55,6 +57,8 @@ namespace MDSHO.Data {
     public static IDefaultColorsRepository DefaultColors { get { return Current.DefaultColors; } }
     /// <summary>Settings of the whole app on this PC.</summary>
     public static IAppSettingsRepository AppSettings { get { return Current.AppSettings; } }
+    /// <summary>The screen setups seen on this PC and the places in each.</summary>
+    public static IScreenSetupRepository ScreenSetups { get { return Current.ScreenSetups; } }
 
     /// <summary>Begin a transaction scope. Use: <c>using (var tx = DataStore.BeginTransaction()) { ...; tx.Commit(); }</c></summary>
     public static ITransactionScope BeginTransaction() {

@@ -305,14 +305,40 @@ namespace MDSHO {
       SaveNotePlace(isOpen: true);
     }
 
+    /// <summary>The normal (not minimized or maximized) place and size of the window; empty when it isn't known yet.</summary>
+    public Rect NormalBounds {
+      get {
+        Rect normal = this.WindowState == WindowState.Normal
+          ? new Rect(this.Left, this.Top, double.IsNaN(this.Width) ? this.ActualWidth : this.Width, double.IsNaN(this.Height) ? this.ActualHeight : this.Height)
+          : this.RestoreBounds;
+        return normal.IsEmpty || double.IsNaN(normal.X) || double.IsNaN(normal.Y) || double.IsInfinity(normal.Width) || double.IsNaN(normal.Width) ? Rect.Empty : normal;
+      }
+    }
+
+    /// <summary>
+    /// Moves the window's normal place and size to <paramref name="bounds"/> (a screen setup's saved place). A maximized
+    /// window is maximized again on its new screen; a minimized one keeps its state and comes back there.
+    /// </summary>
+    public void MoveNormalBoundsTo(Rect bounds) {
+      bool maximized = this.WindowState == WindowState.Maximized;
+      if (maximized) {
+        this.WindowState = WindowState.Normal;
+      }
+      this.Left = bounds.X;
+      this.Top = bounds.Y;
+      this.Width = Math.Max(this.MinWidth, bounds.Width);
+      this.Height = Math.Max(this.MinHeight, bounds.Height);
+      if (maximized) {
+        this.WindowState = WindowState.Maximized;
+      }
+    }
+
     private void SaveNotePlace(bool isOpen) {
       if (this.kind != TextKind.Note || this.shortcut.ID == 0) {
         return;
       }
-      Rect normal = this.WindowState == WindowState.Normal
-        ? new Rect(this.Left, this.Top, double.IsNaN(this.Width) ? this.ActualWidth : this.Width, double.IsNaN(this.Height) ? this.ActualHeight : this.Height)
-        : this.RestoreBounds;
-      if (normal.IsEmpty || double.IsNaN(normal.X) || double.IsInfinity(normal.Width)) {
+      Rect normal = NormalBounds;
+      if (normal.IsEmpty) {
         return;
       }
       long state = this.WindowState == WindowState.Maximized ? NoteWindowPlace.Maximized
@@ -324,6 +350,8 @@ namespace MDSHO {
         // A place that can't be saved must never break the note window.
         AppLog.Warning(ex, "Could not save the place of a note window");
       }
+      // And as its place in the current screen setup (ignored while the screens change). Never throws.
+      AppServices.Current.ScreenSetups.Remember(new NoteWindowPlacedItem(this));
     }
 
     /// <summary>

@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 16**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 17**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -139,6 +139,41 @@ exports, and an import that replaces the data keeps them. Added in version 16.
 | Key | Value |
 |---|---|
 | `BringToFrontShortcut` | The **Bring panels to front** keyboard shortcut (Settings > Keyboard shortcut), for example `Ctrl+Shift+Alt+M`, or `Off`. Without a row: `Ctrl+Shift+Alt+M`. |
+| `RememberScreenSetupPlaces` | **Remember places for each screen setup** (Settings > Screen setups): `On` or `Off`. Without a row: on. Added in version 17. |
+
+### ScreenSetups
+
+The screen setups MDSHO has seen on this PC: one row per set of connected screens. Not part of exports, and an import
+that replaces the data keeps them. **Forget the other setups** in the tray menu deletes every row but the current setup,
+and a setup beyond the 10 most recently used ones is deleted. Added in version 17.
+
+| Column | Type | Null | Default | Meaning |
+|---|---|---|---|---|
+| `ID` | INTEGER | NOT NULL | | Primary key. |
+| `Key` | TEXT | NOT NULL | | Unique. Which screens make the setup: each screen as `widthxheight` (physical pixels), `*` for the primary screen, then `@c` and its column and `r` and its row, in column, then row order, joined with `\|`, for example `1920x1080*@c0r0\|2560x1440@c1r0` (a monitor right of the primary laptop screen). The column is the number of screens entirely left of the screen, the row the number entirely above it. Device names, exact offsets, the working area and the display scale don't count. MDSHO 1.7.0 wrote `DeviceName@left,top,widthxheight` keys; they are changed to this form, and merged, at start. |
+| `Name` | TEXT | NOT NULL | | The name shown in the tray menu's **Screen setups** list: the number of screens and their resolutions, primary screen first, for example `2 screens: 1920×1080, 2560×1440`. Two different setups can have the same name (the same resolutions arranged differently); the list then numbers the one added later. |
+| `LastUsed` | TEXT | NOT NULL | `''` | When the setup was last the current one, as UTC text (`2026-11-15T10:00:00.0000000Z`), always later than the others' so the order is right; empty when never recorded. The tray list shows the most recently used first, and only the 10 most recently used setups are kept (never forgetting the current one). Added in 1.7.1 to version 17; a 1.7.0 database gets it at start. |
+
+### ScreenSetupPlaces
+
+Where each panel, clone and note window was last in each screen setup, so they go back there when those screens are
+connected again (see [Architecture](architecture.md#places-per-screen-setup)). One row per setup and item. Not part of
+exports, and an import that replaces the data keeps them. Added in version 17.
+
+| Column | Type | Null | Default | Meaning |
+|---|---|---|---|---|
+| `ID` | INTEGER | NOT NULL | | Primary key. |
+| `SetupID` | INTEGER | NOT NULL | | The setup (`ScreenSetups.ID`). |
+| `Kind` | INTEGER | NOT NULL | | `0` = panel, `1` = clone, `2` = note window. |
+| `ItemID` | INTEGER | NOT NULL | | The panel's `MDSHOWindows.ID`, the clone's `MDSHOWindowClones.ID` or the note's `Shortcuts.ID`. Not a foreign key, so an import that replaces the data (which adds the panels again with the same IDs) keeps the places; places of items that are gone are deleted when MDSHO starts. |
+| `ScreenDeviceName` | TEXT | NOT NULL | | Name of the screen the item was mostly on. |
+| `Left` | INTEGER | NOT NULL | | Left edge, measured from the left of the whole desktop (for a note, of the normal, not maximized, window). |
+| `Top` | INTEGER | NOT NULL | | Top edge, measured from the top of the whole desktop. |
+| `Width` | INTEGER | NOT NULL | | Width. |
+| `Height` | INTEGER | NOT NULL | | Height. |
+| `Dock` | INTEGER | NOT NULL | `0` | `0` = not docked, `1` = docked to the left, `2` = docked to the right of the screen's working area. A docked panel is docked again to the full height of that screen's working area. |
+
+`SetupID`, `Kind` and `ItemID` together are unique.
 
 ## Keys and relationships
 
@@ -148,6 +183,7 @@ Foreign keys are switched on for every connection, and all of them use `ON DELET
 - `Shortcuts.ParentMDSHOWindowID` → `MDSHOWindows.ID`: deleting a panel deletes its root buttons.
 - `Shortcuts.ParentShortcutID` → `Shortcuts.ID`: deleting a group deletes everything inside it.
 - `NoteWindows.ShortcutID` → `Shortcuts.ID`: deleting a note deletes its window place.
+- `ScreenSetupPlaces.SetupID` → `ScreenSetups.ID`: forgetting a screen setup deletes its places.
 
 The shortcut files in the shortcuts folder are not part of the database; the app deletes them itself.
 
@@ -183,6 +219,7 @@ that worked.
 | 14 | 1.5.10 | `MDSHOWindows.ReserveDockedSpace` dropped (`ALTER TABLE ... DROP COLUMN`, like version 5; the rows and other columns stay): "Reserve screen space when docked" was removed. Exports made before this still import. |
 | 15 | 1.5.10 | `DefaultColors` table: the panel and note default colours saved with **Set as default** in the Colours window (empty at first). |
 | 16 | 1.6.1 | `AppSettings` table: settings of the whole app on this PC, starting with the **Bring panels to front** keyboard shortcut (empty at first). |
+| 17 | 1.7.1 | `ScreenSetups` and `ScreenSetupPlaces` tables: the screen setups seen on this PC and the place of every panel, clone and note window in each (empty at first). The 1.7.0 test build created this version without `ScreenSetups.LastUsed`; MDSHO adds the column at start when it is missing. |
 
 ### Backup before an upgrade
 
