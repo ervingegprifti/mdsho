@@ -65,6 +65,12 @@ namespace MDSHO.Data {
       return Current.BeginTransaction();
     }
 
+    /// <summary>The version of the database file when an upgrade is due (it is older than this MDSHO), else null (no
+    /// database yet, or up to date). Never creates or changes the file.</summary>
+    public static int? VersionBeforeUpgrade() {
+      return SchemaManager.VersionBeforeUpgrade();
+    }
+
     /// <summary>Create the database if missing and apply the pending schema migrations.</summary>
     public static void Upgrade() {
       Current.Upgrade();

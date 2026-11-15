@@ -34,6 +34,9 @@ namespace MDSHO.Tests {
       Services.ScreenSetups = new ScreenSetupTracker(Services.Screens, new ScreenSetupTests.FakeTimer());
       // The window theme never reads or watches the real Windows setting in tests.
       Services.WindowTheme = new WindowThemeSetting(new FakeWindowsAppMode());
+      // Backups never write to the real profile folder or wait on a real timer in tests.
+      Services.Backups = new BackupService(new FakeClock(), "TESTPC", System.IO.Path.Combine(System.IO.Path.GetTempPath(), "MDSHO.Tests", "Profile"),
+        "0.0.0", new ScreenSetupTests.FakeTimer(), action => action());
       AppServices.Current = Services;
     }
 

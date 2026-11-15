@@ -364,7 +364,7 @@ namespace MDSHO.Data {
     /// <summary>
     /// Read the database <c>user_version</c> over a read-only, unpooled connection (reading never changes the file).
     /// </summary>
-    private static int ReadUserVersion() {
+    internal static int ReadUserVersion() {
       SqliteConnectionStringBuilder builder = new SqliteConnectionStringBuilder(ConnectionFactory.GetConnectionString()) {
         Mode = SqliteOpenMode.ReadOnly,
         Pooling = false
@@ -418,6 +418,17 @@ namespace MDSHO.Data {
         MDSHO.Common.AppLog.Information("Database migration {Version} applied: {Name}", migration.Version, migration.Name);
       }
       MDSHO.Common.AppLog.Information("Database version {DatabaseVersion}", pending[pending.Count - 1].Version);
+    }
+
+    /// <summary>The version of the database when it exists and is older than this MDSHO (an upgrade is due), else null.
+    /// Never creates or changes the file.</summary>
+    internal static int? VersionBeforeUpgrade() {
+      string databaseFilePath = MDSHO.Common.Paths.GetAppDataLocalDatabaseFilePath();
+      if (!File.Exists(databaseFilePath) || new FileInfo(databaseFilePath).Length == 0) {
+        return null;
+      }
+      int version = ReadUserVersion();
+      return version < MDSHO.Common.AppConstants.DatabaseVersion ? version : null;
     }
 
     /// <summary>

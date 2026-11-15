@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using MDSHO.Common;
 using MDSHO.Core;
@@ -20,7 +22,7 @@ namespace MDSHO.Data {
     }
 
     /// <summary>The application version as Major.Minor.Build (1.1.0).</summary>
-    internal static string AppVersion() {
+    public static string AppVersion() {
       Version v = typeof(DataExporter).Assembly.GetName().Version;
       return v.Major + "." + v.Minor + "." + Math.Max(v.Build, 0);
     }
@@ -30,9 +32,14 @@ namespace MDSHO.Data {
     /// target and moves it into place. An existing target is replaced. Missing shortcut files are listed in the manifest.
     /// </summary>
     public static ExportManifest Export(string zipPath) {
+      return Export(zipPath, new ExportOptions());
+    }
+
+    /// <summary>Like <see cref="Export(string)"/>, with a PC name in the manifest, or reading a database not yet upgraded.</summary>
+    public static ExportManifest Export(string zipPath, ExportOptions options) {
       AppLog.Information("Export started to {ZipPath}", zipPath);
       try {
-        ExportManifest manifest = ExportCore(zipPath);
+        ExportManifest manifest = ExportCore(zipPath, options ?? new ExportOptions());
         AppLog.Information("Export finished: {Windows} windows, {Clones} clones, {Shortcuts} shortcuts, {Files} files ({MissingFiles} missing)",
           manifest.Counts.Windows, manifest.Counts.Clones, manifest.Counts.Shortcuts, manifest.Counts.Files, manifest.MissingFiles.Count);
         return manifest;
@@ -42,21 +49,34 @@ namespace MDSHO.Data {
       }
     }
 
-    private static ExportManifest ExportCore(string zipPath) {
-      DataFile data = new DataFile();
-      using (ITransactionScope tx = DataStore.BeginTransaction()) {
-        data.Windows = DataStore.Windows.GetAll();
-        data.Clones = DataStore.Clones.GetAll();
-        data.Shortcuts = DataStore.Shortcuts.GetAll();
-        tx.Commit();
+    /// <summary>
+    /// A SHA-256 of what an export would hold (data.json and the shortcut files), without the export time. The same data
+    /// always gives the same hash, so backups can tell when something changed.
+    /// </summary>
+    public static string DataHash() {
+      DataFile data = ReadData(false);
+      string shortcutsPath = Paths.GetShortcutsPath();
+      using (IncrementalHash hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256)) {
+        hash.AppendData(SerializeData(data));
+        foreach (string name in FileNames(data)) {
+          hash.AppendData(Encoding.UTF8.GetBytes("\n" + name + "\n"));
+          string path = Path.Combine(shortcutsPath, name);
+          hash.AppendData(File.Exists(path) ? File.ReadAllBytes(path) : Encoding.UTF8.GetBytes("missing"));
+        }
+        return Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant();
       }
+    }
+
+    private static ExportManifest ExportCore(string zipPath, ExportOptions options) {
+      DataFile data = ReadData(options.BeforeUpgrade);
       string shortcutsPath = Paths.GetShortcutsPath();
       ExportManifest manifest = new ExportManifest {
         Format = ExportManifest.FormatName,
         FormatVersion = ExportManifest.CurrentFormatVersion,
         AppVersion = AppVersion(),
-        SchemaVersion = AppConstants.DatabaseVersion,
-        ExportedAtUtc = DateTime.UtcNow
+        SchemaVersion = options.BeforeUpgrade ? SchemaManager.ReadUserVersion() : AppConstants.DatabaseVersion,
+        ExportedAtUtc = DateTime.UtcNow,
+        PcName = string.IsNullOrEmpty(options.PcName) ? null : options.PcName
       };
       manifest.Counts.Windows = data.Windows.Count;
       manifest.Counts.Clones = data.Clones.Count;
@@ -65,15 +85,7 @@ namespace MDSHO.Data {
       try {
         using (FileStream fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
         using (ZipArchive zip = new ZipArchive(fs, ZipArchiveMode.Create)) {
-          HashSet<string> done = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-          foreach (Shortcut s in data.Shortcuts) {
-            if (string.IsNullOrEmpty(s.Guid) || string.IsNullOrEmpty(s.Ext)) {
-              continue;
-            }
-            string name = s.Guid + s.Ext;
-            if (!done.Add(name)) {
-              continue;
-            }
+          foreach (string name in FileNames(data)) {
             try {
               zip.CreateEntryFromFile(Path.Combine(shortcutsPath, name), PortabilityJson.FilesPrefix + name, CompressionLevel.Optimal);
               manifest.Counts.Files++;
@@ -84,7 +96,10 @@ namespace MDSHO.Data {
             }
           }
           WriteJson(zip, PortabilityJson.ManifestEntry, manifest);
-          WriteJson(zip, PortabilityJson.DataEntry, data);
+          ZipArchiveEntry dataEntry = zip.CreateEntry(PortabilityJson.DataEntry, CompressionLevel.Optimal);
+          using (Stream stream = dataEntry.Open()) {
+            stream.Write(SerializeData(data));
+          }
         }
         File.Move(tempPath, zipPath, overwrite: true);
       } catch {
@@ -92,6 +107,44 @@ namespace MDSHO.Data {
         throw;
       }
       return manifest;
+    }
+
+    // One consistent snapshot. Before an upgrade the tables may lack newer columns: see OldSchemaReader.
+    private static DataFile ReadData(bool beforeUpgrade) {
+      DataFile data = new DataFile();
+      using (ITransactionScope tx = DataStore.BeginTransaction()) {
+        if (beforeUpgrade) {
+          data.Windows = OldSchemaReader.Windows();
+          data.Clones = OldSchemaReader.Clones();
+          data.Shortcuts = OldSchemaReader.Shortcuts();
+        } else {
+          data.Windows = DataStore.Windows.GetAll();
+          data.Clones = DataStore.Clones.GetAll();
+          data.Shortcuts = DataStore.Shortcuts.GetAll();
+        }
+        tx.Commit();
+      }
+      return data;
+    }
+
+    // The shortcut file names, each once, in the order of the shortcuts.
+    private static List<string> FileNames(DataFile data) {
+      List<string> names = new List<string>();
+      HashSet<string> done = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+      foreach (Shortcut s in data.Shortcuts) {
+        if (string.IsNullOrEmpty(s.Guid) || string.IsNullOrEmpty(s.Ext)) {
+          continue;
+        }
+        string name = s.Guid + s.Ext;
+        if (done.Add(name)) {
+          names.Add(name);
+        }
+      }
+      return names;
+    }
+
+    private static byte[] SerializeData(DataFile data) {
+      return JsonSerializer.SerializeToUtf8Bytes(data, PortabilityJson.Options);
     }
 
     private static void WriteJson(ZipArchive zip, string entryName, object value) {

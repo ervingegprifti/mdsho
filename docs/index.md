@@ -31,6 +31,10 @@ window with your own buttons, and you can have as many panels as you like, on as
   instead in a panel's Settings on the **Appearance** page. Panels and notes keep their own colours.
 - **Colors:** set the colors of each panel and note in its Colours window, save your own defaults, and mark buttons with a color.
 - **Export and import:** save all your panels and buttons to one `.zip` file and load them back.
+- **Automatic backups:** every day your data changes, when you exit after a change, and always before a database
+  upgrade, MDSHO saves the same
+  `.zip` to an `mdsho-backups` folder in your user folder (`C:\Users\<you>\mdsho-backups`). Pick another folder, such as a OneDrive or Google Drive folder, in a panel's
+  Settings on the **Backups** page. Restore a backup with **Import data**.
 
 ## Install
 

@@ -219,7 +219,7 @@ namespace MDSHO.Tests {
       using (Setup s = new Setup()) {
         WithSettings(window => {
           List<Label> labels = WpfAppHost.VisualDescendants<Label>(window).ToList();
-          Assert.Equal(new[] { "Icons appearance", "Window theme", "Other", "Keyboard shortcut", "Screen setups" }, labels.Select(l => l.Content as string).ToArray());
+          Assert.Equal(new[] { "Icons appearance", "Window theme", "Other", "Keyboard shortcut", "Screen setups", "Backups" }, labels.Select(l => l.Content as string).ToArray());
           Assert.Equal(window.FindResource("StyleSettingsCategory"), labels.Last().Style);
           CheckBox check = Named<CheckBox>(window, "CheckRememberScreenSetups");
           Assert.Equal("Remember places for each screen setup", check.Content);
