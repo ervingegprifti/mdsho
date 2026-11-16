@@ -83,6 +83,7 @@ namespace MDSHO {
 			this.MenuItemHeaderBrowseAppData.Click += MenuItemHeaderBrowseAppData_Click;
 			this.MenuItemHeaderRate.Click += MenuItemHeaderRate_Click;
 			this.MenuItemHeaderShare.Click += MenuItemHeaderShare_Click;
+			this.MenuItemHeaderSupport.Click += MenuItemHeaderSupport_Click;
 			this.MenuItemHeaderAboutWindow.Click += MenuItemHeaderAboutWindow_Click;
       this.MenuItemHeaderDeleteWindow.Click += MenuItemHeaderDeleteWindow_Click;
       this.MenuItemHeaderExitApplication.Click += MenuItemHeaderExitApplication_Click;
@@ -195,6 +196,9 @@ namespace MDSHO {
 		}
 		private void MenuItemHeaderShare_Click(object sender, RoutedEventArgs e) {
 			_ = AppServices.Current.StoreActions.ShareAsync();
+		}
+		private void MenuItemHeaderSupport_Click(object sender, RoutedEventArgs e) {
+			_ = AppServices.Current.StoreActions.SupportAsync();
 		}
 		private void MenuItemHeaderAboutWindow_Click(object sender, RoutedEventArgs e) {
       try {

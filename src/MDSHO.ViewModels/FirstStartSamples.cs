@@ -16,7 +16,9 @@ namespace MDSHO.ViewModels {
       "Right-click anything for more: new groups, run commands, notes, colours.\r\n" +
       "Press Ctrl+Shift+Alt+M to bring your panels to the front.\r\n" +
       "\r\n" +
-      "These samples are yours to try. Delete the group when you are done.";
+      "These samples are yours to try. Delete the group when you are done.\r\n" +
+      "\r\n" +
+      "MDSHO is developed in spare time. If it saves you time, you can support its development: right-click a panel's title and choose Support MDSHO.";
 
     /// <summary>Adds the group and its samples to the window and returns the welcome note's ID (null when it was not added).</summary>
     public static long? AddTo(long windowID, string documentsFolder) {

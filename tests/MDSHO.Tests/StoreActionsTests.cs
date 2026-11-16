@@ -18,6 +18,7 @@ namespace MDSHO.Tests {
       public readonly List<Exception> Errors = new List<Exception>();
       public bool FailClipboard;
       public bool FailLaunch;
+      public bool LaunchReturnsFalse;
       public void CopyToClipboard(string text) {
         if (FailClipboard) { throw new InvalidOperationException("clipboard busy"); }
         Calls.Add("clipboard:" + text);
@@ -27,7 +28,7 @@ namespace MDSHO.Tests {
       public Task<bool> LaunchUriAsync(Uri uri) {
         if (FailLaunch) { return Task.FromException<bool>(new InvalidOperationException("no store")); }
         Calls.Add("launch:" + uri.OriginalString);
-        return Task.FromResult(true);
+        return Task.FromResult(!LaunchReturnsFalse);
       }
       public void ShowError(Exception exception) { Errors.Add(exception); }
     }
@@ -139,6 +140,52 @@ namespace MDSHO.Tests {
       Assert.Equal(2, host.Errors.Count);
     }
 
+    private const string SupportUrl = "https://ervingegprifti.github.io/mdsho/support/";
+
+    [Fact]
+    public void Support_url_is_the_docs_support_page() {
+      Assert.Equal(SupportUrl, AppConstants.SupportUrl);
+    }
+
+    [Fact]
+    public async Task Support_opens_the_support_page_only_and_does_not_count_as_rating() {
+      FakeHost host = new FakeHost();
+      StoreActions actions = new StoreActions(host, Rating("Store", StoreRatingResult.Rated));
+      int rated = 0;
+      actions.Rated += () => rated++;
+      await actions.SupportAsync();
+      Assert.Equal(new[] { "launch:" + SupportUrl }, host.Calls);
+      Assert.Empty(host.Errors);
+      Assert.Equal(0, rated);
+    }
+
+    [Fact]
+    public async Task Support_shows_the_error_when_the_page_cannot_open() {
+      FakeHost host = new FakeHost { FailLaunch = true };
+      await new StoreActions(host).SupportAsync();
+      Assert.Single(host.Errors);
+    }
+
+    [Fact]
+    public async Task Support_shows_the_error_when_Windows_opens_nothing() {
+      FakeHost host = new FakeHost { LaunchReturnsFalse = true };
+      await new StoreActions(host).SupportAsync();
+      Assert.Single(host.Errors);
+      Assert.Contains(SupportUrl, host.Errors[0].Message);
+    }
+
+    /// <summary>The support address is written once, in AppConstants; every Support entry uses it.</summary>
+    [Fact]
+    public void Support_url_is_written_only_in_AppConstants() {
+      string src = System.IO.Path.Combine(ThirdPartyNoticesTests.RepoRoot(), "src");
+      List<string> files = System.IO.Directory.GetFiles(src, "*.*", System.IO.SearchOption.AllDirectories)
+        .Where(f => (f.EndsWith(".cs") || f.EndsWith(".xaml")) && !f.Contains(System.IO.Path.DirectorySeparatorChar + "obj" + System.IO.Path.DirectorySeparatorChar)
+          && !f.Contains(System.IO.Path.DirectorySeparatorChar + "bin" + System.IO.Path.DirectorySeparatorChar))
+        .Where(f => System.IO.File.ReadAllText(f).Contains("mdsho/support"))
+        .Select(f => System.IO.Path.GetFileName(f)).ToList();
+      Assert.Equal(new[] { "AppConstants.cs" }, files);
+    }
+
     private static FieldInfo NamedElement(Type view, string name) {
       return view.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
     }
@@ -151,15 +198,17 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void About_window_offers_rate_and_share() {
+    public void About_window_offers_rate_share_and_support() {
       Assert.NotNull(NamedElement(typeof(AboutWindow), "HyperlinkRate"));
       Assert.NotNull(NamedElement(typeof(AboutWindow), "HyperlinkShare"));
+      Assert.NotNull(NamedElement(typeof(AboutWindow), "HyperlinkSupport"));
     }
 
     [Fact]
-    public void Title_menu_offers_rate_and_share() {
+    public void Title_menu_offers_rate_share_and_support() {
       Assert.NotNull(NamedElement(typeof(DesktopWindowView), "MenuItemHeaderRate"));
       Assert.NotNull(NamedElement(typeof(DesktopWindowView), "MenuItemHeaderShare"));
+      Assert.NotNull(NamedElement(typeof(DesktopWindowView), "MenuItemHeaderSupport"));
     }
   }
 }

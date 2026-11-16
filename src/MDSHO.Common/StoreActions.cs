@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace MDSHO.Common {
 
-  /// <summary>What the Rate / Share actions need from the UI (clipboard, message box, browser, store launcher).</summary>
+  /// <summary>What the Rate / Share / Support actions need from the UI (clipboard, message box, browser, store launcher).</summary>
   public interface IStoreActionsHost {
     /// <summary>Puts text on the clipboard.</summary>
     void CopyToClipboard(string text);
@@ -35,7 +35,7 @@ namespace MDSHO.Common {
     Task<StoreRatingResult> RequestRateAndReviewAsync();
   }
 
-  /// <summary>"Rate MDSHO" and "Share MDSHO", shared by the About window and the tray menu.</summary>
+  /// <summary>"Rate MDSHO", "Share MDSHO" and "Support MDSHO", shared by the About window and the panel title menu.</summary>
   public class StoreActions {
     /// <summary>Microsoft Store web page of MDSHO.</summary>
     public const string StoreWebUrl = "https://www.microsoft.com/store/productId/9P8DNCD0PPG8";
@@ -100,6 +100,19 @@ namespace MDSHO.Common {
         Rated?.Invoke();
       } catch (Exception ex) {
         AppLog.Warning(ex, "Recording the rating failed");
+      }
+    }
+
+    /// <summary>
+    /// Opens the Support MDSHO page (never throws; errors are shown). It is not a rating: the review prompt is not touched.
+    /// </summary>
+    public async Task SupportAsync() {
+      try {
+        if (!await host.LaunchUriAsync(new Uri(AppConstants.SupportUrl))) {
+          throw new InvalidOperationException("Windows could not open " + AppConstants.SupportUrl);
+        }
+      } catch (Exception ex) {
+        host.ShowError(ex);
       }
     }
 

@@ -20,6 +20,8 @@
     public const string PrivacyPolicyUrl = "https://ervingegprifti.github.io/mdsho/privacy/";
     /// <summary>The MDSHO Terms and Conditions on the docs site.</summary>
     public const string TermsUrl = "https://ervingegprifti.github.io/mdsho/terms/";
+    /// <summary>The Support MDSHO page on the docs site (GitHub Sponsors and Ko-fi).</summary>
+    public const string SupportUrl = "https://ervingegprifti.github.io/mdsho/support/";
 
     /// <summary>
     /// We use this to identify the current database schema version.
