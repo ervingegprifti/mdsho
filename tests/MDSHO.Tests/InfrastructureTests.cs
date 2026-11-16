@@ -79,6 +79,13 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
+    public void The_Store_rating_in_the_test_host_is_not_a_Store_install() {
+      StoreRating rating = new StoreRating(() => IntPtr.Zero);
+      Assert.IsAssignableFrom<IStoreRating>(rating);
+      Assert.Equal("Not packaged", rating.InstallKind);
+    }
+
+    [Fact]
     public void Auto_start_is_supported_only_when_packaged() {
       Assert.False(new AutoStartService(new FakePackage { IsPackaged = false }).IsSupported);
       Assert.Equal(AutoStartState.NotPackaged, new AutoStartService(new FakePackage { IsPackaged = false }).GetState());
@@ -194,6 +201,7 @@ namespace MDSHO.Tests {
       Assert.IsType<ShellLauncher>(Helpers.AppServices.Defaults().Shell);
       Assert.IsType<ScreenService>(Helpers.AppServices.Defaults().Screens);
       Assert.IsType<ClipboardService>(Helpers.AppServices.Defaults().Clipboard);
+      Assert.IsType<StoreRating>(Helpers.AppServices.Defaults().StoreActions.RatingService);
     }
     #endregion APP SERVICES
   }

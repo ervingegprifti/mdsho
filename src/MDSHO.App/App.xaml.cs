@@ -112,6 +112,7 @@ namespace MDSHO
         StartBringPanelsToFront();
         StartScreenSetups();
         StartBackups();
+        StartReviewPrompt();
         CreateContextMenu();
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
@@ -294,6 +295,15 @@ namespace MDSHO
         AppServices.Current.Backups.Start();
       } catch (Exception ex) {
         Common.AppLog.Error(ex, "Automatic backups could not be started");
+      }
+    }
+
+    /// <summary>At startup: counts today and, a minute later, may show the "Enjoying MDSHO?" prompt.</summary>
+    private static void StartReviewPrompt() {
+      try {
+        AppServices.Current.Review.Start();
+      } catch (Exception ex) {
+        Common.AppLog.Error(ex, "The review prompt could not be started");
       }
     }
 
@@ -760,6 +770,11 @@ namespace MDSHO
       }
       try {
         AppServices.Current.Backups.Stop();
+      } catch (Exception ex) {
+        Debug.WriteLine(ex);
+      }
+      try {
+        AppServices.Current.Review.Stop();
       } catch (Exception ex) {
         Debug.WriteLine(ex);
       }

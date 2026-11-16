@@ -37,6 +37,8 @@ namespace MDSHO.Tests {
       // Backups never write to the real profile folder or wait on a real timer in tests.
       Services.Backups = new BackupService(new FakeClock(), "TESTPC", System.IO.Path.Combine(System.IO.Path.GetTempPath(), "MDSHO.Tests", "Profile"),
         "0.0.0", new ScreenSetupTests.FakeTimer(), action => action());
+      // The review prompt never waits on a real timer or opens a window in tests.
+      Services.Review = new ReviewPrompt(new FakeClock(), new ScreenSetupTests.FakeTimer(), () => false, p => { }, Services.StoreActions, false);
       AppServices.Current = Services;
     }
 

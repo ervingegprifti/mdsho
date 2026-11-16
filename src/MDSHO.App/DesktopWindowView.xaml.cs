@@ -46,7 +46,19 @@ namespace MDSHO {
 		/// <summary>Coming back to the window (e.g. from Explorer) rechecks the shortcut targets for the missing-target icon.</summary>
 		protected override void OnActivated(EventArgs e) {
 			base.OnActivated(e);
+			lastUsed = new WeakReference<DesktopWindowView>(this);
 			(this.DataContext as DesktopWindowViewModel)?.RefreshTargetKinds();
+		}
+
+		private static WeakReference<DesktopWindowView> lastUsed;
+
+		/// <summary>The panel activated last, while it is still shown; otherwise null.</summary>
+		public static DesktopWindowView LastUsed {
+			get {
+				DesktopWindowView view = null;
+				lastUsed?.TryGetTarget(out view);
+				return view != null && view.IsVisible && view.WindowState != WindowState.Minimized ? view : null;
+			}
 		}
 
 		#region INITIALIZERS

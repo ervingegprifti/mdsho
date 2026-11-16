@@ -32,6 +32,9 @@ namespace MDSHO {
     private readonly TextKind kind;
     private readonly IconGlyphs icons;
 
+    /// <summary>True for a note window, false for a comment window.</summary>
+    public bool IsNote => this.kind == TextKind.Note;
+
     /// <summary>The keyboard modifiers held down; tests replace it, since they can't hold Ctrl.</summary>
     public static Func<ModifierKeys> KeyboardModifiers = () => Keyboard.Modifiers;
 

@@ -86,7 +86,7 @@ namespace MDSHO.Tests {
     /// <summary>MDSHO's own windows and controls without user colours: they follow the theme.</summary>
     public static readonly string[] ThemedXamlFiles = {
       "AboutWindow.xaml", "ColorsWindow.xaml", "CommandErrorWindow.xaml", "ErrorWindow.xaml", "RunCommandExamplesWindow.xaml",
-      "RunCommandWindow.xaml", "SettingsWindow.xaml", "Controls/DialogTitleBar.xaml", "App.xaml",
+      "RunCommandWindow.xaml", "SettingsWindow.xaml", "ReviewWindow.xaml", "Controls/DialogTitleBar.xaml", "App.xaml",
     };
 
     // ---- The dictionaries ----
@@ -400,6 +400,7 @@ namespace MDSHO.Tests {
           Window[] themed = {
             new SettingsWindow(w), new ColorsWindow(w), new RunCommandWindow(run), new RunCommandExamplesWindow(run), new AboutWindow(),
             new ErrorWindow(new InvalidOperationException("Test error")), new CommandErrorWindow("Title", "Error", "Detail"),
+            new ReviewWindow(new ReviewPrompt(new FakeClock(), new ScreenSetupTests.FakeTimer(), () => false, p => { }, new Common.StoreActions(null), false)),
           };
           foreach (Window window in themed) {
             Assert.True(WindowThemes.GetIsThemed(window), window.GetType().Name + " does not follow the theme");

@@ -1,6 +1,8 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Interop;
 using MDSHO.Common;
 
 namespace MDSHO.Helpers {
@@ -36,6 +38,22 @@ namespace MDSHO.Helpers {
     /// <summary>Launches a URI with Windows (Microsoft Store pages).</summary>
     public async Task<bool> LaunchUriAsync(Uri uri) {
       return await uriLauncher.LaunchUriAsync(uri);
+    }
+
+    /// <summary>
+    /// The window the Store's rating dialog belongs to: the active MDSHO window (About, a panel), else the panel used
+    /// last, else a shown panel, else the main window. Zero when there is none.
+    /// </summary>
+    public static IntPtr OwnerWindowHandle() {
+      Application app = Application.Current;
+      if (app == null) {
+        return IntPtr.Zero;
+      }
+      Window owner = app.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive && w.IsVisible && !(w is ReviewWindow))
+        ?? DesktopWindowView.LastUsed
+        ?? app.Windows.OfType<DesktopWindowView>().FirstOrDefault(w => w.IsVisible)
+        ?? app.MainWindow;
+      return owner == null ? IntPtr.Zero : new WindowInteropHelper(owner).EnsureHandle();
     }
 
     /// <summary>Shows the error dialog.</summary>

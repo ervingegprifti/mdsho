@@ -17,6 +17,24 @@ namespace MDSHO.Common {
     void ShowError(Exception exception);
   }
 
+  /// <summary>How the Store's in-app rating dialog ended.</summary>
+  public enum StoreRatingResult {
+    /// <summary>The user rated MDSHO.</summary>
+    Rated,
+    /// <summary>The user closed the dialog without rating.</summary>
+    Cancelled,
+    /// <summary>The dialog failed (an error or no network).</summary>
+    Failed
+  }
+
+  /// <summary>The Microsoft Store's in-app rating dialog, and how MDSHO was installed.</summary>
+  public interface IStoreRating {
+    /// <summary>"Store" for a Microsoft Store install; otherwise the package signature ("Enterprise", "Developer", "None") or "Not packaged".</summary>
+    string InstallKind { get; }
+    /// <summary>Shows the Store's rating dialog.</summary>
+    Task<StoreRatingResult> RequestRateAndReviewAsync();
+  }
+
   /// <summary>"Rate MDSHO" and "Share MDSHO", shared by the About window and the tray menu.</summary>
   public class StoreActions {
     /// <summary>Microsoft Store web page of MDSHO.</summary>
@@ -30,17 +48,58 @@ namespace MDSHO.Common {
 
     private readonly IStoreActionsHost host;
 
-    /// <summary>Creates the actions over a UI host.</summary>
-    public StoreActions(IStoreActionsHost host) {
+    /// <summary>Creates the actions over a UI host and, for Store installs, the Store's rating dialog.</summary>
+    public StoreActions(IStoreActionsHost host, IStoreRating rating = null) {
       this.host = host;
+      RatingService = rating;
     }
 
-    /// <summary>Opens the Microsoft Store review page (never throws; errors are shown).</summary>
+    /// <summary>The Store's rating dialog, or null.</summary>
+    public IStoreRating RatingService { get; }
+
+    /// <summary>True when MDSHO was installed from the Microsoft Store.</summary>
+    public bool IsStoreInstall => InstallKind == "Store";
+
+    /// <summary>How MDSHO was installed (see <see cref="IStoreRating.InstallKind"/>).</summary>
+    public string InstallKind => RatingService?.InstallKind ?? "Not packaged";
+
+    /// <summary>Raised after a rating, or after the Store page opened when we can't know (the review prompt then never shows).</summary>
+    public event Action Rated;
+
+    /// <summary>
+    /// Store installs: the Store's rating dialog; a cancel does nothing, and a failure opens the Store review page.
+    /// Other installs: the Store review page. Never throws; errors are shown.
+    /// </summary>
     public async Task RateAsync() {
+      if (IsStoreInstall) {
+        StoreRatingResult result;
+        try {
+          result = await RatingService.RequestRateAndReviewAsync();
+        } catch (Exception ex) {
+          AppLog.Warning(ex, "The Store rating dialog failed");
+          result = StoreRatingResult.Failed;
+        }
+        if (result == StoreRatingResult.Rated) {
+          RaiseRated();
+          return;
+        }
+        if (result == StoreRatingResult.Cancelled) {
+          return;
+        }
+      }
       try {
         await host.LaunchUriAsync(ReviewUri);
+        RaiseRated();
       } catch (Exception ex) {
         host.ShowError(ex);
+      }
+    }
+
+    private void RaiseRated() {
+      try {
+        Rated?.Invoke();
+      } catch (Exception ex) {
+        AppLog.Warning(ex, "Recording the rating failed");
       }
     }
 

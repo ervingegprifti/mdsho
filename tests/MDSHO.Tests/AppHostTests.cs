@@ -67,6 +67,7 @@ namespace MDSHO.Tests {
       using (IHost host = AppHost.Build(null)) {
         Assert.IsType<StoreActionsHost>(host.Services.GetRequiredService<IStoreActionsHost>());
         Assert.Same(host.Services.GetRequiredService<StoreActions>(), host.Services.GetRequiredService<StoreActions>());
+        Assert.IsType<Infrastructure.StoreRating>(host.Services.GetRequiredService<StoreActions>().RatingService);
       }
     }
 
