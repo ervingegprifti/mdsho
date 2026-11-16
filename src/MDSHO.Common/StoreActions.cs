@@ -63,6 +63,37 @@ namespace MDSHO.Common {
     /// <summary>How MDSHO was installed (see <see cref="IStoreRating.InstallKind"/>).</summary>
     public string InstallKind => RatingService?.InstallKind ?? "Not packaged";
 
+    /// <summary>How MDSHO was installed, as About shows it: Microsoft Store, Sideload, Developer build or Not packaged.</summary>
+    public string InstallKindText {
+      get {
+        string kind = InstallKind;
+        switch (kind) {
+          case "Store":
+            return "Microsoft Store";
+          case "Enterprise":
+          case "Developer":
+            // Signed with our own certificate.
+            return "Sideload";
+          case "None":
+            // Registered unsigned, from Visual Studio.
+            return "Developer build";
+          default:
+            return kind;
+        }
+      }
+    }
+
+    /// <summary>The version with how MDSHO was installed in brackets; the version alone if that can't be read.</summary>
+    public string VersionWithInstallKind(string version) {
+      try {
+        string text = InstallKindText;
+        return string.IsNullOrEmpty(text) ? version : version + " (" + text + ")";
+      } catch (Exception ex) {
+        AppLog.Warning(ex, "Could not read how MDSHO was installed");
+        return version;
+      }
+    }
+
     /// <summary>Raised after a rating, or after the Store page opened when we can't know (the review prompt then never shows).</summary>
     public event Action Rated;
 

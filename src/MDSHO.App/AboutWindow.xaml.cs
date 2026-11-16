@@ -51,7 +51,7 @@ namespace MDSHO {
 
       try {
         string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-        LabelVersion.Content = version;
+        LabelVersion.Content = this.storeActions.VersionWithInstallKind(version);
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
       }
