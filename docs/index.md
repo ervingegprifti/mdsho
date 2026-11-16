@@ -80,3 +80,7 @@ The name "MDSHO" and its logo are not covered by these licences; see
 The source code, issue tracker and releases are on GitHub:
 [github.com/ervingegprifti/mdsho](https://github.com/ervingegprifti/mdsho).
 Bug reports and questions go to [GitHub Issues](https://github.com/ervingegprifti/mdsho/issues).
+
+## Support MDSHO
+
+MDSHO is developed in spare time. If it saves you time, you can [support its development](support.md).

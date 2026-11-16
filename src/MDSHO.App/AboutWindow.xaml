@@ -94,6 +94,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!--Pronounced-->
@@ -139,6 +140,14 @@
                         <TextBlock x:Name="TextBlockShareIcon" Text="{Binding Share, Source={x:Static local:AboutWindow.Icons}}" Style="{StaticResource StyleLinkIcon}" Margin="15,0,0,0"/>
                         <Label Style="{StaticResource StyleValue}" Margin="5,0,0,0">
                             <Hyperlink x:Name="HyperlinkShare" TextDecorations="None" Foreground="{DynamicResource Theme.Link}" ToolTip="Copy the MDSHO store link to share it with your friends">Share</Hyperlink>
+                        </Label>
+                    </StackPanel>
+                    <!--Support (opens the docs Support page, see StoreActions.SupportAsync)-->
+                    <Label Grid.Row="8" Content="Support: " Style="{StaticResource StyleLabel}"/>
+                    <StackPanel Grid.Row="8" Grid.Column="1" Margin="10,0,0,0" Orientation="Horizontal">
+                        <TextBlock x:Name="TextBlockSupportIcon" Text="{Binding Heart, Source={x:Static local:AboutWindow.Icons}}" Style="{StaticResource StyleLinkIcon}"/>
+                        <Label Style="{StaticResource StyleValue}" Margin="5,0,0,0">
+                            <Hyperlink x:Name="HyperlinkSupport" TextDecorations="None" Foreground="{DynamicResource Theme.Link}" ToolTip="Support MDSHO's development">Support MDSHO</Hyperlink>
                         </Label>
                     </StackPanel>
                 </Grid>

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -52,6 +52,57 @@ namespace MDSHO.Tests {
         }
       }
       Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
+    }
+
+    /// <summary>docs/support.md: the page the app's Support entries open, with both ways to support and a link home.</summary>
+    [Fact]
+    public void Support_page_lists_both_options_and_links_home() {
+      string docs = Path.Combine(RepoRoot(), "docs");
+      string path = Path.Combine(docs, "support.md");
+      Assert.True(File.Exists(path), "docs/support.md does not exist.");
+      string text = File.ReadAllText(path);
+      string[] lines = File.ReadAllLines(path);
+      Assert.Equal("---", lines[0]);
+      Assert.Contains("title: Support MDSHO", lines);
+      Assert.Contains("permalink: /support/", lines);
+      Assert.Contains("[MDSHO](index.md) › Support", text);
+      Assert.Contains("# Support MDSHO", lines);
+      Assert.Contains("MDSHO is developed in spare time. If it saves you time, you can support its development.", text);
+      Assert.Contains("GitHub Sponsors", text);
+      Assert.Contains("Card. Monthly or one-time.", text);
+      Assert.Contains("https://github.com/sponsors/ervingegprifti", text);
+      Assert.Contains("Ko-fi", text);
+      Assert.Contains("PayPal or card. One-time tip.", text);
+      Assert.Contains("https://ko-fi.com/ervingegprifti", text);
+      Assert.Contains("Rating MDSHO in the Microsoft Store and telling others about it helps too. Thank you!", text);
+      Assert.Contains("index.md", LinkTargets(lines));
+      // The app's link and the page's address match.
+      Assert.Equal(MDSHO.Common.AppConstants.DocsUrl + "support/", MDSHO.Common.AppConstants.SupportUrl);
+    }
+
+    [Fact]
+    public void Home_page_and_readme_link_to_the_support_page() {
+      string root = RepoRoot();
+      Assert.Contains("support.md", LinkTargets(File.ReadAllLines(Path.Combine(root, "docs", "index.md"))));
+      Assert.Contains("## Support MDSHO", File.ReadAllLines(Path.Combine(root, "docs", "index.md")));
+      Assert.Contains("docs/support.md", LinkTargets(File.ReadAllLines(Path.Combine(root, "README.md"))));
+    }
+
+    /// <summary>MDSHO is never called free or paid in the support texts.</summary>
+    [Fact]
+    public void Support_texts_never_say_free_or_paid() {
+      string root = RepoRoot();
+      Regex word = new Regex(@"\b(free|paid)\b", RegexOptions.IgnoreCase);
+      foreach (string text in new[] { File.ReadAllText(Path.Combine(root, "docs", "support.md")), MDSHO.ViewModels.FirstStartSamples.NoteText }) {
+        Assert.DoesNotMatch(word, text);
+      }
+    }
+
+    [Fact]
+    public void Funding_file_lists_only_github_sponsors_and_ko_fi() {
+      string[] lines = File.ReadAllLines(Path.Combine(RepoRoot(), ".github", "FUNDING.yml"))
+        .Where(l => l.Trim().Length > 0 && !l.TrimStart().StartsWith("#")).ToArray();
+      Assert.Equal(new[] { "github: ervingegprifti", "ko_fi: ervingegprifti" }, lines);
     }
 
     /// <summary>Link targets of one Markdown file, outside code blocks and inline code.</summary>

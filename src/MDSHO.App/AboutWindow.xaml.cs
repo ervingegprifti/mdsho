@@ -67,6 +67,7 @@ namespace MDSHO {
       HyperlinkTermsAndConditions.RequestNavigate += Hyperlink_RequestNavigate;
       HyperlinkRate.Click += (s, e) => _ = this.storeActions.RateAsync();
       HyperlinkShare.Click += (s, e) => _ = this.storeActions.ShareAsync();
+      HyperlinkSupport.Click += (s, e) => _ = this.storeActions.SupportAsync();
       // Third-party notice links are wired in the ItemsControl template (AboutWindow.xaml).
     }
 

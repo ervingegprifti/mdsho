@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -86,8 +86,19 @@ namespace MDSHO.Tests {
         "Right-click anything for more: new groups, run commands, notes, colours.",
         "Press Ctrl+Shift+Alt+M to bring your panels to the front.",
         "",
-        "These samples are yours to try. Delete the group when you are done.");
+        "These samples are yours to try. Delete the group when you are done.",
+        "",
+        "MDSHO is developed in spare time. If it saves you time, you can support its development: right-click a panel's title and choose Support MDSHO.");
       Assert.Equal(expected, FirstStartSamples.NoteText);
+    }
+
+    /// <summary>The support line closes the welcome note, after a blank line, and names the panel menu item.</summary>
+    [Fact]
+    public void WelcomeNote_ends_with_the_support_line() {
+      string[] lines = FirstStartSamples.NoteText.Split("\r\n");
+      Assert.Equal("", lines[lines.Length - 2]);
+      Assert.Equal("MDSHO is developed in spare time. If it saves you time, you can support its development: right-click a panel's title and choose Support MDSHO.", lines[lines.Length - 1]);
+      Assert.EndsWith("choose Support MDSHO.", lines[lines.Length - 1]);
     }
 
     [Fact]

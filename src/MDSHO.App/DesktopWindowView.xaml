@@ -238,6 +238,11 @@
                                     <TextBlock Text="{Binding Appearance.Icons.Share}" Style="{StaticResource StyleMenuItemFontIcon}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
+                            <MenuItem x:Name="MenuItemHeaderSupport" Header="Support MDSHO...">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.Heart}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
                             <MenuItem x:Name="MenuItemHeaderAboutWindow" Header="About">
                                 <MenuItem.Icon>
                                     <TextBlock Text="{Binding Appearance.Icons.Info}" Style="{StaticResource StyleMenuItemFontIcon}"/>

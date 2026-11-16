@@ -380,7 +380,7 @@ namespace MDSHO.Tests {
           try {
             List<System.Windows.Documents.Hyperlink> links = WpfAppHost.VisualDescendants<TextBlock>(window)
               .SelectMany(t => t.Inlines.OfType<System.Windows.Documents.Hyperlink>()).ToList();
-            links.AddRange(new[] { "HyperlinkProject", "HyperlinkRate", "HyperlinkShare" }.Select(n => Named<System.Windows.Documents.Hyperlink>(window, n)));
+            links.AddRange(new[] { "HyperlinkProject", "HyperlinkRate", "HyperlinkShare", "HyperlinkSupport" }.Select(n => Named<System.Windows.Documents.Hyperlink>(window, n)));
             Assert.True(links.Count > 20, "Expected the links of the third-party list too");
             Color expected = ColorOf(Application.Current.FindResource("Theme.Link"));
             Assert.All(links, l => Assert.Equal(expected, ColorOf(l.Foreground)));

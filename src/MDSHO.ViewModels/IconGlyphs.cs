@@ -11,7 +11,7 @@ namespace MDSHO.ViewModels {
       nameof(DockRight), nameof(Shortcuts), nameof(Shortcut), nameof(Plus), nameof(Delete), nameof(Cut), nameof(Copy),
       nameof(Paste), nameof(Send), nameof(Database), nameof(Command), nameof(Bookmark), nameof(Share), nameof(Star),
       nameof(Folder), nameof(Globe), nameof(Warning), nameof(Run), nameof(Wizard), nameof(Info), nameof(Desktop), nameof(Brush),
-      nameof(Comment), nameof(Note), nameof(PinOff), nameof(PinOn), nameof(Ok), nameof(WrapText))]
+      nameof(Comment), nameof(Note), nameof(PinOff), nameof(PinOn), nameof(Ok), nameof(WrapText), nameof(Heart))]
     private bool solidIcons;
 
     /// <summary>Icon font character of the MDSHO logo.</summary>
@@ -88,6 +88,9 @@ namespace MDSHO.ViewModels {
 
     /// <summary>The desktop icon (Find MDSHO lost windows and Find other lost windows in the tray menu).</summary>
     public string Desktop { get { return this.SolidIcons ? UnicodeText.FromHex("e92e") : UnicodeText.FromHex("e92f"); } }
+
+    /// <summary>The heart icon: Support MDSHO in About and the panel title menu (added in font v1.18).</summary>
+    public string Heart { get { return this.SolidIcons ? UnicodeText.FromHex("e958") : UnicodeText.FromHex("e959"); } }
 
     /// <summary>Icon font character for Info, used for the About window and the About menu items.</summary>
     public string Info { get { return this.SolidIcons ? UnicodeText.FromHex("e92a") : UnicodeText.FromHex("e92b"); } }

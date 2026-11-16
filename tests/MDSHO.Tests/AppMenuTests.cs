@@ -151,14 +151,15 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Title_menu_tail_has_browse_rate_share_and_about() {
+    public void Title_menu_tail_has_browse_rate_share_support_and_about() {
       WithTitleMenu((menu, view) => {
         List<string> items = menu.Items.Cast<object>().Where(i => !(i is FrameworkElement f) || f.Visibility != Visibility.Collapsed || i is Separator).Select(Describe).ToList();
         int export = items.IndexOf("Export data...");
         Assert.True(export > 0, "Export data... missing: " + string.Join(" | ", items));
-        Assert.Equal(new[] { "-", "Export data...", "Import data...", "Browse app data", "-", "Rate...", "Share...", "About", "Exit application" },
+        Assert.Equal(new[] { "-", "Export data...", "Import data...", "Browse app data", "-", "Rate...", "Share...", "Support MDSHO...", "About", "Exit application" },
           items.Skip(export - 1).ToArray());
-        Assert.DoesNotContain(items, text => text.Contains("MDSHO"));
+        // Only Support names the product (no "Rate MDSHO" / "Share MDSHO").
+        Assert.Equal(new[] { "Support MDSHO..." }, items.Where(text => text.Contains("MDSHO")).ToArray());
       });
     }
 
@@ -202,6 +203,7 @@ namespace MDSHO.Tests {
     [InlineData("MenuItemHeaderBrowseAppData", "Appearance.Icons.Folder")]
     [InlineData("MenuItemHeaderRate", "Appearance.Icons.Star")]
     [InlineData("MenuItemHeaderShare", "Appearance.Icons.Share")]
+    [InlineData("MenuItemHeaderSupport", "Appearance.Icons.Heart")]
     [InlineData("MenuItemHeaderAboutWindow", "Appearance.Icons.Info")]
     [InlineData("MenuItemHeaderExitApplication", "Appearance.Icons.Times")]
     public void Title_menu_items_have_their_font_icons(string name, string iconPath) {
@@ -223,6 +225,17 @@ namespace MDSHO.Tests {
           Item(menu, "MenuItemHeaderBrowseAppData").RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
         });
         Assert.Equal(new[] { expected }, opened.Paths);
+      }
+    }
+
+    [Fact]
+    public void Title_menu_support_opens_the_support_page() {
+      using (FakeAppServices services = new FakeAppServices()) {
+        WithTitleMenu((menu, view) => {
+          Item(menu, "MenuItemHeaderSupport").RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+          WpfAppHost.Pump();
+        });
+        Assert.Equal(new[] { new Uri(AppConstants.SupportUrl) }, services.Launched);
       }
     }
 
@@ -248,6 +261,45 @@ namespace MDSHO.Tests {
 
     private static string TextOf(Hyperlink link) {
       return new TextRange(link.ContentStart, link.ContentEnd).Text.Trim();
+    }
+
+    /// <summary>The Support row: under Microsoft Store, label "Support:", a solid heart, then the link (theme link colour).</summary>
+    [Fact]
+    public void About_has_a_support_row_under_the_store_row() {
+      WithAboutWindow(window => {
+        Hyperlink link = (Hyperlink)window.FindName("HyperlinkSupport");
+        Assert.Equal("Support MDSHO", TextOf(link));
+        Assert.Equal("Support MDSHO's development", link.ToolTip);
+        Assert.Equal("Theme.Link", ResourceKeyOf(link, TextElement.ForegroundProperty));
+        TextBlock icon = (TextBlock)window.FindName("TextBlockSupportIcon");
+        Assert.Equal(new IconGlyphs(true).Heart, icon.Text);
+        Assert.Equal(Application.Current.FindResource("IconFont"), icon.FontFamily);
+        // The row's label is "Support: " in the row right after "Microsoft Store: ".
+        Grid grid = (Grid)window.FindName("GridAboutLabels");
+        Label store = grid.Children.OfType<Label>().Single(l => "Microsoft Store: ".Equals(l.Content));
+        Label support = grid.Children.OfType<Label>().Single(l => "Support: ".Equals(l.Content));
+        Assert.Equal(Grid.GetRow(store) + 1, Grid.GetRow(support));
+        Assert.Equal(grid.RowDefinitions.Count - 1, Grid.GetRow(support));
+        Assert.Equal(Grid.GetRow(support), Grid.GetRow((UIElement)LogicalTreeHelper.GetParent(icon)));
+      });
+    }
+
+    [Fact]
+    public void About_support_opens_the_support_page() {
+      using (FakeAppServices services = new FakeAppServices()) {
+        WithAboutWindow(window => {
+          ((Hyperlink)window.FindName("HyperlinkSupport")).RaiseEvent(new RoutedEventArgs(Hyperlink.ClickEvent));
+          WpfAppHost.Pump();
+        });
+        Assert.Equal(new[] { new Uri(AppConstants.SupportUrl) }, services.Launched);
+      }
+    }
+
+    /// <summary>The resource key of a DynamicResource set on the element, or null.</summary>
+    private static object ResourceKeyOf(DependencyObject element, DependencyProperty property) {
+      object local = element.ReadLocalValue(property);
+      System.Reflection.PropertyInfo key = local?.GetType().GetProperty("ResourceKey", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+      return key?.GetValue(local);
     }
 
     [Fact]

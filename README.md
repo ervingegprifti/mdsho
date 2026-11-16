@@ -33,3 +33,7 @@ The name "MDSHO", its logo and the MDSHOFont icon font are not covered by the GP
 ## Contributing
 
 MDSHO does not accept code contributions; bug reports and suggestions are welcome in [Issues](https://github.com/ervingegprifti/mdsho/issues). See [CONTRIBUTING.md](CONTRIBUTING.md), which also shows how to build and test your own copy.
+
+## Support MDSHO
+
+MDSHO is developed in spare time. If it saves you time, you can [support its development](docs/support.md).
