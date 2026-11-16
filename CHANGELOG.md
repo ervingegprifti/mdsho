@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.13.0]
+
+### Added
+
+- **Review prompt**: after two weeks of use, MDSHO asks once whether you'd like to rate it in the Microsoft Store (Store
+  installs only, at most twice). On Store installs, Rate opens the Store's rating dialog inside MDSHO.
+
 ## [1.12.3]
 
 ### Added

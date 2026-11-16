@@ -51,6 +51,62 @@ namespace MDSHO.Tests {
       Assert.Empty(host.Errors);
     }
 
+    private static ReviewPromptTests.FakeStoreRating Rating(string kind, StoreRatingResult result, bool throws = false) {
+      return new ReviewPromptTests.FakeStoreRating { InstallKind = kind, Result = result, Throw = throws };
+    }
+
+    [Theory]
+    [InlineData("Enterprise")]
+    [InlineData("Developer")]
+    [InlineData("Not packaged")]
+    public async Task Without_a_Store_install_Rate_opens_the_store_review_page_as_before(string kind) {
+      FakeHost host = new FakeHost();
+      ReviewPromptTests.FakeStoreRating rating = Rating(kind, StoreRatingResult.Rated);
+      StoreActions actions = new StoreActions(host, rating);
+      Assert.False(actions.IsStoreInstall);
+      Assert.Equal(kind, actions.InstallKind);
+      await actions.RateAsync();
+      Assert.Equal(new[] { "launch:" + ReviewUri }, host.Calls);
+      Assert.Equal(0, rating.Calls);
+    }
+
+    [Fact]
+    public async Task On_a_Store_install_a_rating_in_the_Store_dialog_is_reported_and_no_page_opens() {
+      FakeHost host = new FakeHost();
+      StoreActions actions = new StoreActions(host, Rating("Store", StoreRatingResult.Rated));
+      int rated = 0;
+      actions.Rated += () => rated++;
+      Assert.True(actions.IsStoreInstall);
+      await actions.RateAsync();
+      Assert.Empty(host.Calls);
+      Assert.Equal(1, rated);
+    }
+
+    [Fact]
+    public async Task On_a_Store_install_a_cancel_reports_nothing_and_opens_nothing() {
+      FakeHost host = new FakeHost();
+      StoreActions actions = new StoreActions(host, Rating("Store", StoreRatingResult.Cancelled));
+      int rated = 0;
+      actions.Rated += () => rated++;
+      await actions.RateAsync();
+      Assert.Empty(host.Calls);
+      Assert.Equal(0, rated);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task On_a_Store_install_a_failed_dialog_falls_back_to_the_store_review_page(bool throws) {
+      FakeHost host = new FakeHost();
+      StoreActions actions = new StoreActions(host, Rating("Store", StoreRatingResult.Failed, throws));
+      int rated = 0;
+      actions.Rated += () => rated++;
+      await actions.RateAsync();
+      Assert.Equal(new[] { "launch:" + ReviewUri }, host.Calls);
+      Assert.Equal(1, rated);
+      Assert.Empty(host.Errors);
+    }
+
     [Fact]
     public async Task Share_copies_link_tells_user_opens_browser_then_store_page() {
       FakeHost host = new FakeHost();

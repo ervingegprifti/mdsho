@@ -148,6 +148,12 @@ exports, and an import that replaces the data keeps them. Added in version 16.
 | `BackupLastTime` | When the last regular backup was written (UTC, round-trip format). Added in 1.12.3; the database version stays 17. |
 | `BackupLastHash` | A SHA-256 of the data in the last regular backup, to tell when the data changed. Added in 1.12.3; the database version stays 17. |
 | `BackupLastError` | Why the last backup failed, shown in red in Settings; empty after a success. Added in 1.12.3; the database version stays 17. |
+| `ReviewFirstStart` | The local date (`yyyy-MM-dd`) of the first start this PC recorded, for the review prompt. Added in 1.13.0; the database version stays 17. |
+| `ReviewDaysUsed` | On how many different local days MDSHO ran, for the review prompt. Added in 1.13.0; the database version stays 17. |
+| `ReviewLastDay` | The last local day counted in `ReviewDaysUsed` (`yyyy-MM-dd`). Added in 1.13.0; the database version stays 17. |
+| `ReviewShown` | How many times the review prompt was shown: `1` or `2`. Without a row: never. Added in 1.13.0; the database version stays 17. |
+| `ReviewLastShown` | The local date (`yyyy-MM-dd`) the review prompt was last shown. Added in 1.13.0; the database version stays 17. |
+| `ReviewRated` | `Yes` after a rating in the Store dialog, or after Rate opened the Store page (the review prompt, the panel menu or About); the prompt then never shows. Added in 1.13.0; the database version stays 17. |
 
 ### ScreenSetups
 

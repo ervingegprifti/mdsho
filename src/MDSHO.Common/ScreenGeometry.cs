@@ -77,6 +77,14 @@ namespace MDSHO.Common {
     /// clamped to the work area's left or top edge when the window is bigger. Used to place a window through its handle,
     /// which works on any monitor whatever its scale.
     /// </summary>
+    /// <summary>Top-left (whole PHYSICAL pixels) of a window in the bottom-right corner of the screen's work area, <paramref name="gapPx"/> from its edges.</summary>
+    public static ScreenPoint BottomRightInWorkAreaPhysical(ScreenInfo screen, double widthPx, double heightPx, double gapPx) {
+      ScreenRect w = screen.WorkingArea;
+      double left = Math.Floor(w.Right - widthPx - gapPx);
+      double top = Math.Floor(w.Bottom - heightPx - gapPx);
+      return new ScreenPoint(Math.Max(w.Left, left), Math.Max(w.Top, top));
+    }
+
     public static ScreenPoint CenterInWorkAreaPhysical(ScreenInfo screen, double widthPx, double heightPx) {
       ScreenRect w = screen.WorkingArea;
       double left = Math.Floor(w.Left + (w.Width - widthPx) / 2);

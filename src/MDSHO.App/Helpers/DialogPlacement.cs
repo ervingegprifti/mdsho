@@ -19,6 +19,9 @@ namespace MDSHO.Helpers {
     /// <summary>Moves a window's handle to a physical-pixel top-left. Tests replace it so no real window is moved.</summary>
     public static Action<Window, Point> MoveToPhysical = MovePhysical;
 
+    /// <summary>The primary screen. Tests replace it so no real monitor is read.</summary>
+    public static Func<ScreenInfo> PrimaryScreen = () => AppServices.Current.Screens.PrimaryScreen();
+
     /// <summary>
     /// Makes <paramref name="owner"/> the dialog's owner and places the dialog in the middle of the work area (without
     /// the taskbar) of the owner's screen. The owner must have been shown.
@@ -123,6 +126,41 @@ namespace MDSHO.Helpers {
       };
       dialog.ContentRendered += (s, e) => opening = false;
       dialog.Closed += (s, e) => opening = false;
+    }
+
+    /// <summary>
+    /// Places a window without an owner in the bottom-right corner of the primary screen's work area, <paramref name="gapDip"/>
+    /// from its edges. Like the other placements, it is placed through its handle in physical pixels.
+    /// </summary>
+    public static void BottomRightOfPrimary(Window dialog, double gapDip) {
+      dialog.WindowStartupLocation = WindowStartupLocation.Manual;
+      ScreenInfo screen = PrimaryScreen();
+      double width = SizeOf(dialog.Width, dialog.MinWidth);
+      double height = SizeOf(dialog.Height, dialog.MinHeight);
+      ScreenPoint guess = ScreenGeometry.BottomRightInWorkAreaPhysical(screen, width * screen.Scale, height * screen.Scale, gapDip * screen.Scale);
+      dialog.Left = guess.X / screen.Scale;
+      dialog.Top = guess.Y / screen.Scale;
+      EventHandler placeOnHandle = null;
+      placeOnHandle = (s, e) => {
+        dialog.SourceInitialized -= placeOnHandle;
+        PlaceBottomRightPhysical(dialog, screen, gapDip);
+      };
+      dialog.SourceInitialized += placeOnHandle;
+      // The height is known once laid out (SizeToContent), and a DPI change resizes it: place it again.
+      dialog.Loaded += (s, e) => PlaceBottomRightPhysical(dialog, screen, gapDip);
+      dialog.DpiChanged += (s, e) => dialog.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() => PlaceBottomRightPhysical(dialog, screen, gapDip)));
+    }
+
+    // Moves the dialog's handle to the bottom-right corner of the work area for its current physical size.
+    private static void PlaceBottomRightPhysical(Window dialog, ScreenInfo screen, double gapDip) {
+      Rect bounds = PhysicalBoundsOf(dialog);
+      if (bounds.IsEmpty) {
+        return;
+      }
+      Point target = ScreenGeometry.BottomRightInWorkAreaPhysical(screen, bounds.Width, bounds.Height, gapDip * screen.Scale).ToPoint();
+      if (target != bounds.TopLeft) {
+        MoveToPhysical(dialog, target);
+      }
     }
 
     /// <summary>The physical-pixel rect of an element on screen; empty when it is not shown. Tests replace it.</summary>

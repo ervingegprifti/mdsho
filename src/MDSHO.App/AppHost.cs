@@ -52,6 +52,7 @@ namespace MDSHO {
 
       // UI services.
       services.AddSingleton<IStoreActionsHost, StoreActionsHost>();
+      services.AddSingleton<IStoreRating>(_ => new StoreRating(StoreActionsHost.OwnerWindowHandle));
       services.AddSingleton<StoreActions>();
       services.AddSingleton<AppServices>();
 

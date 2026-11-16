@@ -66,6 +66,20 @@ namespace MDSHO.Helpers {
       set { this.backups = value; }
     }
     private BackupService backups;
+    /// <summary>The one-time "Enjoying MDSHO?" prompt (off in the Debug build). Made on first use.</summary>
+    public ReviewPrompt Review {
+      get {
+        return this.review ??= new ReviewPrompt(System.TimeProvider.System, new DispatcherOneShotTimer(), () => ReviewWindow.IsDialogOpen(),
+          ReviewWindow.ShowFor, StoreActions, IsDebugBuild);
+      }
+      set { this.review = value; }
+    }
+    private ReviewPrompt review;
+#if DEBUG
+    private const bool IsDebugBuild = true;
+#else
+    private const bool IsDebugBuild = false;
+#endif
     /// <summary>"Bring panels to front". Null until the app has started.</summary>
     public PanelsToFront PanelsToFront { get; set; }
 
@@ -91,7 +105,7 @@ namespace MDSHO.Helpers {
       UriLauncher uriLauncher = new UriLauncher();
       return new AppServices(shell, package, new AppDataLocator(package), new AutoStartService(package),
         new ScreenService(), clipboard, uriLauncher, new ShellLinkWriter(),
-        new StoreActions(new StoreActionsHost(clipboard, shell, uriLauncher)));
+        new StoreActions(new StoreActionsHost(clipboard, shell, uriLauncher), new StoreRating(StoreActionsHost.OwnerWindowHandle)));
     }
 
     /// <summary>Gives the view models the services they use (process start, clipboard, shortcut files).</summary>

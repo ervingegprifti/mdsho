@@ -218,6 +218,22 @@ API: a OneDrive or Google Drive folder gives a cloud copy. The manifest also hol
   counts as no folder chosen, so the current default applies; files there are left alone.
 - The settings are in `AppSettings` (see [Database](database.md)). Import data's file dialog opens in the backup folder.
 
+## Review prompt
+
+`src/MDSHO.ViewModels/ReviewPrompt.cs` decides when the one-time "Enjoying MDSHO?" window (`ReviewWindow`) shows:
+only for Microsoft Store installs (`Package.Current.SignatureKind == Store`; otherwise it logs why once and stays off),
+installed 14 days (from `ReviewFirstStart`), used on 7 different local days, a minute after start, and not while another
+MDSHO dialog is open (it tries again a minute later). A long run checks every hour, so new days count. Later or X on the
+first showing asks again after 30 days; there are at most two showings. Off in the Debug build. It opens with
+`ShowActivated=false` beside the panel used last (`DesktopWindowView.LastUsed`), else bottom-right of the primary screen.
+
+Rate (the prompt, the panel menu and About) goes through `StoreActions.RateAsync`. On a Store install it shows the Store's
+in-app rating dialog (`Infrastructure.StoreRating`: `StoreContext.RequestRateAndReviewAppAsync`, initialised with an MDSHO
+window handle). A rating raises `StoreActions.Rated`, which stops the prompt for good; a cancel counts as Later; a
+failure opens the Store review page and also counts as rated. Other installs open the Store review page as before.
+The clock, timer, dialog check and the rating dialog (`IStoreRating`) are injected, so the rules are tested without
+waiting or calling the Store. The settings are in `AppSettings`.
+
 ## Bring panels to front
 
 A global keyboard shortcut (default **Ctrl+Shift+Alt+M**) and the first tray menu item bring every visible panel above
