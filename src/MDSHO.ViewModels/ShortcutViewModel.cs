@@ -438,6 +438,18 @@ namespace MDSHO.ViewModels {
         if (!this.isProcessCommand || this.isGroup) {
           return this.Target;
         }
+        return this.CommandLineText;
+      }
+    }
+    /// <summary>
+    /// A run command's command line as its tooltip shows it and "Copy command to memory" copies it: the program (quoted
+    /// when it contains a space), then the resolved arguments. Null when it is not a run command or the line is empty.
+    /// </summary>
+    public string CommandLineText {
+      get {
+        if (!this.isProcessCommand || this.isGroup) {
+          return null;
+        }
         string commandLine = RunCommandLine.CommandLine(this.ProcessFileName, this.ResolvedProcessArguments);
         return commandLine.Length == 0 ? null : commandLine;
       }
@@ -513,6 +525,8 @@ namespace MDSHO.ViewModels {
     public bool ShowSetNameTheSameAsTarget => this.ShowShortcut;
     /// <summary>True for a file, folder or web link shortcut.</summary>
     public bool ShowCopyTargetToMemory => this.ShowShortcut;
+    /// <summary>True for a run command.</summary>
+    public bool ShowCopyCommandToMemory => this.ShowCommand;
     /// <summary>True for a file, folder or web link shortcut (not for groups and commands).</summary>
     public bool ShowShortcut => !this.isGroup && !this.isProcessCommand && !this.isNote;
     /// <summary>True for a note button.</summary>
@@ -690,6 +704,14 @@ namespace MDSHO.ViewModels {
     private void CopyTargetToMemory() {
       if (!string.IsNullOrEmpty(this.Target)) {
         CopyText(this.Target);
+      }
+    }
+    /// <summary>Copies a run command's command line, as its tooltip shows it.</summary>
+    [RelayCommand]
+    private void CopyCommandToMemory() {
+      string commandLine = this.CommandLineText;
+      if (!string.IsNullOrEmpty(commandLine)) {
+        CopyText(commandLine);
       }
     }
     /// <summary>Cuts the shortcut so it can be pasted elsewhere.</summary>

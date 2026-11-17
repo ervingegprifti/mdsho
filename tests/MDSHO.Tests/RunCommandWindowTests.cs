@@ -1164,6 +1164,43 @@ namespace MDSHO.Tests {
       });
     }
 
+    /// <summary>A run command's menu has "Copy command to memory" right after Rename, with no icon; a group's menu does not show it.</summary>
+    [Fact]
+    public void Command_menu_has_copy_command_to_memory_after_rename_without_an_icon() {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
+        DesktopWindowView view = new DesktopWindowView(f.Win) { ShowActivated = false, Left = -10000, Top = -10000 };
+        try {
+          view.Show();
+          WpfAppHost.Pump();
+          ShortcutViewModel group = f.Win.RootShortcuts[0];
+          group.IsGroupExpanded = true;
+          WpfAppHost.Pump();
+          TreeView tree = (TreeView)view.FindName("TreeViewShortcuts");
+          foreach (ShortcutViewModel shortcut in new[] { f.Command, group }) {
+            TreeViewItem item = WpfAppHost.VisualDescendants<TreeViewItem>(tree).Single(i => i.DataContext == shortcut);
+            ContextMenu menu = WpfAppHost.VisualDescendants<Button>(item).First(b => b.DataContext == shortcut).ContextMenu;
+            menu.DataContext = shortcut;
+            WpfAppHost.Pump();
+            List<object> visible = menu.Items.Cast<object>().Where(i => !(i is FrameworkElement e) || e.Visibility != Visibility.Collapsed).ToList();
+            List<string> names = visible.Select(Describe).ToList();
+            if (shortcut == f.Command) {
+              int rename = names.IndexOf("Rename");
+              Assert.True(rename >= 0, string.Join(" | ", names));
+              MenuItem copy = Assert.IsType<MenuItem>(visible[rename + 1]);
+              Assert.Equal("Copy command to memory", copy.Header);
+              Assert.Null(copy.Icon);
+              Assert.Same(f.Command.CopyCommandToMemoryCommand, copy.Command);
+            } else {
+              Assert.DoesNotContain("Copy command to memory", names);
+            }
+          }
+        } finally {
+          view.Close();
+          WpfAppHost.Pump();
+        }
+      });
+    }
+
     // ---- Pictures for review (only when asked for) ----
 
     /// <summary>
