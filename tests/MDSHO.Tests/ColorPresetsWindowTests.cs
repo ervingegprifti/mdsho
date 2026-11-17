@@ -17,7 +17,7 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// The Presets row of the Colours window: under the window colours, eight small window pictures, one per theme. A click
+  /// The Presets row of the Colours window: under the window colours, twelve small window pictures, three per season. A click
   /// puts all five colours on screen at once, like Default colours: saved only with Apply. Works for panels and notes.
   /// </summary>
   public class ColorPresetsWindowTests {
@@ -110,7 +110,7 @@ namespace MDSHO.Tests {
     // ---- Layout ----
 
     [Fact]
-    public void A_Presets_heading_like_Window_colours_sits_under_the_colours_with_eight_pictures_in_one_row() {
+    public void A_Presets_heading_like_Window_colours_sits_under_the_colours_with_twelve_pictures_in_one_row() {
       WithPanel((window, w) => {
         Label heading = Named<Label>(window, "LabelPresetsHeading");
         Assert.Equal("Presets", heading.Content);
@@ -122,18 +122,21 @@ namespace MDSHO.Tests {
         Assert.Equal(Named<Label>(window, "LabelAppearanceHeading").TranslatePoint(new Point(0, 0), body).X, heading.TranslatePoint(new Point(0, 0), body).X, 0.5);
 
         List<Button> presets = Presets(window);
-        Assert.Equal(ColorPresets.All.Select(p => p.Name).ToArray(), presets.Select(b => AutomationProperties.GetName(b)).ToArray());
+        Assert.Equal(12, presets.Count);
+        Assert.Equal(ColorPresets.All.Select(p => p.Label).ToArray(), presets.Select(b => AutomationProperties.GetName(b)).ToArray());
         double top = presets[0].TranslatePoint(new Point(0, 0), body).Y;
         Assert.True(top > headingTop + heading.ActualHeight - 0.5);
         double left = heading.TranslatePoint(new Point(0, 0), body).X;
         for (int i = 0; i < presets.Count; i++) {
           Point at = presets[i].TranslatePoint(new Point(0, 0), body);
           Assert.Equal(top, at.Y, 0.5);
-          Assert.Equal(64, presets[i].ActualWidth, 0.5);
-          Assert.Equal(50, presets[i].ActualHeight, 0.5);
-          Assert.Equal(left + i * (64 + 9), at.X, 0.5); // 9 px gaps, the first lined up with the heading
+          Assert.Equal(42, presets[i].ActualWidth, 0.5);
+          Assert.Equal(34, presets[i].ActualHeight, 0.5);
+          Assert.Equal(left + i * (42 + 9), at.X, 0.5); // 9 px gaps, the first lined up with the heading
         }
-        Assert.True(presets[^1].TranslatePoint(new Point(64, 0), body).X <= body.ActualWidth + 0.5, "The row is wider than the window.");
+        double right = presets[^1].TranslatePoint(new Point(42, 0), body).X;
+        Assert.True(right <= body.ActualWidth + 0.5, "The row is wider than the window.");
+        Assert.True(body.ActualWidth - right < 9, "The row should fill the width.");
       });
     }
 
@@ -148,28 +151,36 @@ namespace MDSHO.Tests {
           Assert.Equal(C(p.BorderColor), ColorOf(frame.BorderBrush));
           Assert.Equal(C(p.BackgroundColor), ColorOf(frame.Background));
           Border title = Part<Border>(presets[i], "PresetTitle");
-          Assert.Equal(15, title.ActualHeight, 0.5);
+          Assert.Equal(10, title.ActualHeight, 0.5);
           Assert.Equal(C(p.TitleBackgroundColor), ColorOf(title.Background));
-          TextBlock aa = Part<TextBlock>(presets[i], "PresetTitleText");
-          Assert.Equal("Aa", aa.Text);
-          Assert.Equal(C(p.TitleTextColor), ColorOf(aa.Foreground));
+          Assert.Empty(WpfAppHost.VisualDescendants<TextBlock>(presets[i])); // no "Aa": a bar stands for the title
+          Rectangle bar = Part<Rectangle>(presets[i], "PresetTitleBar");
+          Assert.Equal(14, bar.ActualWidth, 0.5);
+          Assert.Equal(3, bar.ActualHeight, 0.5);
+          Assert.True(bar.RadiusX > 0);
+          Assert.Equal(C(p.TitleTextColor), ColorOf(bar.Fill));
           List<Rectangle> lines = WpfAppHost.VisualDescendants<Rectangle>(presets[i]).Where(r => r.Name.StartsWith("PresetLine", StringComparison.Ordinal)).ToList();
-          Assert.Equal(3, lines.Count);
+          Assert.Equal(2, lines.Count);
           Assert.All(lines, l => {
             Assert.Equal(C(p.TextColor), ColorOf(l.Fill));
             Assert.True(l.RadiusX > 0);
           });
+          // A long and a shorter line: 80 % and 55 % of the space inside the body.
+          FrameworkElement space = (FrameworkElement)VisualTreeHelper.GetParent(lines[0]);
+          Assert.Equal(space.ActualWidth * 0.8, lines[0].ActualWidth, 1.0); // within a pixel (layout rounding)
+          Assert.Equal(space.ActualWidth * 0.55, lines[1].ActualWidth, 1.0);
         }
       });
     }
 
     [Fact]
-    public void Each_picture_has_the_theme_name_as_tooltip_and_accessible_name() {
+    public void Each_picture_has_season_and_name_as_tooltip_and_accessible_name() {
       WithPanel((window, w) => {
         List<Button> presets = Presets(window);
+        Assert.Equal("Summer: Ocean", presets[6].ToolTip);
         for (int i = 0; i < presets.Count; i++) {
-          Assert.Equal(ColorPresets.All[i].Name, presets[i].ToolTip);
-          Assert.Equal(ColorPresets.All[i].Name, AutomationProperties.GetName(presets[i]));
+          Assert.Equal(ColorPresets.All[i].Label, presets[i].ToolTip);
+          Assert.Equal(ColorPresets.All[i].Label, AutomationProperties.GetName(presets[i]));
         }
       });
     }
@@ -222,44 +233,38 @@ namespace MDSHO.Tests {
       });
     }
 
-    // ---- "Preset: <name>" and the selected picture ----
-
-    private static TextBlock PresetText(ColorsWindow window) {
-      return Named<TextBlock>(window, "TextPreset");
+    [Fact]
+    public void The_row_is_not_clipped_so_the_ring_shows_all_round() {
+      WithPanel((window, w) => {
+        FrameworkElement list = Named<FrameworkElement>(window, "ListPresets");
+        // WPF clips an element to its layout slot when its content is wider than the space it gets, which would cut
+        // the ring's top and bottom.
+        foreach (DependencyObject e in new DependencyObject[] { list }.Concat(WpfAppHost.VisualDescendants<FrameworkElement>(list).Where(f => f is ItemsPresenter || f is StackPanel))) {
+          Assert.Null(System.Windows.Controls.Primitives.LayoutInformation.GetLayoutClip((FrameworkElement)e));
+        }
+      });
     }
+
+    // ---- The selected picture ----
 
     private static Border Ring(Button preset) {
       return Part<Border>(preset, "PresetRing");
     }
 
-    /// <summary>"Preset: name" shows, and only that picture has the ring, when <paramref name="index"/> is not -1.</summary>
+    /// <summary>Only the picture at <paramref name="index"/> has the ring (none when -1).</summary>
     private static void AssertSelected(ColorsWindow window, int index) {
-      TextBlock text = PresetText(window);
       List<Button> presets = Presets(window);
-      if (index < 0) {
-        Assert.NotEqual(Visibility.Visible, text.Visibility);
-      } else {
-        Assert.Equal(Visibility.Visible, text.Visibility);
-        Assert.Equal("Preset: " + ColorPresets.All[index].Name, text.Text);
-      }
       for (int i = 0; i < presets.Count; i++) {
         Assert.Equal(i == index ? Visibility.Visible : Visibility.Hidden, Ring(presets[i]).Visibility);
       }
     }
 
     [Fact]
-    public void Preset_text_looks_like_Editing_and_sits_under_the_presets_on_the_left() {
+    public void There_is_no_Preset_name_text_the_ring_shows_the_selected_one() {
       WithPanel((window, w) => {
         Click(Presets(window)[4]);
-        TextBlock text = PresetText(window);
-        TextBlock editing = Named<TextBlock>(window, "TextEditing");
-        Assert.Equal(editing.Margin, text.Margin);
-        Assert.Equal(ColorOf(editing.Foreground), ColorOf(text.Foreground));
-        Assert.Equal(ColorOf(window.FindResource("Theme.TextSecondary")), ColorOf(text.Foreground));
-        FrameworkElement body = Named<FrameworkElement>(window, "PanelBody");
-        Button first = Presets(window)[0];
-        Assert.Equal(first.TranslatePoint(new Point(0, 0), body).X, text.TranslatePoint(new Point(0, 0), body).X, 0.5);
-        Assert.True(text.TranslatePoint(new Point(0, 0), body).Y >= first.TranslatePoint(new Point(0, first.ActualHeight), body).Y);
+        Assert.Null(window.FindName("TextPreset"));
+        Assert.DoesNotContain(WpfAppHost.VisualDescendants<TextBlock>(window), t => (t.Text ?? "").StartsWith("Preset:", StringComparison.Ordinal));
       });
     }
 
@@ -341,15 +346,15 @@ namespace MDSHO.Tests {
     [Fact]
     public void Clicking_a_preset_puts_all_five_colours_of_the_panel_on_screen_and_the_palette_follows() {
       WithPanel((window, w) => {
-        ColorPreset nord = ColorPresets.All[4];
+        ColorPreset picked = ColorPresets.All[4];
         Click(Presets(window)[4]);
-        Assert.Equal(Colours(nord), Colours(w.Appearance));
+        Assert.Equal(Colours(picked), Colours(w.Appearance));
         ColorPicker.PickerControlBase palette = Named<ColorPicker.PickerControlBase>(window, "PickerColor");
-        Assert.Equal(C(nord.BorderColor), palette.SelectedColor); // Border stays selected
-        Assert.Equal(C(nord.BorderColor), ColorOf(Named<Border>(window, "SwatchBorder").Background));
+        Assert.Equal(C(picked.BorderColor), palette.SelectedColor); // Border stays selected
+        Assert.Equal(C(picked.BorderColor), ColorOf(Named<Border>(window, "SwatchBorder").Background));
         Named<ListBox>(window, "ListColorTargets").SelectedIndex = 2;
         WpfAppHost.Pump();
-        Assert.Equal(C(nord.TitleTextColor), palette.SelectedColor);
+        Assert.Equal(C(picked.TitleTextColor), palette.SelectedColor);
         // Another preset replaces all five again, and the palette shows the selected one.
         ColorPreset dracula = ColorPresets.All[5];
         Click(Presets(window)[5]);

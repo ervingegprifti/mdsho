@@ -121,11 +121,12 @@
                     </Setter.Value>
                 </Setter>
             </Style>
-            <!--A preset: a 64 x 50 window picture in the preset's colours (ColorPreset: border, title bar with "Aa", body with
-                three text lines). Hover and keyboard focus show an accent ring around it, drawn in the 9 px gap.-->
+            <!--A preset: a 42 x 34 window picture in the preset's colours (ColorPreset: border, title bar with a short bar
+                for the title text, body with two text lines). The matching preset, hover and keyboard focus show an accent
+                ring around it, drawn in the 9 px gap.-->
             <Style x:Key="StylePreset" TargetType="{x:Type Button}">
-                <Setter Property="Width" Value="64"/>
-                <Setter Property="Height" Value="50"/>
+                <Setter Property="Width" Value="42"/>
+                <Setter Property="Height" Value="34"/>
                 <Setter Property="Margin" Value="0,0,9,0"/>
                 <Setter Property="Cursor" Value="Hand"/>
                 <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -133,29 +134,38 @@
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type Button}">
                             <Grid>
-                                <Border x:Name="PresetRing" Margin="-4" BorderThickness="2" CornerRadius="6"
+                                <Border x:Name="PresetRing" Margin="-4" BorderThickness="2" CornerRadius="5"
                                         BorderBrush="{DynamicResource Theme.Accent}" Visibility="Hidden"/>
                                 <Border x:Name="PresetFrame" BorderThickness="2" CornerRadius="3" SnapsToDevicePixels="True"
                                         BorderBrush="{Binding BorderColor, Converter={StaticResource HexToBrush}}"
                                         Background="{Binding BackgroundColor, Converter={StaticResource HexToBrush}}">
                                     <Grid>
                                         <Grid.RowDefinitions>
-                                            <RowDefinition Height="15"/>
+                                            <RowDefinition Height="10"/>
                                             <RowDefinition Height="*"/>
                                         </Grid.RowDefinitions>
                                         <Border x:Name="PresetTitle" Grid.Row="0" CornerRadius="1,1,0,0"
                                                 Background="{Binding TitleBackgroundColor, Converter={StaticResource HexToBrush}}">
-                                            <TextBlock x:Name="PresetTitleText" Text="Aa" FontSize="9" FontWeight="SemiBold" Margin="5,0,0,0" VerticalAlignment="Center"
-                                                       Foreground="{Binding TitleTextColor, Converter={StaticResource HexToBrush}}"/>
+                                            <Rectangle x:Name="PresetTitleBar" Width="14" Height="3" RadiusX="1.5" RadiusY="1.5"
+                                                       HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4,0,0,0"
+                                                       Fill="{Binding TitleTextColor, Converter={StaticResource HexToBrush}}"/>
                                         </Border>
-                                        <StackPanel Grid.Row="1" Margin="6,6,6,0">
-                                            <Rectangle x:Name="PresetLine1" Width="38" Height="3" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Left"
+                                        <!--Two text lines, 80 % and 55 % of the body's width-->
+                                        <Grid Grid.Row="1" Margin="4,5,4,0" VerticalAlignment="Top">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="55*"/>
+                                                <ColumnDefinition Width="25*"/>
+                                                <ColumnDefinition Width="20*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Rectangle x:Name="PresetLine1" Grid.Row="0" Grid.ColumnSpan="2" Height="3" RadiusX="1.5" RadiusY="1.5"
                                                        Fill="{Binding TextColor, Converter={StaticResource HexToBrush}}"/>
-                                            <Rectangle x:Name="PresetLine2" Width="30" Height="3" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Left" Margin="0,4,0,0"
+                                            <Rectangle x:Name="PresetLine2" Grid.Row="1" Grid.Column="0" Height="3" RadiusX="1.5" RadiusY="1.5" Margin="0,3,0,0"
                                                        Fill="{Binding TextColor, Converter={StaticResource HexToBrush}}"/>
-                                            <Rectangle x:Name="PresetLine3" Width="22" Height="3" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Left" Margin="0,4,0,0"
-                                                       Fill="{Binding TextColor, Converter={StaticResource HexToBrush}}"/>
-                                        </StackPanel>
+                                        </Grid>
                                     </Grid>
                                 </Border>
                             </Grid>
@@ -329,7 +339,8 @@
 
                     <!--Presets: one small window picture per theme; a click puts all five colours on screen (saved with Apply)-->
                     <Label x:Name="LabelPresetsHeading" Content="Presets" Margin="0,18,0,10" Style="{StaticResource StyleSettingsCategory}"/>
-                    <ItemsControl x:Name="ListPresets" HorizontalAlignment="Left" Focusable="False"
+                    <!--Margin -9 on the right takes in the last picture's gap, so the row is never wider than its space (WPF would clip it, and the ring with it)-->
+                    <ItemsControl x:Name="ListPresets" HorizontalAlignment="Left" Margin="0,0,-9,0" Focusable="False"
                                   KeyboardNavigation.TabNavigation="Once" KeyboardNavigation.DirectionalNavigation="Cycle"
                                   AutomationProperties.Name="Presets">
                         <ItemsControl.ItemsPanel>
@@ -340,14 +351,11 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Button Style="{StaticResource StylePreset}"
-                                        ToolTip="{Binding Name}"
-                                        AutomationProperties.Name="{Binding Name}"/>
+                                        ToolTip="{Binding Label}"
+                                        AutomationProperties.Name="{Binding Label}"/>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <!--"Preset: Nord" while the five colours on screen are exactly a preset's-->
-                    <TextBlock x:Name="TextPreset" Margin="0,8,0,0" HorizontalAlignment="Left" Visibility="Hidden"
-                               Foreground="{DynamicResource Theme.TextSecondary}"/>
 
                 </StackPanel>
             </ScrollViewer>

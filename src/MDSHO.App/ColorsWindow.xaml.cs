@@ -154,7 +154,7 @@ namespace MDSHO {
       closeWithoutApply = false;
       this.Close();
     }
-    // "Preset: name" and the selected picture follow every colour change (a preset, the palette, Default colours).
+    // The selected picture follows every colour change (a preset, the palette, Default colours).
     private void WatchColors(System.ComponentModel.INotifyPropertyChanged colors) {
       System.ComponentModel.PropertyChangedEventHandler changed = (s, e) => ShowMatchingPreset();
       colors.PropertyChanged += changed;
@@ -162,11 +162,9 @@ namespace MDSHO {
       this.Loaded += (s, e) => ShowMatchingPreset();
     }
 
-    /// <summary>Shows "Preset: name" and the ring on that picture while the colours on screen are exactly a preset's.</summary>
+    /// <summary>Shows the ring on the picture whose preset's five colours are exactly the colours on screen.</summary>
     private void ShowMatchingPreset() {
       ColorPreset match = this.matchingPreset();
-      this.TextPreset.Text = match == null ? "" : "Preset: " + match.Name;
-      this.TextPreset.Visibility = match == null ? Visibility.Hidden : Visibility.Visible;
       for (int i = 0; i < this.ListPresets.Items.Count; i++) {
         if (this.ListPresets.ItemContainerGenerator.ContainerFromIndex(i) is DependencyObject container
             && VisualTreeHelper.GetChildrenCount(container) > 0 && VisualTreeHelper.GetChild(container, 0) is Button button) {

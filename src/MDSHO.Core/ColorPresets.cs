@@ -4,8 +4,12 @@ namespace MDSHO.Core {
 
   /// <summary>One colour preset of the Colours window: a theme name and its five colours, each "#AARRGGBB".</summary>
   public sealed class ColorPreset {
-    /// <summary>The theme name, shown as the tooltip.</summary>
+    /// <summary>The preset's name, such as "Ocean".</summary>
     public string Name { get; init; }
+    /// <summary>The season it belongs to.</summary>
+    public string Season { get; init; }
+    /// <summary>"Season: Name", the tooltip and accessible name.</summary>
+    public string Label => this.Season + ": " + this.Name;
     /// <summary>Border colour.</summary>
     public string BorderColor { get; init; }
     /// <summary>Title bar background colour.</summary>
@@ -27,24 +31,25 @@ namespace MDSHO.Core {
   }
 
   /// <summary>
-  /// The colour presets of the Colours window, from the published palettes of popular editor themes: four light, then
-  /// four dark. A click on one puts its five colours on screen; Apply saves them. Title text is at least 3:1 on its
-  /// background and body text at least 4.5:1 (ColorPresetsTests).
+  /// The colour presets of the Colours window: three per season, in the order Winter, Spring, Summer, Autumn, each in
+  /// that season's colours. A click on one puts its five colours on screen; Apply saves them. Title text is at least 3:1
+  /// on its background and body text at least 4.5:1 (ColorPresetsTests).
   /// </summary>
   public static class ColorPresets {
-    /// <summary>All presets, in the order shown: name, border, title background, title text, background, text.</summary>
+    /// <summary>All presets, in the order shown: season, name, border, title background, title text, background, text.</summary>
     public static IReadOnlyList<ColorPreset> All { get; } = new[] {
-      // Light themes
-      Preset("Solarized Light", "#FF93A1A1", "#FF268BD2", "#FFFDF6E3", "#FFFDF6E3", "#FF586E75"),
-      Preset("Catppuccin Latte", "#FFBCC0CC", "#FF8839EF", "#FFEFF1F5", "#FFEFF1F5", "#FF4C4F69"),
-      // Rosé Pine Dawn's title bar uses the theme's pine (its rose was too light for the title text).
-      Preset("Rosé Pine Dawn", "#FFDFDAD9", "#FF286983", "#FFFAF4ED", "#FFFAF4ED", "#FF575279"),
-      Preset("Gruvbox Light", "#FFD5C4A1", "#FF458588", "#FFFBF1C7", "#FFFBF1C7", "#FF3C3836"),
-      // Dark themes
-      Preset("Nord", "#FF4C566A", "#FF5E81AC", "#FFECEFF4", "#FF2E3440", "#FFD8DEE9"),
-      Preset("Dracula", "#FF44475A", "#FFBD93F9", "#FF282A36", "#FF282A36", "#FFF8F8F2"),
-      Preset("Gruvbox Dark", "#FF504945", "#FFD65D0E", "#FFFBF1C7", "#FF282828", "#FFEBDBB2"),
-      Preset("Catppuccin Mocha", "#FF45475A", "#FF89B4FA", "#FF1E1E2E", "#FF1E1E2E", "#FFCDD6F4"),
+      Preset("Winter", "Frost", "#FFA9C4D9", "#FF3E6F96", "#FFFFFFFF", "#FFEEF4F9", "#FF1F3A52"),
+      Preset("Winter", "Evergreen", "#FF9DB5A8", "#FF2F5D50", "#FFF1F5F2", "#FFF4F7F5", "#FF23362D"),
+      Preset("Winter", "Midnight", "#FF3A4A63", "#FF1B2A41", "#FFE8EEF5", "#FF26344A", "#FFDCE6F0"),
+      Preset("Spring", "Blossom", "#FFE8B4C3", "#FFB8496E", "#FFFFFFFF", "#FFFFF4F7", "#FF5A2A3A"),
+      Preset("Spring", "Fresh leaf", "#FFA8D5A2", "#FF3F8A31", "#FFFFFFFF", "#FFF3FAEF", "#FF2C4A24"),
+      Preset("Spring", "Lilac", "#FFC9B8E3", "#FF7452A6", "#FFFFFFFF", "#FFF7F3FC", "#FF3E2D57"),
+      Preset("Summer", "Ocean", "#FF7CC6D6", "#FF0B6F8C", "#FFFFFFFF", "#FFEAF8FB", "#FF134552"),
+      Preset("Summer", "Sunshine", "#FFE9C46A", "#FFF4B400", "#FF3A2A00", "#FFFFFBEA", "#FF4A3B10"),
+      Preset("Summer", "Coral", "#FFF4A58A", "#FFD2492F", "#FFFFFFFF", "#FFFFF3EE", "#FF5A2516"),
+      Preset("Autumn", "Maple", "#FFD9A07A", "#FFA63F17", "#FFFFF5EC", "#FFFFF6EE", "#FF4A2412"),
+      Preset("Autumn", "Harvest", "#FFD6B25E", "#FF7A5B16", "#FFFFF8E6", "#FFFBF4E2", "#FF4A3A15"),
+      Preset("Autumn", "Dusk", "#FF5A3A45", "#FF6E2C3E", "#FFF6E9EC", "#FF2B2024", "#FFEADDE0"),
     };
 
     /// <summary>The preset with exactly these five colours (ignoring case), or null.</summary>
@@ -62,9 +67,9 @@ namespace MDSHO.Core {
       return string.Equals(a, b, System.StringComparison.OrdinalIgnoreCase);
     }
 
-    private static ColorPreset Preset(string name, string border, string titleBackground, string titleText, string background, string text) {
+    private static ColorPreset Preset(string season, string name, string border, string titleBackground, string titleText, string background, string text) {
       return new ColorPreset {
-        Name = name, BorderColor = border, TitleBackgroundColor = titleBackground, TitleTextColor = titleText,
+        Season = season, Name = name, BorderColor = border, TitleBackgroundColor = titleBackground, TitleTextColor = titleText,
         BackgroundColor = background, TextColor = text
       };
     }
