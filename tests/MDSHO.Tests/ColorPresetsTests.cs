@@ -15,14 +15,14 @@ namespace MDSHO.Tests {
 
     private static readonly (string Season, string Name, string Border, string TitleBackground, string TitleText, string Background, string Text)[] Expected = {
       ("Winter", "Frost", "#FFA9C4D9", "#FF3E6F96", "#FFFFFFFF", "#FFEEF4F9", "#FF1F3A52"),
-      ("Winter", "Evergreen", "#FF9DB5A8", "#FF2F5D50", "#FFF1F5F2", "#FFF4F7F5", "#FF23362D"),
+      ("Winter", "Snowfall", "#FF55544F", "#FF55544F", "#FFFFFFFF", "#FFFFFEF5", "#FF000000"),
       ("Winter", "Midnight", "#FF3A4A63", "#FF1B2A41", "#FFE8EEF5", "#FF26344A", "#FFDCE6F0"),
       ("Spring", "Blossom", "#FFE8B4C3", "#FFB8496E", "#FFFFFFFF", "#FFFFF4F7", "#FF5A2A3A"),
       ("Spring", "Fresh leaf", "#FFA8D5A2", "#FF3F8A31", "#FFFFFFFF", "#FFF3FAEF", "#FF2C4A24"),
       ("Spring", "Lilac", "#FFC9B8E3", "#FF7452A6", "#FFFFFFFF", "#FFF7F3FC", "#FF3E2D57"),
       ("Summer", "Ocean", "#FF7CC6D6", "#FF0B6F8C", "#FFFFFFFF", "#FFEAF8FB", "#FF134552"),
       ("Summer", "Sunshine", "#FFE9C46A", "#FFF4B400", "#FF3A2A00", "#FFFFFBEA", "#FF4A3B10"),
-      ("Summer", "Coral", "#FFF4A58A", "#FFD2492F", "#FFFFFFFF", "#FFFFF3EE", "#FF5A2516"),
+      ("Summer", "Seaside", "#FF75B2A1", "#FF75B2A1", "#FF000000", "#FFE9E2BA", "#FF000000"),
       ("Autumn", "Maple", "#FFD9A07A", "#FFA63F17", "#FFFFF5EC", "#FFFFF6EE", "#FF4A2412"),
       ("Autumn", "Harvest", "#FFD6B25E", "#FF7A5B16", "#FFFFF8E6", "#FFFBF4E2", "#FF4A3A15"),
       ("Autumn", "Halloween", "#FF000000", "#FF000000", "#FFFFFFFF", "#CC000000", "#FFFFFFFF"),
