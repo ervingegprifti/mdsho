@@ -121,6 +121,60 @@
                     </Setter.Value>
                 </Setter>
             </Style>
+            <!--A preset: a 64 x 50 window picture in the preset's colours (ColorPreset: border, title bar with "Aa", body with
+                three text lines). Hover and keyboard focus show an accent ring around it, drawn in the 9 px gap.-->
+            <Style x:Key="StylePreset" TargetType="{x:Type Button}">
+                <Setter Property="Width" Value="64"/>
+                <Setter Property="Height" Value="50"/>
+                <Setter Property="Margin" Value="0,0,9,0"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Button}">
+                            <Grid>
+                                <Border x:Name="PresetRing" Margin="-4" BorderThickness="2" CornerRadius="6"
+                                        BorderBrush="{DynamicResource Theme.Accent}" Visibility="Hidden"/>
+                                <Border x:Name="PresetFrame" BorderThickness="2" CornerRadius="3" SnapsToDevicePixels="True"
+                                        BorderBrush="{Binding BorderColor, Converter={StaticResource HexToBrush}}"
+                                        Background="{Binding BackgroundColor, Converter={StaticResource HexToBrush}}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="15"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Border x:Name="PresetTitle" Grid.Row="0" CornerRadius="1,1,0,0"
+                                                Background="{Binding TitleBackgroundColor, Converter={StaticResource HexToBrush}}">
+                                            <TextBlock x:Name="PresetTitleText" Text="Aa" FontSize="9" FontWeight="SemiBold" Margin="5,0,0,0" VerticalAlignment="Center"
+                                                       Foreground="{Binding TitleTextColor, Converter={StaticResource HexToBrush}}"/>
+                                        </Border>
+                                        <StackPanel Grid.Row="1" Margin="6,6,6,0">
+                                            <Rectangle x:Name="PresetLine1" Width="38" Height="3" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Left"
+                                                       Fill="{Binding TextColor, Converter={StaticResource HexToBrush}}"/>
+                                            <Rectangle x:Name="PresetLine2" Width="30" Height="3" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Left" Margin="0,4,0,0"
+                                                       Fill="{Binding TextColor, Converter={StaticResource HexToBrush}}"/>
+                                            <Rectangle x:Name="PresetLine3" Width="22" Height="3" RadiusX="1.5" RadiusY="1.5" HorizontalAlignment="Left" Margin="0,4,0,0"
+                                                       Fill="{Binding TextColor, Converter={StaticResource HexToBrush}}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <!--The preset whose colours are on screen (ColorsWindow.xaml.cs sets Tag)-->
+                                <Trigger Property="Tag" Value="Selected">
+                                    <Setter TargetName="PresetRing" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="PresetRing" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter TargetName="PresetRing" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -272,6 +326,28 @@
                             <TextBlock x:Name="TextEditing" Margin="0,8,0,0" Foreground="{DynamicResource Theme.TextSecondary}" Text="Editing: Border"/>
                         </StackPanel>
                     </Grid>
+
+                    <!--Presets: one small window picture per theme; a click puts all five colours on screen (saved with Apply)-->
+                    <Label x:Name="LabelPresetsHeading" Content="Presets" Margin="0,18,0,10" Style="{StaticResource StyleSettingsCategory}"/>
+                    <ItemsControl x:Name="ListPresets" HorizontalAlignment="Left" Focusable="False"
+                                  KeyboardNavigation.TabNavigation="Once" KeyboardNavigation.DirectionalNavigation="Cycle"
+                                  AutomationProperties.Name="Presets">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource StylePreset}"
+                                        ToolTip="{Binding Name}"
+                                        AutomationProperties.Name="{Binding Name}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <!--"Preset: Nord" while the five colours on screen are exactly a preset's-->
+                    <TextBlock x:Name="TextPreset" Margin="0,8,0,0" HorizontalAlignment="Left" Visibility="Hidden"
+                               Foreground="{DynamicResource Theme.TextSecondary}"/>
 
                 </StackPanel>
             </ScrollViewer>

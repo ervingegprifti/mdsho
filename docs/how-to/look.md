@@ -16,6 +16,9 @@ This page helps you choose the colours of your panels, the style of the icons an
 3. Choose a colour in the palette. The panel changes as you pick.
 4. Click **Apply**. Closing the window without Apply puts the old colours back.
 
+To try a ready-made theme, click one of the **Presets** under the colours, such as Nord or Dracula. It sets all five
+colours at once and shows its name, for example "Preset: Nord"; click **Apply** to keep them.
+
 A panel's clones share its colours.
 
 ## Save your own default colours

@@ -185,9 +185,9 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Window_is_at_most_580_high_and_the_content_is_not_clipped() {
+    public void Window_is_at_most_620_high_with_the_presets_and_the_content_is_not_clipped() {
       WithColors((window, w) => {
-        Assert.InRange(window.Height, 300, 580);
+        Assert.InRange(window.Height, 300, 620); // taller with the Presets row (1.15.0)
         ScrollViewer scroll = Named<ScrollViewer>(window, "ScrollBody");
         FrameworkElement body = Named<FrameworkElement>(window, "PanelBody");
         body.Measure(new Size(scroll.ViewportWidth, double.PositiveInfinity));

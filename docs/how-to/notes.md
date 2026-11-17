@@ -44,6 +44,8 @@ Click **Wrap text** to fit long lines to the window's width.
 3. Choose a colour in the palette. The note changes as you pick.
 4. Click **Apply**. Closing the window without Apply puts the old colours back.
 
+The **Presets** under the colours set all five at once to a ready-made theme; click **Apply** to keep them.
+
 Click **Set as default** to use these colours for new notes, and **Default colours** to go back to them.
 
 > MDSHO remembers where each note window was, also for each set of screens. See
