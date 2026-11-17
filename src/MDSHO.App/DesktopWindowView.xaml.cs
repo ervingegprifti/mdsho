@@ -15,10 +15,10 @@ namespace MDSHO {
   /// </summary>
   public partial class DesktopWindowView : Window {
 
-		/// <summary>Creates the window for a view model (a real window or a clone) and moves it back on screen if its saved position is no longer visible.</summary>
 		/// <summary>Opens the About window with this window's icons; the title menu's About and a double-click on the title icon use it. Tests replace it.</summary>
 		public Action<IconGlyphs> ShowAbout { get; set; } = icons => ((App)Application.Current).ShowAboutWindow(icons);
 
+		/// <summary>Creates the window for a view model (a real window or a clone) and moves it back on screen if its saved position is no longer visible.</summary>
 		public DesktopWindowView(DesktopWindowViewModel desktopWindow) {
       InitializeComponent();
 			this.InitializeWindowEvents();
