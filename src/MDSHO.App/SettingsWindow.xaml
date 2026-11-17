@@ -10,7 +10,7 @@
         xmlns:converters="clr-namespace:MDSHO.Converters"
         d:DataContext="{d:DesignInstance Type=viewmodels:DesktopWindowViewModel}"
         Title="Settings"
-        Width="560"
+        Width="720"
         SizeToContent="Height"
         ResizeMode="NoResize"
         Topmost="True"

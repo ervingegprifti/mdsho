@@ -15,6 +15,9 @@ namespace MDSHO {
   /// </summary>
   public partial class DesktopWindowView : Window {
 
+		/// <summary>Opens the About window with this window's icons; the title menu's About and a double-click on the title icon use it. Tests replace it.</summary>
+		public Action<IconGlyphs> ShowAbout { get; set; } = icons => ((App)Application.Current).ShowAboutWindow(icons);
+
 		/// <summary>Creates the window for a view model (a real window or a clone) and moves it back on screen if its saved position is no longer visible.</summary>
 		public DesktopWindowView(DesktopWindowViewModel desktopWindow) {
       InitializeComponent();
@@ -132,8 +135,13 @@ namespace MDSHO {
 
 		#region CONTROL EVENTS
 		// Header
+		// A double-click on the MDSHO icon opens About; on the rest of the title bar it centres the window.
 		private void ContentControlHeader_MouseDoubleClick(object sender, MouseButtonEventArgs e) {
-			CenterWindowToItsOwnScreen();
+			if (e.OriginalSource == this.TextBlockHeaderIcon) {
+				OpenAbout();
+			} else {
+				CenterWindowToItsOwnScreen();
+			}
 		}
 		private void MenuItemHeaderNewWindow_Click(object sender, RoutedEventArgs e) {
 			try {
@@ -201,9 +209,11 @@ namespace MDSHO {
 			_ = AppServices.Current.StoreActions.SupportAsync();
 		}
 		private void MenuItemHeaderAboutWindow_Click(object sender, RoutedEventArgs e) {
-      try {
-				App app = (App)Application.Current;
-				app.ShowAboutWindow(((DesktopWindowViewModel)this.DataContext).Appearance.Icons);
+			OpenAbout();
+		}
+		private void OpenAbout() {
+			try {
+				this.ShowAbout(((DesktopWindowViewModel)this.DataContext).Appearance.Icons);
 			} catch (Exception ex) {
 				ErrorDialog.ShowDialog(ex);
 			}

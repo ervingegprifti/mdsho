@@ -270,7 +270,7 @@ namespace MDSHO.Tests {
       string[] Commands(Type t) => t.GetProperties().Where(p => typeof(ICommand).IsAssignableFrom(p.PropertyType)).Select(p => p.Name).OrderBy(n => n).ToArray();
       Assert.Equal(new[] { "BeginEditTitleCommand", "CancelEditTitleCommand", "CloseWindowCommand", "CommitEditTitleCommand",
         "NewGroupShortcutCommand", "NewNoteShortcutCommand", "NewProcessCommandShortcutCommand", "PasteShortcutCommand" }, Commands(typeof(DesktopWindowViewModel)));
-      Assert.Equal(new[] { "CancelEditCommand", "CommitEditCommand", "CopyShortcutCommand", "CopyTargetToMemoryCommand", "CutShortcutCommand",
+      Assert.Equal(new[] { "CancelEditCommand", "CommitEditCommand", "CopyCommandToMemoryCommand", "CopyShortcutCommand", "CopyTargetToMemoryCommand", "CutShortcutCommand",
         "DeleteShortcutCommand", "EditCommentCommand", "EditNoteCommand", "EditRunCommandCommand", "MarkShortcutCommand", "NewGroupShortcutCommand", "NewNoteShortcutCommand", "NewProcessCommandShortcutCommand", "PasteShortcutCommand",
         "RenameCommand", "SetNameTheSameAsTargetCommand" }, Commands(typeof(ShortcutViewModel)));
       Assert.Equal(new[] { "TestRunCommand" }, Commands(typeof(RunCommandViewModel)));

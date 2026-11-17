@@ -492,6 +492,13 @@ namespace MDSHO.Tests {
       Assert.Equal(("explorer.exe", "ms-windows-store:", false, false), (vm.Program, vm.Arguments, vm.KeepWindowOpen, vm.RunAsAdministrator));
     }
 
+    [Fact]
+    public void Using_a_git_example_fills_its_working_folder() {
+      RunCommandViewModel vm = new RunCommandViewModel(ViewModelFactory.NewProcessCommandShortcut(app, null, win), true);
+      Assert.True(vm.UseExample(RunCommandExamples.All.Single(e => e.Name == "git status")));
+      Assert.Equal(("cmd.exe", "C:\\Repos\\MyRepo", "git status", true, false), (vm.Program, vm.WorkingFolder, vm.Arguments, vm.KeepWindowOpen, vm.RunAsAdministrator));
+    }
+
     [Theory]
     [InlineData("Run a PowerShell script with the group value", "powershell.exe", "-NoExit -ExecutionPolicy Bypass -File \"C:\\Scripts\\script.ps1\" -Name SRV01")]
     [InlineData("Run a batch script with the group value", "cmd.exe", "/K \"C:\\Scripts\\script.cmd\" SRV01")]

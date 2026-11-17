@@ -96,7 +96,7 @@ namespace MDSHO.Tests {
           Assert.All(Items(window), i => Assert.Equal((string)i.Content, AutomationProperties.GetName(i)));
           Assert.Equal(SelectionMode.Single, list.SelectionMode);
           Assert.Equal(140, Named<FrameworkElement>(window, "BorderSettingsPages").ActualWidth, 1);
-          Assert.Equal(560, window.Width);
+          Assert.Equal(720, window.Width);
         });
       }
     }

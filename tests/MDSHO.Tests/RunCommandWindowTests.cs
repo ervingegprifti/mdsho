@@ -690,8 +690,8 @@ namespace MDSHO.Tests {
           Assert.Equal(bar, BackgroundOf(window, "TitleBar"));
           Assert.Equal((Color)ColorConverter.ConvertFromString("#F4F3ED"), BackgroundOf(window, "Body"));
           ListBox list = Named<ListBox>(window, "ListExamples");
-          Assert.Equal(15, list.Items.Count);
-          Assert.Equal(new[] { "Command Prompt (cmd)", "PowerShell", "Explorer", "Other" },
+          Assert.Equal(41, list.Items.Count);
+          Assert.Equal(new[] { "Command Prompt (cmd)", "PowerShell", "Explorer", "Git", "Docker", "Other" },
             list.Items.Groups.Cast<CollectionViewGroup>().Select(g => (string)g.Name).ToArray());
           Assert.True(Named<Button>(window, "ButtonUse").IsDefault);
           Button[] buttons = WpfAppHost.VisualDescendants<Button>(window).ToArray();
@@ -1156,6 +1156,43 @@ namespace MDSHO.Tests {
               Assert.False(visible[i] == "-" && visible[i - 1] == "-", "Two separators in a row: " + all);
             }
             Assert.Equal(shortcut == f.Command, visible.Contains("Edit run command..."));
+          }
+        } finally {
+          view.Close();
+          WpfAppHost.Pump();
+        }
+      });
+    }
+
+    /// <summary>A run command's menu has "Copy command to memory" right after Rename, with no icon; a group's menu does not show it.</summary>
+    [Fact]
+    public void Command_menu_has_copy_command_to_memory_after_rename_without_an_icon() {
+      WithCommand("cmd.exe", "/K ping {=1}", f => {
+        DesktopWindowView view = new DesktopWindowView(f.Win) { ShowActivated = false, Left = -10000, Top = -10000 };
+        try {
+          view.Show();
+          WpfAppHost.Pump();
+          ShortcutViewModel group = f.Win.RootShortcuts[0];
+          group.IsGroupExpanded = true;
+          WpfAppHost.Pump();
+          TreeView tree = (TreeView)view.FindName("TreeViewShortcuts");
+          foreach (ShortcutViewModel shortcut in new[] { f.Command, group }) {
+            TreeViewItem item = WpfAppHost.VisualDescendants<TreeViewItem>(tree).Single(i => i.DataContext == shortcut);
+            ContextMenu menu = WpfAppHost.VisualDescendants<Button>(item).First(b => b.DataContext == shortcut).ContextMenu;
+            menu.DataContext = shortcut;
+            WpfAppHost.Pump();
+            List<object> visible = menu.Items.Cast<object>().Where(i => !(i is FrameworkElement e) || e.Visibility != Visibility.Collapsed).ToList();
+            List<string> names = visible.Select(Describe).ToList();
+            if (shortcut == f.Command) {
+              int rename = names.IndexOf("Rename");
+              Assert.True(rename >= 0, string.Join(" | ", names));
+              MenuItem copy = Assert.IsType<MenuItem>(visible[rename + 1]);
+              Assert.Equal("Copy command to memory", copy.Header);
+              Assert.Null(copy.Icon);
+              Assert.Same(f.Command.CopyCommandToMemoryCommand, copy.Command);
+            } else {
+              Assert.DoesNotContain("Copy command to memory", names);
+            }
           }
         } finally {
           view.Close();

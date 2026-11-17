@@ -232,7 +232,7 @@ namespace MDSHO.Tests {
           Assert.Equal(TextWrapping.Wrap, hint.TextWrapping);
           Assert.Equal(shortcutHint.Margin, hint.Margin);
           Assert.Equal(shortcutHint.Foreground.ToString(), hint.Foreground.ToString());
-          Assert.Equal(560, window.Width);
+          Assert.Equal(720, window.Width);
           // The checkbox fits on one line.
           check.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
           Assert.True(check.DesiredSize.Width <= check.ActualWidth + 0.5, "The checkbox is clipped.");
