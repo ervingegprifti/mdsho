@@ -2,7 +2,7 @@
 
 ### Used in MDSHO application.
 
-Version: **1.18**
+Version: **1.19**
 
 | Icon | Name | Code | Icon | Name | Code |
 | :---: | :--- | :--- | :---: | :--- | :--- |

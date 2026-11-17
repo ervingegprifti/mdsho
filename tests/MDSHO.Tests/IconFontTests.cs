@@ -11,7 +11,7 @@ namespace MDSHO.Tests {
 
   /// <summary>
   /// Checks the MDSHOFont icon font embedded in the app: it must contain every glyph the app uses,
-  /// and it must be the font from assets/Font/MDSHOFont-v1.18 (which added heart).
+  /// and it must be the font from assets/Font/MDSHOFont-v1.19 (which redrew the globe icons, same codes).
   /// </summary>
   public class IconFontTests {
 
@@ -35,10 +35,10 @@ namespace MDSHO.Tests {
     /// <summary>
     /// One test for all codes on purpose: WPF's font cache is not safe to use from parallel test cases.
     /// The range runs from mdsho_s (U+E900) to heart_o (U+E959). v1.15 added comment (U+E94C/U+E94D), note
-    /// (U+E94E/U+E94F), thumbtack left (U+E950/U+E951) and thumbtack down (U+E952/U+E953); v1.16 added ok (U+E954/U+E955); v1.17 added wrap text (U+E956/U+E957); v1.18 added heart (U+E958/U+E959).
+    /// (U+E94E/U+E94F), thumbtack left (U+E950/U+E951) and thumbtack down (U+E952/U+E953); v1.16 added ok (U+E954/U+E955); v1.17 added wrap text (U+E956/U+E957); v1.18 added heart (U+E958/U+E959); v1.19 redrew the globe (U+E946/U+E947, same codes).
     /// </summary>
     [Fact]
-    public void Embedded_font_contains_every_glyph_up_to_v1_18() {
+    public void Embedded_font_contains_every_glyph_up_to_v1_19() {
       GlyphTypeface font = LoadEmbeddedFont();
       int[] missing = Enumerable.Range(0xE900, 0xE959 - 0xE900 + 1)
         .Where(code => !font.CharacterToGlyphMap.ContainsKey(code))
@@ -46,10 +46,10 @@ namespace MDSHO.Tests {
       Assert.True(missing.Length == 0, "MDSHOFont has no glyph for " + string.Join(", ", missing.Select(c => $"U+{c:X4}")));
     }
 
-    /// <summary>The embedded font is byte for byte the IcoMoon v1.18 build kept in assets.</summary>
+    /// <summary>The embedded font is byte for byte the IcoMoon v1.19 build kept in assets.</summary>
     [Fact]
-    public void Embedded_font_is_the_v1_18_build_from_assets() {
-      string source = Path.Combine(ThirdPartyNoticesTests.RepoRoot(), "assets", "Font", "MDSHOFont-v1.18", "fonts", "MDSHOFont.ttf");
+    public void Embedded_font_is_the_v1_19_build_from_assets() {
+      string source = Path.Combine(ThirdPartyNoticesTests.RepoRoot(), "assets", "Font", "MDSHOFont-v1.19", "fonts", "MDSHOFont.ttf");
       Assert.True(File.Exists(source), source + " not found.");
       Assert.Equal(File.ReadAllBytes(source), EmbeddedFontBytes());
     }
@@ -62,20 +62,21 @@ namespace MDSHO.Tests {
       Assert.False(Directory.Exists(Path.Combine(ThirdPartyNoticesTests.RepoRoot(), "assets", "Font", "MDSHOFont-v1.15")));
       Assert.False(Directory.Exists(Path.Combine(ThirdPartyNoticesTests.RepoRoot(), "assets", "Font", "MDSHOFont-v1.16")));
       Assert.False(Directory.Exists(Path.Combine(ThirdPartyNoticesTests.RepoRoot(), "assets", "Font", "MDSHOFont-v1.17")));
+      Assert.False(Directory.Exists(Path.Combine(ThirdPartyNoticesTests.RepoRoot(), "assets", "Font", "MDSHOFont-v1.18")));
     }
 
     /// <summary>The icon sources README points at a font project folder that exists (the current one).</summary>
     [Fact]
     public void The_icons_readme_points_at_the_current_font_folder() {
       string readme = File.ReadAllText(Path.Combine(ThirdPartyNoticesTests.RepoRoot(), "assets", "Font", "Icons", "README.md"));
-      Assert.Contains(@"..\MDSHOFont-v1.18\selection.json", readme);
+      Assert.Contains(@"..\MDSHOFont-v1.19\selection.json", readme);
     }
 
     /// <summary>The font README names the version that is embedded.</summary>
     [Fact]
-    public void The_font_readme_says_version_1_18() {
+    public void The_font_readme_says_version_1_19() {
       string readme = File.ReadAllText(Path.Combine(ThirdPartyNoticesTests.RepoRoot(), "assets", "Font", "README.md"));
-      Assert.Contains("Version: **1.18**", readme);
+      Assert.Contains("Version: **1.19**", readme);
     }
 
     private static byte[] EmbeddedFontBytes() {

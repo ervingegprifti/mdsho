@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using MDSHO.Core;
 using Xunit;
 
@@ -164,9 +164,9 @@ namespace MDSHO.Tests {
     [Fact]
     public void Examples_are_grouped_in_the_agreed_order() {
       Assert.Equal(
-        new[] { "Command Prompt (cmd)", "PowerShell", "Explorer", "Other" },
+        new[] { "Command Prompt (cmd)", "PowerShell", "Explorer", "Git", "Docker", "Other" },
         RunCommandExamples.All.Select(e => e.Category).Distinct().ToArray());
-      Assert.Equal(15, RunCommandExamples.All.Count);
+      Assert.Equal(41, RunCommandExamples.All.Count);
     }
 
     [Fact]
@@ -178,6 +178,7 @@ namespace MDSHO.Tests {
           "Find MDSHO in Microsoft Store", "Review MDSHO in Microsoft Store", "List stopped services",
           "Run a PowerShell script (.ps1)", "Run a PowerShell script with the group value", "Run a PowerShell 7 script (.ps1)",
           "Open the Startup folder", "Open the Apps folder", "Open Microsoft Store",
+          "git clone https://...", "git remote", "git remote show origin", "git fetch", "git checkout --track origin/BranchX", "git branch -l", "git checkout main", "git pull", "git status", "git diff", "git log --oneline -20", "git branch LocalWorkingBranch", "git checkout LocalWorkingBranch", "git switch -c NewBranch", "git stash", "git stash pop", "git branch -d LocalWorkingBranch", "git branch -D LocalWorkingBranch", "docker ps", "docker ps -a", "docker images", "docker start MyContainer", "docker stop MyContainer", "docker logs MyContainer", "docker compose up -d", "docker compose down",
           "Refresh shortcut thumbnails"
         },
         RunCommandExamples.All.Select(e => e.Name).ToArray());

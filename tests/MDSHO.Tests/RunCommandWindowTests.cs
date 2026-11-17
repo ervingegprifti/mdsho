@@ -690,8 +690,8 @@ namespace MDSHO.Tests {
           Assert.Equal(bar, BackgroundOf(window, "TitleBar"));
           Assert.Equal((Color)ColorConverter.ConvertFromString("#F4F3ED"), BackgroundOf(window, "Body"));
           ListBox list = Named<ListBox>(window, "ListExamples");
-          Assert.Equal(15, list.Items.Count);
-          Assert.Equal(new[] { "Command Prompt (cmd)", "PowerShell", "Explorer", "Other" },
+          Assert.Equal(41, list.Items.Count);
+          Assert.Equal(new[] { "Command Prompt (cmd)", "PowerShell", "Explorer", "Git", "Docker", "Other" },
             list.Items.Groups.Cast<CollectionViewGroup>().Select(g => (string)g.Name).ToArray());
           Assert.True(Named<Button>(window, "ButtonUse").IsDefault);
           Button[] buttons = WpfAppHost.VisualDescendants<Button>(window).ToArray();

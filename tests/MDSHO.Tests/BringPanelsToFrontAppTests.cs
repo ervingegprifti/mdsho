@@ -203,7 +203,7 @@ namespace MDSHO.Tests {
           TextBlock hint = Named<TextBlock>(window, "TextShortcutHint");
           Assert.Equal("For all panels, on this PC. Press it again or Esc to send them back.", hint.Text);
           Assert.Equal(TextWrapping.Wrap, hint.TextWrapping);
-          Assert.Equal(560, window.Width);
+          Assert.Equal(720, window.Width);
         });
       }
     }

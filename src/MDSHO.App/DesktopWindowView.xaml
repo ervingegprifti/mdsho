@@ -272,9 +272,10 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!--Header Icon-->
+                    <!--Header Icon: a double-click opens About (Transparent so its whole box takes the click)-->
                     <TextBlock x:Name="TextBlockHeaderIcon" Grid.Row="0" Grid.Column="0"
                         Text="{Binding Appearance.Icons.MDSHO}"
+                        Background="Transparent"
                         Foreground="{Binding Appearance.TitleTextColor, Converter={StaticResource HexToBrush}}"
                         FontFamily="{StaticResource IconFont}"
                         FontSize="16"
