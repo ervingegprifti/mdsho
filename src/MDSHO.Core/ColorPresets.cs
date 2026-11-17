@@ -33,7 +33,7 @@ namespace MDSHO.Core {
   /// <summary>
   /// The colour presets of the Colours window: three per season, in the order Winter, Spring, Summer, Autumn, each in
   /// that season's colours. A click on one puts its five colours on screen; Apply saves them. Title text is at least 3:1
-  /// on its background and body text at least 4.5:1 (ColorPresetsTests).
+  /// on its background and body text at least 4.5:1, over any desktop where a background lets it through (ColorPresetsTests).
   /// </summary>
   public static class ColorPresets {
     /// <summary>All presets, in the order shown: season, name, border, title background, title text, background, text.</summary>
@@ -49,8 +49,13 @@ namespace MDSHO.Core {
       Preset("Summer", "Coral", "#FFF4A58A", "#FFD2492F", "#FFFFFFFF", "#FFFFF3EE", "#FF5A2516"),
       Preset("Autumn", "Maple", "#FFD9A07A", "#FFA63F17", "#FFFFF5EC", "#FFFFF6EE", "#FF4A2412"),
       Preset("Autumn", "Harvest", "#FFD6B25E", "#FF7A5B16", "#FFFFF8E6", "#FFFBF4E2", "#FF4A3A15"),
-      Preset("Autumn", "Dusk", "#FF5A3A45", "#FF6E2C3E", "#FFF6E9EC", "#FF2B2024", "#FFEADDE0"),
+      // Also MDSHO's own panel colours (AppConstants.DefaultWindow*Color; ColorPresetsTests keeps them equal). Its body is
+      // 80 % opaque black, so the desktop shows through a little.
+      Preset("Autumn", "Halloween", "#FF000000", "#FF000000", "#FFFFFFFF", "#CC000000", "#FFFFFFFF"),
     };
+
+    /// <summary>Autumn: Halloween, the last preset: the colours of a new panel and of Default colours without saved defaults.</summary>
+    public static ColorPreset Halloween => All[All.Count - 1];
 
     /// <summary>The preset with exactly these five colours (ignoring case), or null.</summary>
     public static ColorPreset Match(string border, string titleBackground, string titleText, string background, string text) {

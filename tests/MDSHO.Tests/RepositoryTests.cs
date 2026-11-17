@@ -30,9 +30,9 @@ namespace MDSHO.Tests {
       Assert.Equal(MDSHO.Common.AppConstants.InitialWindowWidth, w.Width);
       Assert.Equal(MDSHO.Common.AppConstants.InitialWindowHeight, w.Height);
       Assert.Equal("#FF000000", w.BorderColor);
-      Assert.Equal("#99000000", w.BackgroundColor);
+      Assert.Equal("#CC000000", w.BackgroundColor);
       Assert.Equal("#FFFFFFFF", w.TextColor);
-      Assert.Equal("#CC000000", w.TitleBackgroundColor);
+      Assert.Equal("#FF000000", w.TitleBackgroundColor);
       Assert.Equal("#FFFFFFFF", w.TitleTextColor);
       Assert.Equal("Notes for this window.", w.Notes);
       Assert.True(w.SolidIcons);

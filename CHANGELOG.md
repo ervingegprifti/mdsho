@@ -6,11 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
-## [1.15.1]
+## [1.15.2]
 
 ### Added
 
 - **Colour presets**: the Colours window of a panel or a note has 12 ready-made colour sets, three for each season, such as Winter: Frost and Summer: Ocean. Click one to try it, then Apply to keep it.
+
+### Changed
+
+- New panels now start with the Autumn: Halloween colours: a solid black title bar and an 80% black body.
 
 ## [1.14.3]
 

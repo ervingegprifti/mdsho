@@ -202,6 +202,8 @@ namespace MDSHO.Tests {
     [Fact]
     public void The_focus_ring_is_hidden_until_hover_or_focus_and_uses_the_accent_in_light_and_dark() {
       WithPanel((window, w) => {
+        w.Appearance.BackgroundColor = "#99000000"; // colours of no preset, so no ring for the selected one
+        WpfAppHost.Pump();
         try {
           foreach (WindowThemeKind theme in new[] { WindowThemeKind.Light, WindowThemeKind.Dark }) {
             WindowThemes.Apply(theme);
@@ -269,8 +271,33 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
+    public void A_new_panel_opens_on_Halloween_its_default_colours() {
+      WithPanel((window, w) => AssertSelected(window, 11));
+    }
+
+    [Fact]
     public void No_preset_is_shown_when_the_window_opens_on_colours_that_match_none() {
-      WithPanel((window, w) => AssertSelected(window, -1));
+      using (TempDb db = new TempDb()) {
+        WpfAppHost.Run(() => {
+          DesktopWindowViewModel w = new AppViewModel().AddWindow("TEST", 100, 100);
+          w.Appearance.BackgroundColor = "#99000000"; // the default before 1.15.2: no preset
+          ColorsWindow window = new ColorsWindow(w);
+          Shown(window, () => AssertSelected(window, -1));
+        });
+      }
+    }
+
+    [Fact]
+    public void The_Halloween_picture_shows_its_80_percent_black_body_over_the_window_background() {
+      WithPanel((window, w) => {
+        Button halloween = Presets(window)[11];
+        Assert.Equal(Color.FromArgb(0xCC, 0, 0, 0), ColorOf(Part<Border>(halloween, "PresetFrame").Background));
+        Assert.Equal(Colors.Black, ColorOf(Part<Border>(halloween, "PresetTitle").Background));
+        // Nothing painted behind the frame: the window background shows through the body.
+        foreach (Border border in WpfAppHost.VisualDescendants<Border>(halloween).Where(x => x.Name != "PresetFrame" && x.Name != "PresetTitle")) {
+          Assert.True(border.Background == null || ColorOf(border.Background).A == 0, border.Name + " hides the window background");
+        }
+      });
     }
 
     [Fact]
@@ -298,11 +325,11 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Default_colours_hides_the_preset_unless_the_defaults_match_one() {
+    public void Default_colours_shows_Halloween_or_the_preset_the_saved_defaults_match() {
       WithPanel((window, w) => {
         Click(Presets(window)[4]);
         Click(Named<Button>(window, "ButtonDefaultColours"));
-        AssertSelected(window, -1);
+        AssertSelected(window, 11); // no saved defaults: MDSHO's own, Halloween
         // Saved defaults that are a preset show it.
         Click(Presets(window)[6]);
         Click(Named<Button>(window, "ButtonSetAsDefault"));

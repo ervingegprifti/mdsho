@@ -25,7 +25,7 @@ namespace MDSHO.Tests {
       ("Summer", "Coral", "#FFF4A58A", "#FFD2492F", "#FFFFFFFF", "#FFFFF3EE", "#FF5A2516"),
       ("Autumn", "Maple", "#FFD9A07A", "#FFA63F17", "#FFFFF5EC", "#FFFFF6EE", "#FF4A2412"),
       ("Autumn", "Harvest", "#FFD6B25E", "#FF7A5B16", "#FFFFF8E6", "#FFFBF4E2", "#FF4A3A15"),
-      ("Autumn", "Dusk", "#FF5A3A45", "#FF6E2C3E", "#FFF6E9EC", "#FF2B2024", "#FFEADDE0"),
+      ("Autumn", "Halloween", "#FF000000", "#FF000000", "#FFFFFFFF", "#CC000000", "#FFFFFFFF"),
     };
 
     private static string[] ColoursOf(ColorPreset p) {
@@ -39,6 +39,22 @@ namespace MDSHO.Tests {
         return s <= 0.03928 ? s / 12.92 : Math.Pow((s + 0.055) / 1.055, 2.4);
       }
       return 0.2126 * Channel(hex.Substring(3, 2)) + 0.7152 * Channel(hex.Substring(5, 2)) + 0.0722 * Channel(hex.Substring(7, 2));
+    }
+
+    // A translucent colour over a backdrop ("#FFRRGGBB"): what the eye sees.
+    private static string Over(string hex, string backdrop) {
+      double a = int.Parse(hex.Substring(1, 2), NumberStyles.HexNumber) / 255.0;
+      string result = "#FF";
+      for (int i = 3; i < 9; i += 2) {
+        double c = int.Parse(hex.Substring(i, 2), NumberStyles.HexNumber), b = int.Parse(backdrop.Substring(i, 2), NumberStyles.HexNumber);
+        result += ((int)Math.Round(c * a + b * (1 - a))).ToString("X2");
+      }
+      return result;
+    }
+
+    // The worst contrast of a text colour on a background that may let the desktop through: over white and over black.
+    private static double ContrastOnAnyDesktop(string text, string background) {
+      return Math.Min(Contrast(text, Over(background, "#FFFFFFFF")), Contrast(text, Over(background, "#FF000000")));
     }
 
     private static double Contrast(string a, string b) {
@@ -77,22 +93,52 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Every_colour_is_an_opaque_AARRGGBB_hex() {
-      Regex hex = new Regex("^#FF[0-9A-F]{6}$");
-      Assert.All(ColorPresets.All.SelectMany(ColoursOf), c => Assert.Matches(hex, c));
+    public void Every_colour_is_an_AARRGGBB_hex_and_only_Halloween_has_a_see_through_background() {
+      Assert.All(ColorPresets.All.SelectMany(ColoursOf), c => Assert.Matches(new Regex("^#[0-9A-F]{8}$"), c));
+      Assert.All(ColorPresets.All.Where(p => p.Name != "Halloween").SelectMany(ColoursOf), c => Assert.StartsWith("#FF", c));
+      ColorPreset halloween = ColorPresets.All.Single(p => p.Name == "Halloween");
+      Assert.Equal("#CC000000", halloween.BackgroundColor); // 80 % opaque black
+      Assert.All(new[] { halloween.BorderColor, halloween.TitleBackgroundColor, halloween.TitleTextColor, halloween.TextColor },
+        c => Assert.StartsWith("#FF", c));
+    }
+
+    [Fact]
+    public void Halloween_is_the_last_preset_Autumn_Halloween() {
+      Assert.Equal("Autumn: Halloween", ColorPresets.All[11].Label);
+      Assert.Same(ColorPresets.All[11], ColorPresets.Halloween);
+    }
+
+    // One source: a new panel, the welcome panel and Default colours (without saved defaults) use Halloween's colours.
+    [Fact]
+    public void The_default_panel_colours_are_the_Halloween_preset() {
+      ColorPreset h = ColorPresets.Halloween;
+      string[] defaults = {
+        MDSHO.Common.AppConstants.DefaultWindowBorderColor, MDSHO.Common.AppConstants.DefaultWindowTitleBackgroundColor,
+        MDSHO.Common.AppConstants.DefaultWindowTitleTextColor, MDSHO.Common.AppConstants.DefaultWindowBackgroundColor,
+        MDSHO.Common.AppConstants.DefaultWindowTextColor };
+      Assert.Equal(ColoursOf(h), defaults);
+      Assert.Same(h, ColorPresets.Match(defaults[0], defaults[1], defaults[2], defaults[3], defaults[4]));
+    }
+
+    [Fact]
+    public void Match_counts_alpha_so_Halloween_needs_its_80_percent_background() {
+      ColorPreset h = ColorPresets.All[11];
+      Assert.Same(h, ColorPresets.Match("#FF000000", "#FF000000", "#FFFFFFFF", "#cc000000", "#FFFFFFFF"));
+      Assert.Null(ColorPresets.Match("#FF000000", "#FF000000", "#FFFFFFFF", "#99000000", "#FFFFFFFF")); // 60 %
+      Assert.Null(ColorPresets.Match("#FF000000", "#FF000000", "#FFFFFFFF", "#FF000000", "#FFFFFFFF")); // solid
     }
 
     [Fact]
     public void Body_text_is_easy_to_read_on_the_background() {
-      Assert.All(ColorPresets.All, p => Assert.True(Contrast(p.TextColor, p.BackgroundColor) >= 4.5,
-        $"{p.Name}: text on background is {Contrast(p.TextColor, p.BackgroundColor):0.00}:1"));
+      Assert.All(ColorPresets.All, p => Assert.True(ContrastOnAnyDesktop(p.TextColor, p.BackgroundColor) >= 4.5,
+        $"{p.Name}: text on background is {ContrastOnAnyDesktop(p.TextColor, p.BackgroundColor):0.00}:1"));
     }
 
     // The title is short and SemiBold: 3:1, WCAG's level for large text (the owner's choice, 1.15.0).
     [Fact]
     public void Title_text_is_easy_to_read_on_the_title_background() {
-      Assert.All(ColorPresets.All, p => Assert.True(Contrast(p.TitleTextColor, p.TitleBackgroundColor) >= 3,
-        $"{p.Name}: title text on title background is {Contrast(p.TitleTextColor, p.TitleBackgroundColor):0.00}:1"));
+      Assert.All(ColorPresets.All, p => Assert.True(ContrastOnAnyDesktop(p.TitleTextColor, p.TitleBackgroundColor) >= 3,
+        $"{p.Name}: title text on title background is {ContrastOnAnyDesktop(p.TitleTextColor, p.TitleBackgroundColor):0.00}:1"));
     }
 
     [Fact]
