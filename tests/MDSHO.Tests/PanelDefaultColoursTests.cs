@@ -71,7 +71,7 @@ namespace MDSHO.Tests {
         Assert.Equal((AppConstants.DefaultWindowBorderColor, AppConstants.DefaultWindowBackgroundColor, AppConstants.DefaultWindowTextColor,
           AppConstants.DefaultWindowTitleBackgroundColor, AppConstants.DefaultWindowTitleTextColor),
           (a.BorderColor, a.BackgroundColor, a.TextColor, a.TitleBackgroundColor, a.TitleTextColor));
-        Assert.Equal(("#FF000000", "#99000000", "#FFFFFFFF", "#CC000000", "#FFFFFFFF"),
+        Assert.Equal(("#FF000000", "#CC000000", "#FFFFFFFF", "#FF000000", "#FFFFFFFF"), // Autumn: Halloween (1.15.2)
           (AppConstants.DefaultWindowBorderColor, AppConstants.DefaultWindowBackgroundColor, AppConstants.DefaultWindowTextColor,
            AppConstants.DefaultWindowTitleBackgroundColor, AppConstants.DefaultWindowTitleTextColor));
       });

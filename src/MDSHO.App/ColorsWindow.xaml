@@ -121,6 +121,70 @@
                     </Setter.Value>
                 </Setter>
             </Style>
+            <!--A preset: a 42 x 34 window picture in the preset's colours (ColorPreset: border, title bar with a short bar
+                for the title text, body with two text lines). The matching preset, hover and keyboard focus show an accent
+                ring around it, drawn in the 9 px gap.-->
+            <Style x:Key="StylePreset" TargetType="{x:Type Button}">
+                <Setter Property="Width" Value="42"/>
+                <Setter Property="Height" Value="34"/>
+                <Setter Property="Margin" Value="0,0,9,0"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Button}">
+                            <Grid>
+                                <Border x:Name="PresetRing" Margin="-4" BorderThickness="2" CornerRadius="5"
+                                        BorderBrush="{DynamicResource Theme.Accent}" Visibility="Hidden"/>
+                                <Border x:Name="PresetFrame" BorderThickness="2" CornerRadius="3" SnapsToDevicePixels="True"
+                                        BorderBrush="{Binding BorderColor, Converter={StaticResource HexToBrush}}"
+                                        Background="{Binding BackgroundColor, Converter={StaticResource HexToBrush}}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="10"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Border x:Name="PresetTitle" Grid.Row="0" CornerRadius="1,1,0,0"
+                                                Background="{Binding TitleBackgroundColor, Converter={StaticResource HexToBrush}}">
+                                            <Rectangle x:Name="PresetTitleBar" Width="14" Height="3" RadiusX="1.5" RadiusY="1.5"
+                                                       HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4,0,0,0"
+                                                       Fill="{Binding TitleTextColor, Converter={StaticResource HexToBrush}}"/>
+                                        </Border>
+                                        <!--Two text lines, 80 % and 55 % of the body's width-->
+                                        <Grid Grid.Row="1" Margin="4,5,4,0" VerticalAlignment="Top">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="55*"/>
+                                                <ColumnDefinition Width="25*"/>
+                                                <ColumnDefinition Width="20*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Rectangle x:Name="PresetLine1" Grid.Row="0" Grid.ColumnSpan="2" Height="3" RadiusX="1.5" RadiusY="1.5"
+                                                       Fill="{Binding TextColor, Converter={StaticResource HexToBrush}}"/>
+                                            <Rectangle x:Name="PresetLine2" Grid.Row="1" Grid.Column="0" Height="3" RadiusX="1.5" RadiusY="1.5" Margin="0,3,0,0"
+                                                       Fill="{Binding TextColor, Converter={StaticResource HexToBrush}}"/>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <!--The preset whose colours are on screen (ColorsWindow.xaml.cs sets Tag)-->
+                                <Trigger Property="Tag" Value="Selected">
+                                    <Setter TargetName="PresetRing" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="PresetRing" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter TargetName="PresetRing" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -272,6 +336,26 @@
                             <TextBlock x:Name="TextEditing" Margin="0,8,0,0" Foreground="{DynamicResource Theme.TextSecondary}" Text="Editing: Border"/>
                         </StackPanel>
                     </Grid>
+
+                    <!--Presets: one small window picture per theme; a click puts all five colours on screen (saved with Apply)-->
+                    <Label x:Name="LabelPresetsHeading" Content="Presets" Margin="0,18,0,10" Style="{StaticResource StyleSettingsCategory}"/>
+                    <!--Margin -9 on the right takes in the last picture's gap, so the row is never wider than its space (WPF would clip it, and the ring with it)-->
+                    <ItemsControl x:Name="ListPresets" HorizontalAlignment="Left" Margin="0,0,-9,0" Focusable="False"
+                                  KeyboardNavigation.TabNavigation="Once" KeyboardNavigation.DirectionalNavigation="Cycle"
+                                  AutomationProperties.Name="Presets">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource StylePreset}"
+                                        ToolTip="{Binding Label}"
+                                        AutomationProperties.Name="{Binding Label}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
                 </StackPanel>
             </ScrollViewer>

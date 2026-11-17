@@ -8,13 +8,15 @@ using MDSHO.Helpers;
 using MDSHO.ViewModels;
 using MDSHO.Data;
 using MDSHO.Common;
+using MDSHO.Core;
 
 namespace MDSHO {
   /// <summary>
   /// The Colours window of a panel (the brush button in its title bar) or of a note (the brush button in the Note window):
   /// five colour buttons and one palette for the selected colour. Changes show live; Apply saves them, closing without
   /// Apply puts the old colours back. Default colours puts back the saved defaults (else MDSHO's own colours), and Set as
-  /// default saves the colours on screen as the defaults of panels, or of notes, at once.
+  /// default saves the colours on screen as the defaults of panels, or of notes, at once. A preset (the row of window
+  /// pictures under the colours) puts all five colours on screen at once, like Default colours.
   /// </summary>
   public partial class ColorsWindow : Window {
     private bool closeWithoutApply = true;
@@ -22,6 +24,10 @@ namespace MDSHO {
     // Puts back what was there when the window opened (closed without Apply), and saves the new values (Apply).
     private Action revert = () => { };
     private Action save = () => { };
+    // Puts a preset's five colours on screen (like Default colours: saved only with Apply).
+    private Action<ColorPreset> applyPreset = p => { };
+    // The preset whose five colours are on screen, or null.
+    private Func<ColorPreset> matchingPreset = () => null;
 
     /// <summary>Creates the window as "Window colours" for a panel (a clone edits its window's colours).</summary>
     public ColorsWindow(DesktopWindowViewModel desktopWindow) {
@@ -32,6 +38,15 @@ namespace MDSHO {
       this.ButtonDefaultColours.Click += (s, e) => a.ResetColorsToDefaults();
       this.ButtonSetAsDefault.Click += (s, e) => a.SaveColorsAsDefaults();
       this.ButtonSetAsDefault.ToolTip = "Use these colours for new windows and for Default colours";
+      this.applyPreset = p => {
+        a.BorderColor = p.BorderColor;
+        a.TitleBackgroundColor = p.TitleBackgroundColor;
+        a.TitleTextColor = p.TitleTextColor;
+        a.BackgroundColor = p.BackgroundColor;
+        a.TextColor = p.TextColor;
+      };
+      this.matchingPreset = () => ColorPresets.Match(a.BorderColor, a.TitleBackgroundColor, a.TitleTextColor, a.BackgroundColor, a.TextColor);
+      WatchColors(a);
       (string border, string background, string text, string titleBackground, string titleText) old =
         (a.BorderColor, a.BackgroundColor, a.TextColor, a.TitleBackgroundColor, a.TitleTextColor);
       this.revert = () => {
@@ -65,6 +80,9 @@ namespace MDSHO {
       this.ButtonSetAsDefault.Click += (s, e) => note.NoteColors.SaveAsDefaults();
       this.ButtonSetAsDefault.ToolTip = "Use these colours for new notes and for Default colours";
       NoteColors c = note.NoteColors;
+      this.applyPreset = p => c.Load(p.BorderColor, p.TitleBackgroundColor, p.TitleTextColor, p.BackgroundColor, p.TextColor);
+      this.matchingPreset = () => ColorPresets.Match(c.BorderColor, c.TitleBackgroundColor, c.TitleTextColor, c.BackgroundColor, c.TextColor);
+      WatchColors(c);
       (string border, string titleBackground, string titleText, string background, string text) old =
         (c.BorderColor, c.TitleBackgroundColor, c.TitleTextColor, c.BackgroundColor, c.TextColor);
       this.revert = () => c.Load(old.border, old.titleBackground, old.titleText, old.background, old.text);
@@ -92,6 +110,9 @@ namespace MDSHO {
       // Control Events
       this.ButtonApply.Click += ButtonApply_Click;
       this.ListColorTargets.SelectionChanged += ListColorTargets_SelectionChanged;
+      // The presets: each picture's DataContext is its ColorPreset.
+      this.ListPresets.ItemsSource = ColorPresets.All;
+      this.ListPresets.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, new RoutedEventHandler(Preset_Click));
       // The palette: the square picks saturation and brightness (mouse and arrow keys); the swatch, R G B A values,
       // square colour and thumb follow the palette's colour state.
       this.SquareSaturationValue.MouseLeftButtonDown += Square_MouseLeftButtonDown;
@@ -132,6 +153,30 @@ namespace MDSHO {
       this.save();
       closeWithoutApply = false;
       this.Close();
+    }
+    // The selected picture follows every colour change (a preset, the palette, Default colours).
+    private void WatchColors(System.ComponentModel.INotifyPropertyChanged colors) {
+      System.ComponentModel.PropertyChangedEventHandler changed = (s, e) => ShowMatchingPreset();
+      colors.PropertyChanged += changed;
+      this.Closed += (s, e) => colors.PropertyChanged -= changed;
+      this.Loaded += (s, e) => ShowMatchingPreset();
+    }
+
+    /// <summary>Shows the ring on the picture whose preset's five colours are exactly the colours on screen.</summary>
+    private void ShowMatchingPreset() {
+      ColorPreset match = this.matchingPreset();
+      for (int i = 0; i < this.ListPresets.Items.Count; i++) {
+        if (this.ListPresets.ItemContainerGenerator.ContainerFromIndex(i) is DependencyObject container
+            && VisualTreeHelper.GetChildrenCount(container) > 0 && VisualTreeHelper.GetChild(container, 0) is Button button) {
+          button.Tag = ReferenceEquals(this.ListPresets.Items[i], match) ? "Selected" : null;
+        }
+      }
+    }
+
+    private void Preset_Click(object sender, RoutedEventArgs e) {
+      if ((e.OriginalSource as FrameworkElement)?.DataContext is ColorPreset preset) {
+        this.applyPreset(preset);
+      }
     }
     private void Icons_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e) {
       if (e.PropertyName == nameof(IconGlyphs.Brush) || e.PropertyName == nameof(IconGlyphs.Times)) {

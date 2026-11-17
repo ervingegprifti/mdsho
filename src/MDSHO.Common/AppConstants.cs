@@ -71,15 +71,16 @@
     /// <summary>Height in device independent pixels of a new window or clone.</summary>
     public const int InitialWindowHeight = 500;
 
-    // The colours of a new window (also what Default colours in its Settings window puts back).
+    // The colours of a new window (also what Default colours puts back when no defaults are saved): the colour preset
+    // Autumn: Halloween (ColorPresets.Halloween in MDSHO.Core; ColorPresetsTests keeps the two equal).
     /// <summary>Border colour of a new window.</summary>
     public const string DefaultWindowBorderColor = "#FF000000";
     /// <summary>Background colour of a new window.</summary>
-    public const string DefaultWindowBackgroundColor = "#99000000";
+    public const string DefaultWindowBackgroundColor = "#CC000000";
     /// <summary>Text colour of a new window.</summary>
     public const string DefaultWindowTextColor = "#FFFFFFFF";
     /// <summary>Title bar background colour of a new window.</summary>
-    public const string DefaultWindowTitleBackgroundColor = "#CC000000";
+    public const string DefaultWindowTitleBackgroundColor = "#FF000000";
     /// <summary>Title text colour of a new window.</summary>
     public const string DefaultWindowTitleTextColor = "#FFFFFFFF";
 

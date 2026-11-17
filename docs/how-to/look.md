@@ -16,6 +16,10 @@ This page helps you choose the colours of your panels, the style of the icons an
 3. Choose a colour in the palette. The panel changes as you pick.
 4. Click **Apply**. Closing the window without Apply puts the old colours back.
 
+To try ready-made colours, click one of the **Presets** under the colours: three for each season, such as Winter: Frost
+or Summer: Ocean. It sets all five colours at once; click **Apply** to keep them. New panels start with Autumn:
+Halloween, a black title bar over a slightly see-through black body.
+
 A panel's clones share its colours.
 
 ## Save your own default colours
