@@ -21,8 +21,15 @@ namespace MDSHO.Data {
     /// <summary>The largest accepted total uncompressed size of the file's entries (and of any single entry).</summary>
     public static long MaxTotalBytes { get; set; } = 200L * 1024 * 1024;
 
+    /// <summary>How many before-import backups are kept (the newest ones).</summary>
+    public static int KeepImportBackups { get; set; } = 5;
+
     private static readonly Regex SafeGuid = new Regex("^[A-Za-z0-9-]{0,64}$", RegexOptions.Compiled);
-    private static readonly Regex SafeExt = new Regex(@"^(\.[A-Za-z0-9]{1,16})?$", RegexOptions.Compiled);
+    // A file type that is safe in a file name (no path); SafeExt then allows only the types MDSHO makes.
+    private static readonly Regex SafeFileType = new Regex(@"^(\.[A-Za-z0-9]{1,16})?$", RegexOptions.Compiled);
+    // MDSHO only makes .lnk and .url files (or none, for groups, notes and run commands). Any other type, such as .exe or
+    // .bat, would run when the button is clicked, so it is never imported.
+    private static readonly Regex SafeExt = new Regex(@"^(\.lnk|\.url)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex Colour = new Regex("^#[0-9A-Fa-f]{8}$", RegexOptions.Compiled);
 
     /// <summary>Validates the file and returns its manifest (the counts are the real ones found in data.json).</summary>
@@ -33,7 +40,8 @@ namespace MDSHO.Data {
     }
 
     /// <summary>
-    /// Imports the file. Replace first saves the current data to the import backups folder (<see cref="ImportResult.BackupPath"/>).
+    /// Imports the file. Replace first saves the current data to the import backups folder (<see cref="ImportResult.BackupPath"/>);
+    /// only the newest <see cref="KeepImportBackups"/> are kept there.
     /// Throws <see cref="DataPortabilityException"/> for an invalid file (nothing is changed); any other exception means
     /// the import failed and was rolled back.
     /// </summary>
@@ -128,7 +136,24 @@ namespace MDSHO.Data {
         path = Path.Combine(folder, "MDSHO-before-import-" + stamp + "-" + i + ".zip");
       }
       DataExporter.Export(path);
+      DeleteOldImportBackups(folder, path);
       return path;
+    }
+
+    // Keeps only the newest KeepImportBackups before-import backups (each can be large). Other files are left alone, and
+    // a backup that can't be deleted is only logged.
+    private static void DeleteOldImportBackups(string folder, string newest) {
+      IEnumerable<FileInfo> old = new DirectoryInfo(folder).GetFiles("MDSHO-before-import-*.zip")
+        .Where(f => !string.Equals(f.FullName, Path.GetFullPath(newest), StringComparison.OrdinalIgnoreCase))
+        .OrderByDescending(f => f.LastWriteTimeUtc)
+        .Skip(Math.Max(0, KeepImportBackups - 1));
+      foreach (FileInfo file in old) {
+        try {
+          file.Delete();
+        } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
+          AppLog.Warning(ex, "An old import backup could not be deleted: {Path}", file.FullName);
+        }
+      }
     }
 
     private static void DeleteAllData() {
@@ -417,8 +442,11 @@ namespace MDSHO.Data {
           if (s.ParentShortcutID != null && !shortcuts.ContainsKey(s.ParentShortcutID.Value)) {
             throw new DataPortabilityException("Shortcut " + s.ID + " has parent shortcut " + s.ParentShortcutID + ", which is not in the file.");
           }
-          if (!SafeGuid.IsMatch(s.Guid) || !SafeExt.IsMatch(s.Ext)) {
+          if (!SafeGuid.IsMatch(s.Guid) || !SafeFileType.IsMatch(s.Ext)) {
             throw new DataPortabilityException("Shortcut " + s.ID + " has an unsafe file name and was not imported.");
+          }
+          if (!SafeExt.IsMatch(s.Ext)) {
+            throw new DataPortabilityException("Shortcut " + s.ID + " has the file type \"" + s.Ext + "\". MDSHO imports only .lnk and .url files, so this file was not imported.");
           }
         }
         if (Data.DefaultColors != null) {

@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.17.3]
+
+### Fixed
+
+- When a shortcut or run command can't open, MDSHO shows a short reason from Windows, not an error code or technical details. The details go to the log.
+- An error caught in the background no longer closes MDSHO. It is logged and shown as usual.
+- Deleting a button whose file is in use no longer shows an error. The file is deleted at the next start.
+- At start, MDSHO deletes shortcut files that no button uses.
+
+### Changed
+
+- Import accepts only .lnk and .url shortcut files. A file with any other type, such as .exe, is not imported.
+- Only the 5 newest backups made before an import are kept.
+- The app package is marked as tested on Windows 11 24H2 and no longer declares lock screen badges, which MDSHO never used.
+
 ## [1.17.2]
 
 ### Fixed

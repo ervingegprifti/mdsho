@@ -121,7 +121,7 @@ MDSHO stores everything for the current Windows user in one folder, `%LOCALAPPDA
 |---|---|---|
 | Database (see [Database](database.md)) | `mdsho.sqlite3` | `mdsho-debug.sqlite3` |
 | Shortcut files of the buttons (`.lnk`, `.url`) | `shortcuts\` | `shortcuts-debug\` |
-| Backups made before an import that replaces the data | `ImportBackups\` | `ImportBackupsDebug\` |
+| Backups made before an import that replaces the data (the newest 5 are kept) | `ImportBackups\` | `ImportBackupsDebug\` |
 | Backups made before a database upgrade | `mdsho.sqlite3.bak-v<N>-<timestamp>` | `mdsho-debug.sqlite3.bak-v<N>-<timestamp>` |
 | Automatic backups (see [Automatic backups](#automatic-backups)) | `%USERPROFILE%\mdsho-backups\` | `%USERPROFILE%\mdsho-backups-debug\` |
 | Log files (see [Logging](#logging)) | `logs\mdsho-<yyyyMMdd>.log` | the same folder |

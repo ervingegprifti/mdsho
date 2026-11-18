@@ -119,6 +119,7 @@ namespace MDSHO
         StartBringPanelsToFront();
         StartScreenSetups();
         StartBackups();
+        DeleteUnusedShortcutFiles();
         StartReviewPrompt();
         CreateContextMenu();
       } catch (Exception ex) {
@@ -320,6 +321,15 @@ namespace MDSHO
         AppServices.Current.Backups.Start();
       } catch (Exception ex) {
         Common.AppLog.Error(ex, "Automatic backups could not be started");
+      }
+    }
+
+    /// <summary>At startup: deletes shortcut files left behind when they were in use at delete time.</summary>
+    private static void DeleteUnusedShortcutFiles() {
+      try {
+        ShortcutFileService.DeleteUnusedFiles();
+      } catch (Exception ex) {
+        Common.AppLog.Error(ex, "Unused shortcut files could not be deleted");
       }
     }
 
