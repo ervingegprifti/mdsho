@@ -145,6 +145,18 @@ namespace MDSHO.ViewModels {
       string folder = Folder;
       return Directory.Exists(folder) ? folder : null;
     }
+
+    /// <summary>
+    /// The newest backup (regular or before an upgrade) of this PC in the backup folder, else the newest of any PC, else
+    /// null. Used when the database can't be opened: then the saved folder can't be read either and the default is used.
+    /// </summary>
+    public string LatestBackup() {
+      string[] backups = new[] { Folder, DefaultFolder }.Distinct(StringComparer.OrdinalIgnoreCase).Where(Directory.Exists)
+        .SelectMany(folder => Directory.GetFiles(folder, "MDSHO-backup-*.zip"))
+        .OrderByDescending(File.GetLastWriteTimeUtc).ToArray();
+      string mine = "MDSHO-backup-" + this.pc + "-";
+      return backups.FirstOrDefault(f => Path.GetFileName(f).StartsWith(mine, StringComparison.OrdinalIgnoreCase)) ?? backups.FirstOrDefault();
+    }
     #endregion SETTINGS
 
     #region BACKING UP

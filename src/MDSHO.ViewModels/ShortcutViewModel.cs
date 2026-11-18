@@ -340,6 +340,11 @@ namespace MDSHO.ViewModels {
     /// or Enter) shows and hides its note. Set by the app; when null, <see cref="OpenNoteEditor"/> is used.
     /// </summary>
     public static Action<ShortcutViewModel> ToggleNoteEditor { get; set; }
+    /// <summary>
+    /// Called after a button, group or panel was deleted, with each deleted top item: closes the open note windows of the
+    /// notes in it (set by the app), so nothing is typed into a note that is gone.
+    /// </summary>
+    public static Action<ShortcutViewModel> NotesDeleted { get; set; }
     /// <summary>The Windows error code when the user answers No to the administrator (UAC) prompt.</summary>
     public const int ErrorCancelled = 1223;
     /// <summary>
@@ -583,6 +588,23 @@ namespace MDSHO.ViewModels {
         this.suppressParentSave = false;
       }
     }
+    // True while SaveNoteText sets the text it already wrote to the database.
+    private bool savingNoteText;
+
+    /// <summary>
+    /// Saves the note text: the database first, then memory. A failed write throws and leaves the old text in both, so
+    /// the new text still counts as unsaved and the next save tries again.
+    /// </summary>
+    public void SaveNoteText(string value) {
+      value ??= "";
+      DataStore.Shortcuts.UpdateNoteText(this.ID, value);
+      this.savingNoteText = true;
+      try {
+        this.NoteText = value;
+      } finally {
+        this.savingNoteText = false;
+      }
+    }
     private void ShortcutViewModel_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e) {
       if (this.suppressParentSave) {
         return;
@@ -609,7 +631,9 @@ namespace MDSHO.ViewModels {
       } else if (e.PropertyName == nameof(this.Comment)) {
         DataStore.Shortcuts.UpdateComment(this.ID, this.Comment ?? "");
       } else if (e.PropertyName == nameof(this.NoteText)) {
-        DataStore.Shortcuts.UpdateNoteText(this.ID, this.NoteText ?? "");
+        if (!this.savingNoteText) {
+          DataStore.Shortcuts.UpdateNoteText(this.ID, this.NoteText ?? "");
+        }
       } else if (e.PropertyName == nameof(this.ToolTipText) || e.PropertyName == nameof(this.HasRunCommandError)) {
         OnPropertyChanged(nameof(this.HasToolTip));
         OnPropertyChanged(nameof(this.ShowCommentDivider));
@@ -783,6 +807,7 @@ namespace MDSHO.ViewModels {
         siblings[i].Position = i;
       }
       this.AppViewModel.ForgetDeleted(this);
+      NotesDeleted?.Invoke(this);
       ShortcutFileService.DeleteShortcutFiles(this);
     }
     private static void CountDescendants(ShortcutViewModel parent, ref int shortcutCount, ref int groupCount) {

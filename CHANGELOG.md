@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.17.2]
+
+### Fixed
+
+- If MDSHO can't open your data at start, it now offers to restore the latest backup, start with empty data, or exit. Your old data file is kept.
+- An import that fails now puts your shortcut files back, so nothing is lost. Before, a failed import could delete shortcut files.
+- Deleting a note, or the group or panel it is in, closes its open note window, so nothing is typed into a note that is gone.
+- A note that can't be saved is tried again when you type more and when you close it. Closing asks before the text is lost.
+- At exit, every open note is saved even if one fails. MDSHO says which notes could not be saved and asks before it exits.
+
 ## [1.17.1]
 
 ### Changed

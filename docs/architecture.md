@@ -193,8 +193,14 @@ full exception text on the clipboard, and **Open logs folder** opens the logs fo
 - **replaces** all current data, after saving an automatic export of the current data in the import backups folder, or
 - **adds** the imported panels next to the existing ones, with new IDs and new shortcut file names.
 
-The database part of an import runs in one transaction, and the shortcut files are only moved into place after it
-commits, so a failed import leaves the existing data as it was. MDSHO restarts after a successful import. Export files
+The database part of an import runs in one transaction. The shortcut files are put in place just before it commits, in
+a way that can be undone: Replace renames the shortcuts folder aside and the new files' folder in its place, and deletes
+the old folder only after the commit. A failed import rolls back the database and puts the files back, so it leaves the
+existing data as it was. MDSHO restarts after a successful import.
+
+If the database can't be opened at start (a corrupt file, or an upgrade that failed), MDSHO offers to restore the latest
+automatic backup, start with empty data, or exit. The first two rename the old file to `MDSHO.sqlite3.unreadable-<time>`
+and make a new database. Export files
 from older MDSHO versions still import; missing newer fields get their defaults.
 
 The format version is 3 since 1.16.0: 2 added the note window places, 3 the default colours and settings. MDSHO reads

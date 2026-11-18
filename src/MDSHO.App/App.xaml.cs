@@ -72,7 +72,8 @@ namespace MDSHO
         renamedData.WriteToLog();
 
         if (!DatabaseUpdate()) {
-          // The database was created by a newer MDSHO: the user was told to update. Exit without touching the data.
+          // The database was created by a newer MDSHO (the user was told to update), or it can't be opened and the user
+          // chose Exit. Exit without touching the data.
           Application.Current.Shutdown();
           return;
         }
@@ -82,6 +83,8 @@ namespace MDSHO
         ShortcutViewModel.OpenCommentEditor = TextEditWindow.ShowCommentFor;
         ShortcutViewModel.OpenNoteEditor = TextEditWindow.ShowNoteFor;
         ShortcutViewModel.ToggleNoteEditor = TextEditWindow.ToggleNoteFor;
+        // Deleting a note (or its group or panel) closes its open note window.
+        ShortcutViewModel.NotesDeleted = TextEditWindow.CloseNotesOf;
 
         // Get the data context for the application.
         this.DataContext = this.host.Services.GetRequiredService<AppViewModel>();
@@ -96,7 +99,11 @@ namespace MDSHO
         TextEditWindow.ReopenOpenNotes(this.DataContext);
         this.DataContext.OpenFirstStartNote();
         this.SessionEnding += (s, args) => {
-          TextEditWindow.SaveOpenNotesForExit();
+          // Windows is signing out: there is no time to ask, so notes that can't be saved are only logged.
+          IReadOnlyList<string> unsaved = TextEditWindow.SaveOpenNotesForExit();
+          if (unsaved.Count > 0) {
+            Common.AppLog.Warning(null, "Notes not saved when Windows signed out: {Count}", unsaved.Count);
+          }
           BackUpOnExit();
         };
 
@@ -185,7 +192,11 @@ namespace MDSHO
     }
 
 
-    /// <summary>Upgrades the database. Returns false when the database is newer than this app (startup must stop).</summary>
+    /// <summary>
+    /// Upgrades the database. Returns false when startup must stop: the database is newer than this app, or it can't be
+    /// opened and the user chose Exit. When it can't be opened, the user can restore the latest backup or start with
+    /// empty data instead; the old file is kept either way.
+    /// </summary>
     private bool DatabaseUpdate() {
       try {
         return DatabaseStartup.TryUpgrade(
@@ -196,11 +207,25 @@ namespace MDSHO
             // Stored paths of dropped .lnk/.url files still pointing into the old shortcuts folder.
             Data.DataNamesUpgrade.FixShortcutTargetsInAppDataFolder();
           },
-          (message, caption) => MessageBox.Show(message, caption, MessageBoxButton.OK, MessageBoxImage.Warning));
+          (message, caption) => MessageBox.Show(message, caption, MessageBoxButton.OK, MessageBoxImage.Warning),
+          AskDatabaseRecovery,
+          () => AppServices.Current.Backups.LatestBackup());
       } catch (Exception ex) {
+        // Without a working database nothing else can run.
         ErrorDialog.ShowDialog(ex);
-        return true;
+        return false;
       }
+    }
+
+    // Yes / No / Cancel with a backup, OK / Cancel without one (the question says what each button does).
+    private static DatabaseRecoveryChoice AskDatabaseRecovery(string question, bool hasBackup) {
+      if (hasBackup) {
+        MessageBoxResult answer = MessageBox.Show(question, DatabaseStartup.RecoveryCaption, MessageBoxButton.YesNoCancel, MessageBoxImage.Error, MessageBoxResult.Yes);
+        return answer == MessageBoxResult.Yes ? DatabaseRecoveryChoice.RestoreBackup
+          : answer == MessageBoxResult.No ? DatabaseRecoveryChoice.StartEmpty : DatabaseRecoveryChoice.Exit;
+      }
+      MessageBoxResult ok = MessageBox.Show(question, DatabaseStartup.RecoveryCaption, MessageBoxButton.OKCancel, MessageBoxImage.Error, MessageBoxResult.OK);
+      return ok == MessageBoxResult.OK ? DatabaseRecoveryChoice.StartEmpty : DatabaseRecoveryChoice.Exit;
     }
 
     private void SetWindows() {
@@ -678,13 +703,23 @@ namespace MDSHO
         ImportMode mode = answer == MessageBoxResult.Yes ? ImportMode.Replace : ImportMode.AddAsNew;
         ImportResult result;
         try {
-          // Typing and places of open notes first, so the backup made by Replace has them.
-          TextEditWindow.SaveOpenNotes();
+          // Typing and places of open notes first, so the backup made by Replace has them. The note windows close after
+          // the import, so typing that can't be saved would be lost: ask first.
+          IReadOnlyList<string> unsaved = TextEditWindow.SaveOpenNotes();
+          if (unsaved.Count > 0 && MessageBox.Show(TextEditWindow.UnsavedNotesMessage(unsaved) + "\n\nImport anyway? What you typed in them since the last save will be lost.",
+              "Import MDSHO data", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) {
+            return;
+          }
           result = DataImporter.Import(dialog.FileName, mode);
         } catch (DataPortabilityException ex) {
           ErrorDialog.ShowDialog(ex.Message, ex);
           return;
+        } catch (ImportFilesNotRestoredException ex) {
+          // Rolled back, but the old shortcut files are not back in place: the message says where they are.
+          ErrorDialog.ShowDialog(ex.Message, ex);
+          return;
         } catch (Exception ex) {
+          // A failed import rolls back the database and puts the shortcut files back, so this is true.
           ErrorDialog.ShowDialog("The data could not be imported. Nothing was changed.", ex);
           return;
         }
@@ -727,10 +762,24 @@ namespace MDSHO
     #endregion EXPORT / IMPORT
 
 
+    // Every note is saved on its own; if some can't be saved, asks before exiting (No keeps MDSHO running). Then each
+    // step runs on its own, so one that fails never stops MDSHO from exiting.
     private void ExitApplication() {
-      TextEditWindow.SaveOpenNotesForExit();
+      IReadOnlyList<string> unsaved = TextEditWindow.SaveOpenNotesForExit();
+      if (unsaved.Count > 0) {
+        string question = TextEditWindow.UnsavedNotesMessage(unsaved) + "\n\nExit anyway? What you typed in them since the last save will be lost.";
+        if (MessageBox.Show(question, "Exit MDSHO", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) {
+          TextEditWindow.IsExiting = false;
+          this.restartAfterExit = false;
+          return;
+        }
+      }
       BackUpOnExit();
-      this.notifyIcon.Dispose();
+      try {
+        this.notifyIcon?.Dispose();
+      } catch (Exception ex) {
+        Common.AppLog.Warning(ex, "The tray icon could not be removed");
+      }
       this.notifyIcon = null;
       this.exitApplication = true;
       MainWindow.Close();

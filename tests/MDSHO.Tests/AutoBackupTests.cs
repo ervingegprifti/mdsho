@@ -347,8 +347,15 @@ namespace MDSHO.Tests {
     [Fact]
     public void The_app_backs_up_after_saving_notes_on_exit_and_on_sign_out() {
       string source = File.ReadAllText(Path.Combine(ThirdPartyNoticesTests.RepoRoot(), "src", "MDSHO.App", "App.xaml.cs")).Replace("\r\n", "\n");
-      Assert.Contains("this.SessionEnding += (s, args) => {\n          TextEditWindow.SaveOpenNotesForExit();\n          BackUpOnExit();\n        };", source);
-      Assert.Contains("    private void ExitApplication() {\n      TextEditWindow.SaveOpenNotesForExit();\n      BackUpOnExit();\n", source);
+      // In both, the notes are saved first and then the backup is made.
+      foreach (string start in new[] { "this.SessionEnding += (s, args) => {", "    private void ExitApplication() {" }) {
+        int begin = source.IndexOf(start, StringComparison.Ordinal);
+        Assert.True(begin >= 0, start);
+        int save = source.IndexOf("TextEditWindow.SaveOpenNotesForExit();", begin, StringComparison.Ordinal);
+        int backup = source.IndexOf("BackUpOnExit();", begin, StringComparison.Ordinal);
+        int end = source.IndexOf("\n    }", begin, StringComparison.Ordinal);
+        Assert.True(begin < save && save < backup && backup < end, start);
+      }
     }
     #endregion ON EXIT
 

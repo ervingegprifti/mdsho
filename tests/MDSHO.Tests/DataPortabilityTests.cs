@@ -355,7 +355,7 @@ namespace MDSHO.Tests {
       Assert.Equal(2, m.Counts.Windows);
       Assert.Equal(1, m.Counts.Clones);
       Assert.Equal(7, m.Counts.Shortcuts);
-      Assert.Equal("1.17.1", m.AppVersion);
+      Assert.Equal("1.17.2", m.AppVersion);
       Assert.Equal(DateTimeKind.Utc, m.ExportedAtUtc.Kind);
     }
 
@@ -533,6 +533,39 @@ namespace MDSHO.Tests {
       Assert.Equal(rows, Snapshot());
       Assert.Equal(files, Files());
       Assert.Empty(TempFolders());
+    }
+
+    [Fact]
+    public void Replace_with_a_locked_shortcut_file_changes_nothing() {
+      Seed();
+      DataExporter.Export(Zip());
+      DataStore.Windows.Create("SCREEN9", 1, 1); // so "replaced" differs from "unchanged"
+      List<string> rows = Snapshot();
+      Dictionary<string, string> files = Files();
+      string locked = Directory.GetFiles(ShortcutsDir).First();
+
+      // Another program has one shortcut file open (it can be read, so the backup works, but not deleted or moved).
+      using (new FileStream(locked, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+        Assert.ThrowsAny<Exception>(() => DataImporter.Import(Zip(), ImportMode.Replace));
+      }
+
+      // Database and files are as before, so "Nothing was changed" is true.
+      Assert.Equal(rows, Snapshot());
+      Assert.Equal(files, Files());
+      Assert.Empty(TempFolders());
+      Assert.Empty(Directory.GetDirectories(db.Folder, "ImportOld*"));
+    }
+
+    [Fact]
+    public void Replace_leaves_no_old_shortcuts_folder_behind() {
+      Seed();
+      DataExporter.Export(Zip());
+      Dictionary<string, string> files = Files();
+      File.WriteAllText(Path.Combine(ShortcutsDir, "stray.lnk"), "stray");
+      DataImporter.Import(Zip(), ImportMode.Replace);
+      Assert.Equal(files, Files());
+      Assert.Empty(TempFolders());
+      Assert.Empty(Directory.GetDirectories(db.Folder, "ImportOld*"));
     }
 
     [Fact]

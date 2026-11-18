@@ -22,6 +22,27 @@ namespace MDSHO.Data {
     public DataPortabilityException(string message, Exception inner) : base(message, inner) { }
   }
 
+  /// <summary>
+  /// An import failed and was rolled back, but the old shortcut files could not be put back in the shortcuts folder
+  /// (the message is meant for the user and says where they are).
+  /// </summary>
+  public sealed class ImportFilesNotRestoredException : Exception {
+    /// <summary>The folder that holds the old shortcut files, or null.</summary>
+    public string OldFilesFolder { get; }
+
+    /// <summary>Creates the error for the folder that holds the old shortcut files (or null).</summary>
+    public ImportFilesNotRestoredException(string oldFilesFolder, string shortcutsFolder, Exception inner) : base(MessageFor(oldFilesFolder, shortcutsFolder), inner) {
+      OldFilesFolder = oldFilesFolder;
+    }
+
+    private static string MessageFor(string folder, string shortcutsFolder) {
+      return folder == null
+        ? "The data could not be imported. Your data was not changed, but some shortcut files could not be put back. Some buttons may show a missing icon."
+        : "The data could not be imported. Your data was not changed, but the shortcut files could not be put back. They are in:\n" + folder +
+          "\n\nClose MDSHO and move them back to:\n" + shortcutsFolder;
+    }
+  }
+
   /// <summary>How many rows and files an export contains.</summary>
   public sealed class ExportCounts {
     /// <summary>Number of windows.</summary>

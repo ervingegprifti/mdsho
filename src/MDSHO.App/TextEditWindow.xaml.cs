@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
@@ -302,6 +303,10 @@ namespace MDSHO {
       this.StateChanged += later;
       this.Closing += (s, e) => {
         this.placeTimer.Stop();
+        // Not closing after all (the note could not be saved and the user kept it open).
+        if (e.Cancel) {
+          return;
+        }
         // Closed by the user: remember the place for next time, but not as open. At exit it stays open.
         SaveNotePlace(isOpen: IsExiting);
       };
@@ -338,7 +343,7 @@ namespace MDSHO {
     }
 
     private void SaveNotePlace(bool isOpen) {
-      if (this.kind != TextKind.Note || this.shortcut.ID == 0 || forgetting) {
+      if (this.kind != TextKind.Note || this.shortcut.ID == 0 || forgetting || this.discarded) {
         return;
       }
       Rect normal = NormalBounds;
@@ -363,21 +368,59 @@ namespace MDSHO {
     /// At exit (from the tray, or when Windows shuts down or restarts): saves unsaved typing in every open note window and
     /// keeps the windows marked as open, so they come back where they were at the next start.
     /// </summary>
-    public static void SaveOpenNotesForExit() {
+    public static IReadOnlyList<string> SaveOpenNotesForExit() {
       IsExiting = true;
-      SaveOpenNotes();
+      return SaveOpenNotes();
     }
 
-    /// <summary>Saves unsaved typing and the place of every open note window, marked as open (before an import too).</summary>
-    public static void SaveOpenNotes() {
+    /// <summary>"This note could not be saved: Shopping." or "These notes could not be saved: Shopping, Ideas."</summary>
+    public static string UnsavedNotesMessage(IReadOnlyList<string> names) {
+      return (names.Count == 1 ? "This note could not be saved: " : "These notes could not be saved: ") + string.Join(", ", names) + ".";
+    }
+
+    /// <summary>
+    /// After a note, or a group or panel holding notes, was deleted: closes their open note windows without saving, since
+    /// the notes are gone (typing there could only fail to save).
+    /// </summary>
+    public static void CloseNotesOf(ShortcutViewModel deleted) {
       foreach (TextEditWindow window in openNoteWindows.ToList()) {
-        string text = window.TextComment.Text ?? "";
-        string value = string.IsNullOrWhiteSpace(text) ? "" : text;
-        if (value != (window.shortcut.NoteText ?? "")) {
-          window.shortcut.NoteText = value;
+        if (IsSelfOrInside(window.shortcut, deleted)) {
+          window.discarded = true;
+          window.Close();
         }
-        window.SaveNotePlace(isOpen: true);
       }
+    }
+
+    private static bool IsSelfOrInside(ShortcutViewModel shortcut, ShortcutViewModel container) {
+      for (ShortcutViewModel s = shortcut; s != null; s = s.ParentShortcut) {
+        if (ReferenceEquals(s, container) || (container.ID != 0 && s.ID == container.ID)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    /// <summary>
+    /// Saves unsaved typing and the place of every open note window, marked as open (before an import too). Each note is
+    /// saved on its own, so one that fails doesn't stop the others. Returns the names of the notes that could not be saved.
+    /// </summary>
+    public static IReadOnlyList<string> SaveOpenNotes() {
+      List<string> failed = new List<string>();
+      foreach (TextEditWindow window in openNoteWindows.ToList()) {
+        if (window.discarded) {
+          continue;
+        }
+        window.noteSaveTimer.Stop();
+        if (window.SaveText() != null) {
+          failed.Add(string.IsNullOrWhiteSpace(window.shortcut.Name) ? "(no name)" : window.shortcut.Name);
+        }
+        try {
+          window.SaveNotePlace(isOpen: true);
+        } catch (Exception ex) {
+          AppLog.Warning(ex, "Could not save the place of a note window");
+        }
+      }
+      return failed;
     }
 
     // True while ForgetOpenNotes closes the windows: nothing is saved then.
@@ -476,7 +519,7 @@ namespace MDSHO {
         this.noteSaveTimer.Stop();
         this.noteSaveTimer.Start();
       };
-      this.Closing += (s, e) => SaveNoteNow();
+      this.Closing += (s, e) => SaveBeforeClosing(e);
       UseNoteColours();
     }
 
@@ -626,21 +669,62 @@ namespace MDSHO {
       return string.IsNullOrWhiteSpace(text) ? "" : text;
     }
 
-    // Saves the note now if its text changed, and keeps the window open (autosave, closing, Ctrl+Enter and Ctrl+S).
-    private void SaveNoteNow() {
+    // True when the note was deleted: the window closes without saving.
+    private bool discarded;
+    // True after a failed save showed its error, until a save works again: the error shows once, not on every change.
+    private bool saveErrorShown;
+
+    /// <summary>
+    /// Saves the note now if its text changed, and keeps the window open (autosave, Ctrl+Enter and Ctrl+S). Returns false
+    /// when the save failed: the text then still counts as unsaved, so the next save or closing tries again.
+    /// </summary>
+    public bool SaveNoteNow() {
       this.noteSaveTimer.Stop();
-      if (forgetting) {
-        return;
+      if (forgetting || this.discarded) {
+        return true;
       }
+      Exception error = SaveText();
+      if (error == null) {
+        return true;
+      }
+      if (!this.saveErrorShown) {
+        this.saveErrorShown = true;
+        ErrorDialog.ShowDialog("This note could not be saved. MDSHO tries again when you type more and when you close it.", error);
+      }
+      return false;
+    }
+
+    // Saves the text if it changed. Returns null when saved (or nothing to save), else the error (logged).
+    private Exception SaveText() {
       string value = TextToSave();
       if (value == (this.shortcut.NoteText ?? "")) {
-        return;
+        return null;
       }
       try {
-        this.shortcut.NoteText = value;
+        this.shortcut.SaveNoteText(value);
         this.Saved = true;
+        this.saveErrorShown = false;
+        return null;
       } catch (Exception ex) {
-        ErrorDialog.ShowDialog(ex);
+        AppLog.Warning(ex, "A note could not be saved");
+        return ex;
+      }
+    }
+
+    // Closing (X or Esc) saves first. If that fails, asks before the typing is lost; No keeps the window open. At exit the
+    // failures were already reported (SaveOpenNotesForExit), so it just closes.
+    private void SaveBeforeClosing(CancelEventArgs e) {
+      this.noteSaveTimer.Stop();
+      if (forgetting || this.discarded) {
+        return;
+      }
+      Exception error = SaveText();
+      if (error == null || IsExiting) {
+        return;
+      }
+      string question = "This note could not be saved: " + error.Message + "\n\nClose it anyway? What you typed since the last save will be lost.";
+      if (!Dialogs.Confirm(question, "Note not saved")) {
+        e.Cancel = true;
       }
     }
 
