@@ -385,7 +385,7 @@
                                 </MenuItem.Icon>
                             </MenuItem>
                             <Separator/>
-                            <MenuItem Header="Paste" Command="{Binding PasteShortcutCommand}">
+                            <MenuItem Header="Paste" Command="{Binding PasteShortcutCommand}" InputGestureText="{x:Static viewmodels:ShortcutKeyTexts.Paste}">
                                 <MenuItem.Icon>
                                     <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Paste}"/>
                                 </MenuItem.Icon>
@@ -502,7 +502,7 @@
                                             </MenuItem>
                                         </MenuItem>
                                         <Separator/>
-                                        <MenuItem Header="Rename" Command="{Binding RenameCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}">
+                                        <MenuItem Header="Rename" Command="{Binding RenameCommand}" InputGestureText="{x:Static viewmodels:ShortcutKeyTexts.Rename}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Rename}"/>
                                             </MenuItem.Icon>
@@ -529,23 +529,23 @@
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator Visibility="{Binding ShowCommand, Converter={StaticResource BoolToVisibility}}" />
-                                        <MenuItem Header="Cut" Command="{Binding CutShortcutCommand}">
+                                        <MenuItem Header="Cut" Command="{Binding CutShortcutCommand}" InputGestureText="{x:Static viewmodels:ShortcutKeyTexts.Cut}">
 						                    <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Cut}"/>
 						                    </MenuItem.Icon>
 					                    </MenuItem>
-                                        <MenuItem Header="Copy" Command="{Binding CopyShortcutCommand}">
+                                        <MenuItem Header="Copy" Command="{Binding CopyShortcutCommand}" InputGestureText="{x:Static viewmodels:ShortcutKeyTexts.Copy}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Copy}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="Paste" Command="{Binding PasteShortcutCommand}">
+                                        <MenuItem Header="Paste" Command="{Binding PasteShortcutCommand}" InputGestureText="{x:Static viewmodels:ShortcutKeyTexts.Paste}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Paste}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator/>
-                                        <MenuItem Header="Delete" Command="{Binding DeleteShortcutCommand}">
+                                        <MenuItem Header="Delete" Command="{Binding DeleteShortcutCommand}" InputGestureText="{x:Static viewmodels:ShortcutKeyTexts.Delete}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Delete}"/>
                                             </MenuItem.Icon>
