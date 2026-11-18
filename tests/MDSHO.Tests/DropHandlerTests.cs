@@ -19,7 +19,7 @@ namespace MDSHO.Tests {
   public class DropHandlerTests {
 
     /// <summary>A drop as gong describes it; only what the handler reads is set.</summary>
-    private sealed class FakeDropInfo : IDropInfo {
+    internal sealed class FakeDropInfo : IDropInfo {
       public object Data { get; set; }
       public IDragInfo DragInfo { get; set; }
       public Point DropPosition { get; set; }

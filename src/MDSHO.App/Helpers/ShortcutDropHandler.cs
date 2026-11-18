@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows;
@@ -148,6 +149,28 @@ namespace MDSHO.Helpers {
         return (IEnumerable)data;
       } else {
         return Enumerable.Repeat(data, 1);
+      }
+    }
+    /// <summary>The bytes of a drop data format, or null when it is missing or can't be read.</summary>
+    private static byte[] ReadBytes(IDataObject dataObject, string format) {
+      try {
+        if (!dataObject.GetDataPresent(format, false)) {
+          return null;
+        }
+        object value = dataObject.GetData(format, false);
+        if (value is MemoryStream memory) {
+          return memory.ToArray();
+        }
+        if (value is Stream stream) {
+          using (MemoryStream copy = new MemoryStream()) {
+            stream.CopyTo(copy);
+            return copy.ToArray();
+          }
+        }
+        return value as byte[];
+      } catch (Exception) {
+        // The source app may refuse a format; the name is then the URL.
+        return null;
       }
     }
     /// <summary>True when the target item sits inside the source item in the tree.</summary>
@@ -322,7 +345,9 @@ namespace MDSHO.Helpers {
                 // AbsoluteUri. Queries a data object for the presence of data in the System.Windows.DataFormats.UnicodeText format.
                 // ******************************************************************************************************************************************
                 string dataText = (string)dataObject.GetData(DataFormats.Text, true);
-                window.AddDroppedText(dataText, shortcutParentShortcut, shortcutParentWindow, created);
+                // The page or link title a browser puts in the drop data (never fetched from the web).
+                string title = MDSHO.Core.DroppedLinkTitle.Find(dataText, ReadBytes(dataObject, "FileGroupDescriptorW"), ReadBytes(dataObject, "text/x-moz-url"));
+                window.AddDroppedText(dataText, title, shortcutParentShortcut, shortcutParentWindow, created);
               } else {
                 // ******************************************************************************************************************************************
                 // ShellIDListArray. Perhaps data contain virtual files

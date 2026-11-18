@@ -26,6 +26,8 @@ To put a button inside a group, drop it on the group's name.
 2. Drag it onto the panel.
 3. The new button opens that address in your browser.
 
+The button is named after the page or link title when the browser gives one, otherwise after the address.
+
 ## Open a button
 
 1. Click or double-click the button. Which one depends on **Single click to open**, in the panel's **Settings** on the

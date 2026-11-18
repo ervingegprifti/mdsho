@@ -490,11 +490,18 @@ namespace MDSHO.ViewModels {
     }
     /// <summary>Makes a web shortcut for dropped text when it is an absolute address; other text is ignored.</summary>
     public void AddDroppedText(string dataText, ShortcutViewModel shortcutParentShortcut, DesktopWindowViewModel shortcutParentWindow, List<ShortcutViewModel> created) {
+      AddDroppedText(dataText, null, shortcutParentShortcut, shortcutParentWindow, created);
+    }
+    /// <summary>
+    /// Makes a web shortcut for dropped text when it is an absolute address, named after <paramref name="title"/> (the
+    /// page or link title from the browser) when it is usable, else after the address. Other text is ignored.
+    /// </summary>
+    public void AddDroppedText(string dataText, string title, ShortcutViewModel shortcutParentShortcut, DesktopWindowViewModel shortcutParentWindow, List<ShortcutViewModel> created) {
       Uri uri;
       bool isAbsoluteUri = Uri.TryCreate(dataText, UriKind.Absolute, out uri);
       if (isAbsoluteUri) {
         string guid = Common.Identifiers.NewGuid();
-        ShortcutViewModel shortcutToAdd = ViewModelFactory.NewShortcut(this.AppViewModel, shortcutParentShortcut, shortcutParentWindow, uri.AbsoluteUri, uri.AbsoluteUri, Common.AppConstants.UrlExtension, guid);
+        ShortcutViewModel shortcutToAdd = ViewModelFactory.NewShortcut(this.AppViewModel, shortcutParentShortcut, shortcutParentWindow, Core.DroppedLinkTitle.NameFor(uri.AbsoluteUri, title), uri.AbsoluteUri, Common.AppConstants.UrlExtension, guid);
 
         if (shortcutToAdd != null) {
           created.Add(shortcutToAdd);
