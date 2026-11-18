@@ -355,7 +355,7 @@ namespace MDSHO.Tests {
       Assert.Equal(2, m.Counts.Windows);
       Assert.Equal(1, m.Counts.Clones);
       Assert.Equal(7, m.Counts.Shortcuts);
-      Assert.Equal("1.17.1", m.AppVersion);
+      Assert.Equal("1.17.3", m.AppVersion);
       Assert.Equal(DateTimeKind.Utc, m.ExportedAtUtc.Kind);
     }
 
@@ -504,6 +504,54 @@ namespace MDSHO.Tests {
       AssertRejected(MutateJson(Zip(), "data.json", n => n["shortcuts"].AsArray().First(x => (long)x["isGroup"] == 0)["ext"] = @"\..\x.lnk", "m2.zip"), "unsafe");
     }
 
+    [Theory]
+    [InlineData(".exe")]
+    [InlineData(".bat")]
+    [InlineData(".ps1")]
+    [InlineData(".txt")]
+    public void A_file_type_MDSHO_does_not_make_is_rejected(string ext) {
+      // MDSHO only makes .lnk and .url files: an import must never place a program or script that a click would run.
+      Seed();
+      DataExporter.Export(Zip());
+      DataPortabilityException ex = AssertRejected(MutateJson(Zip(), "data.json", n => n["shortcuts"].AsArray().First(x => (long)x["isGroup"] == 0)["ext"] = ext));
+      Assert.Contains("\"" + ext + "\"", ex.Message);
+      Assert.Contains("only .lnk and .url", ex.Message);
+    }
+
+    [Theory]
+    [InlineData(".lnk")]
+    [InlineData(".url")]
+    [InlineData(".LNK")]
+    [InlineData("")]
+    public void Lnk_url_and_no_file_type_are_accepted(string ext) {
+      Seed();
+      DataExporter.Export(Zip());
+      DataImporter.Inspect(MutateJson(Zip(), "data.json", n => n["shortcuts"].AsArray().First(x => (long)x["isGroup"] == 0)["ext"] = ext));
+    }
+
+    [Fact]
+    public void Only_the_newest_import_backups_are_kept() {
+      int old = DataImporter.KeepImportBackups;
+      DataImporter.KeepImportBackups = 3;
+      try {
+        Seed();
+        DataExporter.Export(Zip());
+        string folder = Paths.GetImportBackupsPath();
+        string other = Path.Combine(folder, "my-notes.txt");
+        File.WriteAllText(other, "not a backup");
+        List<string> paths = new List<string>();
+        for (int i = 0; i < 5; i++) {
+          paths.Add(DataImporter.Import(Zip(), ImportMode.Replace).BackupPath);
+          // Different write times, so "newest" is clear.
+          File.SetLastWriteTimeUtc(paths[i], new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMinutes(i));
+        }
+        Assert.Equal(paths.Skip(2).OrderBy(p => p), Directory.GetFiles(folder, "MDSHO-before-import-*.zip").OrderBy(p => p));
+        Assert.True(File.Exists(other), "other files in the folder are left alone");
+      } finally {
+        DataImporter.KeepImportBackups = old;
+      }
+    }
+
     [Fact]
     public void Oversized_import_is_rejected() {
       Seed();
@@ -533,6 +581,39 @@ namespace MDSHO.Tests {
       Assert.Equal(rows, Snapshot());
       Assert.Equal(files, Files());
       Assert.Empty(TempFolders());
+    }
+
+    [Fact]
+    public void Replace_with_a_locked_shortcut_file_changes_nothing() {
+      Seed();
+      DataExporter.Export(Zip());
+      DataStore.Windows.Create("SCREEN9", 1, 1); // so "replaced" differs from "unchanged"
+      List<string> rows = Snapshot();
+      Dictionary<string, string> files = Files();
+      string locked = Directory.GetFiles(ShortcutsDir).First();
+
+      // Another program has one shortcut file open (it can be read, so the backup works, but not deleted or moved).
+      using (new FileStream(locked, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+        Assert.ThrowsAny<Exception>(() => DataImporter.Import(Zip(), ImportMode.Replace));
+      }
+
+      // Database and files are as before, so "Nothing was changed" is true.
+      Assert.Equal(rows, Snapshot());
+      Assert.Equal(files, Files());
+      Assert.Empty(TempFolders());
+      Assert.Empty(Directory.GetDirectories(db.Folder, "ImportOld*"));
+    }
+
+    [Fact]
+    public void Replace_leaves_no_old_shortcuts_folder_behind() {
+      Seed();
+      DataExporter.Export(Zip());
+      Dictionary<string, string> files = Files();
+      File.WriteAllText(Path.Combine(ShortcutsDir, "stray.lnk"), "stray");
+      DataImporter.Import(Zip(), ImportMode.Replace);
+      Assert.Equal(files, Files());
+      Assert.Empty(TempFolders());
+      Assert.Empty(Directory.GetDirectories(db.Folder, "ImportOld*"));
     }
 
     [Fact]

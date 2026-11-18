@@ -10,7 +10,7 @@
   <Identity
     Name="41797ErvinGegprifti.MDSHO"
     Publisher="CN=F6485E11-0693-40BF-8B18-383BCB7322FF"
-    Version="1.17.1.0" />
+    Version="1.17.3.0" />
 
   <Properties>
     <DisplayName>MDSHO</DisplayName>
@@ -19,7 +19,7 @@
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
   </Dependencies>
 
   <Resources>
@@ -44,7 +44,6 @@
           </uap:ShowNameOnTiles>
         </uap:DefaultTile >
         <uap:SplashScreen Image="Images\SplashScreen.png" />
-        <uap:LockScreen BadgeLogo="Images\BadgeLogo.png" Notification="badge"/>
       </uap:VisualElements>
       <Extensions>
         <desktop:Extension Category="windows.startupTask" Executable="MDSHO.App\MDSHO.exe" EntryPoint="Windows.FullTrustApplication">

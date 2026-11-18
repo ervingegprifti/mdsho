@@ -406,6 +406,7 @@ namespace MDSHO.ViewModels {
       this.AppViewModel.Windows.Remove(this);
       foreach (ShortcutViewModel shortcut in rootShortcutsToDelete) {
         this.AppViewModel.ForgetDeleted(shortcut);
+        ShortcutViewModel.NotesDeleted?.Invoke(shortcut);
         ShortcutFileService.DeleteShortcutFiles(shortcut);
       }
     }

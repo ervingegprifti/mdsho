@@ -1,6 +1,10 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using MDSHO.Common;
+using MDSHO.Core;
+using MDSHO.Data;
 
 namespace MDSHO.ViewModels {
 
@@ -49,20 +53,60 @@ namespace MDSHO.ViewModels {
     /// <summary>
     /// Deletes the physical files of a shortcut. For a group the files of every descendant are deleted (the group itself has no file).
     /// </summary>
+    /// <remarks>
+    /// Runs after the delete is saved, so a file in use never fails it: that file is logged and left, and the next start
+    /// deletes it (<see cref="DeleteUnusedFiles"/>).
+    /// </remarks>
     public static void DeleteShortcutFiles(ShortcutViewModel shortcut) {
       if (shortcut.IsGroup) {
         foreach (ShortcutViewModel childShortcut in shortcut.Children) {
-          string shortcutFilePath = Paths.GetShortcutFilePath(childShortcut.Guid, childShortcut.Ext);
-          if (File.Exists(shortcutFilePath)) {
-            File.Delete(shortcutFilePath);
-          }
+          DeleteQuietly(Paths.GetShortcutFilePath(childShortcut.Guid, childShortcut.Ext));
           DeleteShortcutFiles(childShortcut);
         }
       } else {
-        string shortcutFilePath = Paths.GetShortcutFilePath(shortcut.Guid, shortcut.Ext);
-        if (File.Exists(shortcutFilePath)) {
-          File.Delete(shortcutFilePath);
+        DeleteQuietly(Paths.GetShortcutFilePath(shortcut.Guid, shortcut.Ext));
+      }
+    }
+
+    /// <summary>
+    /// Deletes the .lnk and .url files in the shortcuts folder that no button uses (left over when a file was in use at
+    /// delete time). Does nothing when there are no buttons at all, since that can be a fresh start after a problem.
+    /// A file in use is only logged. Returns how many files were deleted.
+    /// </summary>
+    public static int DeleteUnusedFiles() {
+      string folder = Paths.GetShortcutsPath();
+      List<Shortcut> shortcuts = DataStore.Shortcuts.GetAll();
+      if (shortcuts.Count == 0 || !Directory.Exists(folder)) {
+        return 0;
+      }
+      HashSet<string> used = new HashSet<string>(
+        shortcuts.Where(s => !string.IsNullOrEmpty(s.Guid)).Select(s => s.Guid + s.Ext), StringComparer.OrdinalIgnoreCase);
+      int deleted = 0;
+      foreach (string file in Directory.GetFiles(folder)) {
+        string ext = Path.GetExtension(file);
+        bool isShortcutFile = ext.Equals(AppConstants.LnkExtension, StringComparison.OrdinalIgnoreCase)
+          || ext.Equals(AppConstants.UrlExtension, StringComparison.OrdinalIgnoreCase);
+        if (isShortcutFile && !used.Contains(Path.GetFileName(file)) && DeleteQuietly(file)) {
+          deleted++;
         }
+      }
+      if (deleted > 0) {
+        AppLog.Information("Deleted {Count} shortcut files that no button uses", deleted);
+      }
+      return deleted;
+    }
+
+    // Deletes a file when it exists. A file in use is only logged. Returns true when a file was deleted.
+    private static bool DeleteQuietly(string path) {
+      try {
+        if (!File.Exists(path)) {
+          return false;
+        }
+        File.Delete(path);
+        return true;
+      } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
+        AppLog.Warning(ex, "A shortcut file could not be deleted: {File}", Path.GetFileName(path));
+        return false;
       }
     }
   }

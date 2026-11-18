@@ -340,6 +340,11 @@ namespace MDSHO.ViewModels {
     /// or Enter) shows and hides its note. Set by the app; when null, <see cref="OpenNoteEditor"/> is used.
     /// </summary>
     public static Action<ShortcutViewModel> ToggleNoteEditor { get; set; }
+    /// <summary>
+    /// Called after a button, group or panel was deleted, with each deleted top item: closes the open note windows of the
+    /// notes in it (set by the app), so nothing is typed into a note that is gone.
+    /// </summary>
+    public static Action<ShortcutViewModel> NotesDeleted { get; set; }
     /// <summary>The Windows error code when the user answers No to the administrator (UAC) prompt.</summary>
     public const int ErrorCancelled = 1223;
     /// <summary>
@@ -583,6 +588,23 @@ namespace MDSHO.ViewModels {
         this.suppressParentSave = false;
       }
     }
+    // True while SaveNoteText sets the text it already wrote to the database.
+    private bool savingNoteText;
+
+    /// <summary>
+    /// Saves the note text: the database first, then memory. A failed write throws and leaves the old text in both, so
+    /// the new text still counts as unsaved and the next save tries again.
+    /// </summary>
+    public void SaveNoteText(string value) {
+      value ??= "";
+      DataStore.Shortcuts.UpdateNoteText(this.ID, value);
+      this.savingNoteText = true;
+      try {
+        this.NoteText = value;
+      } finally {
+        this.savingNoteText = false;
+      }
+    }
     private void ShortcutViewModel_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e) {
       if (this.suppressParentSave) {
         return;
@@ -609,12 +631,13 @@ namespace MDSHO.ViewModels {
       } else if (e.PropertyName == nameof(this.Comment)) {
         DataStore.Shortcuts.UpdateComment(this.ID, this.Comment ?? "");
       } else if (e.PropertyName == nameof(this.NoteText)) {
-        DataStore.Shortcuts.UpdateNoteText(this.ID, this.NoteText ?? "");
+        if (!this.savingNoteText) {
+          DataStore.Shortcuts.UpdateNoteText(this.ID, this.NoteText ?? "");
+        }
       } else if (e.PropertyName == nameof(this.ToolTipText) || e.PropertyName == nameof(this.HasRunCommandError)) {
         OnPropertyChanged(nameof(this.HasToolTip));
         OnPropertyChanged(nameof(this.ShowCommentDivider));
       }
-      // MessageBox.Show($"Property '{e.PropertyName}' Changed"); // Debug.
     }
     #endregion EVENTS
 
@@ -783,6 +806,7 @@ namespace MDSHO.ViewModels {
         siblings[i].Position = i;
       }
       this.AppViewModel.ForgetDeleted(this);
+      NotesDeleted?.Invoke(this);
       ShortcutFileService.DeleteShortcutFiles(this);
     }
     private static void CountDescendants(ShortcutViewModel parent, ref int shortcutCount, ref int groupCount) {
@@ -844,16 +868,34 @@ namespace MDSHO.ViewModels {
             Opened?.Invoke();
           }
         }
-
-
-      } catch (System.ComponentModel.Win32Exception ex) {
-        string exceptionMessage = $"Error code: {ex.ErrorCode} \n";
-        exceptionMessage += $"{ex.Message}. \n";
-        exceptionMessage += "Please make sure the shortcut target is correct!";
-        Dialogs.ShowMessage(exceptionMessage, "Exception");
       } catch (Exception ex) {
-        Dialogs.ShowMessage(ex.ToString(), "Exception");
+        // A short plain message; the details go to the log. A run command was already logged by StartRunCommand
+        // (without its arguments, which can hold passwords).
+        if (this.IsProcessCommand) {
+          Dialogs.ShowError(this.Name, CouldNotStartText + RunFailureReason(ex), CheckProgramText);
+        } else {
+          Common.AppLog.Warning(ex, "Shortcut file {File} could not be opened", this.Guid + this.Ext);
+          Dialogs.ShowError(this.Name, CouldNotOpenText + RunFailureReason(ex), CheckTargetText);
+        }
       }
+    }
+    /// <summary>The start of the message when Windows can't open a shortcut's file.</summary>
+    public const string CouldNotOpenText = "Windows could not open this file: ";
+    /// <summary>The start of the message when Windows can't start a run command's program.</summary>
+    public const string CouldNotStartText = "Windows could not start the program: ";
+    /// <summary>The line below a shortcut that can't be opened.</summary>
+    public const string CheckTargetText = "Check that the file or folder it points to still exists.";
+    /// <summary>The line below a run command that can't start.</summary>
+    public const string CheckProgramText = "Check that the program and its folder are correct.";
+    /// <summary>
+    /// A short reason for a failed start: the Windows text for the error code (not ex.Message, which can hold the working
+    /// folder), or the message of any other exception. Never the HRESULT or a stack trace.
+    /// </summary>
+    public static string RunFailureReason(Exception ex) {
+      if (ex is System.ComponentModel.Win32Exception win32) {
+        return new System.ComponentModel.Win32Exception(win32.NativeErrorCode).Message;
+      }
+      return ex.Message;
     }
     #endregion METHODS
   }

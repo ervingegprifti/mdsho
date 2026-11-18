@@ -14,15 +14,22 @@ namespace MDSHO.Data {
 
   /// <summary>
   /// Imports an export file made by <see cref="DataExporter"/>. The file is fully validated before anything is touched;
-  /// all database writes happen in one transaction; the shortcut files are staged in a temporary folder and moved into
-  /// place only after the commit.
+  /// all database writes happen in one transaction; the shortcut files are staged in a temporary folder and swapped into
+  /// place just before the commit, in a way that is undone when the import fails.
   /// </summary>
   public static class DataImporter {
     /// <summary>The largest accepted total uncompressed size of the file's entries (and of any single entry).</summary>
     public static long MaxTotalBytes { get; set; } = 200L * 1024 * 1024;
 
+    /// <summary>How many before-import backups are kept (the newest ones).</summary>
+    public static int KeepImportBackups { get; set; } = 5;
+
     private static readonly Regex SafeGuid = new Regex("^[A-Za-z0-9-]{0,64}$", RegexOptions.Compiled);
-    private static readonly Regex SafeExt = new Regex(@"^(\.[A-Za-z0-9]{1,16})?$", RegexOptions.Compiled);
+    // A file type that is safe in a file name (no path); SafeExt then allows only the types MDSHO makes.
+    private static readonly Regex SafeFileType = new Regex(@"^(\.[A-Za-z0-9]{1,16})?$", RegexOptions.Compiled);
+    // MDSHO only makes .lnk and .url files (or none, for groups, notes and run commands). Any other type, such as .exe or
+    // .bat, would run when the button is clicked, so it is never imported.
+    private static readonly Regex SafeExt = new Regex(@"^(\.lnk|\.url)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex Colour = new Regex("^#[0-9A-Fa-f]{8}$", RegexOptions.Compiled);
 
     /// <summary>Validates the file and returns its manifest (the counts are the real ones found in data.json).</summary>
@@ -33,7 +40,8 @@ namespace MDSHO.Data {
     }
 
     /// <summary>
-    /// Imports the file. Replace first saves the current data to the import backups folder (<see cref="ImportResult.BackupPath"/>).
+    /// Imports the file. Replace first saves the current data to the import backups folder (<see cref="ImportResult.BackupPath"/>);
+    /// only the newest <see cref="KeepImportBackups"/> are kept there.
     /// Throws <see cref="DataPortabilityException"/> for an invalid file (nothing is changed); any other exception means
     /// the import failed and was rolled back.
     /// </summary>
@@ -57,14 +65,19 @@ namespace MDSHO.Data {
           result.BackupPath = BackupCurrentData();
           AppLog.Information("Previous data saved to {BackupPath} before the import", result.BackupPath);
         }
-        string shortcutsPath = Paths.GetShortcutsPath();
-        string stagePath = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(shortcutsPath).TrimEnd(Path.DirectorySeparatorChar)), "ImportTemp-" + Guid.NewGuid().ToString("N"));
+        string shortcutsPath = Path.GetFullPath(Paths.GetShortcutsPath()).TrimEnd(Path.DirectorySeparatorChar);
+        string parent = Path.GetDirectoryName(shortcutsPath);
+        string stamp = Guid.NewGuid().ToString("N");
+        string stagePath = Path.Combine(parent, "ImportTemp-" + stamp);
+        string oldPath = Path.Combine(parent, "ImportOld-" + stamp);
+        ShortcutFileSwap swap = null;
         try {
           // 1. Stage the files under their final names.
           Dictionary<long, string> guidMap = MapGuids(package.Data.Shortcuts, mode);
           Directory.CreateDirectory(stagePath);
           List<string> staged = package.StageFiles(stagePath, guidMap);
-          // 2. All database writes in one transaction.
+          // 2. All database writes in one transaction. The shortcut files are put in place before the commit, in a
+          // way that can be undone: if anything fails, the database rolls back and the files go back as they were.
           using (ITransactionScope tx = DataStore.BeginTransaction()) {
             if (mode == ImportMode.Replace) {
               DeleteAllData();
@@ -76,20 +89,21 @@ namespace MDSHO.Data {
             if (mode == ImportMode.Replace) {
               PortableSettings.Apply(package.Data.Settings, package.Data.DefaultColors);
             }
+            swap = mode == ImportMode.Replace
+              ? ShortcutFileSwap.SwapFolders(shortcutsPath, stagePath, oldPath)
+              : ShortcutFileSwap.AddFiles(shortcutsPath, staged);
             tx.Commit();
           }
-          // 3. Only now touch the shortcut files.
-          if (mode == ImportMode.Replace) {
-            foreach (string old in Directory.GetFiles(shortcutsPath)) {
-              File.Delete(old);
-            }
-          }
-          foreach (string file in staged) {
-            File.Move(file, Path.Combine(shortcutsPath, Path.GetFileName(file)), overwrite: mode == ImportMode.Replace);
-          }
+          swap = null;
+        } catch {
+          // Not committed: put the old shortcut files back.
+          swap?.Undo();
+          throw;
         } finally {
-          try { if (Directory.Exists(stagePath)) { Directory.Delete(stagePath, true); } } catch (IOException) { } catch (UnauthorizedAccessException) { }
+          DeleteFolderQuietly(stagePath);
         }
+        // Committed: the old shortcut files are no longer needed. A folder that can't be deleted now is only logged.
+        DeleteFolderQuietly(oldPath);
         AppLog.Information("Import finished: {Windows} windows, {Clones} clones, {Shortcuts} shortcuts, {NoteWindows} note windows",
           package.Manifest.Counts.Windows, package.Manifest.Counts.Clones, package.Manifest.Counts.Shortcuts, package.Manifest.Counts.NoteWindows);
         return result;
@@ -122,7 +136,24 @@ namespace MDSHO.Data {
         path = Path.Combine(folder, "MDSHO-before-import-" + stamp + "-" + i + ".zip");
       }
       DataExporter.Export(path);
+      DeleteOldImportBackups(folder, path);
       return path;
+    }
+
+    // Keeps only the newest KeepImportBackups before-import backups (each can be large). Other files are left alone, and
+    // a backup that can't be deleted is only logged.
+    private static void DeleteOldImportBackups(string folder, string newest) {
+      IEnumerable<FileInfo> old = new DirectoryInfo(folder).GetFiles("MDSHO-before-import-*.zip")
+        .Where(f => !string.Equals(f.FullName, Path.GetFullPath(newest), StringComparison.OrdinalIgnoreCase))
+        .OrderByDescending(f => f.LastWriteTimeUtc)
+        .Skip(Math.Max(0, KeepImportBackups - 1));
+      foreach (FileInfo file in old) {
+        try {
+          file.Delete();
+        } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
+          AppLog.Warning(ex, "An old import backup could not be deleted: {Path}", file.FullName);
+        }
+      }
     }
 
     private static void DeleteAllData() {
@@ -171,6 +202,82 @@ namespace MDSHO.Data {
           place.ID = 0;
           place.ShortcutID = noteId;
           DataStore.NoteWindows.Save(place);
+        }
+      }
+    }
+
+    // Deletes a folder of the import when it exists. Never throws: a leftover folder is only logged.
+    private static void DeleteFolderQuietly(string path) {
+      try {
+        if (Directory.Exists(path)) {
+          Directory.Delete(path, true);
+        }
+      } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
+        AppLog.Warning(ex, "A folder of the import could not be deleted: {Path}", path);
+      }
+    }
+
+    /// <summary>
+    /// Puts the imported shortcut files in place before the commit, and can undo it. Replace renames the shortcuts folder
+    /// aside and the staged folder in its place (no file is deleted until the commit is done). Add as new moves the new
+    /// files in, and Undo moves them back out.
+    /// </summary>
+    private sealed class ShortcutFileSwap {
+      private string shortcutsPath, stagePath, oldPath;
+      private bool oldMoved, stageMoved;
+      private readonly List<(string from, string to)> moved = new List<(string from, string to)>();
+
+      public static ShortcutFileSwap SwapFolders(string shortcutsPath, string stagePath, string oldPath) {
+        ShortcutFileSwap swap = new ShortcutFileSwap { shortcutsPath = shortcutsPath, stagePath = stagePath, oldPath = oldPath };
+        try {
+          if (Directory.Exists(shortcutsPath)) {
+            // Fails when another program has a shortcut file open: then nothing has changed yet.
+            Directory.Move(shortcutsPath, oldPath);
+            swap.oldMoved = true;
+          }
+          Directory.Move(stagePath, shortcutsPath);
+          swap.stageMoved = true;
+        } catch {
+          swap.Undo();
+          throw;
+        }
+        return swap;
+      }
+
+      public static ShortcutFileSwap AddFiles(string shortcutsPath, IEnumerable<string> staged) {
+        ShortcutFileSwap swap = new ShortcutFileSwap();
+        try {
+          Directory.CreateDirectory(shortcutsPath);
+          foreach (string file in staged) {
+            string target = Path.Combine(shortcutsPath, Path.GetFileName(file));
+            File.Move(file, target);
+            swap.moved.Add((file, target));
+          }
+        } catch {
+          swap.Undo();
+          throw;
+        }
+        return swap;
+      }
+
+      /// <summary>Puts the files back as they were. If that fails too, says where the old files are.</summary>
+      public void Undo() {
+        try {
+          for (int i = this.moved.Count - 1; i >= 0; i--) {
+            File.Move(this.moved[i].to, this.moved[i].from);
+          }
+          this.moved.Clear();
+          if (this.stageMoved) {
+            Directory.Move(this.shortcutsPath, this.stagePath);
+            this.stageMoved = false;
+          }
+          if (this.oldMoved) {
+            Directory.Move(this.oldPath, this.shortcutsPath);
+            this.oldMoved = false;
+          }
+        } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
+          AppLog.Error(ex, "The shortcut files could not be put back after a failed import");
+          throw new ImportFilesNotRestoredException(this.oldMoved ? this.oldPath : null, this.shortcutsPath, ex);
         }
       }
     }
@@ -335,8 +442,11 @@ namespace MDSHO.Data {
           if (s.ParentShortcutID != null && !shortcuts.ContainsKey(s.ParentShortcutID.Value)) {
             throw new DataPortabilityException("Shortcut " + s.ID + " has parent shortcut " + s.ParentShortcutID + ", which is not in the file.");
           }
-          if (!SafeGuid.IsMatch(s.Guid) || !SafeExt.IsMatch(s.Ext)) {
+          if (!SafeGuid.IsMatch(s.Guid) || !SafeFileType.IsMatch(s.Ext)) {
             throw new DataPortabilityException("Shortcut " + s.ID + " has an unsafe file name and was not imported.");
+          }
+          if (!SafeExt.IsMatch(s.Ext)) {
+            throw new DataPortabilityException("Shortcut " + s.ID + " has the file type \"" + s.Ext + "\". MDSHO imports only .lnk and .url files, so this file was not imported.");
           }
         }
         if (Data.DefaultColors != null) {

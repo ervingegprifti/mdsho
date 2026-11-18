@@ -187,10 +187,9 @@ namespace MDSHO.ViewModels {
       try {
         ShortcutViewModel.StartRunCommand(ShortcutViewModel.CreateRunCommandStartInfo(
           this.program, this.StoredArguments, this.workingFolder, this.runAsAdministrator, this.GroupValues));
-      } catch (System.ComponentModel.Win32Exception ex) {
-        Dialogs.ShowMessage($"Error code: {ex.ErrorCode} \n{ex.Message}. \nPlease make sure the program is correct!", "Test run");
-      } catch (InvalidOperationException ex) {
-        Dialogs.ShowMessage(ex.Message, "Test run");
+      } catch (Exception ex) when (ex is System.ComponentModel.Win32Exception || ex is InvalidOperationException) {
+        // StartRunCommand has logged it; a short plain reason here.
+        Dialogs.ShowError("Test run", ShortcutViewModel.CouldNotStartText + ShortcutViewModel.RunFailureReason(ex), ShortcutViewModel.CheckProgramText);
       }
     }
 
