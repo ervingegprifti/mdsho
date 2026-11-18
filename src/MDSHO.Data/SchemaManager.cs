@@ -321,7 +321,7 @@ namespace MDSHO.Data {
           FOREIGN KEY(SetupID) REFERENCES ScreenSetups(ID) ON DELETE CASCADE);");
         AddScreenSetupsLastUsed(conn);
       }),
-      new DbMigration(18, "Note text size: NoteWindows.FontSize (0 = 16)", conn => {
+      new DbMigration(18, "Note text size: NoteWindows.FontSize (0 = 12)", conn => {
         if (!ColumnExists(conn, "NoteWindows", "FontSize")) {
           Execute(conn, "ALTER TABLE NoteWindows ADD COLUMN FontSize INTEGER NOT NULL DEFAULT 0;");
         }

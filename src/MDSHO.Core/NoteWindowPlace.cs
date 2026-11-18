@@ -36,7 +36,7 @@ namespace MDSHO.Core {
     public long FontSize { get; set; }
 
     /// <summary>The text size of a new note or a comment.</summary>
-    public const long DefaultFontSize = 16;
+    public const long DefaultFontSize = 12;
     /// <summary>The smallest text size.</summary>
     public const long MinFontSize = 8;
     /// <summary>The biggest text size.</summary>

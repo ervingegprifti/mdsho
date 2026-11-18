@@ -107,7 +107,7 @@
         </Border>
 
         <!--Body: the text fills it (window colour, no border, 10 px padding, no word wrap, each scroll bar only when needed).
-            Its size is set in code: 16 at first, Ctrl + mouse wheel changes it.-->
+            Its size is set in code: 12 at first, Ctrl + mouse wheel changes it.-->
         <Grid x:Name="Body" Grid.Row="1" Background="#FFF4F3ED">
             <TextBox x:Name="TextComment"
                      AcceptsReturn="True"

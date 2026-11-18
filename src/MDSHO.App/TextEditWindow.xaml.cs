@@ -101,7 +101,7 @@ namespace MDSHO {
           shortcut.OwningWindow.Appearance.CommentWrapText = this.IsWrapText;
         }
       };
-      // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a comment starts at 16 each time.
+      // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a comment starts at 12 each time.
       this.TextComment.FontSize = NoteWindowPlace.DefaultFontSize;
       this.TextComment.PreviewMouseWheel += TextComment_PreviewMouseWheel;
       this.PreviewKeyDown += Window_PreviewKeyDown;

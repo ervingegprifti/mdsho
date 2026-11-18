@@ -10,11 +10,10 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 
 ### Added
 
-- **Note text size**: in a note or comment window, Ctrl + mouse wheel makes the text bigger or smaller. Notes keep their size.
+- **Note text size**: in a note or comment window, Ctrl + mouse wheel makes the text bigger or smaller. Notes keep their size; the text starts at 12, as before.
 
 ### Changed
 
-- Note and comment windows now show their text a little bigger (16 instead of 12).
 - The database moves to version 18. Export your data before installing if you want to be able to go back.
 
 ## [1.15.2]
