@@ -85,6 +85,36 @@ namespace MDSHO.ViewModels {
       return true;
     }
 
+    /// <summary>
+    /// After a Replace import: registers the shortcut the import saved. When another app holds the keys, the shortcut is
+    /// turned off and the refused keys are returned (null otherwise), for <see cref="ImportedInUseMessage"/>.
+    /// </summary>
+    public Hotkey ApplyImported() {
+      Hotkey wanted = Hotkey.Default;
+      try {
+        string text = DataStore.AppSettings.Get(SettingKey);
+        if (text != null && Hotkey.TryParseSetting(text, out Hotkey saved)) {
+          wanted = saved;
+        }
+      } catch (Exception ex) {
+        AppLog.Warning(ex, "The imported Bring panels to front shortcut could not be read; the default is used");
+      }
+      bool applied = Apply(wanted);
+      if (wanted == null || (applied && !IsBlocked)) {
+        return null;
+      }
+      Apply(null);
+      AppLog.Information("The imported Bring panels to front shortcut {Shortcut} is used by another app; it is turned off", wanted.MenuText);
+      return wanted;
+    }
+
+    /// <summary>What the import tells the user when the imported shortcut was turned off.</summary>
+    public static string ImportedInUseMessage(Hotkey hotkey) {
+      // The same words as the Settings box (ShortcutRecorder.InUseHint).
+      return "Another app already uses this shortcut (" + hotkey.DisplayText + ") on this PC, so Bring panels to front is "
+        + "turned off. Choose another one in Settings > Keyboard.";
+    }
+
     /// <summary>Unregisters the keys while the Settings box records, so the box gets them.</summary>
     public void Suspend() {
       suspended = true;

@@ -31,5 +31,7 @@ namespace MDSHO.Core {
     ColorSet Get(ColorSetKind kind);
     /// <summary>Saves the defaults of that kind (adds the row the first time, replaces it after that).</summary>
     void Save(ColorSetKind kind, ColorSet colors);
+    /// <summary>Removes the defaults of that kind, so MDSHO's own colours apply.</summary>
+    void Delete(ColorSetKind kind);
   }
 }

@@ -115,7 +115,8 @@ exports import with default note windows. Added in version 8.
 
 The default colours saved with **Set as default** in the Colours window: at most one row for panels and one for notes.
 They are what **Default colours** puts back and what new panels and new notes start with; existing panels and notes keep
-their colours. Without a row MDSHO's own colours are used. Not part of exports. Added in version 15.
+their colours. Without a row MDSHO's own colours are used. Exports carry them from 1.16.0 (format 3); an import that
+replaces the data sets them, Add as new keeps this PC's. Added in version 15.
 
 | Column | Type | Null | Default | Meaning |
 |---|---|---|---|---|
@@ -128,8 +129,10 @@ their colours. Without a row MDSHO's own colours are used. Not part of exports. 
 
 ### AppSettings
 
-Settings of the whole app on this PC, one row per setting. Without a row the setting has its default. Not part of
-exports, and an import that replaces the data keeps them. Added in version 16.
+Settings of the whole app on this PC, one row per setting. Without a row the setting has its default. From 1.16.0
+(export format 3) exports carry `WindowTheme`, `BringToFrontShortcut` and `RememberScreenSetupPlaces`, and an import
+that replaces the data sets those three (a shortcut another app holds on this PC is turned off). The other settings
+belong to this PC: they are not exported and every import keeps them. Added in version 16.
 
 | Column | Type | Null | Default | Meaning |
 |---|---|---|---|---|
@@ -174,7 +177,8 @@ and a setup beyond the 10 most recently used ones is deleted. Added in version 1
 
 Where each panel, clone and note window was last in each screen setup, so they go back there when those screens are
 connected again (see [Architecture](architecture.md#places-per-screen-setup)). One row per setup and item. Not part of
-exports, and an import that replaces the data keeps them. Added in version 17.
+exports. From 1.16.0 an import that replaces the data deletes all rows, so the imported places are the ones that show;
+Add as new keeps them. Added in version 17.
 
 | Column | Type | Null | Default | Meaning |
 |---|---|---|---|---|

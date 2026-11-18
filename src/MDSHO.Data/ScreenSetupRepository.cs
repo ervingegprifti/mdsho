@@ -43,6 +43,10 @@ namespace MDSHO.Data {
       Run("DELETE FROM ScreenSetups WHERE ID <> @setupID", new { setupID });
     }
 
+    public void DeleteAllPlaces() {
+      Run("DELETE FROM ScreenSetupPlaces");
+    }
+
     public void Touch(long setupID, string lastUsed) {
       Run("UPDATE ScreenSetups SET LastUsed = @lastUsed WHERE ID = @setupID", new { setupID, lastUsed = lastUsed ?? "" });
     }

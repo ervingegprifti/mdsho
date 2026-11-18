@@ -297,7 +297,7 @@ namespace MDSHO.Tests {
     // ---- On this PC only ----
 
     [Fact]
-    public void Export_leaves_the_screen_setups_out_and_replace_import_keeps_them() {
+    public void Export_leaves_the_screen_setups_out_and_replace_import_keeps_them_but_clears_their_places() {
       db = new TempDb();
       DesktopWindow w = DataStore.Windows.Create("D", 0, 0);
       long setup = DataStore.ScreenSetups.Ensure("A", "1 screen: 1920×1080");
@@ -308,16 +308,17 @@ namespace MDSHO.Tests {
         foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.EndsWith(".json", StringComparison.Ordinal))) {
           using (StreamReader reader = new StreamReader(entry.Open())) {
             string text = reader.ReadToEnd();
-            Assert.DoesNotContain("ScreenSetup", text, StringComparison.OrdinalIgnoreCase);
+            // Only the on/off setting (RememberScreenSetupPlaces) travels, from 1.16.0.
+            Assert.DoesNotContain("ScreenSetups", text, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("ScreenSetupPlace\"", text, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("1920×1080", text);
           }
         }
       }
       DataImporter.Import(zip, ImportMode.Replace);
       Assert.Equal("1 screen: 1920×1080", DataStore.ScreenSetups.GetAll().Single().Name);
-      // The panel comes back with the same ID, so its place still belongs to it.
-      Assert.Equal(0, DataStore.ScreenSetups.DeletePlacesOfMissingItems());
-      Assert.Equal(77, DataStore.ScreenSetups.GetPlaces(setup).Single().Left);
+      // From 1.16.0 the places go, so the imported places show after the restart.
+      Assert.Empty(DataStore.ScreenSetups.GetPlaces(setup));
     }
   }
 }

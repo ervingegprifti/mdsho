@@ -83,11 +83,11 @@ namespace MDSHO.Tests {
     // ---- Export ----
 
     [Fact]
-    public void Export_format_is_2_and_the_manifest_counts_the_note_windows() {
+    public void Export_has_format_2_or_later_and_the_manifest_counts_the_note_windows() {
       Seed();
       ExportManifest m = DataExporter.Export(Zip());
-      Assert.Equal(2, ExportManifest.CurrentFormatVersion);
-      Assert.Equal(2, m.FormatVersion);
+      Assert.True(ExportManifest.CurrentFormatVersion >= 2);
+      Assert.Equal(ExportManifest.CurrentFormatVersion, m.FormatVersion);
       Assert.Equal(2, m.Counts.NoteWindows);
       Assert.Equal(2, (int)ReadEntry(Zip(), "manifest.json")["counts"]["noteWindows"]);
       Assert.Equal(2, DataImporter.Inspect(Zip()).Counts.NoteWindows);
@@ -187,10 +187,10 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void A_format_3_file_is_rejected() {
+    public void A_file_with_a_newer_format_is_rejected() {
       Seed();
       DataExporter.Export(Zip());
-      string newer = MutateJson(Zip(), "manifest.json", n => n["formatVersion"] = 3);
+      string newer = MutateJson(Zip(), "manifest.json", n => n["formatVersion"] = ExportManifest.CurrentFormatVersion + 1);
       DataPortabilityException ex = Assert.Throws<DataPortabilityException>(() => DataImporter.Inspect(newer));
       Assert.Contains("formatVersion", ex.Message);
     }

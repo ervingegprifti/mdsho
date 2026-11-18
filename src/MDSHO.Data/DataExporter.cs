@@ -11,7 +11,8 @@ using MDSHO.Core;
 namespace MDSHO.Data {
 
   /// <summary>
-  /// Exports all MDSHO data (windows, clones, shortcuts, note window places and the shortcut files) to one zip file:
+  /// Exports all MDSHO data (windows, clones, shortcuts, note window places, default colours, the portable settings and
+  /// the shortcut files) to one zip file:
   /// <c>manifest.json</c>, <c>data.json</c> and <c>shortcuts/&lt;guid&gt;&lt;ext&gt;</c>.
   /// </summary>
   public static class DataExporter {
@@ -119,11 +120,15 @@ namespace MDSHO.Data {
           data.Clones = OldSchemaReader.Clones();
           data.Shortcuts = OldSchemaReader.Shortcuts();
           data.NoteWindows = OldSchemaReader.NoteWindows();
+          data.DefaultColors = OldSchemaReader.DefaultColors();
+          data.Settings = OldSchemaReader.Settings();
         } else {
           data.Windows = DataStore.Windows.GetAll();
           data.Clones = DataStore.Clones.GetAll();
           data.Shortcuts = DataStore.Shortcuts.GetAll();
           data.NoteWindows = DataStore.NoteWindows.GetAll();
+          data.DefaultColors = PortableSettings.ReadDefaultColors();
+          data.Settings = PortableSettings.Read();
         }
         tx.Commit();
       }

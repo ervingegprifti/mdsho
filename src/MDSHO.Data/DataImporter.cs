@@ -23,6 +23,7 @@ namespace MDSHO.Data {
 
     private static readonly Regex SafeGuid = new Regex("^[A-Za-z0-9-]{0,64}$", RegexOptions.Compiled);
     private static readonly Regex SafeExt = new Regex(@"^(\.[A-Za-z0-9]{1,16})?$", RegexOptions.Compiled);
+    private static readonly Regex Colour = new Regex("^#[0-9A-Fa-f]{8}$", RegexOptions.Compiled);
 
     /// <summary>Validates the file and returns its manifest (the counts are the real ones found in data.json).</summary>
     public static ExportManifest Inspect(string zipPath) {
@@ -67,8 +68,14 @@ namespace MDSHO.Data {
           using (ITransactionScope tx = DataStore.BeginTransaction()) {
             if (mode == ImportMode.Replace) {
               DeleteAllData();
+              // The places remembered per screen setup would move the imported windows back after the restart.
+              DataStore.ScreenSetups.DeleteAllPlaces();
             }
             WriteData(package.Data, mode, guidMap);
+            // Settings and default colours only replace; Add as new merges into this PC, which keeps its own.
+            if (mode == ImportMode.Replace) {
+              PortableSettings.Apply(package.Data.Settings, package.Data.DefaultColors);
+            }
             tx.Commit();
           }
           // 3. Only now touch the shortcut files.
@@ -330,6 +337,14 @@ namespace MDSHO.Data {
           }
           if (!SafeGuid.IsMatch(s.Guid) || !SafeExt.IsMatch(s.Ext)) {
             throw new DataPortabilityException("Shortcut " + s.ID + " has an unsafe file name and was not imported.");
+          }
+        }
+        if (Data.DefaultColors != null) {
+          foreach (KeyValuePair<string, ColorSet> pair in Data.DefaultColors.Where(p => p.Value != null)) {
+            ColorSet c = pair.Value;
+            if (new[] { c.BorderColor, c.TitleBackgroundColor, c.TitleTextColor, c.BackgroundColor, c.TextColor }.Any(v => v == null || !Colour.IsMatch(v))) {
+              throw new DataPortabilityException("data.json is not valid: a default colour of \"" + pair.Key + "\" is not a colour (#AARRGGBB).");
+            }
           }
         }
         foreach (Shortcut s in Data.Shortcuts) {
