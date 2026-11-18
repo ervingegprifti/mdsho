@@ -181,21 +181,20 @@ namespace MDSHO.Tests {
     // ---- Export and import ----
 
     [Fact]
-    public void The_theme_is_not_exported_and_an_import_that_replaces_the_data_keeps_it() {
+    public void The_theme_is_exported_and_only_an_import_that_replaces_the_data_sets_it() {
       NewSetting().SetChoice(WindowThemeChoice.Dark);
       new AppViewModel().AddWindow("TEST", 0, 0);
       string zip = Path.Combine(db.Folder, "export.zip");
       DataExporter.Export(zip);
-      using (ZipArchive archive = ZipFile.OpenRead(zip)) {
-        foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.Name.EndsWith(".json"))) {
-          using (StreamReader reader = new StreamReader(entry.Open())) {
-            Assert.DoesNotContain("WindowTheme", reader.ReadToEnd(), StringComparison.OrdinalIgnoreCase);
-          }
-        }
+      using (ZipArchive archive = ZipFile.OpenRead(zip))
+      using (StreamReader reader = new StreamReader(archive.GetEntry("data.json").Open())) {
+        Assert.Equal("Dark", (string)System.Text.Json.Nodes.JsonNode.Parse(reader.ReadToEnd())["settings"][WindowThemeSetting.SettingKey]);
       }
       DataStore.AppSettings.Set(WindowThemeSetting.SettingKey, "Light");
-      DataImporter.Import(zip, ImportMode.Replace);
+      DataImporter.Import(zip, ImportMode.AddAsNew);
       Assert.Equal("Light", Stored());
+      DataImporter.Import(zip, ImportMode.Replace);
+      Assert.Equal("Dark", Stored());
     }
 
     // ---- Windows' app mode, from the registry ----

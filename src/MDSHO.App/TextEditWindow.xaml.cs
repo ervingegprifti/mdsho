@@ -101,6 +101,9 @@ namespace MDSHO {
           shortcut.OwningWindow.Appearance.CommentWrapText = this.IsWrapText;
         }
       };
+      // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a comment starts at 12 each time.
+      this.TextComment.FontSize = NoteWindowPlace.DefaultFontSize;
+      this.TextComment.PreviewMouseWheel += TextComment_PreviewMouseWheel;
       this.PreviewKeyDown += Window_PreviewKeyDown;
       this.TextComment.PreviewMouseLeftButtonDown += TextComment_PreviewMouseLeftButtonDown;
       this.Loaded += (s, e) => {
@@ -258,6 +261,7 @@ namespace MDSHO {
       this.Height = Math.Max(this.MinHeight, place.Height);
       SetPinned(place.IsTopmost);
       SetWrapText(place.IsWrapText);
+      this.TextComment.FontSize = NoteWindowPlace.FontSizeOrDefault(place.FontSize);
       this.savedState = place.State == NoteWindowPlace.Maximized ? WindowState.Maximized
         : place.State == NoteWindowPlace.Minimized ? WindowState.Minimized : WindowState.Normal;
       EventHandler placeOnHandle = null;
@@ -334,7 +338,7 @@ namespace MDSHO {
     }
 
     private void SaveNotePlace(bool isOpen) {
-      if (this.kind != TextKind.Note || this.shortcut.ID == 0) {
+      if (this.kind != TextKind.Note || this.shortcut.ID == 0 || forgetting) {
         return;
       }
       Rect normal = NormalBounds;
@@ -345,7 +349,8 @@ namespace MDSHO {
         : this.WindowState == WindowState.Minimized ? NoteWindowPlace.Minimized : NoteWindowPlace.Normal;
       try {
         DataStore.NoteWindows.Save(new NoteWindowPlace(this.shortcut.ID, (long)Math.Round(normal.X), (long)Math.Round(normal.Y),
-          (long)Math.Round(normal.Width), (long)Math.Round(normal.Height), state, isOpen) { IsTopmost = this.Topmost, IsWrapText = this.IsWrapText });
+          (long)Math.Round(normal.Width), (long)Math.Round(normal.Height), state, isOpen) { IsTopmost = this.Topmost, IsWrapText = this.IsWrapText,
+          FontSize = (long)Math.Round(this.TextComment.FontSize) });
       } catch (Exception ex) {
         // A place that can't be saved must never break the note window.
         AppLog.Warning(ex, "Could not save the place of a note window");
@@ -360,6 +365,11 @@ namespace MDSHO {
     /// </summary>
     public static void SaveOpenNotesForExit() {
       IsExiting = true;
+      SaveOpenNotes();
+    }
+
+    /// <summary>Saves unsaved typing and the place of every open note window, marked as open (before an import too).</summary>
+    public static void SaveOpenNotes() {
       foreach (TextEditWindow window in openNoteWindows.ToList()) {
         string text = window.TextComment.Text ?? "";
         string value = string.IsNullOrWhiteSpace(text) ? "" : text;
@@ -367,6 +377,24 @@ namespace MDSHO {
           window.shortcut.NoteText = value;
         }
         window.SaveNotePlace(isOpen: true);
+      }
+    }
+
+    // True while ForgetOpenNotes closes the windows: nothing is saved then.
+    private static bool forgetting;
+
+    /// <summary>
+    /// After an import: closes the note windows of the old data without saving their text or place, so they can't
+    /// overwrite the imported data. Call <see cref="SaveOpenNotes"/> before the import.
+    /// </summary>
+    public static void ForgetOpenNotes() {
+      forgetting = true;
+      try {
+        foreach (TextEditWindow window in openNoteWindows.ToList()) {
+          window.Close();
+        }
+      } finally {
+        forgetting = false;
       }
     }
 
@@ -545,6 +573,20 @@ namespace MDSHO {
       }
     }
 
+    // Ctrl + wheel up makes the text bigger, down smaller. Handled, so the text doesn't also scroll.
+    private void TextComment_PreviewMouseWheel(object sender, MouseWheelEventArgs e) {
+      if ((KeyboardModifiers() & ModifierKeys.Control) != ModifierKeys.Control || e.Delta == 0) {
+        return;
+      }
+      e.Handled = true;
+      long size = NoteWindowPlace.NextFontSize((long)Math.Round(this.TextComment.FontSize), e.Delta);
+      if (size == (long)Math.Round(this.TextComment.FontSize)) {
+        return;
+      }
+      this.TextComment.FontSize = size;
+      SaveNotePlace();
+    }
+
     /// <summary>True while the text wraps at the window's edge.</summary>
     public bool IsWrapText => this.TextComment.TextWrapping == TextWrapping.Wrap;
 
@@ -587,6 +629,9 @@ namespace MDSHO {
     // Saves the note now if its text changed, and keeps the window open (autosave, closing, Ctrl+Enter and Ctrl+S).
     private void SaveNoteNow() {
       this.noteSaveTimer.Stop();
+      if (forgetting) {
+        return;
+      }
       string value = TextToSave();
       if (value == (this.shortcut.NoteText ?? "")) {
         return;

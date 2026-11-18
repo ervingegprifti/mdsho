@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace MDSHO.Core {
 
@@ -31,6 +32,28 @@ namespace MDSHO.Core {
     public bool IsTopmost { get; set; }
     /// <summary>True when the note's text wraps at the window's edge (off for new notes).</summary>
     public bool IsWrapText { get; set; }
+    /// <summary>Size of the note's text (Ctrl + mouse wheel); 0 = <see cref="DefaultFontSize"/>.</summary>
+    public long FontSize { get; set; }
+
+    /// <summary>The text size of a new note or a comment.</summary>
+    public const long DefaultFontSize = 12;
+    /// <summary>The smallest text size.</summary>
+    public const long MinFontSize = 8;
+    /// <summary>The biggest text size.</summary>
+    public const long MaxFontSize = 72;
+    /// <summary>How much one turn of the wheel changes the size.</summary>
+    public const long FontSizeStep = 2;
+
+    /// <summary>The size after one turn of the wheel: bigger for up (positive), smaller for down, within the limits.</summary>
+    public static long NextFontSize(long size, int wheelDelta) {
+      long next = wheelDelta > 0 ? size + FontSizeStep : wheelDelta < 0 ? size - FontSizeStep : size;
+      return Math.Clamp(next, MinFontSize, MaxFontSize);
+    }
+
+    /// <summary>A saved size to use: 0 or less is the default, others are kept within the limits.</summary>
+    public static long FontSizeOrDefault(long size) {
+      return size <= 0 ? DefaultFontSize : Math.Clamp(size, MinFontSize, MaxFontSize);
+    }
 
     /// <summary>Parameterless constructor for the data layer (row mapping).</summary>
     public NoteWindowPlace() { }
@@ -53,6 +76,8 @@ namespace MDSHO.Core {
     NoteWindowPlace Get(long shortcutID);
     /// <summary>The places of the note windows that were open, oldest note first.</summary>
     List<NoteWindowPlace> GetOpen();
+    /// <summary>The places of all note windows, by note (exports carry them).</summary>
+    List<NoteWindowPlace> GetAll();
     /// <summary>Saves the place of a note's window (adds the row the first time, updates it after that).</summary>
     void Save(NoteWindowPlace place);
     /// <summary>Marks a note's window as open or closed, keeping its place.</summary>

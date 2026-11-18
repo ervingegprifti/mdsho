@@ -22,5 +22,9 @@ namespace MDSHO.Data {
           Kind = kind.ToString(), colors.BorderColor, colors.TitleBackgroundColor, colors.TitleTextColor, colors.BackgroundColor, colors.TextColor
         });
     }
+
+    public void Delete(ColorSetKind kind) {
+      Run("DELETE FROM DefaultColors WHERE Kind = @kind", new { kind = kind.ToString() });
+    }
   }
 }

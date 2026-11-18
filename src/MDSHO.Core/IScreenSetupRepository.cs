@@ -28,7 +28,7 @@ namespace MDSHO.Core {
     public long Dock { get; set; }
   }
 
-  /// <summary>Screen setups and the window places in each. On this PC only: not exported.</summary>
+  /// <summary>Screen setups and the window places in each. On this PC only: not exported; a Replace import clears the places.</summary>
   public interface IScreenSetupRepository {
     /// <summary>All setups, oldest added first.</summary>
     List<ScreenSetupRecord> GetAll();
@@ -41,6 +41,8 @@ namespace MDSHO.Core {
     void SavePlace(long setupID, ScreenSetupPlace place);
     /// <summary>Deletes every other setup and its places.</summary>
     void DeleteAllExcept(long setupID);
+    /// <summary>Deletes the places of every setup and keeps the setups.</summary>
+    void DeleteAllPlaces();
     /// <summary>Deletes places of windows that no longer exist. Returns how many.</summary>
     int DeletePlacesOfMissingItems();
     /// <summary>Sets the last-used time.</summary>

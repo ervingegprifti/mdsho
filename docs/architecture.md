@@ -180,8 +180,12 @@ full exception text on the clipboard, and **Open logs folder** opens the logs fo
 `MDSHO-export-<yyyy-MM-dd-HHmm>.zip` by default, where you choose. The file contains:
 
 - `manifest.json`: the format name (`MDSHO-export`) and version, the MDSHO version and database version that wrote it,
-  the date, and the counts of windows, clones, shortcuts and files;
-- `data.json`: all windows, clones and shortcuts;
+  the date, and the counts of windows, clones, shortcuts, note windows and files;
+- `data.json`: all windows, clones and shortcuts; the note window places (where each note window was, its size,
+  state, whether it was open, pinned or wrapped, and its text size), each linked to its note by the note's ID; the
+  default colours (`defaultColors`: `Window` and `Note`, `null` when never set); and three settings (`settings`:
+  `WindowTheme`, `BringToFrontShortcut` and `RememberScreenSetupPlaces`, `null` when never set). Settings tied to the PC
+  (backups, the review prompt, the last Settings page) are never in the file;
 - `shortcuts/`: the shortcut files of the buttons.
 
 **Import data...** first checks the whole file (format, versions, counts, size limits) and then either:
@@ -192,6 +196,19 @@ full exception text on the clipboard, and **Open logs folder** opens the logs fo
 The database part of an import runs in one transaction, and the shortcut files are only moved into place after it
 commits, so a failed import leaves the existing data as it was. MDSHO restarts after a successful import. Export files
 from older MDSHO versions still import; missing newer fields get their defaults.
+
+The format version is 3 since 1.16.0: 2 added the note window places, 3 the default colours and settings. MDSHO reads
+formats 1 to 3. A format 1 file has no note window places, so its notes open in default windows; format 1 and 2 files
+have no colours or settings, so the ones on this PC stay as they are.
+
+Only **replace** applies the default colours and settings: a value in the file is saved, a `null` removes this PC's
+value (its default applies), and a missing one is kept. Replace also deletes the places remembered for each screen
+setup, so the imported places are what shows after the restart. If another app holds the imported Bring panels to front
+shortcut on this PC, MDSHO turns it off and says so after the import. **Add as new** leaves colours, settings and
+screen setup places alone. An import links each place to its note's new
+ID (Add as new gives new IDs) and skips a place whose note is not in the file. Before the import MDSHO saves the open
+notes; after it, it closes them without saving, so the old windows can't write over the imported places. After the
+restart the notes the file had open come back where they were.
 
 The code is in `src/MDSHO.Data/DataExporter.cs`, `DataImporter.cs` and `DataPortability.cs`.
 
@@ -249,8 +266,10 @@ the other windows; pressing it again, Esc in a panel or opening a button sends t
   always-on-top windows don't count), the press sends each panel behind the nearest other app's window below it and
   focuses the one under the top panel. Switching to another app ends it without moving anything.
 - `src/MDSHO.ViewModels/BringToFrontShortcut.cs`: the saved shortcut (the `AppSettings` table, see
-  [Database](database.md#appsettings); on this PC only, not exported). It registers the shortcut at startup; when another
-  app holds the keys it stays unregistered without a message, and the Settings window shows it in red.
+  [Database](database.md#appsettings); exported, and set by an import that replaces the data). It registers the shortcut
+  at startup; when another app holds the keys it stays unregistered without a message, and the Settings window shows it
+  in red. After a Replace import, `ApplyImported()` registers the imported keys; if another app holds them it turns the
+  shortcut off and the import's message says so.
   `ShortcutRecorder.cs` is the Settings box (record, Default, Off, Apply).
 - `src/MDSHO.Infrastructure/GlobalHotkeyService.cs` (`RegisterHotKey` with `MOD_NOREPEAT` on a message-only window,
   released at exit) and `WindowZOrder.cs` (z-order and foreground window calls) are the thin Win32 part;
@@ -291,7 +310,8 @@ Settings). The parts:
   `WM_DISPLAYCHANGE`); the app passes each event to the tracker on the UI thread, and
   `src/MDSHO.App/Helpers/DispatcherOneShotTimer.cs` is the wait.
 - The places are in the `ScreenSetups` and `ScreenSetupPlaces` tables and the setting in `AppSettings` (see
-  [Database](database.md#screensetups)): on this PC only, not exported, and kept by an import that replaces the data.
+  [Database](database.md#screensetups)): on this PC only and not exported. An import that replaces the data keeps the
+  setups but deletes their places; the setting is exported and set by such an import.
 
 ## Window theme
 

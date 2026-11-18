@@ -176,24 +176,21 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_shortcut_is_not_exported_and_an_import_that_replaces_the_data_keeps_it() {
+    public void The_shortcut_is_exported_and_only_an_import_that_replaces_the_data_sets_it() {
       BringToFrontShortcut s = Started();
       s.Apply(CtrlAltK);
       new AppViewModel().AddWindow("TEST", 0, 0);
       string zip = Path.Combine(db.Folder, "export.zip");
       DataExporter.Export(zip);
-      using (ZipArchive archive = ZipFile.OpenRead(zip)) {
-        foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.Name.EndsWith(".json"))) {
-          using (StreamReader reader = new StreamReader(entry.Open())) {
-            string json = reader.ReadToEnd();
-            Assert.DoesNotContain("BringToFront", json, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain("Ctrl+Alt+K", json);
-          }
-        }
+      using (ZipArchive archive = ZipFile.OpenRead(zip))
+      using (StreamReader reader = new StreamReader(archive.GetEntry("data.json").Open())) {
+        Assert.Equal("Ctrl+Alt+K", (string)System.Text.Json.Nodes.JsonNode.Parse(reader.ReadToEnd())["settings"][BringToFrontShortcut.SettingKey]);
       }
       DataStore.AppSettings.Set(BringToFrontShortcut.SettingKey, "Alt+Win+F1");
-      DataImporter.Import(zip, ImportMode.Replace);
+      DataImporter.Import(zip, ImportMode.AddAsNew);
       Assert.Equal("Alt+Win+F1", Stored());
+      DataImporter.Import(zip, ImportMode.Replace);
+      Assert.Equal("Ctrl+Alt+K", Stored());
     }
 
     // ---- The Settings box ----

@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.16.0]
+
+### Added
+
+- **Note text size**: in a note or comment window, Ctrl + mouse wheel makes the text bigger or smaller. Notes keep their size; the text starts at 12, as before.
+- **Export and import keep note windows**: exports and backups now carry where each note window was, its size, and whether it was open, pinned or wrapped. After an import, open notes come back where they were. Older export files still import.
+- **Export and import keep your settings**: the default colours, the window theme, the Bring panels to front shortcut and Remember places for each screen setup. Import with Replace sets them and forgets the places saved for each screen setup, so you see the imported places.
+
+### Changed
+
+- The database moves to version 18. Export your data before installing if you want to be able to go back.
+
 ## [1.15.2]
 
 ### Added

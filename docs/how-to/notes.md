@@ -37,6 +37,8 @@ You can also select the button and press F2.
 
 Click **Wrap text** to fit long lines to the window's width.
 
+Hold Ctrl and turn the mouse wheel to make the text bigger or smaller. The note keeps its size. Text starts at size 12.
+
 ## Colour a note
 
 1. Click **Note colours** in the note's title bar.

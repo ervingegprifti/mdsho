@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -50,16 +50,16 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Version_is_17_and_the_last_migration_is_17() {
-      Assert.Equal(17, AppConstants.DatabaseVersion);
-      Assert.Equal(17, SchemaManager.Migrations.Last().Version);
+    public void Version_17_is_a_known_step() {
+      Assert.True(AppConstants.DatabaseVersion >= 17);
+      Assert.Single(SchemaManager.Migrations, m => m.Version == 17);
     }
 
     [Fact]
     public void V16_database_migrates_to_17_with_empty_screen_setup_tables_and_keeps_the_rest() {
       BuildV16Db();
       DataStore.Upgrade();
-      Assert.Equal(17, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(1, Tables("ScreenSetups"));
       Assert.Equal(1, Tables("ScreenSetupPlaces"));
       Assert.Equal(0, db.Scalar("SELECT count(*) FROM ScreenSetups"));
@@ -243,7 +243,7 @@ namespace MDSHO.Tests {
     public void A_1_7_0_database_gets_the_last_used_column_without_losing_its_setups() {
       BuildOwners170Db();
       DataStore.Upgrade();
-      Assert.Equal(17, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(1, db.Scalar("SELECT count(*) FROM pragma_table_info('ScreenSetups') WHERE name = 'LastUsed'"));
       Assert.Equal(6, DataStore.ScreenSetups.GetAll().Count);
       // Running it again changes nothing.
@@ -297,7 +297,7 @@ namespace MDSHO.Tests {
     // ---- On this PC only ----
 
     [Fact]
-    public void Export_leaves_the_screen_setups_out_and_replace_import_keeps_them() {
+    public void Export_leaves_the_screen_setups_out_and_replace_import_keeps_them_but_clears_their_places() {
       db = new TempDb();
       DesktopWindow w = DataStore.Windows.Create("D", 0, 0);
       long setup = DataStore.ScreenSetups.Ensure("A", "1 screen: 1920×1080");
@@ -308,16 +308,17 @@ namespace MDSHO.Tests {
         foreach (ZipArchiveEntry entry in archive.Entries.Where(e => e.FullName.EndsWith(".json", StringComparison.Ordinal))) {
           using (StreamReader reader = new StreamReader(entry.Open())) {
             string text = reader.ReadToEnd();
-            Assert.DoesNotContain("ScreenSetup", text, StringComparison.OrdinalIgnoreCase);
+            // Only the on/off setting (RememberScreenSetupPlaces) travels, from 1.16.0.
+            Assert.DoesNotContain("ScreenSetups", text, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("ScreenSetupPlace\"", text, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("1920×1080", text);
           }
         }
       }
       DataImporter.Import(zip, ImportMode.Replace);
       Assert.Equal("1 screen: 1920×1080", DataStore.ScreenSetups.GetAll().Single().Name);
-      // The panel comes back with the same ID, so its place still belongs to it.
-      Assert.Equal(0, DataStore.ScreenSetups.DeletePlacesOfMissingItems());
-      Assert.Equal(77, DataStore.ScreenSetups.GetPlaces(setup).Single().Left);
+      // From 1.16.0 the places go, so the imported places show after the restart.
+      Assert.Empty(DataStore.ScreenSetups.GetPlaces(setup));
     }
   }
 }

@@ -23,6 +23,7 @@ namespace MDSHO.Data {
 
     private static readonly Regex SafeGuid = new Regex("^[A-Za-z0-9-]{0,64}$", RegexOptions.Compiled);
     private static readonly Regex SafeExt = new Regex(@"^(\.[A-Za-z0-9]{1,16})?$", RegexOptions.Compiled);
+    private static readonly Regex Colour = new Regex("^#[0-9A-Fa-f]{8}$", RegexOptions.Compiled);
 
     /// <summary>Validates the file and returns its manifest (the counts are the real ones found in data.json).</summary>
     public static ExportManifest Inspect(string zipPath) {
@@ -67,8 +68,14 @@ namespace MDSHO.Data {
           using (ITransactionScope tx = DataStore.BeginTransaction()) {
             if (mode == ImportMode.Replace) {
               DeleteAllData();
+              // The places remembered per screen setup would move the imported windows back after the restart.
+              DataStore.ScreenSetups.DeleteAllPlaces();
             }
             WriteData(package.Data, mode, guidMap);
+            // Settings and default colours only replace; Add as new merges into this PC, which keeps its own.
+            if (mode == ImportMode.Replace) {
+              PortableSettings.Apply(package.Data.Settings, package.Data.DefaultColors);
+            }
             tx.Commit();
           }
           // 3. Only now touch the shortcut files.
@@ -83,8 +90,8 @@ namespace MDSHO.Data {
         } finally {
           try { if (Directory.Exists(stagePath)) { Directory.Delete(stagePath, true); } } catch (IOException) { } catch (UnauthorizedAccessException) { }
         }
-        AppLog.Information("Import finished: {Windows} windows, {Clones} clones, {Shortcuts} shortcuts",
-          package.Manifest.Counts.Windows, package.Manifest.Counts.Clones, package.Manifest.Counts.Shortcuts);
+        AppLog.Information("Import finished: {Windows} windows, {Clones} clones, {Shortcuts} shortcuts, {NoteWindows} note windows",
+          package.Manifest.Counts.Windows, package.Manifest.Counts.Clones, package.Manifest.Counts.Shortcuts, package.Manifest.Counts.NoteWindows);
         return result;
       }
     }
@@ -158,6 +165,14 @@ namespace MDSHO.Data {
         DataStore.Shortcuts.Add(s);
         shortcutIds[oldId] = s.ID;
       }
+      // Each note window place goes with its note's new ID; a place of a note not in the file is skipped.
+      foreach (NoteWindowPlace place in data.NoteWindows) {
+        if (shortcutIds.TryGetValue(place.ShortcutID, out long noteId)) {
+          place.ID = 0;
+          place.ShortcutID = noteId;
+          DataStore.NoteWindows.Save(place);
+        }
+      }
     }
 
     /// <summary>An opened, validated export file.</summary>
@@ -206,6 +221,7 @@ namespace MDSHO.Data {
         Manifest.Counts.Windows = Data.Windows.Count;
         Manifest.Counts.Clones = Data.Clones.Count;
         Manifest.Counts.Shortcuts = Data.Shortcuts.Count;
+        Manifest.Counts.NoteWindows = Data.NoteWindows.Count;
       }
 
       private static DataPortabilityException TooLarge() {
@@ -260,7 +276,7 @@ namespace MDSHO.Data {
         if (m == null || m.Format != ExportManifest.FormatName) {
           throw new DataPortabilityException("The file is not an MDSHO export (unknown format).");
         }
-        if (m.FormatVersion != ExportManifest.CurrentFormatVersion) {
+        if (m.FormatVersion < ExportManifest.OldestFormatVersion || m.FormatVersion > ExportManifest.CurrentFormatVersion) {
           throw new DataPortabilityException("This export file uses formatVersion " + m.FormatVersion + ", which this version of MDSHO does not support.");
         }
         if (m.SchemaVersion > AppConstants.DatabaseVersion) {
@@ -282,11 +298,13 @@ namespace MDSHO.Data {
         if (d == null || d.Windows == null || d.Clones == null || d.Shortcuts == null) {
           throw new DataPortabilityException("data.json is not valid: windows, clones and shortcuts are required.");
         }
+        // Format 1 files have no note window places: the notes get default windows.
+        d.NoteWindows = d.NoteWindows ?? new List<NoteWindowPlace>();
         return d;
       }
 
       private void Validate() {
-        foreach (object row in Data.Windows.Cast<object>().Concat(Data.Clones).Concat(Data.Shortcuts)) {
+        foreach (object row in Data.Windows.Cast<object>().Concat(Data.Clones).Concat(Data.Shortcuts).Concat(Data.NoteWindows)) {
           if (row == null) {
             throw new DataPortabilityException("data.json is not valid: it contains an empty record.");
           }
@@ -319,6 +337,14 @@ namespace MDSHO.Data {
           }
           if (!SafeGuid.IsMatch(s.Guid) || !SafeExt.IsMatch(s.Ext)) {
             throw new DataPortabilityException("Shortcut " + s.ID + " has an unsafe file name and was not imported.");
+          }
+        }
+        if (Data.DefaultColors != null) {
+          foreach (KeyValuePair<string, ColorSet> pair in Data.DefaultColors.Where(p => p.Value != null)) {
+            ColorSet c = pair.Value;
+            if (new[] { c.BorderColor, c.TitleBackgroundColor, c.TitleTextColor, c.BackgroundColor, c.TextColor }.Any(v => v == null || !Colour.IsMatch(v))) {
+              throw new DataPortabilityException("data.json is not valid: a default colour of \"" + pair.Key + "\" is not a colour (#AARRGGBB).");
+            }
           }
         }
         foreach (Shortcut s in Data.Shortcuts) {

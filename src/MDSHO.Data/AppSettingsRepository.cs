@@ -13,5 +13,9 @@ namespace MDSHO.Data {
       Run("INSERT INTO AppSettings (Key, Value) VALUES (@key, @value) ON CONFLICT(Key) DO UPDATE SET Value = excluded.Value",
         new { key, value = value ?? "" });
     }
+
+    public void Delete(string key) {
+      Run("DELETE FROM AppSettings WHERE Key = @key", new { key });
+    }
   }
 }

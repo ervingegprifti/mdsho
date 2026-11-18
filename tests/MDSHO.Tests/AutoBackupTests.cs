@@ -63,7 +63,7 @@ namespace MDSHO.Tests {
       string zip = Path.Combine(db.Folder, "pc.zip");
       DataExporter.Export(zip, new ExportOptions { PcName = "HOMEPC" });
       Assert.Equal("HOMEPC", (string)Manifest(zip)["pcName"]);
-      Assert.Equal(1, (int)Manifest(zip)["formatVersion"]);
+      Assert.Equal(3, (int)Manifest(zip)["formatVersion"]);
       Assert.Equal("HOMEPC", DataImporter.Inspect(zip).PcName);
     }
 

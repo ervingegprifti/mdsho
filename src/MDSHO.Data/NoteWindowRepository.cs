@@ -5,7 +5,7 @@ namespace MDSHO.Data {
 
   /// <summary>The NoteWindows table: one row per note window (see <see cref="INoteWindowRepository"/>).</summary>
   internal sealed class NoteWindowRepository : RepositoryBase, INoteWindowRepository {
-    private const string SelectColumns = "ID, ShortcutID, Left, Top, Width, Height, State, IsOpen, IsTopmost, IsWrapText";
+    private const string SelectColumns = "ID, ShortcutID, Left, Top, Width, Height, State, IsOpen, IsTopmost, IsWrapText, FontSize";
 
     public NoteWindowPlace Get(long shortcutID) {
       return One<NoteWindowPlace>("SELECT " + SelectColumns + " FROM NoteWindows WHERE ShortcutID = @shortcutID", new { shortcutID });
@@ -15,14 +15,18 @@ namespace MDSHO.Data {
       return Many<NoteWindowPlace>("SELECT " + SelectColumns + " FROM NoteWindows WHERE IsOpen = 1 ORDER BY ShortcutID ASC");
     }
 
+    public List<NoteWindowPlace> GetAll() {
+      return Many<NoteWindowPlace>("SELECT " + SelectColumns + " FROM NoteWindows ORDER BY ShortcutID ASC");
+    }
+
     public void Save(NoteWindowPlace place) {
       Run(@"
-        INSERT INTO NoteWindows (ShortcutID, Left, Top, Width, Height, State, IsOpen, IsTopmost, IsWrapText)
-        VALUES (@ShortcutID, @Left, @Top, @Width, @Height, @State, @IsOpen, @IsTopmost, @IsWrapText)
+        INSERT INTO NoteWindows (ShortcutID, Left, Top, Width, Height, State, IsOpen, IsTopmost, IsWrapText, FontSize)
+        VALUES (@ShortcutID, @Left, @Top, @Width, @Height, @State, @IsOpen, @IsTopmost, @IsWrapText, @FontSize)
         ON CONFLICT(ShortcutID) DO UPDATE SET
           Left = excluded.Left, Top = excluded.Top, Width = excluded.Width, Height = excluded.Height,
           State = excluded.State, IsOpen = excluded.IsOpen, IsTopmost = excluded.IsTopmost,
-          IsWrapText = excluded.IsWrapText", place);
+          IsWrapText = excluded.IsWrapText, FontSize = excluded.FontSize", place);
     }
 
     public void SetOpen(long shortcutID, bool isOpen) {

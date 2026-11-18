@@ -32,14 +32,18 @@ namespace MDSHO.Data {
     public int Shortcuts { get; set; }
     /// <summary>Number of shortcut files in the zip.</summary>
     public int Files { get; set; }
+    /// <summary>Number of note window places (0 in format 1 files, which have none).</summary>
+    public int NoteWindows { get; set; }
   }
 
   /// <summary>The content of manifest.json.</summary>
   public sealed class ExportManifest {
     /// <summary>Fixed name that identifies an MDSHO export file.</summary>
     public const string FormatName = "MDSHO-export";
-    /// <summary>The export format version this build writes and reads.</summary>
-    public const int CurrentFormatVersion = 1;
+    /// <summary>The export format version this build writes. 2 added the note window places, 3 the default colours and settings.</summary>
+    public const int CurrentFormatVersion = 3;
+    /// <summary>The oldest export format version this build still reads.</summary>
+    public const int OldestFormatVersion = 1;
 
     /// <summary>Identifies the file as an MDSHO export.</summary>
     public string Format { get; set; }
@@ -79,6 +83,68 @@ namespace MDSHO.Data {
     public List<DesktopWindow> Windows { get; set; }
     public List<DesktopWindowClone> Clones { get; set; }
     public List<Shortcut> Shortcuts { get; set; }
+    /// <summary>The note window places (format 2); null in format 1 files.</summary>
+    public List<NoteWindowPlace> NoteWindows { get; set; }
+    /// <summary>The default colours by ColorSetKind name, null for a kind never set (format 3); null in older files.</summary>
+    public Dictionary<string, ColorSet> DefaultColors { get; set; }
+    /// <summary>The PortableSettings values, null for one never set (format 3); null in older files.</summary>
+    public Dictionary<string, string> Settings { get; set; }
+  }
+
+  /// <summary>
+  /// The settings an export carries and a Replace import applies: Window theme, the Bring panels to front shortcut and
+  /// Remember places for each screen setup. Settings tied to this PC (backups, review prompt, last Settings page) stay out.
+  /// </summary>
+  public static class PortableSettings {
+    /// <summary>Their AppSettings keys (the same as the SettingKey constants of the view models).</summary>
+    public static readonly string[] Keys = { "WindowTheme", "BringToFrontShortcut", "RememberScreenSetupPlaces" };
+
+    /// <summary>The current value of each key; null when never saved.</summary>
+    internal static Dictionary<string, string> Read() {
+      Dictionary<string, string> values = new Dictionary<string, string>();
+      foreach (string key in Keys) {
+        values[key] = DataStore.AppSettings.Get(key);
+      }
+      return values;
+    }
+
+    /// <summary>Both kinds of default colours; null for a kind never set.</summary>
+    internal static Dictionary<string, ColorSet> ReadDefaultColors() {
+      Dictionary<string, ColorSet> colors = new Dictionary<string, ColorSet>();
+      foreach (ColorSetKind kind in Enum.GetValues<ColorSetKind>()) {
+        colors[kind.ToString()] = DataStore.DefaultColors.Get(kind);
+      }
+      return colors;
+    }
+
+    /// <summary>
+    /// Sets what the file has: a value is saved, a null is removed. A key or kind missing from the file (and a file
+    /// without these parts at all) keeps the value on this PC. Other keys in the file are ignored.
+    /// </summary>
+    internal static void Apply(Dictionary<string, string> settings, Dictionary<string, ColorSet> defaultColors) {
+      if (settings != null) {
+        foreach (string key in Keys) {
+          if (settings.TryGetValue(key, out string value)) {
+            if (value == null) {
+              DataStore.AppSettings.Delete(key);
+            } else {
+              DataStore.AppSettings.Set(key, value);
+            }
+          }
+        }
+      }
+      if (defaultColors != null) {
+        foreach (ColorSetKind kind in Enum.GetValues<ColorSetKind>()) {
+          if (defaultColors.TryGetValue(kind.ToString(), out ColorSet colors)) {
+            if (colors == null) {
+              DataStore.DefaultColors.Delete(kind);
+            } else {
+              DataStore.DefaultColors.Save(kind, colors);
+            }
+          }
+        }
+      }
+    }
   }
 
   internal static class PortabilityJson {
@@ -103,6 +169,14 @@ namespace MDSHO.Data {
             }
           };
           info.Properties.Add(legacyNotes);
+        }
+        // A note window place is linked by its note's ID; its own row ID is not written.
+        if (info.Type == typeof(NoteWindowPlace)) {
+          for (int i = info.Properties.Count - 1; i >= 0; i--) {
+            if (string.Equals(info.Properties[i].Name, "id", StringComparison.OrdinalIgnoreCase)) {
+              info.Properties.RemoveAt(i);
+            }
+          }
         }
         if (info.Type == typeof(DesktopWindow) || info.Type == typeof(DesktopWindowClone) || info.Type == typeof(Shortcut)) {
           for (int i = info.Properties.Count - 1; i >= 0; i--) {

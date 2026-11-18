@@ -678,6 +678,8 @@ namespace MDSHO
         ImportMode mode = answer == MessageBoxResult.Yes ? ImportMode.Replace : ImportMode.AddAsNew;
         ImportResult result;
         try {
+          // Typing and places of open notes first, so the backup made by Replace has them.
+          TextEditWindow.SaveOpenNotes();
           result = DataImporter.Import(dialog.FileName, mode);
         } catch (DataPortabilityException ex) {
           ErrorDialog.ShowDialog(ex.Message, ex);
@@ -686,7 +688,16 @@ namespace MDSHO
           ErrorDialog.ShowDialog("The data could not be imported. Nothing was changed.", ex);
           return;
         }
+        // The open note windows belong to the old data: close them without saving over the imported data.
+        TextEditWindow.ForgetOpenNotes();
         string done = "The data was imported.";
+        if (mode == ImportMode.Replace) {
+          // The imported shortcut: another app may hold its keys on this PC.
+          Common.Hotkey refused = AppServices.Current.BringToFront.ApplyImported();
+          if (refused != null) {
+            done += "\n\n" + BringToFrontShortcut.ImportedInUseMessage(refused);
+          }
+        }
         if (result.BackupPath != null) {
           done += "\nYour previous data was saved to:\n" + result.BackupPath;
         }
