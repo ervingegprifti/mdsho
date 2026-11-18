@@ -142,7 +142,7 @@ namespace MDSHO.Tests {
       ExportManifest m = DataExporter.Export(Zip());
       Assert.False(File.Exists(Zip() + ".tmp"));
       Assert.Equal("MDSHO-export", m.Format);
-      Assert.Equal(1, m.FormatVersion);
+      Assert.Equal(2, m.FormatVersion);
       Assert.Equal(AppConstants.DatabaseVersion, m.SchemaVersion);
       Assert.Equal(2, m.Counts.Windows);
       Assert.Equal(1, m.Counts.Clones);
@@ -158,7 +158,7 @@ namespace MDSHO.Tests {
       }
       JsonNode manifest = JsonNode.Parse(ReadEntry(Zip(), "manifest.json"));
       Assert.Equal("MDSHO-export", (string)manifest["format"]);
-      Assert.Equal(1, (int)manifest["formatVersion"]);
+      Assert.Equal(2, (int)manifest["formatVersion"]);
       Assert.Equal(AppConstants.DatabaseVersion, (int)manifest["schemaVersion"]);
       Assert.Equal(7, (int)manifest["counts"]["shortcuts"]);
       Assert.Equal(1, manifest["missingFiles"].AsArray().Count);
@@ -397,7 +397,7 @@ namespace MDSHO.Tests {
     public void Unsupported_format_version_is_rejected() {
       Seed();
       DataExporter.Export(Zip());
-      AssertRejected(MutateJson(Zip(), "manifest.json", n => n["formatVersion"] = 2), "formatVersion");
+      AssertRejected(MutateJson(Zip(), "manifest.json", n => n["formatVersion"] = 3), "formatVersion");
     }
 
     [Fact]

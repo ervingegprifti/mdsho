@@ -338,7 +338,7 @@ namespace MDSHO {
     }
 
     private void SaveNotePlace(bool isOpen) {
-      if (this.kind != TextKind.Note || this.shortcut.ID == 0) {
+      if (this.kind != TextKind.Note || this.shortcut.ID == 0 || forgetting) {
         return;
       }
       Rect normal = NormalBounds;
@@ -365,6 +365,11 @@ namespace MDSHO {
     /// </summary>
     public static void SaveOpenNotesForExit() {
       IsExiting = true;
+      SaveOpenNotes();
+    }
+
+    /// <summary>Saves unsaved typing and the place of every open note window, marked as open (before an import too).</summary>
+    public static void SaveOpenNotes() {
       foreach (TextEditWindow window in openNoteWindows.ToList()) {
         string text = window.TextComment.Text ?? "";
         string value = string.IsNullOrWhiteSpace(text) ? "" : text;
@@ -372,6 +377,24 @@ namespace MDSHO {
           window.shortcut.NoteText = value;
         }
         window.SaveNotePlace(isOpen: true);
+      }
+    }
+
+    // True while ForgetOpenNotes closes the windows: nothing is saved then.
+    private static bool forgetting;
+
+    /// <summary>
+    /// After an import: closes the note windows of the old data without saving their text or place, so they can't
+    /// overwrite the imported data. Call <see cref="SaveOpenNotes"/> before the import.
+    /// </summary>
+    public static void ForgetOpenNotes() {
+      forgetting = true;
+      try {
+        foreach (TextEditWindow window in openNoteWindows.ToList()) {
+          window.Close();
+        }
+      } finally {
+        forgetting = false;
       }
     }
 
@@ -606,6 +629,9 @@ namespace MDSHO {
     // Saves the note now if its text changed, and keeps the window open (autosave, closing, Ctrl+Enter and Ctrl+S).
     private void SaveNoteNow() {
       this.noteSaveTimer.Stop();
+      if (forgetting) {
+        return;
+      }
       string value = TextToSave();
       if (value == (this.shortcut.NoteText ?? "")) {
         return;

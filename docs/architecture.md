@@ -180,8 +180,9 @@ full exception text on the clipboard, and **Open logs folder** opens the logs fo
 `MDSHO-export-<yyyy-MM-dd-HHmm>.zip` by default, where you choose. The file contains:
 
 - `manifest.json`: the format name (`MDSHO-export`) and version, the MDSHO version and database version that wrote it,
-  the date, and the counts of windows, clones, shortcuts and files;
-- `data.json`: all windows, clones and shortcuts;
+  the date, and the counts of windows, clones, shortcuts, note windows and files;
+- `data.json`: all windows, clones and shortcuts, and the note window places (where each note window was, its size,
+  state, whether it was open, pinned or wrapped, and its text size), each linked to its note by the note's ID;
 - `shortcuts/`: the shortcut files of the buttons.
 
 **Import data...** first checks the whole file (format, versions, counts, size limits) and then either:
@@ -192,6 +193,12 @@ full exception text on the clipboard, and **Open logs folder** opens the logs fo
 The database part of an import runs in one transaction, and the shortcut files are only moved into place after it
 commits, so a failed import leaves the existing data as it was. MDSHO restarts after a successful import. Export files
 from older MDSHO versions still import; missing newer fields get their defaults.
+
+The format version is 2 since 1.16.0, which added the note window places. MDSHO reads formats 1 and 2; a format 1
+file has no note window places, so its notes open in default windows. An import links each place to its note's new
+ID (Add as new gives new IDs) and skips a place whose note is not in the file. Before the import MDSHO saves the open
+notes; after it, it closes them without saving, so the old windows can't write over the imported places. After the
+restart the notes the file had open come back where they were.
 
 The code is in `src/MDSHO.Data/DataExporter.cs`, `DataImporter.cs` and `DataPortability.cs`.
 

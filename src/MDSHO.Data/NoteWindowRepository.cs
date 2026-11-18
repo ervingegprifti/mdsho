@@ -15,6 +15,10 @@ namespace MDSHO.Data {
       return Many<NoteWindowPlace>("SELECT " + SelectColumns + " FROM NoteWindows WHERE IsOpen = 1 ORDER BY ShortcutID ASC");
     }
 
+    public List<NoteWindowPlace> GetAll() {
+      return Many<NoteWindowPlace>("SELECT " + SelectColumns + " FROM NoteWindows ORDER BY ShortcutID ASC");
+    }
+
     public void Save(NoteWindowPlace place) {
       Run(@"
         INSERT INTO NoteWindows (ShortcutID, Left, Top, Width, Height, State, IsOpen, IsTopmost, IsWrapText, FontSize)

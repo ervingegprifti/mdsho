@@ -76,6 +76,8 @@ namespace MDSHO.Core {
     NoteWindowPlace Get(long shortcutID);
     /// <summary>The places of the note windows that were open, oldest note first.</summary>
     List<NoteWindowPlace> GetOpen();
+    /// <summary>The places of all note windows, by note (exports carry them).</summary>
+    List<NoteWindowPlace> GetAll();
     /// <summary>Saves the place of a note's window (adds the row the first time, updates it after that).</summary>
     void Save(NoteWindowPlace place);
     /// <summary>Marks a note's window as open or closed, keeping its place.</summary>

@@ -24,6 +24,12 @@ namespace MDSHO.Data {
       return Filled(Many<Shortcut>("SELECT *, ParentMDSHOWindowID AS ParentWindowID FROM Shortcuts ORDER BY ID ASC"));
     }
 
+    // The NoteWindows table came in version 8; IsTopmost, IsWrapText and FontSize later (missing ones read as 0).
+    public static List<NoteWindowPlace> NoteWindows() {
+      bool exists = One<long>("SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = 'NoteWindows'") > 0;
+      return exists ? Many<NoteWindowPlace>("SELECT * FROM NoteWindows ORDER BY ShortcutID ASC") : new List<NoteWindowPlace>();
+    }
+
     private static List<T> Filled<T>(List<T> rows) {
       PropertyInfo[] texts = typeof(T).GetProperties().Where(p => p.PropertyType == typeof(string) && p.CanWrite && p.CanRead).ToArray();
       foreach (T row in rows) {

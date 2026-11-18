@@ -11,7 +11,7 @@ using MDSHO.Core;
 namespace MDSHO.Data {
 
   /// <summary>
-  /// Exports all MDSHO data (windows, clones, shortcuts and the shortcut files) to one zip file:
+  /// Exports all MDSHO data (windows, clones, shortcuts, note window places and the shortcut files) to one zip file:
   /// <c>manifest.json</c>, <c>data.json</c> and <c>shortcuts/&lt;guid&gt;&lt;ext&gt;</c>.
   /// </summary>
   public static class DataExporter {
@@ -40,8 +40,8 @@ namespace MDSHO.Data {
       AppLog.Information("Export started to {ZipPath}", zipPath);
       try {
         ExportManifest manifest = ExportCore(zipPath, options ?? new ExportOptions());
-        AppLog.Information("Export finished: {Windows} windows, {Clones} clones, {Shortcuts} shortcuts, {Files} files ({MissingFiles} missing)",
-          manifest.Counts.Windows, manifest.Counts.Clones, manifest.Counts.Shortcuts, manifest.Counts.Files, manifest.MissingFiles.Count);
+        AppLog.Information("Export finished: {Windows} windows, {Clones} clones, {Shortcuts} shortcuts, {NoteWindows} note windows, {Files} files ({MissingFiles} missing)",
+          manifest.Counts.Windows, manifest.Counts.Clones, manifest.Counts.Shortcuts, manifest.Counts.NoteWindows, manifest.Counts.Files, manifest.MissingFiles.Count);
         return manifest;
       } catch (Exception ex) {
         AppLog.Error(ex, "Export failed");
@@ -81,6 +81,7 @@ namespace MDSHO.Data {
       manifest.Counts.Windows = data.Windows.Count;
       manifest.Counts.Clones = data.Clones.Count;
       manifest.Counts.Shortcuts = data.Shortcuts.Count;
+      manifest.Counts.NoteWindows = data.NoteWindows.Count;
       string tempPath = zipPath + ".tmp";
       try {
         using (FileStream fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -117,10 +118,12 @@ namespace MDSHO.Data {
           data.Windows = OldSchemaReader.Windows();
           data.Clones = OldSchemaReader.Clones();
           data.Shortcuts = OldSchemaReader.Shortcuts();
+          data.NoteWindows = OldSchemaReader.NoteWindows();
         } else {
           data.Windows = DataStore.Windows.GetAll();
           data.Clones = DataStore.Clones.GetAll();
           data.Shortcuts = DataStore.Shortcuts.GetAll();
+          data.NoteWindows = DataStore.NoteWindows.GetAll();
         }
         tx.Commit();
       }

@@ -32,14 +32,18 @@ namespace MDSHO.Data {
     public int Shortcuts { get; set; }
     /// <summary>Number of shortcut files in the zip.</summary>
     public int Files { get; set; }
+    /// <summary>Number of note window places (0 in format 1 files, which have none).</summary>
+    public int NoteWindows { get; set; }
   }
 
   /// <summary>The content of manifest.json.</summary>
   public sealed class ExportManifest {
     /// <summary>Fixed name that identifies an MDSHO export file.</summary>
     public const string FormatName = "MDSHO-export";
-    /// <summary>The export format version this build writes and reads.</summary>
-    public const int CurrentFormatVersion = 1;
+    /// <summary>The export format version this build writes. 2 added the note window places.</summary>
+    public const int CurrentFormatVersion = 2;
+    /// <summary>The oldest export format version this build still reads.</summary>
+    public const int OldestFormatVersion = 1;
 
     /// <summary>Identifies the file as an MDSHO export.</summary>
     public string Format { get; set; }
@@ -79,6 +83,8 @@ namespace MDSHO.Data {
     public List<DesktopWindow> Windows { get; set; }
     public List<DesktopWindowClone> Clones { get; set; }
     public List<Shortcut> Shortcuts { get; set; }
+    /// <summary>The note window places (format 2); null in format 1 files.</summary>
+    public List<NoteWindowPlace> NoteWindows { get; set; }
   }
 
   internal static class PortabilityJson {
@@ -103,6 +109,14 @@ namespace MDSHO.Data {
             }
           };
           info.Properties.Add(legacyNotes);
+        }
+        // A note window place is linked by its note's ID; its own row ID is not written.
+        if (info.Type == typeof(NoteWindowPlace)) {
+          for (int i = info.Properties.Count - 1; i >= 0; i--) {
+            if (string.Equals(info.Properties[i].Name, "id", StringComparison.OrdinalIgnoreCase)) {
+              info.Properties.RemoveAt(i);
+            }
+          }
         }
         if (info.Type == typeof(DesktopWindow) || info.Type == typeof(DesktopWindowClone) || info.Type == typeof(Shortcut)) {
           for (int i = info.Properties.Count - 1; i >= 0; i--) {
