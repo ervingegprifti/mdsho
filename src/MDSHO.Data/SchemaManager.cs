@@ -93,6 +93,7 @@ namespace MDSHO.Data {
           IsOpen INTEGER NOT NULL DEFAULT 0,
           IsTopmost INTEGER NOT NULL DEFAULT 0,
           IsWrapText INTEGER NOT NULL DEFAULT 0,
+          FontSize INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(ShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE);
         CREATE TABLE IF NOT EXISTS DefaultColors (
           Kind TEXT NOT NULL PRIMARY KEY,
@@ -319,6 +320,13 @@ namespace MDSHO.Data {
           UNIQUE(SetupID, Kind, ItemID),
           FOREIGN KEY(SetupID) REFERENCES ScreenSetups(ID) ON DELETE CASCADE);");
         AddScreenSetupsLastUsed(conn);
+      }),
+      new DbMigration(18, "Note text size: NoteWindows.FontSize (0 = 16)", conn => {
+        if (!ColumnExists(conn, "NoteWindows", "FontSize")) {
+          Execute(conn, "ALTER TABLE NoteWindows ADD COLUMN FontSize INTEGER NOT NULL DEFAULT 0;");
+        }
+        // A 1.7.0 test build database skips the version 17 repair once it is at 18, so repair it here too.
+        AddScreenSetupsLastUsed(conn);
       })
     };
 
@@ -439,9 +447,9 @@ namespace MDSHO.Data {
       RepairVersion17();
     }
 
-    // Fixes a version 17 database from the 1.7.0 test build.
+    // Fixes a database from the 1.7.0 test build (version 17 or later).
     private static void RepairVersion17() {
-      if (ReadUserVersion() != 17) {
+      if (ReadUserVersion() < 17) {
         return;
       }
       using (SqliteConnection conn = new SqliteConnection(ConnectionFactory.GetConnectionString())) {

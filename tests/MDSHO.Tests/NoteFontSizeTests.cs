@@ -1,0 +1,289 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using Microsoft.Data.Sqlite;
+using MDSHO.Common;
+using MDSHO.Core;
+using MDSHO.Data;
+using MDSHO.ViewModels;
+using Xunit;
+
+namespace MDSHO.Tests {
+
+  /// <summary>
+  /// Ctrl + mouse wheel makes the text of a Note or Comment window bigger or smaller (steps of 2 from 8 to 72, 16 at
+  /// first). A note keeps its size in NoteWindows.FontSize (database version 18; 0 = 16); a comment starts at 16 each time.
+  /// </summary>
+  public class NoteFontSizeTests : IDisposable {
+    private TempDb db;
+    public void Dispose() { if (db != null) { db.Dispose(); } }
+
+    // ---- The size steps ----
+
+    [Fact]
+    public void The_sizes_are_16_at_first_and_go_in_steps_of_2_from_8_to_72() {
+      Assert.Equal(16, NoteWindowPlace.DefaultFontSize);
+      Assert.Equal(8, NoteWindowPlace.MinFontSize);
+      Assert.Equal(72, NoteWindowPlace.MaxFontSize);
+      Assert.Equal(18, NoteWindowPlace.NextFontSize(16, 120));
+      Assert.Equal(14, NoteWindowPlace.NextFontSize(16, -120));
+      Assert.Equal(72, NoteWindowPlace.NextFontSize(72, 120));
+      Assert.Equal(8, NoteWindowPlace.NextFontSize(8, -120));
+      Assert.Equal(16, NoteWindowPlace.NextFontSize(16, 0));
+    }
+
+    [Fact]
+    public void A_saved_size_of_0_or_out_of_range_means_16_or_the_nearest_limit() {
+      Assert.Equal(16, NoteWindowPlace.FontSizeOrDefault(0));
+      Assert.Equal(16, NoteWindowPlace.FontSizeOrDefault(-4));
+      Assert.Equal(24, NoteWindowPlace.FontSizeOrDefault(24));
+      Assert.Equal(72, NoteWindowPlace.FontSizeOrDefault(500));
+      Assert.Equal(8, NoteWindowPlace.FontSizeOrDefault(3));
+    }
+
+    // ---- Database version 18 ----
+
+    private long Columns(string table, string column) {
+      return db.Scalar("SELECT count(*) FROM pragma_table_info('" + table + "') WHERE name = '" + column + "' COLLATE NOCASE");
+    }
+
+    // A version 17 database with one note window place.
+    private void BuildV17Db() {
+      db = new TempDb(false);
+      db.Exec("PRAGMA user_version = 9;" + DatabaseV10MigrationTests.V9Sql
+        + "INSERT INTO MDSHOWindows (ID,Title,ScreenDeviceName,Left,Top,Width,Height,BorderColor,BackgroundColor,TextColor,TitleBackgroundColor,TitleTextColor,Notes,SolidIcons,SingleClickToOpen) VALUES "
+        + "(1,'W1','D1',0,0,300,400,'#FF000001','#FF000002','#FF000003','#FF000004','#FF000005','',1,1);"
+        + "INSERT INTO Shortcuts VALUES (1,NULL,1,'N','','','g1',0,0,'',0,'#F',0,0,'','',0,'',1,'text');"
+        + "INSERT INTO NoteWindows (ShortcutID,Left,Top,Width,Height,State,IsOpen,IsTopmost) VALUES (1,10,20,300,200,0,1,1);");
+      using (SqliteConnection c = db.Open()) {
+        foreach (int version in new[] { 10, 11, 12, 13, 14, 15, 16, 17 }) {
+          SchemaManager.Migrations.Single(m => m.Version == version).Apply(c);
+        }
+      }
+      db.Exec("PRAGMA user_version = 17;");
+    }
+
+    [Fact]
+    public void Version_is_18_and_the_last_migration_is_18() {
+      Assert.Equal(18, AppConstants.DatabaseVersion);
+      Assert.Equal(18, SchemaManager.Migrations.Last().Version);
+    }
+
+    [Fact]
+    public void V17_database_migrates_to_18_with_font_size_0_and_keeps_the_place() {
+      BuildV17Db();
+      DataStore.Upgrade();
+      Assert.Equal(18, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(1, Columns("NoteWindows", "FontSize"));
+      NoteWindowPlace place = DataStore.NoteWindows.Get(1);
+      Assert.Equal((10L, 20L, true, true, 0L), (place.Left, place.Top, place.IsOpen, place.IsTopmost, place.FontSize));
+      Assert.Single(Directory.GetFiles(db.Folder, "test.sqlite3.bak-v17-*"));
+    }
+
+    [Fact]
+    public void Running_the_v18_step_twice_does_nothing_the_second_time() {
+      BuildV17Db();
+      DataStore.Upgrade();
+      using (SqliteConnection c = db.Open()) {
+        SchemaManager.Migrations.Single(m => m.Version == 18).Apply(c);
+      }
+      Assert.Equal(1, Columns("NoteWindows", "FontSize"));
+    }
+
+    [Fact]
+    public void A_new_database_has_the_column_and_the_size_is_saved_with_the_place() {
+      db = new TempDb();
+      Assert.Equal(1, Columns("NoteWindows", "FontSize"));
+      long windowId = DataStore.Windows.GetAll().First().ID;
+      Shortcut note = DataStore.Shortcuts.CreateNote(null, windowId);
+      DataStore.NoteWindows.Save(new NoteWindowPlace(note.ID, 1, 2, 300, 200, NoteWindowPlace.Normal, isOpen: true) { FontSize = 24 });
+      Assert.Equal(24, DataStore.NoteWindows.Get(note.ID).FontSize);
+      DataStore.NoteWindows.Save(new NoteWindowPlace(note.ID, 1, 2, 300, 200, NoteWindowPlace.Normal, isOpen: true) { FontSize = 10 });
+      Assert.Equal(10, DataStore.NoteWindows.Get(note.ID).FontSize);
+    }
+
+    // ---- The window ----
+
+    private static readonly ScreenRect TestArea = new ScreenRect(-20000, -20000, 15000, 15000);
+
+    private sealed class Fixture {
+      public AppViewModel App;
+      public DesktopWindowViewModel Win;
+      public ShortcutViewModel Note;
+    }
+
+    private static void WithNote(Action<Fixture> body) {
+      WpfAppHost.Run(() => {
+        Action<ShortcutViewModel> oldNoteEditor = ShortcutViewModel.OpenNoteEditor;
+        Action<TextEditWindow> oldPlace = TextEditWindow.PlaceNoteWindow;
+        Func<IList<ScreenRect>> oldAreas = TextEditWindow.WorkAreas;
+        Func<ModifierKeys> oldModifiers = TextEditWindow.KeyboardModifiers;
+        ShortcutViewModel.OpenNoteEditor = s => { };
+        TextEditWindow.PlaceNoteWindow = w => {
+          w.WindowStartupLocation = WindowStartupLocation.Manual;
+          w.Left = -10000;
+          w.Top = -10000;
+        };
+        TextEditWindow.WorkAreas = () => new List<ScreenRect> { TestArea };
+        try {
+          using (TempDb tempDb = new TempDb()) {
+            Fixture f = new Fixture();
+            f.App = new AppViewModel();
+            f.Win = f.App.AddWindow("TEST", 0, 0);
+            f.Win.NewNoteShortcutCommand.Execute(null);
+            f.Note = f.Win.RootShortcuts.Last();
+            f.Note.Name = "Checklist";
+            body(f);
+          }
+        } finally {
+          foreach (TextEditWindow w in TextEditWindow.OpenNoteWindows.ToList()) {
+            w.Close();
+          }
+          WpfAppHost.Pump();
+          ShortcutViewModel.OpenNoteEditor = oldNoteEditor;
+          TextEditWindow.PlaceNoteWindow = oldPlace;
+          TextEditWindow.WorkAreas = oldAreas;
+          TextEditWindow.KeyboardModifiers = oldModifiers;
+        }
+      });
+    }
+
+    private static TextEditWindow Open(ShortcutViewModel note) {
+      TextEditWindow.ShowNoteFor(note);
+      WpfAppHost.Pump();
+      return TextEditWindow.OpenNoteWindows.Single(w => w.Shortcut == note);
+    }
+
+    private static TextBox Text(Window window) {
+      return (TextBox)window.FindName("TextComment");
+    }
+
+    // Turns the mouse wheel over the text, with or without Ctrl; true when the window handled it.
+    private static bool Wheel(TextEditWindow window, int delta, bool ctrl) {
+      TextEditWindow.KeyboardModifiers = () => ctrl ? ModifierKeys.Control : ModifierKeys.None;
+      MouseWheelEventArgs e = new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, delta) { RoutedEvent = UIElement.PreviewMouseWheelEvent };
+      Text(window).RaiseEvent(e);
+      WpfAppHost.Pump();
+      return e.Handled;
+    }
+
+    [Fact]
+    public void A_new_note_shows_its_text_at_16() {
+      WithNote(f => {
+        Assert.Equal(16, Text(Open(f.Note)).FontSize);
+      });
+    }
+
+    [Fact]
+    public void Ctrl_wheel_up_makes_the_text_bigger_and_down_smaller_and_is_handled() {
+      WithNote(f => {
+        TextEditWindow window = Open(f.Note);
+        Assert.True(Wheel(window, 120, ctrl: true));
+        Assert.Equal(18, Text(window).FontSize);
+        Assert.True(Wheel(window, 120, ctrl: true));
+        Assert.Equal(20, Text(window).FontSize);
+        Assert.True(Wheel(window, -120, ctrl: true));
+        Assert.Equal(18, Text(window).FontSize);
+      });
+    }
+
+    [Fact]
+    public void The_wheel_without_ctrl_leaves_the_size_and_scrolls_as_before() {
+      WithNote(f => {
+        TextEditWindow window = Open(f.Note);
+        Assert.False(Wheel(window, 120, ctrl: false));
+        Assert.Equal(16, Text(window).FontSize);
+      });
+    }
+
+    [Fact]
+    public void The_size_stops_at_8_and_72() {
+      WithNote(f => {
+        TextEditWindow window = Open(f.Note);
+        for (int i = 0; i < 40; i++) { Wheel(window, 120, ctrl: true); }
+        Assert.Equal(72, Text(window).FontSize);
+        for (int i = 0; i < 40; i++) { Wheel(window, -120, ctrl: true); }
+        Assert.Equal(8, Text(window).FontSize);
+      });
+    }
+
+    [Fact]
+    public void The_title_bar_keeps_its_size() {
+      WithNote(f => {
+        TextEditWindow window = Open(f.Note);
+        double title = ((TextBlock)window.FindName("TextTitle")).FontSize;
+        double titleEdit = ((TextBox)window.FindName("TextTitleEdit")).FontSize;
+        double close = ((Button)window.FindName("ButtonClose")).FontSize;
+        double wrap = ((Button)window.FindName("ButtonWrap")).FontSize;
+        Wheel(window, 120, ctrl: true);
+        Wheel(window, 120, ctrl: true);
+        Assert.Equal(20, Text(window).FontSize);
+        Assert.Equal(title, ((TextBlock)window.FindName("TextTitle")).FontSize);
+        Assert.Equal(titleEdit, ((TextBox)window.FindName("TextTitleEdit")).FontSize);
+        Assert.Equal(close, ((Button)window.FindName("ButtonClose")).FontSize);
+        Assert.Equal(wrap, ((Button)window.FindName("ButtonWrap")).FontSize);
+      });
+    }
+
+    [Fact]
+    public void A_note_saves_its_size_and_reopens_at_it() {
+      WithNote(f => {
+        TextEditWindow window = Open(f.Note);
+        Wheel(window, 120, ctrl: true);
+        Wheel(window, 120, ctrl: true);
+        Assert.Equal(20, DataStore.NoteWindows.Get(f.Note.ID).FontSize);
+        window.Close();
+        WpfAppHost.Pump();
+        Assert.Equal(20, DataStore.NoteWindows.Get(f.Note.ID).FontSize);
+        Assert.Equal(20, Text(Open(f.Note)).FontSize);
+      });
+    }
+
+    [Fact]
+    public void A_note_saved_before_version_18_opens_at_16() {
+      WithNote(f => {
+        DataStore.NoteWindows.Save(new NoteWindowPlace(f.Note.ID, -9200, -9100, 720, 610, NoteWindowPlace.Normal, isOpen: true));
+        Assert.Equal(16, Text(Open(f.Note)).FontSize);
+      });
+    }
+
+    [Fact]
+    public void A_comment_window_sizes_with_ctrl_wheel_but_starts_at_16_next_time() {
+      WithNote(f => {
+        ShortcutViewModel command = ViewModelFactory.NewProcessCommandShortcut(f.App, null, f.Win);
+        f.Win.RootShortcuts.Add(command);
+        command.Name = "Ping";
+        TextEditWindow first = ShowOffScreen(TextEditWindow.ForComment(command));
+        try {
+          Assert.Equal(16, Text(first).FontSize);
+          Assert.True(Wheel(first, 120, ctrl: true));
+          Assert.Equal(18, Text(first).FontSize);
+        } finally {
+          first.Close();
+          WpfAppHost.Pump();
+        }
+        TextEditWindow second = ShowOffScreen(TextEditWindow.ForComment(command));
+        try {
+          Assert.Equal(16, Text(second).FontSize);
+        } finally {
+          second.Close();
+          WpfAppHost.Pump();
+        }
+      });
+    }
+
+    private static TextEditWindow ShowOffScreen(TextEditWindow window) {
+      window.WindowStartupLocation = WindowStartupLocation.Manual;
+      window.Left = -10000;
+      window.Top = -10000;
+      window.ShowActivated = false;
+      window.Show();
+      WpfAppHost.Pump();
+      return window;
+    }
+  }
+}

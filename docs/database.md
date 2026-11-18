@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 17**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 18**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -108,6 +108,7 @@ where they were after a restart. Added in version 8.
 | `IsOpen` | INTEGER | NOT NULL | `0` | `1` = the window was open (also when MDSHO or Windows closed it at exit), so it opens again at start. |
 | `IsTopmost` | INTEGER | NOT NULL | `0` | `1` = the window stays on top of other apps (the pin in its title bar). Added in version 9. |
 | `IsWrapText` | INTEGER | NOT NULL | `0` | `1` = the note's text wraps at the window's edge (the wrap text button in its title bar). Added in version 11. |
+| `FontSize` | INTEGER | NOT NULL | `0` | Size of the note's text, set with Ctrl + mouse wheel: 8 to 72 in steps of 2; `0` = 16. Added in version 18. |
 
 ### DefaultColors
 
@@ -234,6 +235,7 @@ that worked.
 | 15 | 1.5.10 | `DefaultColors` table: the panel and note default colours saved with **Set as default** in the Colours window (empty at first). |
 | 16 | 1.6.1 | `AppSettings` table: settings of the whole app on this PC, starting with the **Bring panels to front** keyboard shortcut (empty at first). |
 | 17 | 1.7.1 | `ScreenSetups` and `ScreenSetupPlaces` tables: the screen setups seen on this PC and the place of every panel, clone and note window in each (empty at first). The 1.7.0 test build created this version without `ScreenSetups.LastUsed`; MDSHO adds the column at start when it is missing. |
+| 18 | 1.16.0 | `NoteWindows.FontSize` (`INTEGER NOT NULL DEFAULT 0`): the text size of each note window (`0` = 16). Note window places are not part of exports, so exports and backups are unchanged and older ones still import. The step also adds `ScreenSetups.LastUsed` when a 1.7.0 test build database lacks it. |
 
 ### Backup before an upgrade
 
