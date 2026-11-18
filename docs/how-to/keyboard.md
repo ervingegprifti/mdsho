@@ -40,6 +40,8 @@ Select a button first, with a click or the arrow keys.
 | Ctrl+C | Copies the button. |
 | Ctrl+V | Pastes into the selected group, or into the group the selected button is in. |
 
+The right-click menu of a button shows these keys next to Rename, Cut, Copy, Paste and Delete.
+
 ## Rename
 
 1. Select a button or group and press F2, or right-click it and choose **Rename**.

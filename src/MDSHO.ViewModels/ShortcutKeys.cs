@@ -27,4 +27,21 @@ namespace MDSHO.ViewModels {
     /// <summary>Any other combination.</summary>
     Other
   }
+
+  /// <summary>
+  /// The key texts panel menus show next to Rename, Cut, Copy, Paste and Delete. They name keys HandleKey acts on;
+  /// no spaces, like the tray's shortcut text.
+  /// </summary>
+  public static class ShortcutKeyTexts {
+    /// <summary>F2.</summary>
+    public const string Rename = "F2";
+    /// <summary>Ctrl+X.</summary>
+    public const string Cut = "Ctrl+X";
+    /// <summary>Ctrl+C.</summary>
+    public const string Copy = "Ctrl+C";
+    /// <summary>Ctrl+V.</summary>
+    public const string Paste = "Ctrl+V";
+    /// <summary>Delete.</summary>
+    public const string Delete = "Delete";
+  }
 }
