@@ -48,7 +48,10 @@ The right-click menu of a button shows these keys next to Rename, Cut, Copy, Pas
 2. Type the new name.
 3. Press Enter to keep it, or Esc to cancel.
 
-To rename a panel, right-click its title and choose **Rename window title**.
+With the mouse, click a button or group, wait a moment, and click it again, like in Explorer (not in a panel set to
+**Single click to open**). A fast double click still opens it.
+
+To rename a panel, right-click its title and choose **Rename window title**, or click the title text twice slowly.
 
 ## Notes and comments
 

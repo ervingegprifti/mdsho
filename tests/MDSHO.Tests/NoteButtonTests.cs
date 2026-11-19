@@ -235,11 +235,45 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_note_title_says_double_click_to_rename_the_comment_title_does_not() {
+    public void The_note_title_says_click_twice_slowly_to_rename_the_comment_title_does_not() {
       WithGroup(f => {
         ShortcutViewModel note = NewNoteInGroup(f);
         Assert.Equal(TextEditWindow.RenameTitleToolTip, Named<TextBlock>(TextEditWindow.ForNote(note), "TextTitle").ToolTip);
+        Assert.Equal("Click twice slowly to rename the note", TextEditWindow.RenameTitleToolTip);
         Assert.Null(Named<TextBlock>(TextEditWindow.ForComment(f.Group), "TextTitle").ToolTip);
+      });
+    }
+
+    [Fact]
+    public void A_double_click_on_the_note_title_maximises_like_the_title_bar_and_does_not_rename() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        TextEditWindow window = TextEditWindow.ForNote(note);
+        int toggles = 0;
+        window.TitleDoubleClick = () => toggles++;
+        Shown(window, () => {
+          TitleMouse.DoubleClick(Named<TextBlock>(window, "TextTitle"));
+          Assert.Equal(1, toggles);
+          TitleMouse.Wait(TitleMouse.DoubleClickTime * 2 + 100);
+          Assert.False(window.IsRenamingTitle);
+        });
+      });
+    }
+
+    [Fact]
+    public void A_slow_second_click_on_the_note_title_renames_the_note() {
+      WithGroup(f => {
+        ShortcutViewModel note = NewNoteInGroup(f);
+        TextEditWindow window = TextEditWindow.ForNote(note);
+        Shown(window, () => {
+          TextBlock title = Named<TextBlock>(window, "TextTitle");
+          TitleMouse.Click(title);
+          TitleMouse.Wait(TitleMouse.DoubleClickTime + 150);
+          TitleMouse.Click(title);
+          Assert.False(window.IsRenamingTitle);
+          Assert.True(TitleMouse.WaitFor(() => window.IsRenamingTitle, TitleMouse.DoubleClickTime * 3));
+          window.EndRenameTitle(save: false);
+        });
       });
     }
 

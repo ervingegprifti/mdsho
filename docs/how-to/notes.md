@@ -25,7 +25,7 @@ Hover over a note's button to see its first lines.
 
 ## Name a note
 
-1. Double-click the note's title in the note window.
+1. Click the note's title in the note window, wait a moment, and click it again.
 2. Type the new name and press Enter.
 
 You can also select the button and press F2.

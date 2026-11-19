@@ -195,7 +195,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_title_shows_the_command_name_and_says_double_click_to_rename() {
+    public void The_title_shows_the_command_name_and_says_click_twice_slowly_to_rename() {
       WithCommand("cmd.exe", "", f => {
         f.Command.Name = "Open logs";
         RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
@@ -204,7 +204,41 @@ namespace MDSHO.Tests {
           Assert.Equal("Open logs", title.Text);
           Assert.StartsWith("Open logs", window.Title);
           Assert.Equal(RunCommandWindow.RenameTitleToolTip, title.ToolTip);
-          Assert.Equal("Double-click to rename the command", RunCommandWindow.RenameTitleToolTip);
+          Assert.Equal("Click twice slowly to rename the command", RunCommandWindow.RenameTitleToolTip);
+        });
+      });
+    }
+
+    [Fact]
+    public void A_double_click_on_the_title_text_maximises_like_the_title_bar_and_does_not_rename() {
+      WithCommand("cmd.exe", "", f => {
+        RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
+        int toggles = 0;
+        window.TitleDoubleClick = () => toggles++;
+        Shown(window, () => {
+          TitleMouse.DoubleClick(Named<TextBlock>(window, "TextTitle"));
+          Assert.Equal(1, toggles);
+          TitleMouse.Wait(TitleMouse.DoubleClickTime * 2 + 100);
+          Assert.False(window.IsRenamingTitle);
+        });
+      });
+    }
+
+    [Fact]
+    public void A_slow_second_click_on_the_title_text_renames_the_command() {
+      WithCommand("cmd.exe", "", f => {
+        RunCommandWindow window = new RunCommandWindow(new RunCommandViewModel(f.Command, false));
+        int toggles = 0;
+        window.TitleDoubleClick = () => toggles++;
+        Shown(window, () => {
+          TextBlock title = Named<TextBlock>(window, "TextTitle");
+          TitleMouse.Click(title);
+          TitleMouse.Wait(TitleMouse.DoubleClickTime + 150);
+          TitleMouse.Click(title);
+          Assert.False(window.IsRenamingTitle);
+          Assert.True(TitleMouse.WaitFor(() => window.IsRenamingTitle, TitleMouse.DoubleClickTime * 3));
+          Assert.Equal(0, toggles);
+          window.EndRenameTitle(save: false);
         });
       });
     }

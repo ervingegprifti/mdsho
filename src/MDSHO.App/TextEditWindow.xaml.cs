@@ -121,15 +121,19 @@ namespace MDSHO {
     // ---- Renaming a note from its title ----
 
     /// <summary>The tooltip of a note's title.</summary>
-    public const string RenameTitleToolTip = "Double-click to rename the note";
+    public const string RenameTitleToolTip = "Click twice slowly to rename the note";
 
     private TitleRename titleRename;
+
+    /// <summary>What a double click on the title text does: maximise or restore, like the title bar. Tests replace it.</summary>
+    public Action TitleDoubleClick { get; set; }
 
     /// <summary>A note is renamed from its title (see <see cref="TitleRename"/>); the new name is saved at once.</summary>
     private void UseRenamableTitle() {
       this.titleRename = new TitleRename(this, this.TextTitle, this.TextTitleEdit, RenameTitleToolTip,
         () => this.shortcut.Name, name => this.shortcut.Name = name,
-        () => { if (this.IsActive) { this.TextComment.Focus(); } });
+        () => { if (this.IsActive) { this.TextComment.Focus(); } },
+        () => (this.TitleDoubleClick ?? (() => TitleRename.ToggleMaximize(this)))());
     }
 
     /// <summary>True while the note's title is being renamed.</summary>

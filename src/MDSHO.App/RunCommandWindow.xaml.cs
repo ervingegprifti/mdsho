@@ -15,8 +15,11 @@ namespace MDSHO {
     private readonly RunCommandViewModel viewModel;
     private readonly TitleRename titleRename;
 
+    /// <summary>What a double click on the title text does: maximise or restore, like the title bar. Tests replace it.</summary>
+    public Action TitleDoubleClick { get; set; }
+
     /// <summary>The tooltip of the command's title.</summary>
-    public const string RenameTitleToolTip = "Double-click to rename the command";
+    public const string RenameTitleToolTip = "Click twice slowly to rename the command";
 
     /// <summary>Creates the window for a run command.</summary>
     public RunCommandWindow(RunCommandViewModel viewModel) {
@@ -30,7 +33,8 @@ namespace MDSHO {
       };
       this.titleRename = new TitleRename(this, this.TextTitle, this.TextTitleEdit, RenameTitleToolTip,
         () => this.viewModel.Name, name => this.viewModel.Name = name,
-        () => { if (this.IsActive) { this.ComboProgram.Focus(); } });
+        () => { if (this.IsActive) { this.ComboProgram.Focus(); } },
+        () => (this.TitleDoubleClick ?? (() => TitleRename.ToggleMaximize(this)))());
       // The window icon is the run glyph of the command's window (solid or outline) and follows that setting while open.
       IconGlyphs icons = viewModel.Icons;
       this.Icon = GlyphIcon.Create(icons.Run);
