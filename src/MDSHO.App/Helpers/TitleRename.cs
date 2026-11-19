@@ -8,10 +8,11 @@ namespace MDSHO.Helpers {
 
   /// <summary>
   /// Renaming from a window's title (the Note and Run command windows): the title text takes the mouse (the rest of the
-  /// title bar is still the caption), a double click on it, or a click and then another slow click (like Explorer),
-  /// opens an edit box in its place, and dragging it moves the window. The first click counts even if it activated the
-  /// window; losing the focus or dragging forgets it. Enter or leaving the box keeps the new name, Esc the old one, a blank name is ignored; closing the window
-  /// while renaming keeps the new name. A double click elsewhere on the title bar still maximises and restores.
+  /// title bar is still the caption). A click and then another slow click on it (like Explorer) opens an edit box in its
+  /// place; the first click counts even if it activated the window, and losing the focus or dragging forgets it. A double
+  /// click on it maximises and restores, like the rest of the title bar, and dragging it moves the window. Enter or
+  /// leaving the box keeps the new name, Esc the old one, a blank name is ignored; closing the window while renaming
+  /// keeps the new name.
   /// </summary>
   internal sealed class TitleRename {
     private readonly Window window;
@@ -20,6 +21,7 @@ namespace MDSHO.Helpers {
     private readonly Func<string> getName;
     private readonly Action<string> setName;
     private readonly Action afterEnd;
+    private readonly Action doubleClick;
     private Point? dragStart;
     private readonly Common.SlowClickRename slowClick;
 
@@ -30,13 +32,15 @@ namespace MDSHO.Helpers {
     /// <param name="getName">The current name.</param>
     /// <param name="setName">Takes a changed, non-blank name.</param>
     /// <param name="afterEnd">Runs when the edit box closes, e.g. to give the focus back to the window's main field.</param>
-    public TitleRename(Window window, TextBlock title, TextBox edit, string toolTip, Func<string> getName, Action<string> setName, Action afterEnd) {
+    /// <param name="doubleClick">Runs on a double click on the title text; null maximises or restores the window.</param>
+    public TitleRename(Window window, TextBlock title, TextBox edit, string toolTip, Func<string> getName, Action<string> setName, Action afterEnd, Action doubleClick = null) {
       this.window = window;
       this.title = title;
       this.edit = edit;
       this.getName = getName;
       this.setName = setName;
       this.afterEnd = afterEnd;
+      this.doubleClick = doubleClick ?? (() => ToggleMaximize(window));
       this.slowClick = SlowClicks.Create(_ => Begin());
       System.Windows.Shell.WindowChrome.SetIsHitTestVisibleInChrome(title, true);
       title.ToolTip = toolTip;
@@ -99,9 +103,19 @@ namespace MDSHO.Helpers {
       this.slowClick.Press(this.title, at.X, at.Y, !IsRenaming);
       if (e.ClickCount == 2) {
         this.dragStart = null;
-        Begin();
+        if (!IsRenaming) { this.doubleClick(); }
       } else {
         this.dragStart = at;
+      }
+    }
+
+    /// <summary>Maximises or restores the window, like a double click on its title bar.</summary>
+    public static void ToggleMaximize(Window window) {
+      if (window.ResizeMode == ResizeMode.NoResize || window.ResizeMode == ResizeMode.CanMinimize) { return; }
+      if (window.WindowState == WindowState.Maximized) {
+        SystemCommands.RestoreWindow(window);
+      } else {
+        SystemCommands.MaximizeWindow(window);
       }
     }
 

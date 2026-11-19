@@ -12,6 +12,10 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 
 - Rename like in Explorer: click a selected button, the panel title, or a note or run command title, then click it again slowly. Off for buttons in panels set to open with a single click.
 
+### Changed
+
+- A double click on a note or run command title now maximises the window, like the rest of the title bar, instead of renaming it.
+
 ## [1.17.3]
 
 ### Fixed
