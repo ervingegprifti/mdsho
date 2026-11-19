@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.18.0]
+
+### Added
+
+- Rename like in Explorer: click a selected button, the panel title, or a note or run command title, then click it again slowly. Off for buttons in panels set to open with a single click.
+
 ## [1.17.3]
 
 ### Fixed

@@ -204,7 +204,7 @@ namespace MDSHO.Tests {
           Assert.Equal("Open logs", title.Text);
           Assert.StartsWith("Open logs", window.Title);
           Assert.Equal(RunCommandWindow.RenameTitleToolTip, title.ToolTip);
-          Assert.Equal("Double-click to rename the command", RunCommandWindow.RenameTitleToolTip);
+          Assert.Equal("Click twice slowly or double-click to rename the command", RunCommandWindow.RenameTitleToolTip);
         });
       });
     }

@@ -8,8 +8,9 @@ namespace MDSHO.Helpers {
 
   /// <summary>
   /// Renaming from a window's title (the Note and Run command windows): the title text takes the mouse (the rest of the
-  /// title bar is still the caption), a double click on it opens an edit box in its place, and dragging it moves the
-  /// window. Enter or leaving the box keeps the new name, Esc the old one, a blank name is ignored; closing the window
+  /// title bar is still the caption), a double click on it, or a click and then another slow click (like Explorer),
+  /// opens an edit box in its place, and dragging it moves the window. The first click counts even if it activated the
+  /// window; losing the focus or dragging forgets it. Enter or leaving the box keeps the new name, Esc the old one, a blank name is ignored; closing the window
   /// while renaming keeps the new name. A double click elsewhere on the title bar still maximises and restores.
   /// </summary>
   internal sealed class TitleRename {
@@ -20,6 +21,7 @@ namespace MDSHO.Helpers {
     private readonly Action<string> setName;
     private readonly Action afterEnd;
     private Point? dragStart;
+    private readonly Common.SlowClickRename slowClick;
 
     /// <param name="window">The window whose title is renamed.</param>
     /// <param name="title">The title text.</param>
@@ -35,11 +37,16 @@ namespace MDSHO.Helpers {
       this.getName = getName;
       this.setName = setName;
       this.afterEnd = afterEnd;
+      this.slowClick = SlowClicks.Create(_ => Begin());
       System.Windows.Shell.WindowChrome.SetIsHitTestVisibleInChrome(title, true);
       title.ToolTip = toolTip;
       title.MouseLeftButtonDown += Title_MouseLeftButtonDown;
       title.MouseMove += Title_MouseMove;
-      title.MouseLeftButtonUp += (s, e) => this.dragStart = null;
+      title.MouseLeftButtonUp += (s, e) => {
+        this.dragStart = null;
+        this.slowClick.Release();
+      };
+      window.Deactivated += (s, e) => this.slowClick.Cancel();
       edit.LostKeyboardFocus += (s, e) => End(save: true);
       window.Closing += (s, e) => End(save: true);
     }
@@ -49,6 +56,7 @@ namespace MDSHO.Helpers {
 
     /// <summary>Opens the edit box in place of the title, with the name selected.</summary>
     public void Begin() {
+      this.slowClick.Cancel();
       if (IsRenaming) { return; }
       this.edit.Text = this.getName() ?? "";
       this.title.Visibility = Visibility.Collapsed;
@@ -87,11 +95,13 @@ namespace MDSHO.Helpers {
 
     private void Title_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
       e.Handled = true;
+      Point at = e.GetPosition(this.window);
+      this.slowClick.Press(this.title, at.X, at.Y, !IsRenaming);
       if (e.ClickCount == 2) {
         this.dragStart = null;
         Begin();
       } else {
-        this.dragStart = e.GetPosition(this.window);
+        this.dragStart = at;
       }
     }
 
@@ -107,6 +117,7 @@ namespace MDSHO.Helpers {
         return;
       }
       this.dragStart = null;
+      this.slowClick.Cancel();
       Window w = this.window;
       if (w.WindowState == WindowState.Maximized) {
         // Like dragging a maximised window's title bar: restore it under the mouse, at the same place along the title.

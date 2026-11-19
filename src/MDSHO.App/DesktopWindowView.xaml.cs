@@ -71,6 +71,18 @@ namespace MDSHO {
       this.PreviewKeyDown += DesktopWindowView_PreviewKeyDown;
 		}
     private void InitializeControlEvents() {
+      // Slow-click rename of the buttons and the title.
+      this.slowClick = SlowClicks.Create(SlowClickRename);
+      this.PreviewMouseDown += SlowClick_PreviewMouseDown;
+      this.PreviewMouseMove += (s, e) => {
+        if (e.LeftButton == MouseButtonState.Pressed) {
+          Point at = e.GetPosition(this);
+          this.slowClick.Move(at.X, at.Y);
+        }
+      };
+      this.PreviewMouseLeftButtonUp += (s, e) => this.slowClick.Release();
+      this.Deactivated += (s, e) => this.slowClick.Cancel();
+      this.PreviewKeyDown += (s, e) => this.slowClick.Cancel();
       // Header
       this.ContentControlHeader.MouseDoubleClick += ContentControlHeader_MouseDoubleClick;
 			this.GridHeader.MouseLeftButtonDown += GridHeader_MouseLeftButtonDown;
@@ -234,7 +246,14 @@ namespace MDSHO {
 
 		#region MOVE & SIZE WINDOW
 		private void GridHeader_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+			double left = this.Left, top = this.Top;
 			this.DragMove();
+			// DragMove returns on the release; a move means a drag, not a click.
+			if (this.Left != left || this.Top != top) {
+				this.slowClick.Cancel();
+			} else {
+				this.slowClick.Release();
+			}
 		}
 		private HwndSource hwndSource;
 		// The window is saved only when the user lets go of it (WM_EXITSIZEMOVE), not on every pixel of a drag.
@@ -552,6 +571,75 @@ namespace MDSHO {
 			return null;
 		}
 		#endregion KEYBOARD SHORTCUTS
+
+
+    #region SLOW-CLICK RENAME
+		private Common.SlowClickRename slowClick;
+
+		// Like Explorer: a click, then another slow click on the same selected button, or on the title text, renames it.
+		// Off for buttons when the panel opens them with a single click.
+		private void SlowClick_PreviewMouseDown(object sender, MouseButtonEventArgs e) {
+			if (e.ChangedButton != MouseButton.Left) {
+				this.slowClick.Cancel();
+				return;
+			}
+			DesktopWindowViewModel window = this.DataContext as DesktopWindowViewModel;
+			Point at = e.GetPosition(this);
+			object target = null;
+			bool canRename = false;
+			for (DependencyObject d = e.OriginalSource as DependencyObject; d != null; d = GetParent(d)) {
+				if (d is Button button && button.Name == "ButtonShortcut" && button.DataContext is ShortcutViewModel shortcut) {
+					if (!shortcut.OwningWindow.Appearance.SingleClickToOpen) {
+						target = shortcut;
+						canRename = shortcut.IsSelected && !shortcut.IsEditing;
+					}
+					break;
+				}
+				if (d == this.EditableTextBlockHeaderTitle) {
+					if (window != null && !window.IsEditingTitle && IsOnTitleText(e)) {
+						target = window;
+						canRename = true;
+					}
+					break;
+				}
+			}
+			if (target == null) {
+				this.slowClick.Cancel();
+			} else {
+				this.slowClick.Press(target, at.X, at.Y, canRename);
+			}
+		}
+
+		// The title box spans its column; only a click on the text itself counts.
+		private bool IsOnTitleText(MouseButtonEventArgs e) {
+			if (this.EditableTextBlockHeaderTitle.Template?.FindName("PART_Display", this.EditableTextBlockHeaderTitle) is not TextBlock text) {
+				return false;
+			}
+			Point at = e.GetPosition(text);
+			return at.X >= 0 && at.X <= text.DesiredSize.Width && at.Y >= 0 && at.Y <= text.ActualHeight;
+		}
+
+		private static DependencyObject GetParent(DependencyObject d) {
+			return d is System.Windows.Media.Visual || d is System.Windows.Media.Media3D.Visual3D
+				? System.Windows.Media.VisualTreeHelper.GetParent(d)
+				: LogicalTreeHelper.GetParent(d);
+		}
+
+		private void SlowClickRename(object target) {
+			try {
+				if (!this.IsActive) { return; }
+				if (target is ShortcutViewModel shortcut) {
+					if (shortcut.IsSelected && !shortcut.IsEditing && !shortcut.OwningWindow.Appearance.SingleClickToOpen) {
+						shortcut.RenameCommand.Execute(null);
+					}
+				} else if (target is DesktopWindowViewModel window && !window.IsEditingTitle) {
+					window.BeginEditTitle();
+				}
+			} catch (Exception ex) {
+				ErrorDialog.ShowDialog(ex);
+			}
+		}
+		#endregion SLOW-CLICK RENAME
 
 
     #region RUN SHORTCUT

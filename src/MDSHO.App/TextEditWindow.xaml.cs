@@ -121,7 +121,7 @@ namespace MDSHO {
     // ---- Renaming a note from its title ----
 
     /// <summary>The tooltip of a note's title.</summary>
-    public const string RenameTitleToolTip = "Double-click to rename the note";
+    public const string RenameTitleToolTip = "Click twice slowly or double-click to rename the note";
 
     private TitleRename titleRename;
 

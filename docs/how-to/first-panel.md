@@ -43,8 +43,9 @@ The button is named after the page or link title when the browser gives one, oth
 
 ## Tidy up
 
-- **Rename** a button: right-click it and choose **Rename**, or select it and press F2. **Set name the same as target**
-  gives it the name of what it opens.
+- **Rename** a button: right-click it and choose **Rename**, select it and press F2, or click it, wait a moment, and
+  click it again. The slow click doesn't rename in a panel set to **Single click to open**. **Set name the same as
+  target** gives it the name of what it opens.
 - **Move** a button: drag it, or use **Cut** and **Paste** from its right-click menu.
 - **Comment** on a button: right-click it and choose **Comment...**. The comment shows in its tooltip.
 - **Delete** a button: right-click it and choose **Delete**. The file it opens is not deleted.
@@ -53,7 +54,8 @@ The button is named after the page or link title when the browser gives one, oth
 
 1. Right-click the panel's title and choose **New window**.
 2. The new panel opens in the middle of the same screen. Drag it by its title to where you want it.
-3. To name it, right-click its title and choose **Rename window title**.
+3. To name it, right-click its title and choose **Rename window title**, or click the title text, wait a moment, and
+   click it again.
 
 The first time you start MDSHO, its panel has a **Getting started** group with a sample of each kind of button. Delete
 the group when you are done.

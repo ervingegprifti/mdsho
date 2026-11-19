@@ -16,7 +16,7 @@ namespace MDSHO {
     private readonly TitleRename titleRename;
 
     /// <summary>The tooltip of the command's title.</summary>
-    public const string RenameTitleToolTip = "Double-click to rename the command";
+    public const string RenameTitleToolTip = "Click twice slowly or double-click to rename the command";
 
     /// <summary>Creates the window for a run command.</summary>
     public RunCommandWindow(RunCommandViewModel viewModel) {
