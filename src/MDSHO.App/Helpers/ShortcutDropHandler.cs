@@ -357,7 +357,7 @@ namespace MDSHO.Helpers {
                 foreach (string format in formats) {
                   if (format == "Shell IDList Array") {
                     // Virtual file/s been draged.
-                    AppMessages.VirtualFilesDropped();
+                    AppMessages.VirtualFilesDropped(window?.Appearance?.SolidIcons ?? true);
                   }
                 }
               }

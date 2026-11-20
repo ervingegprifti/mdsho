@@ -9,7 +9,8 @@ namespace MDSHO {
   /// <summary>
   /// Shows a message in the one MDSHO dialog (<see cref="MessageWindow"/>) instead of a Windows message box, and returns
   /// the answer. The dialog is centred on the screen of its owner (the given window, else the active MDSHO window), like
-  /// MDSHO's other dialogs; without one it opens in the middle of the screen.
+  /// MDSHO's other dialogs; without one it opens in the middle of the screen. A message from a panel or one of its
+  /// buttons uses that panel's Solid icons setting; app-wide messages stay solid, like About and Settings.
   /// </summary>
   public static class MdshoMessage {
 
@@ -21,15 +22,15 @@ namespace MDSHO {
 
     /// <summary>Shows <paramref name="message"/>: its first line bold, the rest below it.</summary>
     public static MessageResult Show(Window owner, string title, string message, MessageIcon icon,
-        MessageButtons buttons = MessageButtons.OK, MessageResult defaultResult = MessageResult.None) {
+        MessageButtons buttons = MessageButtons.OK, MessageResult defaultResult = MessageResult.None, bool solidIcons = true) {
       (string heading, string text) = MessageRules.Split(message);
-      return Show(owner, title, heading, text, icon, buttons, defaultResult);
+      return Show(owner, title, heading, text, icon, buttons, defaultResult, solidIcons);
     }
 
     /// <summary>Shows a bold <paramref name="heading"/> and the <paramref name="text"/> below it.</summary>
     public static MessageResult Show(Window owner, string title, string heading, string text, MessageIcon icon,
-        MessageButtons buttons, MessageResult defaultResult) {
-      MessageWindow window = new MessageWindow(title, heading, text, icon, buttons, defaultResult);
+        MessageButtons buttons, MessageResult defaultResult, bool solidIcons = true) {
+      MessageWindow window = new MessageWindow(title, heading, text, icon, buttons, defaultResult, solidIcons);
       Place(window, owner);
       return ShowWindow(window);
     }

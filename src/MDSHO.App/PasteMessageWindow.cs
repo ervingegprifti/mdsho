@@ -13,8 +13,9 @@ namespace MDSHO {
     /// <param name="caption">The title, "MDSHO".</param>
     /// <param name="heading">The bold first line.</param>
     /// <param name="text">The text below it.</param>
-    public PasteMessageWindow(string caption, string heading, string text)
-        : base(caption, heading, text, MessageIcon.Info, MessageButtons.OK, MessageResult.OK) {
+    /// <param name="solidIcons">The icon set of the snippet's panel.</param>
+    public PasteMessageWindow(string caption, string heading, string text, bool solidIcons = true)
+        : base(caption, heading, text, MessageIcon.Info, MessageButtons.OK, MessageResult.OK, solidIcons) {
     }
   }
 }

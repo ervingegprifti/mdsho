@@ -769,7 +769,11 @@ namespace MDSHO {
         return;
       }
       string question = "This note could not be saved: " + error.Message + "\n\nClose it anyway? What you typed since the last save will be lost.";
-      if (!Dialogs.Confirm(question, "Note not saved")) {
+      bool close;
+      using (Dialogs.UseIcons(this.icons.SolidIcons)) {
+        close = Dialogs.Confirm(question, "Note not saved");
+      }
+      if (!close) {
         e.Cancel = true;
       }
     }

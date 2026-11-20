@@ -21,7 +21,7 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - Snippet buttons have their own icon (MDSHOFont 1.20).
 - Autumn: Halloween, the colours of new panels, has a 60% black body (was 80%). Panels that already have the old colours keep them.
 - Enter no longer pastes a snippet; double-click it.
-- All messages use one MDSHO dialog: the same look, an Info or Warning icon, and black text (no red, no Windows message boxes). They follow the Window theme; before your data opens (MDSHO already running, database recovery) they follow Windows' light or dark mode.
+- All messages use one MDSHO dialog: the same look, an Info or Warning icon, and black text (no red, no Windows message boxes). They follow the Window theme; before your data opens (MDSHO already running, database recovery) they follow Windows' light or dark mode. A message from a panel follows that panel's Solid icons setting.
 
 ### Fixed
 

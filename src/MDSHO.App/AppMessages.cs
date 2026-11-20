@@ -71,22 +71,22 @@ namespace MDSHO {
       MdshoMessage.Show(null, ImportCaption, message, MessageIcon.Info);
     }
 
-    /// <summary>Delete window asks twice; true only after Yes both times.</summary>
-    public static bool ConfirmDeleteWindow(Window owner) {
+    /// <summary>Delete window asks twice, with the panel's icon set; true only after Yes both times.</summary>
+    public static bool ConfirmDeleteWindow(Window owner, bool solidIcons) {
       if (MdshoMessage.Show(owner, "Delete window confirmation", "This window and all its shortcuts will be deleted. Do you want to delete this window?",
-          MessageIcon.Warning, MessageButtons.YesNo, MessageResult.No) != MessageResult.Yes) {
+          MessageIcon.Warning, MessageButtons.YesNo, MessageResult.No, solidIcons) != MessageResult.Yes) {
         return false;
       }
       return MdshoMessage.Show(owner, "Delete window warning", "One last warning. Do you want to delete this window? All its shortcuts will be gone.",
-        MessageIcon.Warning, MessageButtons.YesNo, MessageResult.No) == MessageResult.Yes;
+        MessageIcon.Warning, MessageButtons.YesNo, MessageResult.No, solidIcons) == MessageResult.Yes;
     }
 
-    /// <summary>Virtual files (from a zip or a phone) were dropped on a panel.</summary>
-    public static void VirtualFilesDropped() {
+    /// <summary>Virtual files (from a zip or a phone) were dropped on a panel: with the panel's icon set.</summary>
+    public static void VirtualFilesDropped(bool solidIcons) {
       string message = "To create this kind of shortcut please do:\n";
       message += "1. Drag to create a desktop shortcut first,\n";
       message += "2. Drag the shortcut from desktop to MDSHO";
-      MdshoMessage.Show(null, "Information", message, MessageIcon.Info);
+      MdshoMessage.Show(null, "Information", message, MessageIcon.Info, MessageButtons.OK, MessageResult.None, solidIcons);
     }
   }
 }

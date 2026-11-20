@@ -26,14 +26,15 @@ namespace MDSHO {
     /// <param name="icon">Info or Warning.</param>
     /// <param name="buttons">The buttons.</param>
     /// <param name="defaultResult">The default button; one the set has not gives the first.</param>
-    public MessageWindow(string title, string heading, string text, MessageIcon icon, MessageButtons buttons, MessageResult defaultResult) {
+    /// <param name="solidIcons">The icon set: the panel's Solid icons setting for a message from a panel, solid otherwise.</param>
+    public MessageWindow(string title, string heading, string text, MessageIcon icon, MessageButtons buttons, MessageResult defaultResult, bool solidIcons = true) {
       InitializeComponent();
       this.buttons = buttons;
       this.Title = string.IsNullOrWhiteSpace(title) ? "MDSHO" : title;
 #if DEBUG
       this.Title += " DEBUG";
 #endif
-      ViewModels.IconGlyphs icons = new ViewModels.IconGlyphs(true);
+      ViewModels.IconGlyphs icons = new ViewModels.IconGlyphs(solidIcons);
       this.TitleBar.Glyph = icons.MDSHO;
       this.TitleBar.CloseGlyph = icons.Times;
       this.TextIcon.Text = icon == MessageIcon.Info ? icons.Info : icons.Warning;

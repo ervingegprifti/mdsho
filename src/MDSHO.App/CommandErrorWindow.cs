@@ -16,8 +16,9 @@ namespace MDSHO {
     /// <param name="title">The title, e.g. the command's name.</param>
     /// <param name="error">The error, the bold first line.</param>
     /// <param name="detail">The line below the error.</param>
-    public CommandErrorWindow(string title, string error, string detail)
-        : base(title, error, detail, MessageIcon.Warning, MessageButtons.OK, MessageResult.OK) {
+    /// <param name="solidIcons">The icon set of the panel the button is on.</param>
+    public CommandErrorWindow(string title, string error, string detail, bool solidIcons = true)
+        : base(title, error, detail, MessageIcon.Warning, MessageButtons.OK, MessageResult.OK, solidIcons) {
     }
   }
 }

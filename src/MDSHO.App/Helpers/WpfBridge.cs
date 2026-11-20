@@ -12,14 +12,15 @@ namespace MDSHO.Helpers {
 
     /// <summary>Connects the view model seams to WPF. Safe to call more than once.</summary>
     public static void Connect() {
+      // Dialogs.SolidIcons is the icon set of the panel that raised the prompt (solid when none did).
       Dialogs.Confirm = (message, caption) =>
-        MdshoMessage.Show(null, caption, message, MessageIcon.Warning, MessageButtons.YesNo, MessageResult.No) == MessageResult.Yes;
+        MdshoMessage.Show(null, caption, message, MessageIcon.Warning, MessageButtons.YesNo, MessageResult.No, Dialogs.SolidIcons) == MessageResult.Yes;
       Dialogs.ShowMessage = (message, caption) =>
-        MdshoMessage.Show(null, caption, message, MessageIcon.Warning);
+        MdshoMessage.Show(null, caption, message, MessageIcon.Warning, MessageButtons.OK, MessageResult.None, Dialogs.SolidIcons);
       Dialogs.ShowError = (caption, error, detail) =>
-        CommandErrorWindow.ShowWindow(new CommandErrorWindow(caption, error, detail));
+        CommandErrorWindow.ShowWindow(new CommandErrorWindow(caption, error, detail, Dialogs.SolidIcons));
       Dialogs.ShowInfo = (caption, heading, text) =>
-        PasteMessageWindow.ShowWindow(new PasteMessageWindow(caption, heading, text));
+        PasteMessageWindow.ShowWindow(new PasteMessageWindow(caption, heading, text, Dialogs.SolidIcons));
     }
   }
 }

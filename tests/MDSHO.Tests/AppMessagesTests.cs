@@ -226,7 +226,7 @@ namespace MDSHO.Tests {
     public void Deleting_a_window_asks_twice_with_no_as_default_and_stops_at_the_first_no() {
       WpfAppHost.Run(() => {
         answers.Enqueue(MessageResult.No);
-        Assert.False(AppMessages.ConfirmDeleteWindow(null));
+        Assert.False(AppMessages.ConfirmDeleteWindow(null, true));
         MessageWindow first = Only();
         Assert.StartsWith("Delete window confirmation", first.Title);
         Assert.Equal("This window and all its shortcuts will be deleted. Do you want to delete this window?", Heading(first));
@@ -240,7 +240,7 @@ namespace MDSHO.Tests {
       WpfAppHost.Run(() => {
         answers.Enqueue(MessageResult.Yes);
         answers.Enqueue(MessageResult.Yes);
-        Assert.True(AppMessages.ConfirmDeleteWindow(null));
+        Assert.True(AppMessages.ConfirmDeleteWindow(null, true));
         Assert.Equal(2, shown.Count);
         MessageWindow second = shown[1];
         Assert.StartsWith("Delete window warning", second.Title);
@@ -255,7 +255,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void Dropping_virtual_files_is_info() {
       WpfAppHost.Run(() => {
-        AppMessages.VirtualFilesDropped();
+        AppMessages.VirtualFilesDropped(true);
         MessageWindow w = Only();
         Assert.StartsWith("Information", w.Title);
         Assert.Equal("To create this kind of shortcut please do:", Heading(w));

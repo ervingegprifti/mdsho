@@ -612,6 +612,10 @@ namespace MDSHO.ViewModels {
     public string PasteHint => this.SingleClickToOpen ? "Click to paste" : "Double-click to paste";
     // The Single click to open setting of the panel this button is in.
     private bool SingleClickToOpen => this.OwningWindow?.Appearance?.SingleClickToOpen ?? false;
+    /// <summary>Prompts raised by this button use its panel's icon set (clones share their parent's setting).</summary>
+    internal IDisposable PanelIcons() {
+      return Dialogs.UseIcons(this.OwningWindow?.Appearance?.SolidIcons ?? true);
+    }
     /// <summary>Tells the tooltips of the snippets in this button or group that the click setting changed.</summary>
     public void RaisePasteHintChanged() {
       if (this.isSnippet) {
@@ -830,12 +834,16 @@ namespace MDSHO.ViewModels {
       } catch (Exception ex) {
         // The type only: a message could hold the value.
         Common.AppLog.Warning(null, "A snippet could not paste: {ErrorType}", ex.GetType().FullName);
-        Dialogs.ShowError(this.Name, CouldNotPasteText, CopySnippetInsteadText);
+        using (PanelIcons()) {
+          Dialogs.ShowError(this.Name, CouldNotPasteText, CopySnippetInsteadText);
+        }
         return;
       }
       ClipboardPasteMessage message = ClipboardPasteMessage.For(outcome, this.Name, singleClick);
       if (message != null) {
-        Dialogs.ShowInfo(ClipboardPasteMessage.Caption, message.Heading, message.Text);
+        using (PanelIcons()) {
+          Dialogs.ShowInfo(ClipboardPasteMessage.Caption, message.Heading, message.Text);
+        }
       }
     }
     /// <summary>Opens the Note window for this note.</summary>
@@ -939,7 +947,11 @@ namespace MDSHO.ViewModels {
         message = $"Delete shortcut '{this.Name}'?";
         caption = "Delete shortcut confirmation";
       }
-      if (!Dialogs.Confirm(message, caption)) {
+      bool delete;
+      using (PanelIcons()) {
+        delete = Dialogs.Confirm(message, caption);
+      }
+      if (!delete) {
         return;
       }
       // Delete from the database and renumber the remaining siblings in one transaction.
@@ -971,8 +983,16 @@ namespace MDSHO.ViewModels {
     public const string NoProgramMessage = "Set a program first. Use Set Run Command... to choose one.";
     /// <summary>The caption of <see cref="NoProgramMessage"/>.</summary>
     public const string NoProgramCaption = "Run command";
-    /// <summary>Opens the shortcut or runs the command, optionally elevated; shows a message when Windows cannot open it.</summary>
+    /// <summary>
+    /// Opens the shortcut or runs the command, optionally elevated; shows a message when Windows cannot open it, with the
+    /// panel's icon set.
+    /// </summary>
     public void RunShortcut(bool runAsAdministrator) {
+      using (PanelIcons()) {
+        RunShortcutInPanel(runAsAdministrator);
+      }
+    }
+    private void RunShortcutInPanel(bool runAsAdministrator) {
       if (this.IsEditing) {
         return;
       }

@@ -166,7 +166,7 @@ namespace MDSHO {
 		}
 		private void MenuItemHeaderDeleteWindow_Click(object sender, RoutedEventArgs e) {
       try {
-				if (AppMessages.ConfirmDeleteWindow(this)) {
+				if (AppMessages.ConfirmDeleteWindow(this, (this.DataContext as DesktopWindowViewModel)?.Appearance?.SolidIcons ?? true)) {
 					{
 						DesktopWindowViewModel desktopWindow = (DesktopWindowViewModel)this.DataContext;
 						if (desktopWindow.IsClone) {
