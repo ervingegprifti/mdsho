@@ -229,7 +229,7 @@ namespace MDSHO.Tests {
           TextBlock line = WpfAppHost.VisualDescendants<TextBlock>(items.ItemContainerGenerator.ContainerFromIndex(i)).First();
           double right = line.TranslatePoint(new Point(line.DesiredSize.Width, 0), scroll).X;
           Assert.True(right <= scroll.ViewportWidth - m + 0.5,
-            $"{ThirdPartyNotices.All[i].Name} ends at {right:0.#}, less than {m} px from the right edge {scroll.ViewportWidth:0.#}.");
+            $"{ThirdPartyNotices.ShownNow[i].Name} ends at {right:0.#}, less than {m} px from the right edge {scroll.ViewportWidth:0.#}.");
         }
       });
     }
@@ -266,9 +266,9 @@ namespace MDSHO.Tests {
     public void Each_notice_is_one_line_that_does_not_wrap() {
       WithAboutWindow(window => {
         ItemsControl items = (ItemsControl)window.FindName("ItemsThirdPartyNotices");
-        Assert.Equal(ThirdPartyNotices.All.Count, items.Items.Count);
+        Assert.Equal(ThirdPartyNotices.ShownNow.Count, items.Items.Count);
         for (int i = 0; i < items.Items.Count; i++) {
-          ThirdPartyNotice notice = ThirdPartyNotices.All[i];
+          ThirdPartyNotice notice = ThirdPartyNotices.ShownNow[i];
           FrameworkElement container = Assert.IsAssignableFrom<FrameworkElement>(items.ItemContainerGenerator.ContainerFromIndex(i));
           List<TextBlock> texts = WpfAppHost.VisualDescendants<TextBlock>(container).ToList();
           Assert.NotEmpty(texts);
@@ -302,7 +302,7 @@ namespace MDSHO.Tests {
         for (int i = 0; i < items.Items.Count; i++) {
           DependencyObject container = items.ItemContainerGenerator.ContainerFromIndex(i);
           List<Hyperlink> links = WpfAppHost.VisualDescendants<TextBlock>(container).SelectMany(t => t.Inlines.OfType<Hyperlink>()).ToList();
-          ThirdPartyNotice notice = ThirdPartyNotices.All[i];
+          ThirdPartyNotice notice = ThirdPartyNotices.ShownNow[i];
           Assert.Equal(new[] { notice.LicenseUrl, notice.ProjectUrl }, links.Select(l => l.NavigateUri));
         }
       });

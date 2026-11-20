@@ -13,17 +13,18 @@ namespace MDSHO.Helpers {
   /// embedded files in Assets/Fonts (like the icon font). A shipped font whose file is missing shows Courier New.
   /// </summary>
   public static class NoteFontFamilies {
-    /// <summary>The folder of the embedded font files.</summary>
-    public const string FolderUri = "pack://application:,,,/Assets/Fonts/";
+    /// <summary>The folder of the embedded font files (named by assembly, so it also resolves when MDSHO isn't the entry assembly).</summary>
+    public const string FolderUri = "pack://application:,,,/MDSHO;component/Assets/Fonts/";
 
     // The Regular file of each shipped font, and the family name inside it.
-    // Check the family names when the files arrive (Latin Modern files name their family "LM Roman 10" / "LM Mono 10").
+    // The family names WPF uses for the files. Latin Modern files name the family "LM Roman 10" / "LM Mono 10" (name ID 1),
+    // but WPF names them by the typographic family and design size: "Latin Modern Roman 10" / "Latin Modern Mono 10".
     private static readonly Dictionary<string, (string File, string Family)> shipped = new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase) {
       ["JetBrains Mono"] = ("JetBrainsMono-Regular.ttf", "JetBrains Mono"),
       ["Source Code Pro"] = ("SourceCodePro-Regular.ttf", "Source Code Pro"),
       ["IBM Plex Mono"] = ("IBMPlexMono-Regular.ttf", "IBM Plex Mono"),
-      ["Latin Modern Roman"] = ("lmroman10-regular.otf", "LM Roman 10"),
-      ["Latin Modern Mono"] = ("lmmono10-regular.otf", "LM Mono 10"),
+      ["Latin Modern Roman"] = ("lmroman10-regular.otf", "Latin Modern Roman 10"),
+      ["Latin Modern Mono"] = ("lmmono10-regular.otf", "Latin Modern Mono 10"),
     };
 
     /// <summary>True when a font file is embedded in Assets/Fonts. Tests replace it.</summary>

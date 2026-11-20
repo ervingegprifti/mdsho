@@ -90,23 +90,20 @@ namespace MDSHO {
         "Microsoft.Extensions.Options", "Microsoft.Extensions.Options.ConfigurationExtensions", "Microsoft.Extensions.Primitives"),
     };
 
-    /// <summary>Version shown for a font until its file is added (fill in the released version then).</summary>
-    public const string PendingVersion = "TBD";
-
     /// <summary>
     /// The note fonts that come with MDSHO, in menu order. Each shows in About only once its file is embedded
-    /// (<see cref="Shown"/>). The licence texts go in assets/Font/licenses.
+    /// (<see cref="Shown"/>). The licence texts are in assets/Font/licenses and ship in Assets/Fonts/licenses.
     /// </summary>
     public static readonly IReadOnlyList<ThirdPartyNotice> Fonts = new[] {
-      new ThirdPartyNotice("JetBrains Mono", PendingVersion, "OFL-1.1",
+      new ThirdPartyNotice("JetBrains Mono", "2.304", "OFL-1.1",
         "https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt", "https://github.com/JetBrains/JetBrainsMono"),
-      new ThirdPartyNotice("Source Code Pro", PendingVersion, "OFL-1.1",
+      new ThirdPartyNotice("Source Code Pro", "2.042", "OFL-1.1",
         "https://github.com/adobe-fonts/source-code-pro/blob/release/LICENSE.md", "https://github.com/adobe-fonts/source-code-pro"),
-      new ThirdPartyNotice("IBM Plex Mono", PendingVersion, "OFL-1.1",
+      new ThirdPartyNotice("IBM Plex Mono", "2.5.0", "OFL-1.1",
         "https://github.com/IBM/plex/blob/master/LICENSE.txt", "https://github.com/IBM/plex"),
-      new ThirdPartyNotice("Latin Modern Roman", PendingVersion, "GUST Font License",
+      new ThirdPartyNotice("Latin Modern Roman", "2.004", "GUST Font License",
         "https://www.gust.org.pl/projects/e-foundry/licenses", "https://www.gust.org.pl/projects/e-foundry/latin-modern"),
-      new ThirdPartyNotice("Latin Modern Mono", PendingVersion, "GUST Font License",
+      new ThirdPartyNotice("Latin Modern Mono", "2.004", "GUST Font License",
         "https://www.gust.org.pl/projects/e-foundry/licenses", "https://www.gust.org.pl/projects/e-foundry/latin-modern"),
     };
 

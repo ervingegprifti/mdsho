@@ -31,17 +31,18 @@ Build-time only (not shipped): `Microsoft.Windows.SDK.BuildTools` is referenced 
 ## Fonts that come with MDSHO
 
 The note fonts in the "Comes with MDSHO" part of a note's font menu. Each is embedded from
-`src/MDSHO.App/Assets/Fonts` (Regular weight only) and shows under "Third Party Notices" in the About window once its
-file is there; until then the menu shows it in Courier New. Versions are filled in when the files are added. The
-licence texts go in `assets/Font/licenses`.
+`src/MDSHO.App/Assets/Fonts` (Regular weight only) and shows under "Third Party Notices" in the About window. The
+licence texts are in `assets/Font/licenses` and ship with the app in `Assets/Fonts/licenses`. The GUST Font License
+is built on the LPPL 1.3c, so `LPPL-1.3c.txt` ships next to it. IBM Plex Mono 2.5.0 is the release; the font file
+itself says version 2.005.
 
 | Font | Version | License | Included files | License text | Project URL | GPLv3-compatible |
 | :--- | :--- | :--- | :--- | :--- | :--- | :---: |
-| JetBrains Mono | TBD | OFL-1.1 | `JetBrainsMono-Regular.ttf` | https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt | https://github.com/JetBrains/JetBrainsMono | Font data shipped beside the GPL code, not linked into it (see note) |
-| Source Code Pro | TBD | OFL-1.1 | `SourceCodePro-Regular.ttf` | https://github.com/adobe-fonts/source-code-pro/blob/release/LICENSE.md | https://github.com/adobe-fonts/source-code-pro | Font data shipped beside the GPL code, not linked into it (see note) |
-| IBM Plex Mono | TBD | OFL-1.1 | `IBMPlexMono-Regular.ttf` | https://github.com/IBM/plex/blob/master/LICENSE.txt | https://github.com/IBM/plex | Font data shipped beside the GPL code, not linked into it (see note) |
-| Latin Modern Roman | TBD | GUST Font License | `lmroman10-regular.otf` | https://www.gust.org.pl/projects/e-foundry/licenses | https://www.gust.org.pl/projects/e-foundry/latin-modern | Font data shipped beside the GPL code, not linked into it (see note) |
-| Latin Modern Mono | TBD | GUST Font License | `lmmono10-regular.otf` | https://www.gust.org.pl/projects/e-foundry/licenses | https://www.gust.org.pl/projects/e-foundry/latin-modern | Font data shipped beside the GPL code, not linked into it (see note) |
+| JetBrains Mono | 2.304 | OFL-1.1 | `JetBrainsMono-Regular.ttf` | https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt | https://github.com/JetBrains/JetBrainsMono | Font data shipped beside the GPL code, not linked into it (see note) |
+| Source Code Pro | 2.042 | OFL-1.1 | `SourceCodePro-Regular.ttf` | https://github.com/adobe-fonts/source-code-pro/blob/release/LICENSE.md | https://github.com/adobe-fonts/source-code-pro | Font data shipped beside the GPL code, not linked into it (see note) |
+| IBM Plex Mono | 2.5.0 | OFL-1.1 | `IBMPlexMono-Regular.ttf` | https://github.com/IBM/plex/blob/master/LICENSE.txt | https://github.com/IBM/plex | Font data shipped beside the GPL code, not linked into it (see note) |
+| Latin Modern Roman | 2.004 | GUST Font License | `lmroman10-regular.otf` | https://www.gust.org.pl/projects/e-foundry/licenses | https://www.gust.org.pl/projects/e-foundry/latin-modern | Font data shipped beside the GPL code, not linked into it (see note) |
+| Latin Modern Mono | 2.004 | GUST Font License | `lmmono10-regular.otf` | https://www.gust.org.pl/projects/e-foundry/licenses | https://www.gust.org.pl/projects/e-foundry/latin-modern | Font data shipped beside the GPL code, not linked into it (see note) |
 
 Note on the fonts: the FSF lists the OFL and LPPL-based licences as free but not GPL-compatible for code. The fonts are
 separate data files that MDSHO loads at run time, with their own licence texts, which both licences allow.

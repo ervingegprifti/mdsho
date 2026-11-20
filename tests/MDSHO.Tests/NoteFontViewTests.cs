@@ -489,7 +489,7 @@ namespace MDSHO.Tests {
         try {
           NoteFontFamilies.ResourceExists = file => true;
           FontFamily family = NoteFontFamilies.Resolve("IBM Plex Mono");
-          Assert.Equal("pack://application:,,,/Assets/Fonts/", family.BaseUri.ToString());
+          Assert.Equal("pack://application:,,,/MDSHO;component/Assets/Fonts/", family.BaseUri.ToString());
           Assert.EndsWith("#" + NoteFontFamilies.FamilyInFileOf("IBM Plex Mono"), family.Source);
           NoteFontFamilies.ResourceExists = file => false;
           Assert.Equal("Courier New", NoteFontFamilies.Resolve("IBM Plex Mono").Source);
