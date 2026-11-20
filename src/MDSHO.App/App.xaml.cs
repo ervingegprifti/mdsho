@@ -43,6 +43,19 @@ namespace MDSHO
     /// </summary>
     public static bool StartupEnabled { get; set; } = true;
 
+    /// <summary>Connects the windows that edit a button: Run Command, Comment, Note and Edit value.</summary>
+    public static void ConnectEditors() {
+      // New run commands and "Edit run command..." open the Run Command window.
+      ShortcutViewModel.OpenRunCommandEditor = RunCommandWindow.ShowFor;
+      ShortcutViewModel.OpenCommentEditor = TextEditWindow.ShowCommentFor;
+      ShortcutViewModel.OpenNoteEditor = TextEditWindow.ShowNoteFor;
+      ShortcutViewModel.ToggleNoteEditor = TextEditWindow.ToggleNoteFor;
+      // Deleting a note (or its group or panel) closes its open note window.
+      ShortcutViewModel.NotesDeleted = TextEditWindow.CloseNotesOf;
+      // "Edit value..." and a clipboard button with no value open the Edit value window.
+      ShortcutViewModel.OpenClipboardValueEditor = TextEditWindow.ShowClipboardValueFor;
+    }
+
     /// <summary>Starts MDSHO: makes sure only one copy runs, upgrades the database, opens every saved window and creates the tray icon.</summary>
     protected override void OnStartup(StartupEventArgs e) {
       base.OnStartup(e);
@@ -78,13 +91,9 @@ namespace MDSHO
           return;
         }
 
-        // New run commands and "Edit run command..." open the Run Command window.
-        ShortcutViewModel.OpenRunCommandEditor = RunCommandWindow.ShowFor;
-        ShortcutViewModel.OpenCommentEditor = TextEditWindow.ShowCommentFor;
-        ShortcutViewModel.OpenNoteEditor = TextEditWindow.ShowNoteFor;
-        ShortcutViewModel.ToggleNoteEditor = TextEditWindow.ToggleNoteFor;
-        // Deleting a note (or its group or panel) closes its open note window.
-        ShortcutViewModel.NotesDeleted = TextEditWindow.CloseNotesOf;
+        ConnectEditors();
+        // Clipboard buttons paste into the window the user was in before MDSHO.
+        AppServices.Current.ForegroundWindows.Start();
 
         // Get the data context for the application.
         this.DataContext = this.host.Services.GetRequiredService<AppViewModel>();

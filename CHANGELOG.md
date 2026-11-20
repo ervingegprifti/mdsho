@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.19.0]
+
+### Added
+
+- Clipboard buttons: a button with a name and a value. Click in a text field, then double-click the button to paste the value. MDSHO puts your clipboard back afterwards.
+- Copy value to memory and Edit value... in a clipboard button's menu.
+- New clipboard in the panel menu and in a group's menu.
+- Database version 19: the buttons table gets `IsClipboard` and `ClipboardValue` (backed up first). Exports and backups carry them; older exports still import.
+
 ## [1.18.0]
 
 ### Added

@@ -17,6 +17,8 @@ namespace MDSHO.Helpers {
         MessageBox.Show(message, caption, MessageBoxButton.OK, MessageBoxImage.Exclamation);
       Dialogs.ShowError = (caption, error, detail) =>
         CommandErrorWindow.ShowWindow(new CommandErrorWindow(caption, error, detail));
+      Dialogs.ShowInfo = (caption, heading, text) =>
+        PasteMessageWindow.ShowWindow(new PasteMessageWindow(caption, heading, text));
     }
   }
 }

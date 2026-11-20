@@ -384,6 +384,11 @@
                                     <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Note}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
+                            <MenuItem Header="New clipboard" Command="{Binding NewClipboardShortcutCommand}">
+                                <MenuItem.Icon>
+                                    <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Paste}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
                             <Separator/>
                             <MenuItem Header="Paste" Command="{Binding PasteShortcutCommand}" InputGestureText="{x:Static viewmodels:ShortcutKeyTexts.Paste}">
                                 <MenuItem.Icon>
@@ -423,6 +428,11 @@
                                         <MenuItem Header="New note" Command="{Binding NewNoteShortcutCommand}" Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Note}"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="New clipboard" Command="{Binding NewClipboardShortcutCommand}" Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Paste}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}"/>
@@ -509,6 +519,12 @@
                                         </MenuItem>
                                         <!--Run commands only: copies the command line as the tooltip shows it (no icon)-->
                                         <MenuItem Header="Copy command to memory" Command="{Binding CopyCommandToMemoryCommand}" Visibility="{Binding ShowCopyCommandToMemory, Converter={StaticResource BoolToVisibility}}" />
+                                        <!--Clipboard buttons only: copies the value and leaves it on the clipboard-->
+                                        <MenuItem Header="Copy value to memory" Command="{Binding CopyValueToMemoryCommand}" Visibility="{Binding ShowCopyValueToMemory, Converter={StaticResource BoolToVisibility}}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Copy}"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
                                         <MenuItem Header="Set name the same as target" Command="{Binding SetNameTheSameAsTargetCommand}" Visibility="{Binding ShowSetNameTheSameAsTarget, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
                                         <MenuItem Header="Copy target to memory" Command="{Binding CopyTargetToMemoryCommand}" Visibility="{Binding ShowCopyTargetToMemory, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
                                         <MenuItem Header="Comment..." Command="{Binding EditCommentCommand}" Visibility="{Binding ShowComment, Converter={StaticResource BoolToVisibility}}">
@@ -523,6 +539,12 @@
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator Visibility="{Binding ShowNote, Converter={StaticResource BoolToVisibility}}" />
+                                        <MenuItem Header="Edit value..." Visibility="{Binding ShowClipboard, Converter={StaticResource BoolToVisibility}}" Command="{Binding EditClipboardValueCommand}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Paste}"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <Separator Visibility="{Binding ShowClipboard, Converter={StaticResource BoolToVisibility}}" />
                                         <MenuItem Header="Edit run command..." Visibility="{Binding ShowCommand, Converter={StaticResource BoolToVisibility}}" Command="{Binding EditRunCommandCommand}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Run}"/>
@@ -594,6 +616,16 @@
                                     <TextBlock x:Name="TextNoteIcon" Grid.Row="0" Grid.Column="0"
 				                        Text="{Binding DataContext.Appearance.Icons.Note, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
 				                        Visibility="{Binding ShowNote, Converter={StaticResource BoolToVisibility}}"
+				                        Foreground="{Binding DataContext.Appearance.TextColor, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}, Converter={StaticResource HexToBrush}}"
+				                        FontFamily="{StaticResource IconFont}"
+				                        FontSize="16"
+				                        Width="16"
+				                        Margin="1,0,5,0"
+				                        VerticalAlignment="Center" />
+                                    <!--This is used to display the clipboard icon-->
+                                    <TextBlock x:Name="TextClipboardIcon" Grid.Row="0" Grid.Column="0"
+				                        Text="{Binding DataContext.Appearance.Icons.Paste, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+				                        Visibility="{Binding ShowClipboard, Converter={StaticResource BoolToVisibility}}"
 				                        Foreground="{Binding DataContext.Appearance.TextColor, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}, Converter={StaticResource HexToBrush}}"
 				                        FontFamily="{StaticResource IconFont}"
 				                        FontSize="16"

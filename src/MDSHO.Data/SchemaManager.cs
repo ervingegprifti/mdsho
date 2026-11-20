@@ -75,6 +75,8 @@ namespace MDSHO.Data {
           NoteTitleTextColor TEXT NOT NULL DEFAULT '',
           NoteBackgroundColor TEXT NOT NULL DEFAULT '',
           NoteTextColor TEXT NOT NULL DEFAULT '',
+          IsClipboard INTEGER NOT NULL DEFAULT 0,
+          ClipboardValue TEXT NOT NULL DEFAULT '',
           FOREIGN KEY(ParentShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE,
           FOREIGN KEY(ParentMDSHOWindowID) REFERENCES MDSHOWindows(ID) ON DELETE CASCADE);
 
@@ -327,6 +329,14 @@ namespace MDSHO.Data {
         }
         // A 1.7.0 test build database skips the version 17 repair once it is at 18, so repair it here too.
         AddScreenSetupsLastUsed(conn);
+      }),
+      new DbMigration(19, "Clipboard buttons: Shortcuts.IsClipboard and Shortcuts.ClipboardValue", conn => {
+        if (!ColumnExists(conn, "Shortcuts", "IsClipboard")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN IsClipboard INTEGER NOT NULL DEFAULT 0;");
+        }
+        if (!ColumnExists(conn, "Shortcuts", "ClipboardValue")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN ClipboardValue TEXT NOT NULL DEFAULT '';");
+        }
       })
     };
 

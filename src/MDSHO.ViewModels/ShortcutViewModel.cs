@@ -40,7 +40,9 @@ namespace MDSHO.ViewModels {
     /// <summary>A note button: its text is the note.</summary>
     Note,
     /// <summary>A file or folder path that does not exist (any more).</summary>
-    Missing
+    Missing,
+    /// <summary>A clipboard button: pastes its value.</summary>
+    Clipboard
   }
 
   /// <summary>
@@ -133,6 +135,11 @@ namespace MDSHO.ViewModels {
     private long position;
     private bool isProcessCommand;
     private bool isNote;
+    private bool isClipboard;
+    /// <summary>The value of a clipboard button (empty for other buttons). Saved at once.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ToolTipText))]
+    private string clipboardValue;
     /// <summary>The text of a note button (empty for other buttons).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ToolTipText))]
@@ -181,6 +188,10 @@ namespace MDSHO.ViewModels {
     /// <summary>Database ID.</summary>
     public long ID { get { return id; } set { id = value; } }
     partial void OnNameChanged(string value) {
+      if (this.isClipboard) {
+        // The tooltip starts with the name.
+        OnPropertyChanged(nameof(this.ToolTipText));
+      }
       if (this.isGroup) {
         // The group value may have changed: the commands directly inside resolve their arguments again.
         foreach (ShortcutViewModel child in this.shortcuts) {
@@ -213,6 +224,7 @@ namespace MDSHO.ViewModels {
       get {
         if (this.isGroup) { return ShortcutTargetKind.Group; }
         if (this.isNote) { return ShortcutTargetKind.Note; }
+        if (this.isClipboard) { return ShortcutTargetKind.Clipboard; }
         if (this.isProcessCommand) { return ShortcutTargetKind.Command; }
         if (this.IsWebAddress) { return ShortcutTargetKind.WebLink; }
         return this.pathKind;
@@ -236,7 +248,7 @@ namespace MDSHO.ViewModels {
     // A result for an older target is dropped.
     private void UpdateTargetKind(bool refresh) {
       string path = this.target;
-      if (this.isGroup || this.isProcessCommand || this.isNote || string.IsNullOrWhiteSpace(path) || this.IsWebAddress) {
+      if (this.isGroup || this.isProcessCommand || this.isNote || this.isClipboard || string.IsNullOrWhiteSpace(path) || this.IsWebAddress) {
         ++this.targetCheckVersion;
         SetPathKind(ShortcutTargetKind.File);
         return;
@@ -293,6 +305,7 @@ namespace MDSHO.ViewModels {
         // Only a group can get new items or a paste.
         this.NewGroupShortcutCommand.NotifyCanExecuteChanged();
         this.NewProcessCommandShortcutCommand.NotifyCanExecuteChanged();
+        this.NewClipboardShortcutCommand.NotifyCanExecuteChanged();
         this.PasteShortcutCommand.NotifyCanExecuteChanged();
       }
     }
@@ -440,11 +453,20 @@ namespace MDSHO.ViewModels {
         if (this.isNote) {
           return Preview(this.noteText);
         }
+        if (this.isClipboard && !this.isGroup) {
+          return ClipboardToolTip();
+        }
         if (!this.isProcessCommand || this.isGroup) {
           return this.Target;
         }
         return this.CommandLineText;
       }
+    }
+    // The name, the value (cut after 10 lines), then how to paste.
+    private string ClipboardToolTip() {
+      string value = Preview(this.clipboardValue);
+      string nl = Environment.NewLine;
+      return (this.Name ?? "") + nl + (value == null ? "" : value + nl) + nl + this.PasteHint;
     }
     /// <summary>
     /// A run command's command line as its tooltip shows it and "Copy command to memory" copies it: the program (quoted
@@ -533,7 +555,7 @@ namespace MDSHO.ViewModels {
     /// <summary>True for a run command.</summary>
     public bool ShowCopyCommandToMemory => this.ShowCommand;
     /// <summary>True for a file, folder or web link shortcut (not for groups and commands).</summary>
-    public bool ShowShortcut => !this.isGroup && !this.isProcessCommand && !this.isNote;
+    public bool ShowShortcut => !this.isGroup && !this.isProcessCommand && !this.isNote && !this.isClipboard;
     /// <summary>True for a note button.</summary>
     public bool ShowNote => !this.isGroup && this.isNote;
     /// <summary>True when the shortcut is marked.</summary>
@@ -542,13 +564,45 @@ namespace MDSHO.ViewModels {
     public bool ShowCommand => !this.isGroup && this.isProcessCommand;
     /// <summary>True for a group (only groups can get new items).</summary>
     public bool ShowNewShortcut => this.isGroup;
+    /// <summary>True for a clipboard button.</summary>
+    public bool IsClipboard { get { return this.isClipboard; } }
+    /// <summary>True for a clipboard button.</summary>
+    public bool ShowClipboard => !this.isGroup && this.isClipboard;
+    /// <summary>True for a clipboard button.</summary>
+    public bool ShowCopyValueToMemory => this.ShowClipboard;
+    /// <summary>
+    /// Pastes a clipboard button's value into the window the user came from (the app's <see cref="ClipboardPaster"/>).
+    /// Set by the app at startup; tests replace it. Until it is set it throws.
+    /// </summary>
+    public static Func<string, System.Threading.Tasks.Task<PasteOutcome>> PasteValue { get; set; } = value =>
+      throw new InvalidOperationException("ShortcutViewModel.PasteValue is not set.");
+    /// <summary>Opens the Edit value window for a clipboard button (set by the app; tests replace it).</summary>
+    public static Action<ShortcutViewModel> OpenClipboardValueEditor { get; set; }
+    /// <summary>The error when a paste failed.</summary>
+    public const string CouldNotPasteText = "MDSHO could not paste the value.";
+    /// <summary>The line below <see cref="CouldNotPasteText"/>.</summary>
+    public const string CopyValueInsteadText = "Try again, or right-click the button, choose Copy value to memory, then press Ctrl+V.";
+    /// <summary>The tooltip's last line: how to paste in this button's panel.</summary>
+    public string PasteHint => this.SingleClickToOpen ? "Click to paste" : "Double-click to paste";
+    // The Single click to open setting of the panel this button is in.
+    private bool SingleClickToOpen => this.OwningWindow?.Appearance?.SingleClickToOpen ?? false;
+    /// <summary>Tells the tooltips of the clipboard buttons in this button or group that the click setting changed.</summary>
+    public void RaisePasteHintChanged() {
+      if (this.isClipboard) {
+        OnPropertyChanged(nameof(this.PasteHint));
+        OnPropertyChanged(nameof(this.ToolTipText));
+      }
+      foreach (ShortcutViewModel child in this.shortcuts) {
+        child.RaisePasteHintChanged();
+      }
+    }
     // Commands: generated from the [RelayCommand] methods below (NewGroupShortcutCommand, NewProcessCommandShortcutCommand,
     // EditRunCommandCommand, RenameCommand, SetNameTheSameAsTargetCommand, CopyTargetToMemoryCommand, CutShortcutCommand,
     // CopyShortcutCommand, PasteShortcutCommand, MarkShortcutCommand, DeleteShortcutCommand, CommitEditCommand, CancelEditCommand).
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null) {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isClipboard = false, string clipboardValue = "") {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -570,6 +624,8 @@ namespace MDSHO.ViewModels {
       this.processWorkingFolder = processWorkingFolder ?? "";
       this.isNote = isNote;
       this.noteText = noteText ?? "";
+      this.isClipboard = isClipboard;
+      this.clipboardValue = clipboardValue ?? "";
       this.NoteColors = noteColors ?? new NoteColors();
       UpdateTargetKind(false);
       // Events.
@@ -630,6 +686,11 @@ namespace MDSHO.ViewModels {
         DataStore.Shortcuts.UpdateMarkColor(this.ID, this.MarkColor);
       } else if (e.PropertyName == nameof(this.Comment)) {
         DataStore.Shortcuts.UpdateComment(this.ID, this.Comment ?? "");
+      } else if (e.PropertyName == nameof(this.ClipboardValue)) {
+        if (!this.savingClipboardValue) {
+          DataStore.Shortcuts.UpdateClipboardValue(this.ID, this.ClipboardValue ?? "");
+        }
+        OnPropertyChanged(nameof(this.HasToolTip));
       } else if (e.PropertyName == nameof(this.NoteText)) {
         if (!this.savingNoteText) {
           DataStore.Shortcuts.UpdateNoteText(this.ID, this.NoteText ?? "");
@@ -689,6 +750,67 @@ namespace MDSHO.ViewModels {
       ShortcutViewModel note = ViewModelFactory.NewNoteShortcut(this.AppViewModel, this, null);
       this.Children.Add(note);
       OpenNoteEditor?.Invoke(note);
+    }
+    /// <summary>Adds a new clipboard button inside this group and starts its rename.</summary>
+    [RelayCommand(CanExecute = nameof(CanExecuteNewProcessCommandShortcut))]
+    private void NewClipboardShortcut() {
+      ShortcutViewModel clip = ViewModelFactory.NewClipboardShortcut(this.AppViewModel, this, null);
+      this.IsGroupExpanded = true;
+      this.Children.Add(clip);
+      clip.BeginEdit(EditField.Name);
+    }
+    /// <summary>Opens the Edit value window for this clipboard button.</summary>
+    [RelayCommand]
+    private void EditClipboardValue() {
+      if (this.isClipboard) {
+        OpenClipboardValueEditor?.Invoke(this);
+      }
+    }
+    /// <summary>Copies the value to the clipboard and leaves it there (a normal copy). Group values are not filled in.</summary>
+    [RelayCommand]
+    private void CopyValueToMemory() {
+      if (this.isClipboard && !string.IsNullOrEmpty(this.clipboardValue)) {
+        CopyText(this.clipboardValue);
+      }
+    }
+    // True while SaveClipboardValue sets the value it already wrote to the database.
+    private bool savingClipboardValue;
+    /// <summary>Saves the value: the database first, then memory (a failed write throws and keeps the old value).</summary>
+    public void SaveClipboardValue(string value) {
+      value ??= "";
+      DataStore.Shortcuts.UpdateClipboardValue(this.ID, value);
+      this.savingClipboardValue = true;
+      try {
+        this.ClipboardValue = value;
+      } finally {
+        this.savingClipboardValue = false;
+      }
+    }
+    /// <summary>
+    /// Pastes the value into the window the user came from and says why when it can't. An empty value opens Edit value
+    /// instead. The value is used as it is (no group values) and is never logged.
+    /// </summary>
+    public async System.Threading.Tasks.Task PasteForUserAsync() {
+      if (string.IsNullOrEmpty(this.clipboardValue)) {
+        OpenClipboardValueEditor?.Invoke(this);
+        return;
+      }
+      bool singleClick = this.SingleClickToOpen;
+      // Panels brought to front go back first.
+      Opened?.Invoke();
+      PasteOutcome outcome;
+      try {
+        outcome = await PasteValue(this.clipboardValue);
+      } catch (Exception ex) {
+        // The type only: a message could hold the value.
+        Common.AppLog.Warning(null, "A clipboard button could not paste: {ErrorType}", ex.GetType().FullName);
+        Dialogs.ShowError(this.Name, CouldNotPasteText, CopyValueInsteadText);
+        return;
+      }
+      ClipboardPasteMessage message = ClipboardPasteMessage.For(outcome, this.Name, singleClick);
+      if (message != null) {
+        Dialogs.ShowInfo(ClipboardPasteMessage.Caption, message.Heading, message.Text);
+      }
     }
     /// <summary>Opens the Note window for this note.</summary>
     [RelayCommand]
@@ -826,6 +948,11 @@ namespace MDSHO.ViewModels {
     /// <summary>Opens the shortcut or runs the command, optionally elevated; shows a message when Windows cannot open it.</summary>
     public void RunShortcut(bool runAsAdministrator) {
       if (this.IsEditing) {
+        return;
+      }
+      if (this.isClipboard) {
+        // A clipboard button pastes its value into the window the user came from.
+        _ = PasteForUserAsync();
         return;
       }
       if (this.isNote) {

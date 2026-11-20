@@ -16,5 +16,8 @@ namespace MDSHO.ViewModels {
     /// <summary>(caption, error, detail) shows an error in red with a line below it and OK (a small MDSHO window in the app).</summary>
     public static Action<string, string, string> ShowError = (caption, error, detail) =>
       throw new InvalidOperationException("Dialogs.ShowError is not set.");
+    /// <summary>(caption, heading, text) shows information: a bold heading, then the text, with OK.</summary>
+    public static Action<string, string, string> ShowInfo = (caption, heading, text) =>
+      throw new InvalidOperationException("Dialogs.ShowInfo is not set.");
   }
 }
