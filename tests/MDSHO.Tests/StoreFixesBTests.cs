@@ -127,16 +127,52 @@ namespace MDSHO.Tests {
       AssertPlain(e.Error + e.Detail);
     }
 
+    // .NET starts with SEE_MASK_FLAG_NO_UI, so Windows shows no "Problem with Shortcut" box: a missing target only
+    // fails with 1223, and MDSHO must say it.
     [Fact]
-    public void Closing_windows_problem_with_shortcut_box_shows_nothing_and_logs_one_line() {
-      // Windows shows its own "Problem with Shortcut" box for a missing target; closing it fails the open with 1223.
+    public void Error_1223_for_a_missing_target_shows_the_MDSHO_message_and_logs_the_file_name_only() {
       ShortcutViewModel s = FileShortcut(null, "Tool");
-      ShortcutViewModel.ProcessStarter = psi => throw new Win32Exception(ShortcutViewModel.ErrorCancelled);
+      ShortcutViewModel.ProcessStarter = psi => throw new Win32Exception(ShortcutViewModel.ErrorCancelled, @"secret C:\Target\Tool.exe");
       s.RunShortcut(false);
-      Assert.Empty(errors);
+      Assert.Equal(ShortcutTargetKind.Missing, s.TargetKind);
+      var e = Assert.Single(errors);
+      Assert.Equal("Tool", e.Caption);
+      Assert.Equal(ShortcutViewModel.CouldNotOpenText, e.Error);
+      Assert.Equal("The file or folder it points to can't be found.\n" + ShortcutViewModel.CheckTargetText, e.Detail);
       LogEvent line = Assert.Single(log.Events);
-      Assert.Equal(LogEventLevel.Information, line.Level);
+      Assert.Equal(LogEventLevel.Warning, line.Level);
       Assert.Null(line.Exception);
+      Assert.Contains(s.Guid + s.Ext, line.RenderMessage());
+      Assert.DoesNotContain(@"C:\Target", line.RenderMessage());
+    }
+
+    [Fact]
+    public void Error_1223_when_the_target_exists_is_a_declined_prompt_shows_nothing_and_logs_one_line() {
+      Func<string, bool> oldFileExists = ShortcutViewModel.FileExists;
+      ShortcutViewModel.FileExists = p => p == @"C:\Target\Tool.exe" || oldFileExists(p);
+      try {
+        ShortcutViewModel s = FileShortcut(null, "Tool");
+        ShortcutViewModel.ProcessStarter = psi => throw new Win32Exception(ShortcutViewModel.ErrorCancelled);
+        s.RunShortcut(false);
+        Assert.Equal(ShortcutTargetKind.File, s.TargetKind);
+        Assert.Empty(errors);
+        LogEvent line = Assert.Single(log.Events);
+        Assert.Equal(LogEventLevel.Information, line.Level);
+        Assert.Null(line.Exception);
+      } finally {
+        ShortcutViewModel.FileExists = oldFileExists;
+      }
+    }
+
+    [Fact]
+    public void Windows_own_error_box_stays_off_for_shortcuts() {
+      // Windows' box offers Delete, which would delete MDSHO's own .lnk file.
+      ShortcutViewModel s = FileShortcut(null, "Tool");
+      ProcessStartInfo started = null;
+      ShortcutViewModel.ProcessStarter = psi => started = psi;
+      s.RunShortcut(false);
+      Assert.NotNull(started);
+      Assert.False(started.ErrorDialog);
     }
 
     [Fact]

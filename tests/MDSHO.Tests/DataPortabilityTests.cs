@@ -368,7 +368,7 @@ namespace MDSHO.Tests {
       Assert.Equal(2, m.Counts.Windows);
       Assert.Equal(1, m.Counts.Clones);
       Assert.Equal(7, m.Counts.Shortcuts);
-      Assert.Equal("1.20.0", m.AppVersion);
+      Assert.Equal("1.20.1", m.AppVersion);
       Assert.Equal(DateTimeKind.Utc, m.ExportedAtUtc.Kind);
     }
 

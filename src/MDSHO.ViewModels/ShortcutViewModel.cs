@@ -360,8 +360,8 @@ namespace MDSHO.ViewModels {
     /// </summary>
     public static Action<ShortcutViewModel> NotesDeleted { get; set; }
     /// <summary>
-    /// The Windows error code when the user answers No to the administrator (UAC) prompt, or closes Windows' own "Problem
-    /// with Shortcut" box (a shortcut whose target is missing).
+    /// The Windows error code when the user answers No to the administrator (UAC) prompt. Windows also returns it, without
+    /// showing anything, for a shortcut whose target is missing (.NET starts with SEE_MASK_FLAG_NO_UI).
     /// </summary>
     public const int ErrorCancelled = 1223;
     /// <summary>
@@ -1055,9 +1055,15 @@ namespace MDSHO.ViewModels {
           }
         }
       } catch (System.ComponentModel.Win32Exception ex) when (!this.IsProcessCommand && ex.NativeErrorCode == ErrorCancelled) {
-        // Windows showed its own "Problem with Shortcut" box (the target is missing) and the user closed it: Windows has
-        // said it already, so no second message.
-        Common.AppLog.Information("Shortcut file {File} was not opened: Windows' message was closed", this.Guid + this.Ext);
+        // Windows shows no box here (SEE_MASK_FLAG_NO_UI). Its own box isn't turned on: it offers Delete, which would
+        // delete MDSHO's .lnk file.
+        if (this.TargetKind == ShortcutTargetKind.Missing) {
+          Common.AppLog.Warning(null, "Shortcut file {File} was not opened: its target can't be found", this.Guid + this.Ext);
+          Dialogs.ShowError(this.Name, CouldNotOpenText, TargetNotFoundText + "\n" + CheckTargetText);
+        } else {
+          // The target exists, so the user said No to the administrator prompt: nothing to say.
+          Common.AppLog.Information("Shortcut file {File} was not opened: the administrator prompt was declined", this.Guid + this.Ext);
+        }
       } catch (Exception ex) {
         // A short plain message; the details go to the log. A run command was already logged by StartRunCommand
         // (without its arguments, which can hold passwords).
@@ -1077,6 +1083,8 @@ namespace MDSHO.ViewModels {
     public static string FailureDetail(Exception ex, string check) {
       return RunFailureReason(ex) + "\n" + check;
     }
+    /// <summary>The reason when a shortcut's target is gone.</summary>
+    public const string TargetNotFoundText = "The file or folder it points to can't be found.";
     /// <summary>The line below a shortcut that can't be opened.</summary>
     public const string CheckTargetText = "Check that the file or folder it points to still exists.";
     /// <summary>The line below a run command that can't start.</summary>

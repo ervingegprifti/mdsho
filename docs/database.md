@@ -245,7 +245,7 @@ that worked.
 | 17 | 1.7.1 | `ScreenSetups` and `ScreenSetupPlaces` tables: the screen setups seen on this PC and the place of every panel, clone and note window in each (empty at first). The 1.7.0 test build created this version without `ScreenSetups.LastUsed`; MDSHO adds the column at start when it is missing. |
 | 18 | 1.16.0 | `NoteWindows.FontSize` (`INTEGER NOT NULL DEFAULT 0`): the text size of each note window (`0` = 12). From 1.16.0 exports and backups also carry the note window places (export format 2); older exports still import, with default note windows. The step also adds `ScreenSetups.LastUsed` when a 1.7.0 test build database lacks it. |
 | 19 | 1.19.2 | `Shortcuts.IsSnippet` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.SnippetText` (`TEXT NOT NULL DEFAULT ''`) for snippets. Exports and backups carry them (still export format 3); older exports import with no snippets. |
-| 20 | 1.20.0 | `Shortcuts.TextFont` (`TEXT NOT NULL DEFAULT 'Courier New'`): the font of each note and snippet, so existing ones switch to Courier New. Copies, exports and backups carry it (still export format 3); older exports import with Courier New. |
+| 20 | 1.20.1 | `Shortcuts.TextFont` (`TEXT NOT NULL DEFAULT 'Courier New'`): the font of each note and snippet, so existing ones switch to Courier New. Copies, exports and backups carry it (still export format 3); older exports import with Courier New. |
 
 ### Backup before an upgrade
 
