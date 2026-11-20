@@ -279,6 +279,8 @@ namespace MDSHO.Infrastructure {
     [DllImport("user32.dll")]
     private static extern int CountClipboardFormats();
     [DllImport("user32.dll")]
+    private static extern bool IsClipboardFormatAvailable(uint format);
+    [DllImport("user32.dll")]
     private static extern IntPtr GetClipboardData(uint format);
     [DllImport("user32.dll", SetLastError = true)]
     private static extern IntPtr SetClipboardData(uint format, IntPtr data);
@@ -328,6 +330,24 @@ namespace MDSHO.Infrastructure {
       }
     }
 
+    /// <summary>True when the current content is kept out of clipboard history.</summary>
+    public bool IsExcludedFromHistory() {
+      if (IsClipboardFormatAvailable(RegisterClipboardFormat("ExcludeClipboardContentFromMonitorProcessing"))) {
+        return true;
+      }
+      uint canInclude = RegisterClipboardFormat("CanIncludeInClipboardHistory");
+      if (!IsClipboardFormatAvailable(canInclude) || !Open()) {
+        return false;
+      }
+      try {
+        byte[] value = Read(GetClipboardData(canInclude));
+        // A DWORD: 0 = keep out of history. Unreadable counts as kept out, the safe side.
+        return value == null || value.Length < 4 || BitConverter.ToUInt32(value, 0) == 0;
+      } finally {
+        CloseClipboard();
+      }
+    }
+
     /// <summary>The newest clipboard history item, or null.</summary>
     public async Task<object> CurrentHistoryItemAsync() {
       try {
@@ -356,7 +376,10 @@ namespace MDSHO.Infrastructure {
       }
     }
 
-    /// <summary>A copy in memory of every format that is plain memory; null when none could be copied.</summary>
+    /// <summary>
+    /// A copy in memory of every format that is plain memory; null when none could be copied. Registered formats are
+    /// copied too, so the history and cloud exclusion formats come back with the content.
+    /// </summary>
     public object CopyAll() {
       if (!Open()) {
         return null;

@@ -69,6 +69,11 @@ namespace MDSHO.Common {
     bool IsEmpty();
     /// <summary>True when Windows clipboard history is on.</summary>
     bool IsHistoryEnabled();
+    /// <summary>
+    /// True when the current content is kept out of clipboard history (it carries ExcludeClipboardContentFromMonitorProcessing,
+    /// or CanIncludeInClipboardHistory = 0), as password managers do.
+    /// </summary>
+    bool IsExcludedFromHistory();
     /// <summary>The newest clipboard history item (the current content), or null.</summary>
     Task<object> CurrentHistoryItemAsync();
     /// <summary>A copy in memory of every format it can copy, or null when that failed.</summary>
@@ -175,12 +180,13 @@ namespace MDSHO.Common {
         return PasteOutcome.NotEditable;
       }
 
-      // Save the user's clipboard: the history item when history is on (nothing is read), else a copy in memory.
+      // Save the user's clipboard: the history item when history is on (nothing is read), else a copy in memory. Content
+      // kept out of history (a password manager's) is not history item 0, so it is copied, exclusion formats and all.
       bool wasEmpty = this.clipboard.IsEmpty();
       object historyItem = null;
       object copy = null;
       if (!wasEmpty) {
-        if (this.clipboard.IsHistoryEnabled()) {
+        if (this.clipboard.IsHistoryEnabled() && !this.clipboard.IsExcludedFromHistory()) {
           historyItem = await this.clipboard.CurrentHistoryItemAsync();
         }
         if (historyItem == null) {

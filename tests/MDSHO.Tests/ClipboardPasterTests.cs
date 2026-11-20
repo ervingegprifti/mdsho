@@ -46,6 +46,7 @@ namespace MDSHO.Tests {
       public uint Sequence = 100;
       public string Content = "user text";
       public bool History;
+      public bool Excluded;
       public object HistoryItem = "history item";
       public bool HistoryRestoreWorks = true;
       public bool CopyWorks = true;
@@ -58,6 +59,7 @@ namespace MDSHO.Tests {
       public uint SequenceNumber => Sequence;
       public bool IsEmpty() { return Content == null; }
       public bool IsHistoryEnabled() { return History; }
+      public bool IsExcludedFromHistory() { log.Add("excluded?"); return Excluded; }
       public Task<object> CurrentHistoryItemAsync() { log.Add("history item"); return Task.FromResult(HistoryItem); }
       public object CopyAll() { log.Add("copy all"); return CopyWorks ? (object)("copy of " + Content) : null; }
       public bool SetPrivateText(string text) {
@@ -231,6 +233,31 @@ namespace MDSHO.Tests {
       f.Paste();
       Assert.Null(f.Clipboard.Content);
       Assert.DoesNotContain("history item", f.Log.Steps);
+    }
+
+    [Fact]
+    public void With_history_on_and_content_kept_out_of_history_it_keeps_a_copy_in_memory_instead_of_an_older_history_item() {
+      // A password manager's copy is not in the history: history item 0 is an older item, never the user's current content.
+      Fixture f = new Fixture();
+      f.Clipboard.History = true;
+      f.Clipboard.Excluded = true;
+      Assert.Equal(PasteOutcome.Pasted, f.Paste());
+      Assert.DoesNotContain("history item", f.Log.Steps);
+      Assert.Contains("copy all", f.Log.Steps);
+      Assert.Equal("restore copy copy of user text", f.Log.Steps[f.Log.Steps.Count - 1]);
+      Assert.DoesNotContain(f.Log.Steps, s => s.StartsWith("restore history"));
+    }
+
+    [Fact]
+    public void With_history_on_and_content_in_history_it_checks_the_exclusion_and_uses_the_history_item() {
+      Fixture f = new Fixture();
+      f.Clipboard.History = true;
+      f.Clipboard.Excluded = false;
+      Assert.Equal(PasteOutcome.Pasted, f.Paste());
+      Assert.Contains("excluded?", f.Log.Steps);
+      Assert.True(f.Log.Steps.IndexOf("excluded?") < f.Log.Steps.IndexOf("set private"));
+      Assert.DoesNotContain("copy all", f.Log.Steps);
+      Assert.Equal("restore history history item", f.Log.Steps[f.Log.Steps.Count - 1]);
     }
 
     [Fact]
