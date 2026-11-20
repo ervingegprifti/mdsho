@@ -15,6 +15,10 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - New snippet in the panel menu and in a group's menu.
 - Database version 19: the buttons table gets `IsSnippet` and `SnippetText` (backed up first). Exports and backups carry them; older exports still import.
 
+### Changed
+
+- The suggested export file name has the PC name, like backups: `MDSHO-export-<PC>-yyyy-MM-dd-HHmm.zip`.
+
 ## [1.18.0]
 
 ### Added

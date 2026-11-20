@@ -380,14 +380,7 @@ namespace MDSHO.ViewModels {
 
     /// <summary>The PC name with only letters, digits, - and _ (others become _); "PC" when empty.</summary>
     public static string SafePcName(string name) {
-      if (string.IsNullOrEmpty(name)) {
-        return "PC";
-      }
-      StringBuilder safe = new StringBuilder(name.Length);
-      foreach (char c in name) {
-        safe.Append(char.IsLetterOrDigit(c) || c == '-' || c == '_' ? c : '_');
-      }
-      return safe.ToString();
+      return FileNames.SafePcName(name);
     }
 
     /// <summary>The name of a regular backup.</summary>

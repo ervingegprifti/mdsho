@@ -9,6 +9,7 @@ using System.Text.Json.Nodes;
 using MDSHO.Common;
 using MDSHO.Core;
 using MDSHO.Data;
+using MDSHO.ViewModels;
 using Xunit;
 
 namespace MDSHO.Tests {
@@ -132,8 +133,20 @@ namespace MDSHO.Tests {
 
     #region EXPORT
     [Fact]
-    public void Default_file_name_has_timestamp() {
-      Assert.Equal("MDSHO-export-2026-03-09-0705.zip", DataExporter.DefaultFileName(new DateTime(2026, 3, 9, 7, 5, 59)));
+    public void Default_file_name_has_the_pc_name_and_timestamp() {
+      Assert.Equal("MDSHO-export-DESKTOP-42-2026-03-09-0705.zip", DataExporter.DefaultFileName("DESKTOP-42", new DateTime(2026, 3, 9, 7, 5, 59)));
+    }
+
+    [Fact]
+    public void Default_file_name_cleans_the_pc_name_like_the_backups() {
+      Assert.Equal("MDSHO-export-HOME_PC_1-2026-03-09-0705.zip", DataExporter.DefaultFileName("HOME PC/1", new DateTime(2026, 3, 9, 7, 5, 0)));
+      Assert.Equal("MDSHO-export-A_B_C__-2026-03-09-0705.zip", DataExporter.DefaultFileName("A:B*C?\\", new DateTime(2026, 3, 9, 7, 5, 0)));
+      Assert.Equal("MDSHO-export-PC-2026-03-09-0705.zip", DataExporter.DefaultFileName("", new DateTime(2026, 3, 9, 7, 5, 0)));
+      // One rule for both: the backups use the same shared cleaning.
+      foreach (string name in new[] { "HOME PC/1", "A:B*C", "", null, "Büro-PC_2" }) {
+        Assert.Equal(FileNames.SafePcName(name), BackupFiles.SafePcName(name));
+      }
+      Assert.Equal("Büro-PC_2", FileNames.SafePcName("Büro-PC_2"));
     }
 
     [Fact]

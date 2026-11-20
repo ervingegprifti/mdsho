@@ -678,7 +678,7 @@ namespace MDSHO
           Filter = "MDSHO export (*.zip)|*.zip",
           DefaultExt = ".zip",
           AddExtension = true,
-          FileName = DataExporter.DefaultFileName(DateTime.Now)
+          FileName = DataExporter.DefaultFileName(Environment.MachineName, DateTime.Now)
         };
         if (dialog.ShowDialog() != true) {
           return;

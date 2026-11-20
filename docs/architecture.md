@@ -177,7 +177,7 @@ full exception text on the clipboard, and **Open logs folder** opens the logs fo
 ## Export and import
 
 **Export data...** (tray menu and each panel's header menu) saves everything to one `.zip` file, named
-`MDSHO-export-<yyyy-MM-dd-HHmm>.zip` by default, where you choose. The file contains:
+`MDSHO-export-<PC>-<yyyy-MM-dd-HHmm>.zip` by default, where you choose. The file contains:
 
 - `manifest.json`: the format name (`MDSHO-export`) and version, the MDSHO version and database version that wrote it,
   the date, and the counts of windows, clones, shortcuts, note windows and files;
