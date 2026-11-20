@@ -521,12 +521,8 @@
                                         <MenuItem Header="Copy command to memory" Command="{Binding CopyCommandToMemoryCommand}" Visibility="{Binding ShowCopyCommandToMemory, Converter={StaticResource BoolToVisibility}}" />
                                         <!--Snippets only: renames to the first line of the text (no icon, like Set name the same as target)-->
                                         <MenuItem Header="Set name the same as value" Command="{Binding SetNameTheSameAsValueCommand}" Visibility="{Binding ShowSetNameTheSameAsValue, Converter={StaticResource BoolToVisibility}}" />
-                                        <!--Snippets only: copies the text and leaves it on the clipboard-->
-                                        <MenuItem Header="Copy snippet to memory" Command="{Binding CopySnippetToMemoryCommand}" Visibility="{Binding ShowCopySnippetToMemory, Converter={StaticResource BoolToVisibility}}">
-                                            <MenuItem.Icon>
-                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Copy}"/>
-                                            </MenuItem.Icon>
-                                        </MenuItem>
+                                        <!--Snippets only: copies the text and leaves it on the clipboard (no icon, like Copy command to memory)-->
+                                        <MenuItem Header="Copy snippet to memory" Command="{Binding CopySnippetToMemoryCommand}" Visibility="{Binding ShowCopySnippetToMemory, Converter={StaticResource BoolToVisibility}}" />
                                         <MenuItem Header="Set name the same as target" Command="{Binding SetNameTheSameAsTargetCommand}" Visibility="{Binding ShowSetNameTheSameAsTarget, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
                                         <MenuItem Header="Copy target to memory" Command="{Binding CopyTargetToMemoryCommand}" Visibility="{Binding ShowCopyTargetToMemory, Converter={StaticResource BoolToVisibility}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}, Path=Parent}" />
                                         <MenuItem Header="Comment..." Command="{Binding EditCommentCommand}" Visibility="{Binding ShowComment, Converter={StaticResource BoolToVisibility}}">

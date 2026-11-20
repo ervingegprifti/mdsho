@@ -708,7 +708,7 @@ namespace MDSHO.Tests {
         Assert.Null(setName.Icon);
         MenuItem copy = (MenuItem)visible[rename + 2];
         Assert.Same(f.Clip.CopySnippetToMemoryCommand, copy.Command);
-        Assert.Equal("OwningWindow.Appearance.Icons.Copy", IconPath(copy));
+        Assert.Null(copy.Icon);
         MenuItem edit = (MenuItem)visible[names.IndexOf("Edit snippet...")];
         Assert.Same(f.Clip.EditSnippetCommand, edit.Command);
         Assert.Equal("OwningWindow.Appearance.Icons.Paste", IconPath(edit));
