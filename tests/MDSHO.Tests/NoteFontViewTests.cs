@@ -275,7 +275,7 @@ namespace MDSHO.Tests {
         List<object> items = menu.Items.Cast<object>().ToList();
         List<string> shape = items.Select(i => i is Separator ? "-" : i is MenuItem m ? (m.IsEnabled ? "" : "label:") + m.Header : "?").ToList();
         Assert.Equal(new[] {
-          "label:From Windows", "Courier New", "Consolas", "Arial", "-",
+          "label:From Windows", "Courier New", "Consolas", "Arial", "Verdana", "Calibri", "-",
           "label:Comes with MDSHO", "JetBrains Mono", "Source Code Pro", "IBM Plex Mono", "Latin Modern Roman", "Latin Modern Mono" }, shape);
         foreach (MenuItem item in FontItems(menu)) {
           Assert.Equal(NoteFontFamilies.Resolve((string)item.Header).Source, item.FontFamily.Source);

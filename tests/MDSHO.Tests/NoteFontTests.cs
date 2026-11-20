@@ -41,8 +41,8 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_menu_lists_three_windows_fonts_then_five_that_come_with_mdsho() {
-      Assert.Equal(new[] { "Courier New", "Consolas", "Arial" }, NoteFonts.FromWindows);
+    public void The_menu_lists_five_windows_fonts_then_five_that_come_with_mdsho() {
+      Assert.Equal(new[] { "Courier New", "Consolas", "Arial", "Verdana", "Calibri" }, NoteFonts.FromWindows);
       Assert.Equal(new[] { "JetBrains Mono", "Source Code Pro", "IBM Plex Mono", "Latin Modern Roman", "Latin Modern Mono" }, NoteFonts.ComesWithMdsho);
       Assert.Equal(NoteFonts.FromWindows.Concat(NoteFonts.ComesWithMdsho), NoteFonts.All);
       Assert.Equal("From Windows", NoteFonts.FromWindowsLabel);
@@ -51,6 +51,8 @@ namespace MDSHO.Tests {
 
     [Theory]
     [InlineData("Consolas", "Consolas")]
+    [InlineData("verdana", "Verdana")]
+    [InlineData("Calibri", "Calibri")]
     [InlineData("jetbrains mono", "JetBrains Mono")]
     [InlineData("Comic Sans MS", "Courier New")]
     [InlineData("", "Courier New")]

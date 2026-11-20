@@ -46,7 +46,7 @@ moment. The note keeps its size. Text starts at 9 pt.
 2. Pick a font. Each name shows in its own font, and the current one has a check mark.
 
 The note changes at once and keeps its font. New notes start in Courier New. **From Windows** lists Courier New,
-Consolas and Arial; **Comes with MDSHO** lists fonts that are part of MDSHO. Copying text from a note still copies
+Consolas, Arial, Verdana and Calibri; **Comes with MDSHO** lists fonts that are part of MDSHO. Copying text from a note still copies
 plain text, without the font.
 
 ## Colour a note

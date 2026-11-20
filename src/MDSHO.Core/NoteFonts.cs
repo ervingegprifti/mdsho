@@ -17,7 +17,7 @@ namespace MDSHO.Core {
     public const string ComesWithMdshoLabel = "Comes with MDSHO";
 
     /// <summary>Fonts every Windows PC has.</summary>
-    public static readonly IReadOnlyList<string> FromWindows = new[] { "Courier New", "Consolas", "Arial" };
+    public static readonly IReadOnlyList<string> FromWindows = new[] { "Courier New", "Consolas", "Arial", "Verdana", "Calibri" };
 
     /// <summary>Fonts that ship inside MDSHO (embedded font files).</summary>
     public static readonly IReadOnlyList<string> ComesWithMdsho = new[] {

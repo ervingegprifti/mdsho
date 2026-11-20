@@ -8,6 +8,10 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 
 ## [1.20.1]
 
+### Added
+
+- Verdana and Calibri in the font menu of notes and snippets, under From Windows.
+
 ### Fixed
 
 - Clicking a shortcut whose file or folder is gone shows a message again.
