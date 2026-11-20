@@ -25,7 +25,7 @@ namespace MDSHO.Tests {
       ("Summer", "Seaside", "#FF75B2A1", "#FF75B2A1", "#FF000000", "#FFE9E2BA", "#FF000000"),
       ("Autumn", "Maple", "#FFD9A07A", "#FFA63F17", "#FFFFF5EC", "#FFFFF6EE", "#FF4A2412"),
       ("Autumn", "Harvest", "#FFD6B25E", "#FF7A5B16", "#FFFFF8E6", "#FFFBF4E2", "#FF4A3A15"),
-      ("Autumn", "Halloween", "#FF000000", "#FF000000", "#FFFFFFFF", "#CC000000", "#FFFFFFFF"),
+      ("Autumn", "Halloween", "#FF000000", "#FF000000", "#FFFFFFFF", "#99000000", "#FFFFFFFF"),
     };
 
     private static string[] ColoursOf(ColorPreset p) {
@@ -97,7 +97,7 @@ namespace MDSHO.Tests {
       Assert.All(ColorPresets.All.SelectMany(ColoursOf), c => Assert.Matches(new Regex("^#[0-9A-F]{8}$"), c));
       Assert.All(ColorPresets.All.Where(p => p.Name != "Halloween").SelectMany(ColoursOf), c => Assert.StartsWith("#FF", c));
       ColorPreset halloween = ColorPresets.All.Single(p => p.Name == "Halloween");
-      Assert.Equal("#CC000000", halloween.BackgroundColor); // 80 % opaque black
+      Assert.Equal("#99000000", halloween.BackgroundColor); // 60 % opaque black
       Assert.All(new[] { halloween.BorderColor, halloween.TitleBackgroundColor, halloween.TitleTextColor, halloween.TextColor },
         c => Assert.StartsWith("#FF", c));
     }
@@ -121,10 +121,10 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Match_counts_alpha_so_Halloween_needs_its_80_percent_background() {
+    public void Match_counts_alpha_so_Halloween_needs_its_60_percent_background() {
       ColorPreset h = ColorPresets.All[11];
-      Assert.Same(h, ColorPresets.Match("#FF000000", "#FF000000", "#FFFFFFFF", "#cc000000", "#FFFFFFFF"));
-      Assert.Null(ColorPresets.Match("#FF000000", "#FF000000", "#FFFFFFFF", "#99000000", "#FFFFFFFF")); // 60 %
+      Assert.Same(h, ColorPresets.Match("#FF000000", "#FF000000", "#FFFFFFFF", "#99000000", "#FFFFFFFF"));
+      Assert.Null(ColorPresets.Match("#FF000000", "#FF000000", "#FFFFFFFF", "#cc000000", "#FFFFFFFF")); // 80 %, Halloween before 1.19.2
       Assert.Null(ColorPresets.Match("#FF000000", "#FF000000", "#FFFFFFFF", "#FF000000", "#FFFFFFFF")); // solid
     }
 
