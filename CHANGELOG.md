@@ -20,6 +20,7 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - The suggested export file name has the PC name, like backups: `MDSHO-export-<PC>-yyyy-MM-dd-HHmm.zip`.
 - Snippet buttons have their own icon (MDSHOFont 1.20).
 - Autumn: Halloween, the colours of new panels, has a 60% black body (was 80%). Panels that already have the old colours keep them.
+- Enter no longer pastes a snippet; double-click it.
 
 ### Fixed
 

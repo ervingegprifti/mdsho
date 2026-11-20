@@ -30,7 +30,7 @@ MDSHO goes back to the window you were in, pastes the text, and then puts back w
 clipboard was empty, it stays empty. If you copy something else in the meantime, MDSHO leaves it alone. The text is
 not added to your clipboard history.
 
-You can also select the button and press Enter.
+Enter does nothing on a snippet, so that nothing is pasted by accident: double-click it to paste.
 
 ## Copy the text yourself
 

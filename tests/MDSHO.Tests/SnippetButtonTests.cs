@@ -364,7 +364,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Enter_on_the_selected_button_pastes_too() {
+    public void Run_pastes_too() {
       ShortcutViewModel clip = NewSnippet(value: "v");
       clip.Run();
       Assert.Equal(new[] { "v" }, pasted);

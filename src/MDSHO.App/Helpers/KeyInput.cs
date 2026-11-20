@@ -15,6 +15,7 @@ namespace MDSHO.Helpers {
         case Key.F2: return ShortcutKey.F2;
         case Key.Delete: return ShortcutKey.Delete;
         case Key.Enter: return ShortcutKey.Enter;
+        case Key.Space: return ShortcutKey.Space;
         default: return ShortcutKey.Other;
       }
     }

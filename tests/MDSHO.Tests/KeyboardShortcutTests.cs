@@ -40,6 +40,72 @@ namespace MDSHO.Tests {
     private long ParentShortcutId(ShortcutViewModel s) { return db.Scalar("SELECT ParentShortcutID FROM Shortcuts WHERE ID=" + s.ID); }
     private long Count() { return db.Scalar("SELECT COUNT(*) FROM Shortcuts"); }
 
+    private ShortcutViewModel Snippet(ShortcutViewModel parent = null) {
+      ShortcutViewModel s = ViewModelFactory.NewSnippetShortcut(app, parent, parent == null ? win : null);
+      if (parent == null) win.RootShortcuts.Add(s); else parent.Children.Add(s);
+      s.CancelEdit();
+      s.SnippetText = "text";
+      return s;
+    }
+
+    // Pasting from the keyboard is confusing: Enter and Space on a snippet do nothing (double click pastes). They are
+    // reported handled so the focused button does not click itself (which pastes in a single-click panel).
+    [Fact]
+    public void Enter_on_a_snippet_does_nothing_and_is_handled() {
+      ShortcutViewModel clip = Snippet();
+      Assert.True(Key(System.Windows.Input.Key.Enter, ModifierKeys.None, clip));
+      Assert.Empty(ran);
+    }
+
+    [Fact]
+    public void Space_on_a_snippet_does_nothing_and_is_handled() {
+      ShortcutViewModel clip = Snippet();
+      Assert.Equal(ShortcutKey.Space, Helpers.KeyInput.ToShortcutKey(System.Windows.Input.Key.Space));
+      Assert.True(Key(System.Windows.Input.Key.Space, ModifierKeys.None, clip));
+      Assert.Empty(ran);
+    }
+
+    [Fact]
+    public void Space_on_other_buttons_and_groups_is_left_to_the_tree_as_before() {
+      ShortcutViewModel g = Root();
+      ShortcutViewModel leaf = Leaf(null);
+      Assert.False(Key(System.Windows.Input.Key.Space, ModifierKeys.None, leaf));
+      Assert.False(Key(System.Windows.Input.Key.Space, ModifierKeys.None, g));
+      Assert.Empty(ran);
+    }
+
+    [Fact]
+    public void Enter_still_runs_other_buttons_and_folds_groups() {
+      ShortcutViewModel g = Root();
+      ShortcutViewModel leaf = Leaf(null);
+      Assert.True(Key(System.Windows.Input.Key.Enter, ModifierKeys.None, leaf));
+      Assert.Equal(new[] { leaf }, ran);
+      bool expanded = g.IsGroupExpanded;
+      Assert.True(Key(System.Windows.Input.Key.Enter, ModifierKeys.None, g));
+      Assert.NotEqual(expanded, g.IsGroupExpanded);
+    }
+
+    [Fact]
+    public void A_snippet_in_a_group_ignores_enter_too() {
+      ShortcutViewModel clip = Snippet(Root());
+      Assert.True(Key(System.Windows.Input.Key.Enter, ModifierKeys.None, clip));
+      Assert.Empty(ran);
+    }
+
+    [Fact]
+    public void F2_delete_and_cut_copy_paste_still_work_on_a_snippet() {
+      ShortcutViewModel clip = Snippet();
+      Assert.True(Key(System.Windows.Input.Key.F2, ModifierKeys.None, clip));
+      Assert.Equal(EditField.Name, clip.EditField);
+      clip.CancelEdit();
+      Assert.True(Key(System.Windows.Input.Key.C, ModifierKeys.Control, clip));
+      Assert.True(Key(System.Windows.Input.Key.V, ModifierKeys.Control, clip));
+      Assert.Equal(2, win.RootShortcuts.Count(s => s.IsSnippet));
+      Assert.True(Key(System.Windows.Input.Key.X, ModifierKeys.Control, clip));
+      Assert.True(Key(System.Windows.Input.Key.Delete, ModifierKeys.None, win.RootShortcuts.Last(s => s.IsSnippet)));
+      Assert.Empty(ran);
+    }
+
     [Fact]
     public void F2_requests_rename_of_selected() {
       ShortcutViewModel a = Root();

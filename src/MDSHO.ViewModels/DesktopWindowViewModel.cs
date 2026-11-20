@@ -359,6 +359,9 @@ namespace MDSHO.ViewModels {
         selected.CutShortcutCommand.Execute(null);
       } else if (ctrl && key == ShortcutKey.C) {
         selected.CopyShortcutCommand.Execute(null);
+      } else if (none && (key == ShortcutKey.Enter || key == ShortcutKey.Space) && selected.IsSnippet) {
+        // Pasting from the keyboard is confusing: a snippet pastes on double click only. Handled, so the focused button
+        // does not click itself (a click pastes in a single-click panel).
       } else if (none && key == ShortcutKey.Enter) {
         if (selected.IsGroup) {
           selected.IsGroupExpanded = !selected.IsGroupExpanded;

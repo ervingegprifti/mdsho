@@ -14,8 +14,10 @@ namespace MDSHO.ViewModels {
     F2,
     /// <summary>Delete.</summary>
     Delete,
-    /// <summary>Enter (run, or expand/collapse a group).</summary>
-    Enter
+    /// <summary>Enter (run, or expand/collapse a group; nothing on a snippet).</summary>
+    Enter,
+    /// <summary>Space (nothing on a snippet, so its button does not click itself).</summary>
+    Space
   }
 
   /// <summary>The modifier keys held with a <see cref="ShortcutKey"/>.</summary>
