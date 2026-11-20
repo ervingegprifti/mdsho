@@ -15,7 +15,8 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// Ctrl + mouse wheel makes the text of a Note or Comment window bigger or smaller (steps of 2 from 8 to 72). A note
+  /// Ctrl + mouse wheel makes the text of a Note or Comment window bigger or smaller, through the sizes of the Text size
+  /// menu (10 to 48 DIPs = 7.5 to 36 pt); a saved size is loaded within 8 to 72. A note
   /// starts at 16 (12 pt) and keeps its size in NoteWindows.FontSize (database version 18; 0 = 16); a comment starts at
   /// 12 each time.
   /// </summary>
@@ -26,16 +27,44 @@ namespace MDSHO.Tests {
     // ---- The size steps ----
 
     [Fact]
-    public void The_sizes_are_16_at_first_and_go_in_steps_of_2_from_8_to_72() {
+    public void The_sizes_are_16_at_first_and_the_wheel_steps_through_the_presets() {
       Assert.Equal(16, NoteWindowPlace.DefaultFontSize);
       Assert.Equal(12, NoteWindowPlace.CommentFontSize);
       Assert.Equal(8, NoteWindowPlace.MinFontSize);
       Assert.Equal(72, NoteWindowPlace.MaxFontSize);
       Assert.Equal(14, NoteWindowPlace.NextFontSize(12, 120));
       Assert.Equal(10, NoteWindowPlace.NextFontSize(12, -120));
-      Assert.Equal(72, NoteWindowPlace.NextFontSize(72, 120));
-      Assert.Equal(8, NoteWindowPlace.NextFontSize(8, -120));
+      Assert.Equal(24, NoteWindowPlace.NextFontSize(20, 120));
+      Assert.Equal(48, NoteWindowPlace.NextFontSize(32, 120));
+      Assert.Equal(32, NoteWindowPlace.NextFontSize(48, -120));
+      Assert.Equal(48, NoteWindowPlace.NextFontSize(48, 120));
+      Assert.Equal(10, NoteWindowPlace.NextFontSize(10, -120));
       Assert.Equal(12, NoteWindowPlace.NextFontSize(12, 0));
+    }
+
+    [Fact]
+    public void A_wheel_turn_walks_every_preset_up_and_down() {
+      long size = NoteWindowPlace.SizePresets[0];
+      List<long> up = new List<long> { size };
+      for (int i = 0; i < 12; i++) { size = NoteWindowPlace.NextFontSize(size, 120); if (size != up.Last()) { up.Add(size); } }
+      Assert.Equal(NoteWindowPlace.SizePresets, up);
+      List<long> down = new List<long> { size };
+      for (int i = 0; i < 12; i++) { size = NoteWindowPlace.NextFontSize(size, -120); if (size != down.Last()) { down.Add(size); } }
+      Assert.Equal(NoteWindowPlace.SizePresets.Reverse(), down);
+    }
+
+    [Theory]
+    [InlineData(22, 120, 24)]
+    [InlineData(22, -120, 20)]
+    [InlineData(60, -120, 48)]
+    [InlineData(60, 120, 60)]
+    [InlineData(72, -120, 48)]
+    [InlineData(8, 120, 10)]
+    [InlineData(8, -120, 8)]
+    [InlineData(11, -120, 10)]
+    [InlineData(11, 120, 12)]
+    public void A_size_that_is_not_a_preset_goes_to_the_nearest_preset_in_the_wheel_direction(long size, int delta, long expected) {
+      Assert.Equal(expected, NoteWindowPlace.NextFontSize(size, delta));
     }
 
     [Fact]
@@ -213,13 +242,13 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_size_stops_at_8_and_72() {
+    public void The_size_stops_at_10_and_48() {
       WithNote(f => {
         TextEditWindow window = Open(f.Note);
         for (int i = 0; i < 40; i++) { Wheel(window, 120, ctrl: true); }
-        Assert.Equal(72, Text(window).FontSize);
+        Assert.Equal(48, Text(window).FontSize);
         for (int i = 0; i < 40; i++) { Wheel(window, -120, ctrl: true); }
-        Assert.Equal(8, Text(window).FontSize);
+        Assert.Equal(10, Text(window).FontSize);
       });
     }
 
@@ -264,6 +293,18 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
+    public void A_note_saved_at_a_size_that_is_not_a_preset_keeps_it_until_the_wheel_moves() {
+      WithNote(f => {
+        DataStore.NoteWindows.Save(new NoteWindowPlace(f.Note.ID, -9200, -9100, 720, 610, NoteWindowPlace.Normal, isOpen: true) { FontSize = 22 });
+        TextEditWindow window = Open(f.Note);
+        Assert.Equal(22, Text(window).FontSize);
+        Assert.Equal(22, DataStore.NoteWindows.Get(f.Note.ID).FontSize);
+        Wheel(window, -120, ctrl: true);
+        Assert.Equal(20, Text(window).FontSize);
+      });
+    }
+
+    [Fact]
     public void A_note_saved_at_the_old_default_12_keeps_it() {
       WithNote(f => {
         DataStore.NoteWindows.Save(new NoteWindowPlace(f.Note.ID, -9200, -9100, 720, 610, NoteWindowPlace.Normal, isOpen: true) { FontSize = 12 });
@@ -282,6 +323,10 @@ namespace MDSHO.Tests {
           Assert.Equal(12, Text(first).FontSize);
           Assert.True(Wheel(first, 120, ctrl: true));
           Assert.Equal(14, Text(first).FontSize);
+          for (int i = 0; i < 20; i++) { Wheel(first, 120, ctrl: true); }
+          Assert.Equal(48, Text(first).FontSize);
+          Wheel(first, -120, ctrl: true);
+          Assert.Equal(32, Text(first).FontSize);
         } finally {
           first.Close();
           WpfAppHost.Pump();

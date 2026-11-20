@@ -112,7 +112,7 @@ exports import with default note windows. Added in version 8.
 | `IsOpen` | INTEGER | NOT NULL | `0` | `1` = the window was open (also when MDSHO or Windows closed it at exit), so it opens again at start. |
 | `IsTopmost` | INTEGER | NOT NULL | `0` | `1` = the window stays on top of other apps (the pin in its title bar). Added in version 9. |
 | `IsWrapText` | INTEGER | NOT NULL | `0` | `1` = the note's text wraps at the window's edge (the wrap text button in its title bar). Added in version 11. |
-| `FontSize` | INTEGER | NOT NULL | `0` | Size of the note's text, set with the Text size button or Ctrl + mouse wheel: 8 to 72 (DIPs); `0` = 16 (12 pt) from 1.20.1, 12 before. Added in version 18. |
+| `FontSize` | INTEGER | NOT NULL | `0` | Size of the note's text, set with the Text size button or Ctrl + mouse wheel: 10 to 48 DIPs (7.5 to 36 pt) from 1.20.2, 8 to 72 before (still loaded as they are); `0` = 16 (12 pt) from 1.20.1, 12 before. Added in version 18. |
 
 ### DefaultColors
 
@@ -245,7 +245,7 @@ that worked.
 | 17 | 1.7.1 | `ScreenSetups` and `ScreenSetupPlaces` tables: the screen setups seen on this PC and the place of every panel, clone and note window in each (empty at first). The 1.7.0 test build created this version without `ScreenSetups.LastUsed`; MDSHO adds the column at start when it is missing. |
 | 18 | 1.16.0 | `NoteWindows.FontSize` (`INTEGER NOT NULL DEFAULT 0`): the text size of each note window (`0` = 12). From 1.16.0 exports and backups also carry the note window places (export format 2); older exports still import, with default note windows. The step also adds `ScreenSetups.LastUsed` when a 1.7.0 test build database lacks it. |
 | 19 | 1.19.2 | `Shortcuts.IsSnippet` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.SnippetText` (`TEXT NOT NULL DEFAULT ''`) for snippets. Exports and backups carry them (still export format 3); older exports import with no snippets. |
-| 20 | 1.20.1 | `Shortcuts.TextFont` (`TEXT NOT NULL DEFAULT 'Courier New'`): the font of each note and snippet, so existing ones switch to Courier New. Copies, exports and backups carry it (still export format 3); older exports import with Courier New. |
+| 20 | 1.20.2 | `Shortcuts.TextFont` (`TEXT NOT NULL DEFAULT 'Courier New'`): the font of each note and snippet, so existing ones switch to Courier New. Copies, exports and backups carry it (still export format 3); older exports import with Courier New. |
 
 ### Backup before an upgrade
 

@@ -40,8 +40,9 @@ Click **Wrap text** to fit long lines to the window's width.
 ## Change the text size
 
 The **Text size** button left of **Font** shows the note's size in points. Click it and pick a size from 7.5 to 36 pt,
-or **Default (12 pt)**; the current one has a tick. You can also hold Ctrl and turn the mouse wheel (6 to 54 pt), and the
-button follows. The note keeps its size. New notes start at 12 pt; other notes keep the size saved with them.
+or **Default (12 pt)**; the current one has a tick. You can also hold Ctrl and turn the mouse wheel to step through the
+same sizes, and the button follows. The note keeps its size. New notes start at 12 pt; other notes keep the size saved
+with them.
 
 ## Pick a font
 

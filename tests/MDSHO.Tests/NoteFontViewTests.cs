@@ -482,15 +482,27 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void A_wheel_size_that_is_not_a_preset_shows_on_the_button_with_no_tick() {
+    public void A_saved_size_that_is_not_a_preset_shows_on_the_button_with_no_tick() {
       WithButtons(f => {
+        DataStore.NoteWindows.Save(new NoteWindowPlace(f.Note.ID, -9200, -9100, 720, 610, NoteWindowPlace.Normal, isOpen: true) { FontSize = 22 });
         TextEditWindow window = OpenNote(f.Note);
-        Wheel(window, 120);
-        Wheel(window, 120);
-        Wheel(window, 120);
         Assert.Equal(22, Text(window).FontSize);
         Assert.Equal("16.5 pt", Named<Button>(window, "ButtonSize").Content);
         Assert.Empty(Ticked(window.BuildSizeMenu()));
+        Wheel(window, 120);
+        Assert.Equal("18 pt", Named<Button>(window, "ButtonSize").Content);
+        Assert.Equal(new[] { "18 pt" }, Ticked(window.BuildSizeMenu()));
+      });
+    }
+
+    [Fact]
+    public void The_wheel_lands_on_menu_sizes_only() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        for (int i = 0; i < 12; i++) {
+          Wheel(window, i < 6 ? 120 : -120);
+          Assert.Single(Ticked(window.BuildSizeMenu()));
+        }
       });
     }
 
@@ -499,11 +511,11 @@ namespace MDSHO.Tests {
       WithButtons(f => {
         TextEditWindow window = OpenNote(f.Note);
         for (int i = 0; i < 40; i++) { Wheel(window, 120); }
-        Assert.Equal(72, Text(window).FontSize);
-        Assert.Equal("54 pt", Named<Button>(window, "ButtonSize").Content);
+        Assert.Equal(48, Text(window).FontSize);
+        Assert.Equal("36 pt", Named<Button>(window, "ButtonSize").Content);
         for (int i = 0; i < 40; i++) { Wheel(window, -120); }
-        Assert.Equal(8, Text(window).FontSize);
-        Assert.Equal("6 pt", Named<Button>(window, "ButtonSize").Content);
+        Assert.Equal(10, Text(window).FontSize);
+        Assert.Equal("7.5 pt", Named<Button>(window, "ButtonSize").Content);
       });
     }
 

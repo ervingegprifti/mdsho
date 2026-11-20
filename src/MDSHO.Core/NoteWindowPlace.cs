@@ -39,19 +39,28 @@ namespace MDSHO.Core {
     public const long DefaultFontSize = 16;
     /// <summary>The text size a Comment window starts at each time.</summary>
     public const long CommentFontSize = 12;
-    /// <summary>The sizes in the text size menu, in whole DIPs (7.5 to 36 pt).</summary>
-    public static readonly System.Collections.Generic.IReadOnlyList<long> SizePresets = new long[] { 10, 12, 14, 16, 18, 20, 24, 28, 32, 48 };
-    /// <summary>The smallest text size.</summary>
+    /// <summary>The sizes in the text size menu and the steps of the wheel, in whole DIPs (7.5 to 36 pt).</summary>
+    public static readonly IReadOnlyList<long> SizePresets = new long[] { 10, 12, 14, 16, 18, 20, 24, 28, 32, 48 };
+    /// <summary>The smallest saved size that is loaded as it is (older builds saved 8 to 72 in steps of 2).</summary>
     public const long MinFontSize = 8;
-    /// <summary>The biggest text size.</summary>
+    /// <summary>The biggest saved size that is loaded as it is.</summary>
     public const long MaxFontSize = 72;
-    /// <summary>How much one turn of the wheel changes the size.</summary>
-    public const long FontSizeStep = 2;
 
-    /// <summary>The size after one turn of the wheel: bigger for up (positive), smaller for down, within the limits.</summary>
+    /// <summary>
+    /// The size after one turn of the wheel: the next bigger preset for up (positive), the next smaller one for down. It
+    /// stops at the first and last preset; a size outside them stays when there is no preset in that direction.
+    /// </summary>
     public static long NextFontSize(long size, int wheelDelta) {
-      long next = wheelDelta > 0 ? size + FontSizeStep : wheelDelta < 0 ? size - FontSizeStep : size;
-      return Math.Clamp(next, MinFontSize, MaxFontSize);
+      if (wheelDelta > 0) {
+        foreach (long preset in SizePresets) {
+          if (preset > size) { return preset; }
+        }
+      } else if (wheelDelta < 0) {
+        for (int i = SizePresets.Count - 1; i >= 0; i--) {
+          if (SizePresets[i] < size) { return SizePresets[i]; }
+        }
+      }
+      return size;
     }
 
     /// <summary>A saved size to use: 0 or less is the default, others are kept within the limits.</summary>
