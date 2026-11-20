@@ -251,7 +251,7 @@ namespace MDSHO.ViewModels {
         DataStore.Windows.UpdateSolidIcons(windowID, this.Appearance.SolidIcons);
       } else if (e.PropertyName == nameof(this.Appearance.SingleClickToOpen)) {
         DataStore.Windows.UpdateSingleClickToOpen(windowID, this.Appearance.SingleClickToOpen);
-        // The clipboard buttons' tooltips say "Click to paste" or "Double-click to paste".
+        // The snippets' tooltips say "Click to paste" or "Double-click to paste".
         foreach (ShortcutViewModel shortcut in this.RootShortcuts) {
           shortcut.RaisePasteHintChanged();
         }
@@ -309,11 +309,11 @@ namespace MDSHO.ViewModels {
       shortcutParentWindow.RootShortcuts.Add(note);
       ShortcutViewModel.OpenNoteEditor?.Invoke(note);
     }
-    /// <summary>Adds a new clipboard button at the window root and starts its rename.</summary>
+    /// <summary>Adds a new snippet at the window root and starts its rename.</summary>
     [RelayCommand]
-    private void NewClipboardShortcut() {
+    private void NewSnippetShortcut() {
       DesktopWindowViewModel shortcutParentWindow = this.IsClone ? this.ParentWindow : this;
-      ShortcutViewModel clip = ViewModelFactory.NewClipboardShortcut(this.AppViewModel, null, shortcutParentWindow);
+      ShortcutViewModel clip = ViewModelFactory.NewSnippetShortcut(this.AppViewModel, null, shortcutParentWindow);
       shortcutParentWindow.RootShortcuts.Add(clip);
       clip.BeginEdit(EditField.Name);
     }

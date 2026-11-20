@@ -10,10 +10,10 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 
 ### Added
 
-- Clipboard buttons: a button with a name and a value. Click in a text field, then double-click the button to paste the value. MDSHO puts your clipboard back afterwards.
-- Copy value to memory and Edit value... in a clipboard button's menu.
-- New clipboard in the panel menu and in a group's menu.
-- Database version 19: the buttons table gets `IsClipboard` and `ClipboardValue` (backed up first). Exports and backups carry them; older exports still import.
+- Snippets: a button with a name and a text. Click in a text field, then double-click the snippet to paste its text. MDSHO puts your clipboard back afterwards.
+- Copy snippet to memory and Edit snippet... in a snippet's menu.
+- New snippet in the panel menu and in a group's menu.
+- Database version 19: the buttons table gets `IsSnippet` and `SnippetText` (backed up first). Exports and backups carry them; older exports still import.
 
 ## [1.18.0]
 

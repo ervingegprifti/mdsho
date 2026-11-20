@@ -19,18 +19,18 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// Clipboard buttons (1.19.0): a name and a value. Double click (single click in Single click to open panels) pastes the
-  /// value into the window the user came from; Copy value to memory copies it; Edit value... edits it. Stored in
-  /// Shortcuts.IsClipboard and Shortcuts.ClipboardValue (database version 19). The real paste never runs here: it goes
+  /// snippets (1.19.0): a name and a value. Double click (single click in Single click to open panels) pastes the
+  /// value into the window the user came from; Copy snippet to memory copies it; Edit snippet... edits it. Stored in
+  /// Shortcuts.IsSnippet and Shortcuts.SnippetText (database version 19). The real paste never runs here: it goes
   /// through <see cref="ShortcutViewModel.PasteValue"/>, which the tests replace.
   /// </summary>
-  public class ClipboardButtonTests : IDisposable {
+  public class SnippetButtonTests : IDisposable {
     private TempDb db = new TempDb();
     private readonly AppViewModel app = new AppViewModel();
     private readonly DesktopWindowViewModel win;
     private readonly Action<string> oldCopy = ShortcutViewModel.CopyText;
     private readonly Func<string, Task<PasteOutcome>> oldPaste = ShortcutViewModel.PasteValue;
-    private readonly Action<ShortcutViewModel> oldValueEditor = ShortcutViewModel.OpenClipboardValueEditor;
+    private readonly Action<ShortcutViewModel> oldValueEditor = ShortcutViewModel.OpenSnippetEditor;
     private readonly Action<string, string, string> oldInfo = Dialogs.ShowInfo;
     private readonly Action<string, string, string> oldError = Dialogs.ShowError;
     private readonly List<string> copied = new List<string>();
@@ -41,11 +41,11 @@ namespace MDSHO.Tests {
     private PasteOutcome outcome = PasteOutcome.Pasted;
     private readonly string work = Path.Combine(Path.GetTempPath(), "MDSHO.Tests", "clip-" + Guid.NewGuid().ToString("N"));
 
-    public ClipboardButtonTests() {
+    public SnippetButtonTests() {
       Directory.CreateDirectory(work);
       ShortcutViewModel.CopyText = text => copied.Add(text);
       ShortcutViewModel.PasteValue = value => { pasted.Add(value); return Task.FromResult(outcome); };
-      ShortcutViewModel.OpenClipboardValueEditor = s => edited.Add(s);
+      ShortcutViewModel.OpenSnippetEditor = s => edited.Add(s);
       Dialogs.ShowInfo = (caption, heading, text) => infos.Add((caption, heading, text));
       Dialogs.ShowError = (caption, error, detail) => errors.Add((caption, error, detail));
       win = app.AddWindow("TEST", 0, 0);
@@ -54,19 +54,19 @@ namespace MDSHO.Tests {
     public void Dispose() {
       ShortcutViewModel.CopyText = oldCopy;
       ShortcutViewModel.PasteValue = oldPaste;
-      ShortcutViewModel.OpenClipboardValueEditor = oldValueEditor;
+      ShortcutViewModel.OpenSnippetEditor = oldValueEditor;
       Dialogs.ShowInfo = oldInfo;
       Dialogs.ShowError = oldError;
       db.Dispose();
       try { Directory.Delete(work, true); } catch (IOException) { }
     }
 
-    private ShortcutViewModel NewClipboard(string name = "Home address", string value = "Main Street 12\r\n1000 Sample Town") {
-      win.NewClipboardShortcutCommand.Execute(null);
+    private ShortcutViewModel NewSnippet(string name = "Home address", string value = "Main Street 12\r\n1000 Sample Town") {
+      win.NewSnippetShortcutCommand.Execute(null);
       ShortcutViewModel clip = win.RootShortcuts.Last();
       clip.CancelEdit();
       clip.Name = name;
-      clip.ClipboardValue = value;
+      clip.SnippetText = value;
       return clip;
     }
 
@@ -111,15 +111,15 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void V18_database_migrates_to_19_with_no_clipboard_buttons_and_keeps_the_rest() {
+    public void V18_database_migrates_to_19_with_no_snippets_and_keeps_the_rest() {
       BuildV18Db();
       DataStore.Upgrade();
       Assert.Equal(19, db.Scalar("PRAGMA user_version"));
-      Assert.Equal(1, Columns("Shortcuts", "IsClipboard"));
-      Assert.Equal(1, Columns("Shortcuts", "ClipboardValue"));
+      Assert.Equal(1, Columns("Shortcuts", "IsSnippet"));
+      Assert.Equal(1, Columns("Shortcuts", "SnippetText"));
       Shortcut note = Stored(1), command = Stored(2);
-      Assert.Equal((1L, "text", 0L, ""), (note.IsNote, note.NoteText, note.IsClipboard, note.ClipboardValue));
-      Assert.Equal((1L, "/K dir", 0L, ""), (command.IsProcessCommand, command.ProcessArguments, command.IsClipboard, command.ClipboardValue));
+      Assert.Equal((1L, "text", 0L, ""), (note.IsNote, note.NoteText, note.IsSnippet, note.SnippetText));
+      Assert.Equal((1L, "/K dir", 0L, ""), (command.IsProcessCommand, command.ProcessArguments, command.IsSnippet, command.SnippetText));
       Assert.Single(Directory.GetFiles(db.Folder, "test.sqlite3.bak-v18-*"));
     }
 
@@ -130,73 +130,73 @@ namespace MDSHO.Tests {
       using (SqliteConnection c = db.Open()) {
         SchemaManager.Migrations.Single(m => m.Version == 19).Apply(c);
       }
-      Assert.Equal(1, Columns("Shortcuts", "ClipboardValue"));
+      Assert.Equal(1, Columns("Shortcuts", "SnippetText"));
     }
 
     [Fact]
-    public void A_new_database_has_the_columns_and_stores_a_clipboard_button_and_its_value() {
-      Assert.Equal(1, Columns("Shortcuts", "IsClipboard"));
-      Assert.Equal(1, Columns("Shortcuts", "ClipboardValue"));
-      Shortcut created = DataStore.Shortcuts.CreateClipboard(null, win.ID);
-      Assert.Equal(("New clipboard", 1L, ""), (created.Name, created.IsClipboard, created.ClipboardValue));
-      DataStore.Shortcuts.UpdateClipboardValue(created.ID, "line 1\nline 2");
-      Assert.Equal("line 1\nline 2", Stored(created.ID).ClipboardValue);
-      DataStore.Shortcuts.UpdateClipboardValue(created.ID, null);
-      Assert.Equal("", Stored(created.ID).ClipboardValue);
+    public void A_new_database_has_the_columns_and_stores_a_snippet_and_its_text() {
+      Assert.Equal(1, Columns("Shortcuts", "IsSnippet"));
+      Assert.Equal(1, Columns("Shortcuts", "SnippetText"));
+      Shortcut created = DataStore.Shortcuts.CreateSnippet(null, win.ID);
+      Assert.Equal(("New snippet", 1L, ""), (created.Name, created.IsSnippet, created.SnippetText));
+      DataStore.Shortcuts.UpdateSnippetText(created.ID, "line 1\nline 2");
+      Assert.Equal("line 1\nline 2", Stored(created.ID).SnippetText);
+      DataStore.Shortcuts.UpdateSnippetText(created.ID, null);
+      Assert.Equal("", Stored(created.ID).SnippetText);
     }
 
-    // ---- New clipboard ----
+    // ---- New snippet ----
 
     [Fact]
-    public void New_clipboard_in_a_panel_adds_an_empty_clipboard_button_starts_its_rename_and_needs_no_file() {
-      win.NewClipboardShortcutCommand.Execute(null);
+    public void New_snippet_in_a_panel_adds_an_empty_snippet_starts_its_rename_and_needs_no_file() {
+      win.NewSnippetShortcutCommand.Execute(null);
       ShortcutViewModel clip = Assert.Single(win.RootShortcuts);
-      Assert.True(clip.IsClipboard);
-      Assert.Equal("New clipboard", clip.Name);
-      Assert.Equal("", clip.ClipboardValue);
+      Assert.True(clip.IsSnippet);
+      Assert.Equal("New snippet", clip.Name);
+      Assert.Equal("", clip.SnippetText);
       Assert.Equal(EditField.Name, clip.EditField);
       Assert.True(clip.IsSelected);
       Assert.Empty(edited);
       Assert.False(Directory.Exists(Paths.GetShortcutsPath()) && Directory.GetFiles(Paths.GetShortcutsPath()).Length > 0);
       Shortcut stored = Stored(clip.ID);
-      Assert.Equal((1L, 0L, 0L, 0L), (stored.IsClipboard, stored.IsNote, stored.IsProcessCommand, stored.IsGroup));
+      Assert.Equal((1L, 0L, 0L, 0L), (stored.IsSnippet, stored.IsNote, stored.IsProcessCommand, stored.IsGroup));
     }
 
     [Fact]
-    public void New_clipboard_in_a_group_adds_it_to_the_group_and_only_groups_offer_it() {
+    public void New_snippet_in_a_group_adds_it_to_the_group_and_only_groups_offer_it() {
       ShortcutViewModel group = Group("G");
-      Assert.True(group.NewClipboardShortcutCommand.CanExecute(null));
-      group.NewClipboardShortcutCommand.Execute(null);
+      Assert.True(group.NewSnippetShortcutCommand.CanExecute(null));
+      group.NewSnippetShortcutCommand.Execute(null);
       ShortcutViewModel clip = Assert.Single(group.Children);
-      Assert.True(clip.IsClipboard);
+      Assert.True(clip.IsSnippet);
       Assert.Equal(EditField.Name, clip.EditField);
       Assert.Equal(group.ID, Stored(clip.ID).ParentShortcutID);
-      Assert.False(clip.NewClipboardShortcutCommand.CanExecute(null));
+      Assert.False(clip.NewSnippetShortcutCommand.CanExecute(null));
     }
 
     [Fact]
-    public void New_clipboard_in_a_clone_goes_to_its_panel() {
+    public void New_snippet_in_a_clone_goes_to_its_panel() {
       ViewModelFactory.CloneWindow(app, win, DataStore.Clones.Create(win.ID, "D9", 1, 2));
       DesktopWindowViewModel clone = win.Clones.Single();
-      clone.NewClipboardShortcutCommand.Execute(null);
-      Assert.True(Assert.Single(win.RootShortcuts).IsClipboard);
+      clone.NewSnippetShortcutCommand.Execute(null);
+      Assert.True(Assert.Single(win.RootShortcuts).IsSnippet);
     }
 
-    // ---- What a clipboard button shows ----
+    // ---- What a snippet shows ----
 
     [Fact]
     public void Its_kind_and_icon_are_the_paste_glyph_in_both_icon_sets() {
-      ShortcutViewModel clip = NewClipboard();
-      Assert.Equal(ShortcutTargetKind.Clipboard, clip.TargetKind);
-      Assert.Equal(new IconGlyphs(true).Paste, new IconGlyphs(true).ForKind(ShortcutTargetKind.Clipboard));
-      Assert.Equal(new IconGlyphs(false).Paste, new IconGlyphs(false).ForKind(ShortcutTargetKind.Clipboard));
+      ShortcutViewModel clip = NewSnippet();
+      Assert.Equal(ShortcutTargetKind.Snippet, clip.TargetKind);
+      Assert.Equal(new IconGlyphs(true).Paste, new IconGlyphs(true).ForKind(ShortcutTargetKind.Snippet));
+      Assert.Equal(new IconGlyphs(false).Paste, new IconGlyphs(false).ForKind(ShortcutTargetKind.Snippet));
     }
 
     [Fact]
-    public void It_shows_the_clipboard_items_and_not_the_ones_of_other_kinds() {
-      ShortcutViewModel clip = NewClipboard();
-      Assert.True(clip.ShowClipboard);
-      Assert.True(clip.ShowCopyValueToMemory);
+    public void It_shows_the_snippet_items_and_not_the_ones_of_other_kinds() {
+      ShortcutViewModel clip = NewSnippet();
+      Assert.True(clip.ShowSnippet);
+      Assert.True(clip.ShowCopySnippetToMemory);
       Assert.True(clip.ShowComment);
       Assert.False(clip.ShowShortcut);
       Assert.False(clip.ShowCopyTargetToMemory);
@@ -206,13 +206,13 @@ namespace MDSHO.Tests {
       Assert.False(clip.ShowCopyCommandToMemory);
       Assert.False(clip.ShowGroup);
       ShortcutViewModel group = Group("G");
-      Assert.False(group.ShowClipboard);
-      Assert.False(group.ShowCopyValueToMemory);
+      Assert.False(group.ShowSnippet);
+      Assert.False(group.ShowCopySnippetToMemory);
     }
 
     [Fact]
-    public void The_tooltip_shows_the_name_the_value_and_double_click_to_paste() {
-      ShortcutViewModel clip = NewClipboard();
+    public void The_tooltip_shows_the_name_the_text_and_double_click_to_paste() {
+      ShortcutViewModel clip = NewSnippet();
       string nl = Environment.NewLine;
       Assert.Equal("Home address" + nl + "Main Street 12" + nl + "1000 Sample Town" + nl + nl + "Double-click to paste", clip.ToolTipText);
       Assert.True(clip.HasToolTip);
@@ -220,7 +220,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void In_a_single_click_panel_the_tooltip_says_click_to_paste_and_follows_the_setting() {
-      ShortcutViewModel clip = NewClipboard(value: "v");
+      ShortcutViewModel clip = NewSnippet(value: "v");
       List<string> changed = new List<string>();
       clip.PropertyChanged += (s, e) => changed.Add(e.PropertyName);
       win.Appearance.SingleClickToOpen = true;
@@ -233,7 +233,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void A_button_inside_a_group_follows_its_panels_click_setting_too() {
       ShortcutViewModel group = Group("G");
-      group.NewClipboardShortcutCommand.Execute(null);
+      group.NewSnippetShortcutCommand.Execute(null);
       ShortcutViewModel clip = group.Children.Single();
       clip.CancelEdit();
       List<string> changed = new List<string>();
@@ -245,7 +245,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void The_tooltip_shows_the_comment_below_like_other_buttons() {
-      ShortcutViewModel clip = NewClipboard(value: "v");
+      ShortcutViewModel clip = NewSnippet(value: "v");
       clip.Comment = "For the bank form";
       Assert.True(clip.HasComment);
       Assert.True(clip.ShowCommentDivider);
@@ -253,60 +253,60 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void An_empty_value_shows_the_name_and_the_hint() {
-      ShortcutViewModel clip = NewClipboard(value: "");
+    public void An_empty_snippet_shows_the_name_and_the_hint() {
+      ShortcutViewModel clip = NewSnippet(value: "");
       string nl = Environment.NewLine;
       Assert.Equal("Home address" + nl + nl + "Double-click to paste", clip.ToolTipText);
     }
 
     [Fact]
-    public void A_changed_value_is_saved_and_updates_the_tooltip() {
-      ShortcutViewModel clip = NewClipboard(value: "old");
+    public void A_changed_text_is_saved_and_updates_the_tooltip() {
+      ShortcutViewModel clip = NewSnippet(value: "old");
       List<string> changed = new List<string>();
       clip.PropertyChanged += (s, e) => changed.Add(e.PropertyName);
-      clip.SaveClipboardValue("new value");
-      Assert.Equal("new value", clip.ClipboardValue);
-      Assert.Equal("new value", Stored(clip.ID).ClipboardValue);
+      clip.SaveSnippetText("new value");
+      Assert.Equal("new value", clip.SnippetText);
+      Assert.Equal("new value", Stored(clip.ID).SnippetText);
       Assert.Contains(nameof(ShortcutViewModel.ToolTipText), changed);
     }
 
-    // ---- Copy value to memory and Edit value ----
+    // ---- Copy snippet to memory and Edit snippet ----
 
     [Fact]
-    public void Copy_value_to_memory_copies_the_value_exactly_without_group_values() {
+    public void Copy_snippet_to_memory_copies_the_text_exactly_without_group_values() {
       ShortcutViewModel group = Group("Prod {SRV01}");
-      group.NewClipboardShortcutCommand.Execute(null);
+      group.NewSnippetShortcutCommand.Execute(null);
       ShortcutViewModel clip = group.Children.Single();
       clip.CancelEdit();
-      clip.ClipboardValue = "ping {=1}\r\nsecond line";
-      clip.CopyValueToMemoryCommand.Execute(null);
+      clip.SnippetText = "ping {=1}\r\nsecond line";
+      clip.CopySnippetToMemoryCommand.Execute(null);
       Assert.Equal(new[] { "ping {=1}\r\nsecond line" }, copied);
       Assert.Empty(pasted);
     }
 
     [Fact]
-    public void Copy_value_to_memory_of_an_empty_value_copies_nothing() {
-      ShortcutViewModel clip = NewClipboard(value: "");
-      clip.CopyValueToMemoryCommand.Execute(null);
+    public void Copy_snippet_to_memory_of_an_empty_text_copies_nothing() {
+      ShortcutViewModel clip = NewSnippet(value: "");
+      clip.CopySnippetToMemoryCommand.Execute(null);
       Assert.Empty(copied);
     }
 
     [Fact]
-    public void Edit_value_opens_the_value_editor() {
-      ShortcutViewModel clip = NewClipboard();
-      clip.EditClipboardValueCommand.Execute(null);
+    public void Edit_snippet_opens_the_snippet_editor() {
+      ShortcutViewModel clip = NewSnippet();
+      clip.EditSnippetCommand.Execute(null);
       Assert.Same(clip, Assert.Single(edited));
     }
 
     // ---- Double click pastes for the user ----
 
     [Fact]
-    public void Double_click_pastes_the_value_exactly_without_group_values_and_shows_nothing_when_it_worked() {
+    public void Double_click_pastes_the_text_exactly_without_group_values_and_shows_nothing_when_it_worked() {
       ShortcutViewModel group = Group("Prod {SRV01}");
-      group.NewClipboardShortcutCommand.Execute(null);
+      group.NewSnippetShortcutCommand.Execute(null);
       ShortcutViewModel clip = group.Children.Single();
       clip.CancelEdit();
-      clip.ClipboardValue = "user {=1}";
+      clip.SnippetText = "user {=1}";
       clip.DoubleClick(false);
       Assert.Equal(new[] { "user {=1}" }, pasted);
       Assert.Empty(infos);
@@ -315,7 +315,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void A_single_click_pastes_only_in_single_click_panels() {
-      ShortcutViewModel clip = NewClipboard(value: "v");
+      ShortcutViewModel clip = NewSnippet(value: "v");
       clip.Click(false);
       Assert.Empty(pasted);
       clip.DoubleClick(true);
@@ -326,22 +326,22 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Enter_on_the_selected_button_pastes_too() {
-      ShortcutViewModel clip = NewClipboard(value: "v");
+      ShortcutViewModel clip = NewSnippet(value: "v");
       clip.Run();
       Assert.Equal(new[] { "v" }, pasted);
     }
 
     [Fact]
-    public void Panels_brought_to_front_go_back_before_the_paste_but_not_for_an_empty_value() {
+    public void Panels_brought_to_front_go_back_before_the_paste_but_not_for_an_empty_text() {
       Action oldOpened = ShortcutViewModel.Opened;
       List<string> order = new List<string>();
       try {
         ShortcutViewModel.Opened = () => order.Add("sent back");
         ShortcutViewModel.PasteValue = value => { order.Add("paste"); return Task.FromResult(PasteOutcome.Pasted); };
-        NewClipboard(value: "v").DoubleClick(false);
+        NewSnippet(value: "v").DoubleClick(false);
         Assert.Equal(new[] { "sent back", "paste" }, order);
         order.Clear();
-        NewClipboard(value: "").DoubleClick(false);
+        NewSnippet(value: "").DoubleClick(false);
         Assert.Empty(order);
       } finally {
         ShortcutViewModel.Opened = oldOpened;
@@ -350,15 +350,15 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void A_button_being_renamed_does_not_paste() {
-      ShortcutViewModel clip = NewClipboard(value: "v");
+      ShortcutViewModel clip = NewSnippet(value: "v");
       clip.BeginEdit(EditField.Name);
       clip.DoubleClick(false);
       Assert.Empty(pasted);
     }
 
     [Fact]
-    public void An_empty_value_opens_edit_value_instead_of_pasting() {
-      ShortcutViewModel clip = NewClipboard(value: "");
+    public void An_empty_snippet_opens_edit_snippet_instead_of_pasting() {
+      ShortcutViewModel clip = NewSnippet(value: "");
       clip.DoubleClick(false);
       Assert.Empty(pasted);
       Assert.Same(clip, Assert.Single(edited));
@@ -369,20 +369,20 @@ namespace MDSHO.Tests {
     [InlineData(PasteOutcome.NotEditable)]
     public void With_no_place_to_paste_into_it_says_so_with_the_exact_text(PasteOutcome result) {
       outcome = result;
-      ShortcutViewModel clip = NewClipboard();
+      ShortcutViewModel clip = NewSnippet();
       clip.DoubleClick(false);
       var info = Assert.Single(infos);
       Assert.Equal("MDSHO", info.caption);
       Assert.Equal("No place to paste into.", info.heading);
       Assert.Equal("Click in a text field first, then double-click \"Home address\"." + Environment.NewLine + Environment.NewLine
-        + "To paste it yourself, right-click the button, choose Copy value to memory, then press Ctrl+V. Your clipboard is unchanged.", info.text);
+        + "To paste it yourself, right-click the button, choose Copy snippet to memory, then press Ctrl+V. Your clipboard is unchanged.", info.text);
     }
 
     [Fact]
     public void In_a_single_click_panel_the_no_place_message_says_click() {
       outcome = PasteOutcome.NoTarget;
       win.Appearance.SingleClickToOpen = true;
-      ShortcutViewModel clip = NewClipboard();
+      ShortcutViewModel clip = NewSnippet();
       clip.Click(true);
       Assert.StartsWith("Click in a text field first, then click \"Home address\".", Assert.Single(infos).text);
     }
@@ -390,19 +390,19 @@ namespace MDSHO.Tests {
     [Fact]
     public void An_administrator_window_gets_its_own_message_with_the_exact_text() {
       outcome = PasteOutcome.Elevated;
-      ShortcutViewModel clip = NewClipboard();
+      ShortcutViewModel clip = NewSnippet();
       clip.DoubleClick(false);
       var info = Assert.Single(infos);
       Assert.Equal("MDSHO", info.caption);
       Assert.Equal("Can't paste into this window.", info.heading);
       Assert.Equal("It runs as administrator, and Windows doesn't let MDSHO paste into it." + Environment.NewLine + Environment.NewLine
-        + "Right-click \"Home address\", choose Copy value to memory, then press Ctrl+V. Your clipboard is unchanged.", info.text);
+        + "Right-click \"Home address\", choose Copy snippet to memory, then press Ctrl+V. Your clipboard is unchanged.", info.text);
     }
 
     [Fact]
     public void A_busy_clipboard_says_try_again() {
       outcome = PasteOutcome.ClipboardBusy;
-      NewClipboard().DoubleClick(false);
+      NewSnippet().DoubleClick(false);
       var info = Assert.Single(infos);
       Assert.Equal("Can't paste right now.", info.heading);
       Assert.Equal("Another program is using the clipboard. Try again in a moment.", info.text);
@@ -411,100 +411,100 @@ namespace MDSHO.Tests {
     [Fact]
     public void A_paste_that_is_already_running_shows_nothing() {
       outcome = PasteOutcome.AlreadyPasting;
-      NewClipboard().DoubleClick(false);
+      NewSnippet().DoubleClick(false);
       Assert.Empty(infos);
       Assert.Empty(errors);
     }
 
     [Fact]
-    public void A_failed_paste_shows_a_short_error_and_logs_no_value() {
+    public void A_failed_paste_shows_a_short_error_and_logs_no_text() {
       ShortcutViewModel.PasteValue = value => Task.FromException<PasteOutcome>(new InvalidOperationException("secret Main Street 12"));
       using (LogCapture log = new LogCapture()) {
-        ShortcutViewModel clip = NewClipboard();
+        ShortcutViewModel clip = NewSnippet();
         clip.PasteForUserAsync().GetAwaiter().GetResult();
         var error = Assert.Single(errors);
         Assert.Equal("Home address", error.caption);
         Assert.Equal(ShortcutViewModel.CouldNotPasteText, error.error);
-        Assert.Equal(ShortcutViewModel.CopyValueInsteadText, error.detail);
+        Assert.Equal(ShortcutViewModel.CopySnippetInsteadText, error.detail);
         Assert.DoesNotContain(log.Events, e => LogCapture.FullText(e).Contains("Main Street"));
       }
     }
 
     [Fact]
-    public void Pasting_and_editing_never_log_the_value() {
+    public void Pasting_and_editing_never_log_the_text() {
       using (LogCapture log = new LogCapture()) {
-        ShortcutViewModel clip = NewClipboard(value: "P@ssw0rd-123");
-        clip.SaveClipboardValue("P@ssw0rd-456");
+        ShortcutViewModel clip = NewSnippet(value: "P@ssw0rd-123");
+        clip.SaveSnippetText("P@ssw0rd-456");
         clip.DoubleClick(false);
-        clip.CopyValueToMemoryCommand.Execute(null);
+        clip.CopySnippetToMemoryCommand.Execute(null);
         Assert.DoesNotContain(log.Events, e => LogCapture.FullText(e).Contains("P@ssw0rd"));
       }
     }
 
-    // ---- Copy, cut, paste, clones, export, import and backups carry the value ----
+    // ---- Copy, cut, paste, clones, export, import and backups carry the snippet text ----
 
     [Fact]
-    public void Copy_and_paste_of_a_button_carries_the_kind_and_the_value() {
-      ShortcutViewModel clip = NewClipboard();
+    public void Copy_and_paste_of_a_button_carries_the_kind_and_the_text() {
+      ShortcutViewModel clip = NewSnippet();
       clip.Comment = "c";
       ShortcutViewModel group = Group("G");
       ShortcutViewModel copy = ViewModelFactory.CopyShortcut(clip, group, null);
-      Assert.True(copy.IsClipboard);
-      Assert.Equal("Main Street 12\r\n1000 Sample Town", copy.ClipboardValue);
+      Assert.True(copy.IsSnippet);
+      Assert.Equal("Main Street 12\r\n1000 Sample Town", copy.SnippetText);
       Shortcut stored = Stored(copy.ID);
-      Assert.Equal((1L, "Main Street 12\r\n1000 Sample Town", "c"), (stored.IsClipboard, stored.ClipboardValue, stored.Comment));
+      Assert.Equal((1L, "Main Street 12\r\n1000 Sample Town", "c"), (stored.IsSnippet, stored.SnippetText, stored.Comment));
       Assert.NotEqual(clip.ID, copy.ID);
     }
 
     [Fact]
-    public void Copying_a_group_carries_the_clipboard_buttons_inside() {
+    public void Copying_a_group_carries_the_snippets_inside() {
       ShortcutViewModel group = Group("G");
-      group.NewClipboardShortcutCommand.Execute(null);
+      group.NewSnippetShortcutCommand.Execute(null);
       ShortcutViewModel clip = group.Children.Single();
       clip.CancelEdit();
-      clip.ClipboardValue = "inside";
+      clip.SnippetText = "inside";
       ShortcutViewModel copy = ViewModelFactory.CopyShortcut(group, null, win);
       ShortcutViewModel inner = copy.Children.Single();
-      Assert.True(inner.IsClipboard);
-      Assert.Equal("inside", Stored(inner.ID).ClipboardValue);
+      Assert.True(inner.IsSnippet);
+      Assert.Equal("inside", Stored(inner.ID).SnippetText);
     }
 
     [Fact]
-    public void The_panel_reloaded_from_the_database_keeps_the_clipboard_button() {
-      ShortcutViewModel clip = NewClipboard();
+    public void The_panel_reloaded_from_the_database_keeps_the_snippet() {
+      ShortcutViewModel clip = NewSnippet();
       AppViewModel reloaded = ViewModelFactory.CreateAppViewModel(work);
       ShortcutViewModel again = reloaded.Windows.SelectMany(w => w.RootShortcuts).Single(s => s.ID == clip.ID);
-      Assert.True(again.IsClipboard);
-      Assert.Equal("Main Street 12\r\n1000 Sample Town", again.ClipboardValue);
+      Assert.True(again.IsSnippet);
+      Assert.Equal("Main Street 12\r\n1000 Sample Town", again.SnippetText);
     }
 
     [Fact]
-    public void Export_and_replace_import_keep_the_clipboard_button_and_its_value() {
-      ShortcutViewModel clip = NewClipboard();
+    public void Export_and_replace_import_keep_the_snippet_and_its_text() {
+      ShortcutViewModel clip = NewSnippet();
       string zip = Path.Combine(work, "export.zip");
       DataExporter.Export(zip);
       JsonObject row = ReadData(zip)["shortcuts"].AsArray().Single(s => (long)s["id"] == clip.ID).AsObject();
-      Assert.Equal((1L, "Main Street 12\r\n1000 Sample Town"), ((long)row["isClipboard"], (string)row["clipboardValue"]));
+      Assert.Equal((1L, "Main Street 12\r\n1000 Sample Town"), ((long)row["isSnippet"], (string)row["snippetText"]));
       DataStore.Shortcuts.Delete(clip.ID);
       DataImporter.Import(zip, ImportMode.Replace);
       Shortcut back = Stored(clip.ID);
-      Assert.Equal((1L, "Main Street 12\r\n1000 Sample Town"), (back.IsClipboard, back.ClipboardValue));
+      Assert.Equal((1L, "Main Street 12\r\n1000 Sample Town"), (back.IsSnippet, back.SnippetText));
     }
 
     [Fact]
-    public void Add_as_new_import_keeps_the_clipboard_button_and_its_value() {
-      ShortcutViewModel clip = NewClipboard();
+    public void Add_as_new_import_keeps_the_snippet_and_its_text() {
+      ShortcutViewModel clip = NewSnippet();
       string zip = Path.Combine(work, "export.zip");
       DataExporter.Export(zip);
       DataImporter.Import(zip, ImportMode.AddAsNew);
-      List<Shortcut> clips = DataStore.Shortcuts.GetAll().Where(s => s.IsClipboard == 1).ToList();
+      List<Shortcut> clips = DataStore.Shortcuts.GetAll().Where(s => s.IsSnippet == 1).ToList();
       Assert.Equal(2, clips.Count);
-      Assert.All(clips, s => Assert.Equal("Main Street 12\r\n1000 Sample Town", s.ClipboardValue));
+      Assert.All(clips, s => Assert.Equal("Main Street 12\r\n1000 Sample Town", s.SnippetText));
     }
 
     [Fact]
-    public void An_export_from_before_clipboard_buttons_still_imports() {
-      NewClipboard();
+    public void An_export_from_before_snippets_still_imports() {
+      NewSnippet();
       string zip = Path.Combine(work, "export.zip");
       DataExporter.Export(zip);
       string old = Path.Combine(work, "old.zip");
@@ -512,8 +512,8 @@ namespace MDSHO.Tests {
       using (ZipArchive archive = ZipFile.Open(old, ZipArchiveMode.Update)) {
         JsonNode data = JsonNode.Parse(ReadEntryText(archive, "data.json"));
         foreach (JsonNode s in data["shortcuts"].AsArray()) {
-          s.AsObject().Remove("isClipboard");
-          s.AsObject().Remove("clipboardValue");
+          s.AsObject().Remove("isSnippet");
+          s.AsObject().Remove("snippetText");
         }
         JsonNode manifest = JsonNode.Parse(ReadEntryText(archive, "manifest.json"));
         manifest["schemaVersion"] = 18;
@@ -523,18 +523,18 @@ namespace MDSHO.Tests {
       }
       DataImporter.Import(old, ImportMode.Replace);
       Shortcut only = Assert.Single(DataStore.Shortcuts.GetAll());
-      Assert.Equal((0L, ""), (only.IsClipboard, only.ClipboardValue));
+      Assert.Equal((0L, ""), (only.IsSnippet, only.SnippetText));
     }
 
     [Fact]
-    public void A_backup_before_the_upgrade_from_18_reads_the_buttons_with_an_empty_value() {
+    public void A_backup_before_the_upgrade_from_18_reads_the_buttons_with_an_empty_text() {
       BuildV18Db();
       string zip = Path.Combine(work, "before.zip");
       ExportManifest m = DataExporter.Export(zip, new ExportOptions { BeforeUpgrade = true });
       Assert.Equal(18, m.SchemaVersion);
       JsonArray rows = ReadData(zip)["shortcuts"].AsArray();
       Assert.Equal(2, rows.Count);
-      Assert.All(rows, r => Assert.Equal("", (string)r["clipboardValue"]));
+      Assert.All(rows, r => Assert.Equal("", (string)r["snippetText"]));
     }
 
     private static JsonNode ReadData(string zip) {
@@ -557,8 +557,8 @@ namespace MDSHO.Tests {
     }
   }
 
-  /// <summary>The panel menus, the button's icon and menu, the Edit value window and the paste messages (shown off screen).</summary>
-  public class ClipboardButtonViewTests {
+  /// <summary>The panel menus, the button's icon and menu, the Edit snippet window and the paste messages (shown off screen).</summary>
+  public class SnippetButtonViewTests {
 
     private sealed class Fixture {
       public AppViewModel App;
@@ -567,10 +567,10 @@ namespace MDSHO.Tests {
       public ShortcutViewModel Clip;
     }
 
-    private static void WithClipboard(Action<Fixture> body) {
+    private static void WithSnippet(Action<Fixture> body) {
       WpfAppHost.Run(() => {
-        Action<ShortcutViewModel> oldValueEditor = ShortcutViewModel.OpenClipboardValueEditor;
-        ShortcutViewModel.OpenClipboardValueEditor = s => { };
+        Action<ShortcutViewModel> oldValueEditor = ShortcutViewModel.OpenSnippetEditor;
+        ShortcutViewModel.OpenSnippetEditor = s => { };
         try {
           using (TempDb db = new TempDb()) {
             Fixture f = new Fixture();
@@ -578,15 +578,15 @@ namespace MDSHO.Tests {
             f.Win = f.App.AddWindow("TEST", 0, 0);
             f.Group = ViewModelFactory.NewGroupShortcut(f.App, null, f.Win);
             f.Win.RootShortcuts.Add(f.Group);
-            f.Group.NewClipboardShortcutCommand.Execute(null);
+            f.Group.NewSnippetShortcutCommand.Execute(null);
             f.Clip = f.Group.Children.Single();
             f.Clip.CancelEdit();
             f.Clip.Name = "Home address";
-            f.Clip.ClipboardValue = "Main Street 12\r\n1000 Sample Town";
+            f.Clip.SnippetText = "Main Street 12\r\n1000 Sample Town";
             body(f);
           }
         } finally {
-          ShortcutViewModel.OpenClipboardValueEditor = oldValueEditor;
+          ShortcutViewModel.OpenSnippetEditor = oldValueEditor;
         }
       });
     }
@@ -627,8 +627,8 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_panel_menu_has_new_clipboard_after_new_note_with_the_paste_icon() {
-      WithClipboard(f => WithView(f, view => {
+    public void The_panel_menu_has_new_snippet_after_new_note_with_the_paste_icon() {
+      WithSnippet(f => WithView(f, view => {
         TreeView tree = (TreeView)view.FindName("TreeViewShortcuts");
         ContextMenu menu = tree.ContextMenu;
         menu.DataContext = f.Win;
@@ -637,47 +637,47 @@ namespace MDSHO.Tests {
         List<string> names = visible.Select(Describe).ToList();
         int note = names.IndexOf("New note");
         MenuItem clip = Assert.IsType<MenuItem>(visible[note + 1]);
-        Assert.Equal("New clipboard", clip.Header);
-        Assert.Same(f.Win.NewClipboardShortcutCommand, clip.Command);
+        Assert.Equal("New snippet", clip.Header);
+        Assert.Same(f.Win.NewSnippetShortcutCommand, clip.Command);
         Assert.Equal("Appearance.Icons.Paste", IconPath(clip));
       }));
     }
 
     [Fact]
-    public void A_groups_menu_has_new_clipboard_after_new_note_and_a_buttons_menu_does_not() {
-      WithClipboard(f => WithView(f, view => {
+    public void A_groups_menu_has_new_snippet_after_new_note_and_a_buttons_menu_does_not() {
+      WithSnippet(f => WithView(f, view => {
         List<object> visible = Visible(MenuOf(view, f.Group));
         List<string> names = visible.Select(Describe).ToList();
-        Assert.Equal("New clipboard", names[names.IndexOf("New note") + 1]);
-        Assert.Same(f.Group.NewClipboardShortcutCommand, ((MenuItem)visible[names.IndexOf("New clipboard")]).Command);
-        Assert.Equal("OwningWindow.Appearance.Icons.Paste", IconPath((MenuItem)visible[names.IndexOf("New clipboard")]));
-        Assert.DoesNotContain("New clipboard", Visible(MenuOf(view, f.Clip)).Select(Describe));
+        Assert.Equal("New snippet", names[names.IndexOf("New note") + 1]);
+        Assert.Same(f.Group.NewSnippetShortcutCommand, ((MenuItem)visible[names.IndexOf("New snippet")]).Command);
+        Assert.Equal("OwningWindow.Appearance.Icons.Paste", IconPath((MenuItem)visible[names.IndexOf("New snippet")]));
+        Assert.DoesNotContain("New snippet", Visible(MenuOf(view, f.Clip)).Select(Describe));
       }));
     }
 
     [Fact]
-    public void A_clipboard_buttons_menu_matches_the_mockup() {
-      WithClipboard(f => WithView(f, view => {
+    public void A_snippets_menu_matches_the_mockup() {
+      WithSnippet(f => WithView(f, view => {
         List<object> visible = Visible(MenuOf(view, f.Clip));
         List<string> names = visible.Select(Describe).ToList();
         string all = string.Join(" | ", names);
         int rename = names.IndexOf("Rename");
         Assert.True(rename >= 0, all);
-        Assert.Equal(new[] { "Rename", "Copy value to memory", "Comment...", "-", "Edit value...", "-", "Cut", "Copy", "Paste", "-", "Delete" },
+        Assert.Equal(new[] { "Rename", "Copy snippet to memory", "Comment...", "-", "Edit snippet...", "-", "Cut", "Copy", "Paste", "-", "Delete" },
           names.Skip(rename).ToArray());
         MenuItem copy = (MenuItem)visible[rename + 1];
-        Assert.Same(f.Clip.CopyValueToMemoryCommand, copy.Command);
+        Assert.Same(f.Clip.CopySnippetToMemoryCommand, copy.Command);
         Assert.Equal("OwningWindow.Appearance.Icons.Copy", IconPath(copy));
-        MenuItem edit = (MenuItem)visible[names.IndexOf("Edit value...")];
-        Assert.Same(f.Clip.EditClipboardValueCommand, edit.Command);
+        MenuItem edit = (MenuItem)visible[names.IndexOf("Edit snippet...")];
+        Assert.Same(f.Clip.EditSnippetCommand, edit.Command);
         Assert.Equal("OwningWindow.Appearance.Icons.Paste", IconPath(edit));
         foreach (string other in new[] { "Edit note...", "Edit run command...", "Copy target to memory", "Copy command to memory", "Set name the same as target" }) {
           Assert.DoesNotContain(other, names);
         }
-        // Other kinds don't get the clipboard items.
+        // Other kinds don't get the snippet items.
         List<string> group = Visible(MenuOf(view, f.Group)).Select(Describe).ToList();
-        Assert.DoesNotContain("Edit value...", group);
-        Assert.DoesNotContain("Copy value to memory", group);
+        Assert.DoesNotContain("Edit snippet...", group);
+        Assert.DoesNotContain("Copy snippet to memory", group);
         for (int i = 1; i < group.Count; i++) {
           Assert.False(group[i] == "-" && group[i - 1] == "-", "Two separators in a row: " + string.Join(" | ", group));
         }
@@ -686,7 +686,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void The_button_shows_the_paste_glyph_as_its_icon() {
-      WithClipboard(f => WithView(f, view => {
+      WithSnippet(f => WithView(f, view => {
         TreeView tree = (TreeView)view.FindName("TreeViewShortcuts");
         TreeViewItem item = WpfAppHost.VisualDescendants<TreeViewItem>(tree).Single(i => i.DataContext == f.Clip);
         Button button = WpfAppHost.VisualDescendants<Button>(item).First(b => b.DataContext == f.Clip);
@@ -697,7 +697,7 @@ namespace MDSHO.Tests {
       }));
     }
 
-    // ---- The Edit value window ----
+    // ---- The Edit snippet window ----
 
     private static void Shown(Window window, Action check) {
       window.WindowStartupLocation = WindowStartupLocation.Manual;
@@ -731,41 +731,41 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_edit_value_window_shows_the_name_the_clipboard_icon_the_value_ok_wrap_and_close() {
-      WithClipboard(f => {
-        TextEditWindow window = TextEditWindow.ForClipboardValue(f.Clip);
+    public void The_edit_snippet_window_shows_the_name_the_snippet_icon_the_text_ok_wrap_and_close() {
+      WithSnippet(f => {
+        TextEditWindow window = TextEditWindow.ForSnippet(f.Clip);
         Shown(window, () => {
-          Assert.True(window.IsClipboardValue);
+          Assert.True(window.IsSnippetWindow);
           Assert.Equal("Home address", window.Title);
           Assert.Equal("Home address", Named<TextBlock>(window, "TextTitle").Text);
           Assert.Equal(f.Win.Appearance.Icons.Paste, Named<TextBlock>(window, "TextTitleIcon").Text);
           TextBox editor = Named<TextBox>(window, "TextComment");
           Assert.Equal("Main Street 12\r\n1000 Sample Town", editor.Text);
           Assert.True(editor.AcceptsReturn);
-          Assert.Equal("Value", System.Windows.Automation.AutomationProperties.GetName(editor));
+          Assert.Equal("Snippet", System.Windows.Automation.AutomationProperties.GetName(editor));
           Assert.Equal(Visibility.Visible, Named<Button>(window, "ButtonOk").Visibility);
           Assert.Equal(Visibility.Visible, Named<Button>(window, "ButtonWrap").Visibility);
           Assert.Equal(Visibility.Visible, Named<Button>(window, "ButtonClose").Visibility);
           Assert.NotEqual(Visibility.Visible, Named<Button>(window, "ButtonPin").Visibility);
           Assert.NotEqual(Visibility.Visible, Named<Button>(window, "ButtonColors").Visibility);
           Assert.False(Named<Button>(window, "ButtonOk").IsEnabled);
-          Assert.Equal(TextEditWindow.RenameValueTitleToolTip, Named<TextBlock>(window, "TextTitle").ToolTip);
+          Assert.Equal(TextEditWindow.RenameSnippetTitleToolTip, Named<TextBlock>(window, "TextTitle").ToolTip);
         });
       });
     }
 
     [Fact]
-    public void OK_saves_the_value_and_closes() {
-      WithClipboard(f => {
-        TextEditWindow window = TextEditWindow.ForClipboardValue(f.Clip);
+    public void OK_saves_the_text_and_closes() {
+      WithSnippet(f => {
+        TextEditWindow window = TextEditWindow.ForSnippet(f.Clip);
         Shown(window, () => {
           Named<TextBox>(window, "TextComment").Text = "New Street 1";
           Button ok = Named<Button>(window, "ButtonOk");
           Assert.True(ok.IsEnabled);
           Click(ok);
           Assert.True(window.Saved);
-          Assert.Equal("New Street 1", f.Clip.ClipboardValue);
-          Assert.Equal("New Street 1", DataStore.Shortcuts.Get(f.Clip.ID).ClipboardValue);
+          Assert.Equal("New Street 1", f.Clip.SnippetText);
+          Assert.Equal("New Street 1", DataStore.Shortcuts.Get(f.Clip.ID).SnippetText);
           Assert.Equal("", f.Clip.Comment ?? "");
         });
       });
@@ -773,23 +773,23 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Ctrl_enter_saves_and_esc_closes_without_saving() {
-      WithClipboard(f => {
+      WithSnippet(f => {
         Func<ModifierKeys> oldModifiers = TextEditWindow.KeyboardModifiers;
         try {
-          TextEditWindow window = TextEditWindow.ForClipboardValue(f.Clip);
+          TextEditWindow window = TextEditWindow.ForSnippet(f.Clip);
           Shown(window, () => {
             Named<TextBox>(window, "TextComment").Text = "typed";
             Press(window, Key.Escape);
             Assert.False(window.Saved);
-            Assert.Equal("Main Street 12\r\n1000 Sample Town", f.Clip.ClipboardValue);
+            Assert.Equal("Main Street 12\r\n1000 Sample Town", f.Clip.SnippetText);
           });
-          TextEditWindow second = TextEditWindow.ForClipboardValue(f.Clip);
+          TextEditWindow second = TextEditWindow.ForSnippet(f.Clip);
           Shown(second, () => {
             Named<TextBox>(second, "TextComment").Text = "by keys";
             TextEditWindow.KeyboardModifiers = () => ModifierKeys.Control;
             Press(second, Key.Enter);
             Assert.True(second.Saved);
-            Assert.Equal("by keys", f.Clip.ClipboardValue);
+            Assert.Equal("by keys", f.Clip.SnippetText);
           });
         } finally {
           TextEditWindow.KeyboardModifiers = oldModifiers;
@@ -799,8 +799,8 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void The_title_can_be_renamed_and_follows_renames() {
-      WithClipboard(f => {
-        TextEditWindow window = TextEditWindow.ForClipboardValue(f.Clip);
+      WithSnippet(f => {
+        TextEditWindow window = TextEditWindow.ForSnippet(f.Clip);
         Shown(window, () => {
           window.BeginRenameTitle();
           WpfAppHost.Pump();
@@ -816,8 +816,8 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Wrap_text_is_shared_with_the_comment_windows_of_the_panel() {
-      WithClipboard(f => {
-        TextEditWindow window = TextEditWindow.ForClipboardValue(f.Clip);
+      WithSnippet(f => {
+        TextEditWindow window = TextEditWindow.ForSnippet(f.Clip);
         Shown(window, () => {
           Assert.False(window.IsWrapText);
           Click(Named<Button>(window, "ButtonWrap"));
@@ -828,21 +828,21 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_app_opens_edit_value_in_this_window() {
+    public void The_app_opens_edit_snippet_in_this_window() {
       WpfAppHost.Run(() => {
         // ConnectEditors sets every editor seam: all are put back, so later tests keep their fakes.
-        Action<ShortcutViewModel> old = ShortcutViewModel.OpenClipboardValueEditor;
+        Action<ShortcutViewModel> old = ShortcutViewModel.OpenSnippetEditor;
         Action<ShortcutViewModel, bool> oldRun = ShortcutViewModel.OpenRunCommandEditor;
         Action<ShortcutViewModel> oldComment = ShortcutViewModel.OpenCommentEditor;
         Action<ShortcutViewModel> oldNote = ShortcutViewModel.OpenNoteEditor;
         Action<ShortcutViewModel> oldToggle = ShortcutViewModel.ToggleNoteEditor;
         Action<ShortcutViewModel> oldDeleted = ShortcutViewModel.NotesDeleted;
         try {
-          ShortcutViewModel.OpenClipboardValueEditor = null;
+          ShortcutViewModel.OpenSnippetEditor = null;
           App.ConnectEditors();
-          Assert.NotNull(ShortcutViewModel.OpenClipboardValueEditor);
+          Assert.NotNull(ShortcutViewModel.OpenSnippetEditor);
         } finally {
-          ShortcutViewModel.OpenClipboardValueEditor = old;
+          ShortcutViewModel.OpenSnippetEditor = old;
           ShortcutViewModel.OpenRunCommandEditor = oldRun;
           ShortcutViewModel.OpenCommentEditor = oldComment;
           ShortcutViewModel.OpenNoteEditor = oldNote;

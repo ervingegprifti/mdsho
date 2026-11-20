@@ -384,7 +384,7 @@
                                     <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Note}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="New clipboard" Command="{Binding NewClipboardShortcutCommand}">
+                            <MenuItem Header="New snippet" Command="{Binding NewSnippetShortcutCommand}">
                                 <MenuItem.Icon>
                                     <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Paste}"/>
                                 </MenuItem.Icon>
@@ -430,7 +430,7 @@
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Note}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <MenuItem Header="New clipboard" Command="{Binding NewClipboardShortcutCommand}" Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}">
+                                        <MenuItem Header="New snippet" Command="{Binding NewSnippetShortcutCommand}" Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Paste}"/>
                                             </MenuItem.Icon>
@@ -519,8 +519,8 @@
                                         </MenuItem>
                                         <!--Run commands only: copies the command line as the tooltip shows it (no icon)-->
                                         <MenuItem Header="Copy command to memory" Command="{Binding CopyCommandToMemoryCommand}" Visibility="{Binding ShowCopyCommandToMemory, Converter={StaticResource BoolToVisibility}}" />
-                                        <!--Clipboard buttons only: copies the value and leaves it on the clipboard-->
-                                        <MenuItem Header="Copy value to memory" Command="{Binding CopyValueToMemoryCommand}" Visibility="{Binding ShowCopyValueToMemory, Converter={StaticResource BoolToVisibility}}">
+                                        <!--Snippets only: copies the text and leaves it on the clipboard-->
+                                        <MenuItem Header="Copy snippet to memory" Command="{Binding CopySnippetToMemoryCommand}" Visibility="{Binding ShowCopySnippetToMemory, Converter={StaticResource BoolToVisibility}}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Copy}"/>
                                             </MenuItem.Icon>
@@ -539,12 +539,12 @@
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator Visibility="{Binding ShowNote, Converter={StaticResource BoolToVisibility}}" />
-                                        <MenuItem Header="Edit value..." Visibility="{Binding ShowClipboard, Converter={StaticResource BoolToVisibility}}" Command="{Binding EditClipboardValueCommand}">
+                                        <MenuItem Header="Edit snippet..." Visibility="{Binding ShowSnippet, Converter={StaticResource BoolToVisibility}}" Command="{Binding EditSnippetCommand}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Paste}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <Separator Visibility="{Binding ShowClipboard, Converter={StaticResource BoolToVisibility}}" />
+                                        <Separator Visibility="{Binding ShowSnippet, Converter={StaticResource BoolToVisibility}}" />
                                         <MenuItem Header="Edit run command..." Visibility="{Binding ShowCommand, Converter={StaticResource BoolToVisibility}}" Command="{Binding EditRunCommandCommand}">
                                             <MenuItem.Icon>
                                                 <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Run}"/>
@@ -623,9 +623,9 @@
 				                        Margin="1,0,5,0"
 				                        VerticalAlignment="Center" />
                                     <!--This is used to display the clipboard icon-->
-                                    <TextBlock x:Name="TextClipboardIcon" Grid.Row="0" Grid.Column="0"
+                                    <TextBlock x:Name="TextSnippetIcon" Grid.Row="0" Grid.Column="0"
 				                        Text="{Binding DataContext.Appearance.Icons.Paste, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
-				                        Visibility="{Binding ShowClipboard, Converter={StaticResource BoolToVisibility}}"
+				                        Visibility="{Binding ShowSnippet, Converter={StaticResource BoolToVisibility}}"
 				                        Foreground="{Binding DataContext.Appearance.TextColor, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}, Converter={StaticResource HexToBrush}}"
 				                        FontFamily="{StaticResource IconFont}"
 				                        FontSize="16"

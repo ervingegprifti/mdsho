@@ -3,7 +3,7 @@ using MDSHO.Common;
 
 namespace MDSHO.ViewModels {
 
-  /// <summary>What MDSHO says when a clipboard button can't paste: a bold heading, then the text.</summary>
+  /// <summary>What MDSHO says when a snippet can't paste: a bold heading, then the text.</summary>
   public sealed class ClipboardPasteMessage {
     /// <summary>The title of the message window.</summary>
     public const string Caption = "MDSHO";
@@ -29,11 +29,11 @@ namespace MDSHO.ViewModels {
         case PasteOutcome.NotEditable:
           return new ClipboardPasteMessage("No place to paste into.",
             "Click in a text field first, then " + (singleClick ? "click" : "double-click") + " \"" + name + "\"." + paragraph
-            + "To paste it yourself, right-click the button, choose Copy value to memory, then press Ctrl+V. Your clipboard is unchanged.");
+            + "To paste it yourself, right-click the button, choose Copy snippet to memory, then press Ctrl+V. Your clipboard is unchanged.");
         case PasteOutcome.Elevated:
           return new ClipboardPasteMessage("Can't paste into this window.",
             "It runs as administrator, and Windows doesn't let MDSHO paste into it." + paragraph
-            + "Right-click \"" + name + "\", choose Copy value to memory, then press Ctrl+V. Your clipboard is unchanged.");
+            + "Right-click \"" + name + "\", choose Copy snippet to memory, then press Ctrl+V. Your clipboard is unchanged.");
         case PasteOutcome.ClipboardBusy:
           return new ClipboardPasteMessage("Can't paste right now.", "Another program is using the clipboard. Try again in a moment.");
         default:

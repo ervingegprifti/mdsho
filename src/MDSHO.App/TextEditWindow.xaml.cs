@@ -15,7 +15,7 @@ namespace MDSHO {
 
   /// <summary>
   /// Edits the text of one button: its comment (any button or group), the note of a note button, or the value of a
-  /// clipboard button. A comment or value is saved only by OK in the title bar (or Ctrl+Enter), which is greyed out while nothing changed; the X button and Esc
+  /// snippet. A comment or snippet is saved only by OK in the title bar (or Ctrl+Enter), which is greyed out while nothing changed; the X button and Esc
   /// close it without saving. A note saves itself shortly
   /// after each change and when its window closes, so it has no Save button. A text of only spaces and new lines is saved
   /// as empty.
@@ -27,8 +27,8 @@ namespace MDSHO {
       Comment,
       /// <summary>The text of a note button.</summary>
       Note,
-      /// <summary>The value of a clipboard button.</summary>
-      ClipboardValue
+      /// <summary>The text of a snippet.</summary>
+      Snippet
     }
 
     private readonly ShortcutViewModel shortcut;
@@ -46,21 +46,21 @@ namespace MDSHO {
       return new TextEditWindow(shortcut, TextKind.Comment);
     }
 
-    /// <summary>Creates the window for the value of a clipboard button.</summary>
-    public static TextEditWindow ForClipboardValue(ShortcutViewModel shortcut) {
-      return new TextEditWindow(shortcut, TextKind.ClipboardValue);
+    /// <summary>Creates the window for the text of a snippet.</summary>
+    public static TextEditWindow ForSnippet(ShortcutViewModel shortcut) {
+      return new TextEditWindow(shortcut, TextKind.Snippet);
     }
 
-    /// <summary>True for an Edit value window.</summary>
-    public bool IsClipboardValue => this.kind == TextKind.ClipboardValue;
+    /// <summary>True for an Edit snippet window.</summary>
+    public bool IsSnippetWindow => this.kind == TextKind.Snippet;
 
-    /// <summary>The tooltip of an Edit value window's title.</summary>
-    public const string RenameValueTitleToolTip = "Click twice slowly to rename the button";
+    /// <summary>The tooltip of an Edit snippet window's title.</summary>
+    public const string RenameSnippetTitleToolTip = "Click twice slowly to rename the snippet";
 
-    /// <summary>Opens the Edit value window as a dialog beside the MDSHO window the button belongs to, like the Comment window.</summary>
-    public static void ShowClipboardValueFor(ShortcutViewModel shortcut) {
+    /// <summary>Opens the Edit snippet window as a dialog beside the MDSHO window the button belongs to, like the Comment window.</summary>
+    public static void ShowSnippetFor(ShortcutViewModel shortcut) {
       try {
-        TextEditWindow window = ForClipboardValue(shortcut);
+        TextEditWindow window = ForSnippet(shortcut);
         Window owner = RunCommandWindow.FindOwner(shortcut);
         if (owner != null) {
           PlaceComment(window, owner);
@@ -92,7 +92,7 @@ namespace MDSHO {
       this.Closed += (s, e) => shortcut.PropertyChanged -= nameChanged;
       this.TextComment.Text = StoredText() ?? "";
       System.Windows.Automation.AutomationProperties.SetName(this.TextComment,
-        kind == TextKind.Note ? "Note" : kind == TextKind.ClipboardValue ? "Value" : "Comment");
+        kind == TextKind.Note ? "Note" : kind == TextKind.Snippet ? "Snippet" : "Comment");
       if (kind == TextKind.Note) {
         // A note is the main content, so its window is bigger; a comment keeps the smaller size.
         this.Width = 640;
@@ -107,8 +107,8 @@ namespace MDSHO {
         UseRenamableTitle(RenameTitleToolTip);
       } else {
         UseCommentTitleBar();
-        if (kind == TextKind.ClipboardValue) {
-          UseRenamableTitle(RenameValueTitleToolTip);
+        if (kind == TextKind.Snippet) {
+          UseRenamableTitle(RenameSnippetTitleToolTip);
         }
       }
 
@@ -161,7 +161,7 @@ namespace MDSHO {
     /// <summary>What a double click on the title text does: maximise or restore, like the title bar. Tests replace it.</summary>
     public Action TitleDoubleClick { get; set; }
 
-    /// <summary>A note or clipboard button is renamed from its title (see <see cref="TitleRename"/>); the new name is saved at once.</summary>
+    /// <summary>A note or snippet is renamed from its title (see <see cref="TitleRename"/>); the new name is saved at once.</summary>
     private void UseRenamableTitle(string toolTip) {
       this.titleRename = new TitleRename(this, this.TextTitle, this.TextTitleEdit, toolTip,
         () => this.shortcut.Name, name => this.shortcut.Name = name,
@@ -624,7 +624,7 @@ namespace MDSHO {
     private string StoredText() {
       switch (this.kind) {
         case TextKind.Note: return this.shortcut.NoteText;
-        case TextKind.ClipboardValue: return this.shortcut.ClipboardValue;
+        case TextKind.Snippet: return this.shortcut.SnippetText;
         default: return this.shortcut.Comment;
       }
     }
@@ -775,7 +775,7 @@ namespace MDSHO {
     }
 
     private void ShowIcons(IconGlyphs icons) {
-      string glyph = this.kind == TextKind.Note ? icons.Note : this.kind == TextKind.ClipboardValue ? icons.Paste : icons.Comment;
+      string glyph = this.kind == TextKind.Note ? icons.Note : this.kind == TextKind.Snippet ? icons.Paste : icons.Comment;
       this.TextTitleIcon.Text = glyph;
       this.ButtonClose.Content = icons.Times;
       this.ButtonColors.Content = icons.Brush;
@@ -790,13 +790,13 @@ namespace MDSHO {
       if (!HasCommentChange()) {
         return;
       }
-      if (this.kind == TextKind.ClipboardValue) {
+      if (this.kind == TextKind.Snippet) {
         try {
-          this.shortcut.SaveClipboardValue(TextToSave());
+          this.shortcut.SaveSnippetText(TextToSave());
         } catch (Exception ex) {
           // Never the value: it can be a password.
-          AppLog.Warning(null, "A clipboard value could not be saved: {ErrorType}", ex.GetType().FullName);
-          ErrorDialog.ShowDialog("The value could not be saved.", ex);
+          AppLog.Warning(null, "A snippet could not be saved: {ErrorType}", ex.GetType().FullName);
+          ErrorDialog.ShowDialog("The snippet could not be saved.", ex);
           return;
         }
         this.Saved = true;

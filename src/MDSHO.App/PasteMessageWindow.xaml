@@ -23,7 +23,7 @@
         Foreground="{DynamicResource Theme.Text}"
         helpers:WindowThemes.IsThemed="True">
 
-    <!--Why a clipboard button could not paste: an info icon, a bold heading, the text and OK-->
+    <!--Why a snippet could not paste: an info icon, a bold heading, the text and OK-->
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="32" ResizeBorderThickness="0" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>

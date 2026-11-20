@@ -107,8 +107,8 @@ namespace MDSHO.ViewModels {
         noteText: shortcutRecord.NoteText,
         noteColors: new NoteColors(shortcutRecord.NoteBorderColor, shortcutRecord.NoteTitleBackgroundColor, shortcutRecord.NoteTitleTextColor,
           shortcutRecord.NoteBackgroundColor, shortcutRecord.NoteTextColor),
-        isClipboard: Convert.ToBoolean(shortcutRecord.IsClipboard),
-        clipboardValue: shortcutRecord.ClipboardValue);
+        isSnippet: Convert.ToBoolean(shortcutRecord.IsSnippet),
+        snippetText: shortcutRecord.SnippetText);
       foreach (Shortcut childRecord in shortcutRecord.Shortcuts) {
         ShortcutViewModel child = ShortcutToViewModel(appViewModel: appViewModel, parentShortcut: shortcut, shortcutRecord: childRecord);
         shortcut.Children.Add(child);
@@ -242,12 +242,12 @@ namespace MDSHO.ViewModels {
       template.NoteTitleTextColor = colors.TitleText;
       template.NoteBackgroundColor = colors.Background;
       template.NoteTextColor = colors.Text;
-      template.IsClipboard = Convert.ToInt64(shortcut.IsClipboard);
-      template.ClipboardValue = shortcut.ClipboardValue ?? "";
+      template.IsSnippet = Convert.ToInt64(shortcut.IsSnippet);
+      template.SnippetText = shortcut.SnippetText ?? "";
       Shortcut savedRecord = DataStore.Shortcuts.Append(template);
       // Copy the physical file after the insert, so a failed insert (rollback) never leaves an orphan file behind.
-      // Notes, clipboard buttons, groups and run commands have no shortcut file.
-      if (!shortcut.IsGroup && !shortcut.IsProcessCommand && !shortcut.IsNote && !shortcut.IsClipboard) {
+      // Notes, snippets, groups and run commands have no shortcut file.
+      if (!shortcut.IsGroup && !shortcut.IsProcessCommand && !shortcut.IsNote && !shortcut.IsSnippet) {
         string shortcutPath = Paths.GetShortcutFilePath(shortcut.Guid, shortcut.Ext);
         if (System.IO.File.Exists(shortcutPath)) {
           string copyPath = Paths.GetShortcutFilePath(savedRecord.Guid, savedRecord.Ext);
@@ -330,10 +330,10 @@ namespace MDSHO.ViewModels {
         return note;
       }
     }
-    /// <summary>Creates a new empty clipboard button named "New clipboard" under a group or a window (exactly one of the two).</summary>
-    public static ShortcutViewModel NewClipboardShortcut(AppViewModel appViewModel, ShortcutViewModel parentShortcut, DesktopWindowViewModel parentWindow) {
+    /// <summary>Creates a new empty snippet named "New snippet" under a group or a window (exactly one of the two).</summary>
+    public static ShortcutViewModel NewSnippetShortcut(AppViewModel appViewModel, ShortcutViewModel parentShortcut, DesktopWindowViewModel parentWindow) {
       RequireOneParent(parentShortcut, parentWindow);
-      Shortcut shortcutRecord = DataStore.Shortcuts.CreateClipboard(parentShortcut?.ID, parentWindow?.ID);
+      Shortcut shortcutRecord = DataStore.Shortcuts.CreateSnippet(parentShortcut?.ID, parentWindow?.ID);
       return ShortcutToViewModel(appViewModel, parentShortcut, shortcutRecord);
     }
     #endregion NEW

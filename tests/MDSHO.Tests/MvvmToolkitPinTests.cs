@@ -269,9 +269,9 @@ namespace MDSHO.Tests {
     public void Command_properties_keep_the_names_the_views_bind_to() {
       string[] Commands(Type t) => t.GetProperties().Where(p => typeof(ICommand).IsAssignableFrom(p.PropertyType)).Select(p => p.Name).OrderBy(n => n).ToArray();
       Assert.Equal(new[] { "BeginEditTitleCommand", "CancelEditTitleCommand", "CloseWindowCommand", "CommitEditTitleCommand",
-        "NewClipboardShortcutCommand", "NewGroupShortcutCommand", "NewNoteShortcutCommand", "NewProcessCommandShortcutCommand", "PasteShortcutCommand" }, Commands(typeof(DesktopWindowViewModel)));
-      Assert.Equal(new[] { "CancelEditCommand", "CommitEditCommand", "CopyCommandToMemoryCommand", "CopyShortcutCommand", "CopyTargetToMemoryCommand", "CopyValueToMemoryCommand", "CutShortcutCommand",
-        "DeleteShortcutCommand", "EditClipboardValueCommand", "EditCommentCommand", "EditNoteCommand", "EditRunCommandCommand", "MarkShortcutCommand", "NewClipboardShortcutCommand", "NewGroupShortcutCommand", "NewNoteShortcutCommand", "NewProcessCommandShortcutCommand", "PasteShortcutCommand",
+        "NewGroupShortcutCommand", "NewNoteShortcutCommand", "NewProcessCommandShortcutCommand", "NewSnippetShortcutCommand", "PasteShortcutCommand" }, Commands(typeof(DesktopWindowViewModel)));
+      Assert.Equal(new[] { "CancelEditCommand", "CommitEditCommand", "CopyCommandToMemoryCommand", "CopyShortcutCommand", "CopySnippetToMemoryCommand", "CopyTargetToMemoryCommand", "CutShortcutCommand",
+        "DeleteShortcutCommand", "EditCommentCommand", "EditNoteCommand", "EditRunCommandCommand", "EditSnippetCommand", "MarkShortcutCommand", "NewGroupShortcutCommand", "NewNoteShortcutCommand", "NewProcessCommandShortcutCommand", "NewSnippetShortcutCommand", "PasteShortcutCommand",
         "RenameCommand", "SetNameTheSameAsTargetCommand" }, Commands(typeof(ShortcutViewModel)));
       Assert.Equal(new[] { "TestRunCommand" }, Commands(typeof(RunCommandViewModel)));
     }

@@ -8,17 +8,17 @@ namespace MDSHO.Data {
     /// <summary>Column list for SELECTs: the database column ParentMDSHOWindowID is exposed as the property ParentWindowID.</summary>
     internal const string SelectColumns = @"ID, ParentShortcutID, ParentMDSHOWindowID AS ParentWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded,
       Comment, IsMarked, MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText,
-      NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor, IsClipboard, ClipboardValue";
+      NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor, IsSnippet, SnippetText";
 
     private const string InsertSql = @"
       INSERT INTO Shortcuts (
         ID, ParentShortcutID, ParentMDSHOWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded, Comment, IsMarked,
         MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText,
-        NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor, IsClipboard, ClipboardValue)
+        NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor, IsSnippet, SnippetText)
       VALUES (
         NULLIF(@ID, 0), @ParentShortcutID, @ParentWindowID, @Name, @Target, @Ext, @Guid, @IsGroup, @IsGroupExpanded, @Comment, @IsMarked,
         @MarkColor, @Position, @IsProcessCommand, @ProcessFileName, @ProcessArguments, @ProcessRunAsAdmin, COALESCE(@ProcessWorkingFolder, ''), @IsNote, COALESCE(@NoteText, ''),
-        COALESCE(@NoteBorderColor, ''), COALESCE(@NoteTitleBackgroundColor, ''), COALESCE(@NoteTitleTextColor, ''), COALESCE(@NoteBackgroundColor, ''), COALESCE(@NoteTextColor, ''), @IsClipboard, COALESCE(@ClipboardValue, ''))";
+        COALESCE(@NoteBorderColor, ''), COALESCE(@NoteTitleBackgroundColor, ''), COALESCE(@NoteTitleTextColor, ''), COALESCE(@NoteBackgroundColor, ''), COALESCE(@NoteTextColor, ''), @IsSnippet, COALESCE(@SnippetText, ''))";
 
     private const string UpdateSql = @"
       UPDATE Shortcuts SET
@@ -27,7 +27,7 @@ namespace MDSHO.Data {
         MarkColor = @MarkColor, Position = @Position, IsProcessCommand = @IsProcessCommand, ProcessFileName = @ProcessFileName,
         ProcessArguments = @ProcessArguments, ProcessRunAsAdmin = @ProcessRunAsAdmin, IsNote = @IsNote, NoteText = COALESCE(@NoteText, ''),
         NoteBorderColor = COALESCE(@NoteBorderColor, ''), NoteTitleBackgroundColor = COALESCE(@NoteTitleBackgroundColor, ''), NoteTitleTextColor = COALESCE(@NoteTitleTextColor, ''), NoteBackgroundColor = COALESCE(@NoteBackgroundColor, ''), NoteTextColor = COALESCE(@NoteTextColor, ''),
-        ProcessWorkingFolder = COALESCE(@ProcessWorkingFolder, ''), IsClipboard = @IsClipboard, ClipboardValue = COALESCE(@ClipboardValue, '')
+        ProcessWorkingFolder = COALESCE(@ProcessWorkingFolder, ''), IsSnippet = @IsSnippet, SnippetText = COALESCE(@SnippetText, '')
       WHERE ID = @ID";
 
     #region QUERIES
@@ -80,8 +80,8 @@ namespace MDSHO.Data {
         copy.NoteTitleTextColor = template.NoteTitleTextColor;
         copy.NoteBackgroundColor = template.NoteBackgroundColor;
         copy.NoteTextColor = template.NoteTextColor;
-        copy.IsClipboard = template.IsClipboard;
-        copy.ClipboardValue = template.ClipboardValue ?? "";
+        copy.IsSnippet = template.IsSnippet;
+        copy.SnippetText = template.SnippetText ?? "";
         return Get(Add(copy));
       });
     }
@@ -109,10 +109,10 @@ namespace MDSHO.Data {
         isGroup: 0, isGroupExpanded: 0, comment: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
         isProcessCommand: 0, processFileName: "", processArguments: "", isNote: 1, noteText: ""));
     }
-    public Shortcut CreateClipboard(long? parentShortcutID, long? parentWindowID) {
-      return Append(new Shortcut(parentShortcutID, parentWindowID, "New clipboard", "", "", Identifiers.NewGuid(),
+    public Shortcut CreateSnippet(long? parentShortcutID, long? parentWindowID) {
+      return Append(new Shortcut(parentShortcutID, parentWindowID, "New snippet", "", "", Identifiers.NewGuid(),
         isGroup: 0, isGroupExpanded: 0, comment: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
-        isProcessCommand: 0, processFileName: "", processArguments: "") { IsClipboard = 1, ClipboardValue = "" });
+        isProcessCommand: 0, processFileName: "", processArguments: "") { IsSnippet = 1, SnippetText = "" });
     }
     #endregion CREATE
 
@@ -157,8 +157,8 @@ namespace MDSHO.Data {
     public void UpdateNoteText(long id, string noteText) {
       Run("UPDATE Shortcuts SET NoteText = @noteText WHERE ID = @id;", new { id, noteText = noteText ?? "" });
     }
-    public void UpdateClipboardValue(long id, string clipboardValue) {
-      Run("UPDATE Shortcuts SET ClipboardValue = @clipboardValue WHERE ID = @id;", new { id, clipboardValue = clipboardValue ?? "" });
+    public void UpdateSnippetText(long id, string snippetText) {
+      Run("UPDATE Shortcuts SET SnippetText = @snippetText WHERE ID = @id;", new { id, snippetText = snippetText ?? "" });
     }
     public void UpdatePosition(long id, long position) {
       Run("UPDATE Shortcuts SET Position = @position WHERE ID = @id;", new { id, position });

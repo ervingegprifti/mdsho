@@ -3,7 +3,7 @@ using System.Windows;
 
 namespace MDSHO {
 
-  /// <summary>A small MDSHO window that says why a clipboard button could not paste: an info icon, a bold heading, the text and OK.</summary>
+  /// <summary>A small MDSHO window that says why a snippet could not paste: an info icon, a bold heading, the text and OK.</summary>
   public partial class PasteMessageWindow : Window {
 
     /// <summary>Shows the built window (modal). Tests replace it so no window opens.</summary>

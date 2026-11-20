@@ -64,7 +64,7 @@ namespace MDSHO.Infrastructure {
       this.hook = SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, IntPtr.Zero, this.callback, 0, 0,
         WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
       if (this.hook == IntPtr.Zero) {
-        AppLog.Warning(null, "The foreground window hook could not be set; clipboard buttons can't find the window to paste into");
+        AppLog.Warning(null, "The foreground window hook could not be set; snippets can't find the window to paste into");
       }
     }
 
@@ -258,7 +258,7 @@ namespace MDSHO.Infrastructure {
   }
 
   /// <summary>
-  /// The Windows clipboard for clipboard buttons: classic Win32 calls for the content, WinRT for clipboard history. Call it
+  /// The Windows clipboard for snippets: classic Win32 calls for the content, WinRT for clipboard history. Call it
   /// on the UI thread. Never logs or shows the content.
   /// </summary>
   public sealed class PasteClipboard : IPasteClipboard {

@@ -80,9 +80,9 @@ namespace MDSHO.Helpers {
 #else
     private const bool IsDebugBuild = false;
 #endif
-    /// <summary>The window the user was in before MDSHO, for clipboard buttons. Started by the app.</summary>
+    /// <summary>The window the user was in before MDSHO, for snippets. Started by the app.</summary>
     public ForegroundWindowTracker ForegroundWindows { get; set; } = new ForegroundWindowTracker();
-    /// <summary>Pastes clipboard button values. Made on first use.</summary>
+    /// <summary>Pastes snippet values. Made on first use.</summary>
     public ClipboardPaster Paster {
       get {
         return this.paster ??= new ClipboardPaster(ForegroundWindows, new ElevationCheck(), new UiaFocusedFieldCheck(),

@@ -7,7 +7,7 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// The paste flow of a clipboard button (1.19.0), with fakes for every Windows part: the window the user came from,
+  /// The paste flow of a snippet (1.19.0), with fakes for every Windows part: the window the user came from,
   /// the elevation check, the focused-field check, the clipboard, the key sender and the waits.
   /// </summary>
   public class ClipboardPasterTests {

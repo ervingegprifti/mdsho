@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace MDSHO.Common {
 
-  /// <summary>What a clipboard button's paste did.</summary>
+  /// <summary>What a snippet's paste did.</summary>
   public enum PasteOutcome {
     /// <summary>The value was pasted.</summary>
     Pasted,
@@ -113,7 +113,7 @@ namespace MDSHO.Common {
   }
 
   /// <summary>
-  /// Pastes a clipboard button's value into the window the user came from: gives that window the focus back, checks the
+  /// Pastes a snippet's value into the window the user came from: gives that window the focus back, checks the
   /// focused field, saves the user's clipboard, puts the value on it (kept out of history and cloud sync), sends Ctrl+V,
   /// waits, then puts the user's clipboard back unless the user copied something newer. Never logs the value or the
   /// clipboard content.

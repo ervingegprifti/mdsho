@@ -90,8 +90,8 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `NoteTitleTextColor` | TEXT | NOT NULL | `''` | Title text (and title button) colour of the note's window; empty = the default. Added in version 10. |
 | `NoteBackgroundColor` | TEXT | NOT NULL | `''` | Background colour of the note's window; empty = the default. Added in version 10. |
 | `NoteTextColor` | TEXT | NOT NULL | `''` | Text colour of the note's window; empty = the default. Added in version 10. |
-| `IsClipboard` | INTEGER | NOT NULL | `0` | `1` = a clipboard button (it pastes `ClipboardValue`; no shortcut file). Added in version 19. |
-| `ClipboardValue` | TEXT | NOT NULL | `''` | The value a clipboard button pastes, stored as plain text; empty for other buttons. Added in version 19. |
+| `IsSnippet` | INTEGER | NOT NULL | `0` | `1` = a snippet (it pastes `SnippetText`; no shortcut file). Added in version 19. |
+| `SnippetText` | TEXT | NOT NULL | `''` | The text a snippet pastes, stored as plain text; empty for other buttons. Added in version 19. |
 
 ### NoteWindows
 
@@ -243,7 +243,7 @@ that worked.
 | 16 | 1.6.1 | `AppSettings` table: settings of the whole app on this PC, starting with the **Bring panels to front** keyboard shortcut (empty at first). |
 | 17 | 1.7.1 | `ScreenSetups` and `ScreenSetupPlaces` tables: the screen setups seen on this PC and the place of every panel, clone and note window in each (empty at first). The 1.7.0 test build created this version without `ScreenSetups.LastUsed`; MDSHO adds the column at start when it is missing. |
 | 18 | 1.16.0 | `NoteWindows.FontSize` (`INTEGER NOT NULL DEFAULT 0`): the text size of each note window (`0` = 12). From 1.16.0 exports and backups also carry the note window places (export format 2); older exports still import, with default note windows. The step also adds `ScreenSetups.LastUsed` when a 1.7.0 test build database lacks it. |
-| 19 | 1.19.0 | `Shortcuts.IsClipboard` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.ClipboardValue` (`TEXT NOT NULL DEFAULT ''`) for clipboard buttons. Exports and backups carry them (still export format 3); older exports import with no clipboard buttons. |
+| 19 | 1.19.0 | `Shortcuts.IsSnippet` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.SnippetText` (`TEXT NOT NULL DEFAULT ''`) for snippets. Exports and backups carry them (still export format 3); older exports import with no snippets. |
 
 ### Backup before an upgrade
 

@@ -103,7 +103,7 @@ namespace MDSHO.ViewModels {
         case ShortcutTargetKind.Missing: return this.Warning;
         case ShortcutTargetKind.Command: return this.Run;
         case ShortcutTargetKind.Note: return this.Note;
-        case ShortcutTargetKind.Clipboard: return this.Paste;
+        case ShortcutTargetKind.Snippet: return this.Paste;
         case ShortcutTargetKind.Group: return this.Shortcuts;
         default: return this.Shortcut;
       }
