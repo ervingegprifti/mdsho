@@ -139,6 +139,7 @@ namespace MDSHO.ViewModels {
     /// <summary>The text of a snippet (empty for other buttons). Saved at once.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ToolTipText))]
+    [NotifyCanExecuteChangedFor(nameof(SetNameTheSameAsValueCommand))]
     private string snippetText;
     /// <summary>The text of a note button (empty for other buttons).</summary>
     [ObservableProperty]
@@ -570,6 +571,28 @@ namespace MDSHO.ViewModels {
     public bool ShowSnippet => !this.isGroup && this.isSnippet;
     /// <summary>True for a snippet.</summary>
     public bool ShowCopySnippetToMemory => this.ShowSnippet;
+    /// <summary>True for a snippet.</summary>
+    public bool ShowSetNameTheSameAsValue => this.ShowSnippet;
+    // The first non-blank line of the snippet text, trimmed; null when the text is blank.
+    private string SnippetFirstLine() {
+      foreach (string line in (this.snippetText ?? "").Replace("\r\n", "\n").Replace('\r', '\n').Split('\n')) {
+        if (!string.IsNullOrWhiteSpace(line)) {
+          return line.Trim();
+        }
+      }
+      return null;
+    }
+    private bool CanSetNameTheSameAsValue() {
+      return this.isSnippet && SnippetFirstLine() != null;
+    }
+    /// <summary>Renames a snippet to the first non-blank line of its text, trimmed.</summary>
+    [RelayCommand(CanExecute = nameof(CanSetNameTheSameAsValue))]
+    private void SetNameTheSameAsValue() {
+      string line = SnippetFirstLine();
+      if (this.isSnippet && line != null) {
+        this.Name = line;
+      }
+    }
     /// <summary>
     /// Pastes a snippet's text into the window the user came from (the app's <see cref="ClipboardPaster"/>).
     /// Set by the app at startup; tests replace it. Until it is set it throws.

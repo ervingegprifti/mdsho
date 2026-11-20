@@ -6,12 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
-## [1.19.0]
+## [1.19.1]
 
 ### Added
 
 - Snippets: a button with a name and a text. Click in a text field, then double-click the snippet to paste its text. MDSHO puts your clipboard back afterwards.
-- Copy snippet to memory and Edit snippet... in a snippet's menu.
+- Copy snippet to memory, Set name the same as value and Edit snippet... in a snippet's menu.
 - New snippet in the panel menu and in a group's menu.
 - Database version 19: the buttons table gets `IsSnippet` and `SnippetText` (backed up first). Exports and backups carry them; older exports still import.
 

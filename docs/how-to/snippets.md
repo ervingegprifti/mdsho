@@ -18,7 +18,8 @@ double-click.
 4. Type the text. It can have several lines.
 5. Click **OK** in the title bar, or press Ctrl+Enter. Esc closes the window without saving.
 
-Hover over the snippet to see its name and its text.
+Hover over the snippet to see its name and its text. To name it after its text, right-click it and choose
+**Set name the same as value**.
 
 ## Paste a snippet
 

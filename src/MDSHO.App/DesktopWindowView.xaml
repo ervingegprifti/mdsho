@@ -519,6 +519,8 @@
                                         </MenuItem>
                                         <!--Run commands only: copies the command line as the tooltip shows it (no icon)-->
                                         <MenuItem Header="Copy command to memory" Command="{Binding CopyCommandToMemoryCommand}" Visibility="{Binding ShowCopyCommandToMemory, Converter={StaticResource BoolToVisibility}}" />
+                                        <!--Snippets only: renames to the first line of the text (no icon, like Set name the same as target)-->
+                                        <MenuItem Header="Set name the same as value" Command="{Binding SetNameTheSameAsValueCommand}" Visibility="{Binding ShowSetNameTheSameAsValue, Converter={StaticResource BoolToVisibility}}" />
                                         <!--Snippets only: copies the text and leaves it on the clipboard-->
                                         <MenuItem Header="Copy snippet to memory" Command="{Binding CopySnippetToMemoryCommand}" Visibility="{Binding ShowCopySnippetToMemory, Converter={StaticResource BoolToVisibility}}">
                                             <MenuItem.Icon>

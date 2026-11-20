@@ -19,7 +19,7 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// snippets (1.19.0): a name and a value. Double click (single click in Single click to open panels) pastes the
+  /// Snippets (1.19.1): a name and a value. Double click (single click in Single click to open panels) pastes the
   /// value into the window the user came from; Copy snippet to memory copies it; Edit snippet... edits it. Stored in
   /// Shortcuts.IsSnippet and Shortcuts.SnippetText (database version 19). The real paste never runs here: it goes
   /// through <see cref="ShortcutViewModel.PasteValue"/>, which the tests replace.
@@ -289,6 +289,44 @@ namespace MDSHO.Tests {
       ShortcutViewModel clip = NewSnippet(value: "");
       clip.CopySnippetToMemoryCommand.Execute(null);
       Assert.Empty(copied);
+    }
+
+    [Fact]
+    public void Set_name_the_same_as_value_uses_the_first_non_blank_line_trimmed_and_saves_it() {
+      ShortcutViewModel clip = NewSnippet(name: "Old", value: "\r\n   \r\n  Main Street 12  \r\n1000 Sample Town");
+      Assert.True(clip.SetNameTheSameAsValueCommand.CanExecute(null));
+      clip.SetNameTheSameAsValueCommand.Execute(null);
+      Assert.Equal("Main Street 12", clip.Name);
+      Assert.Equal("Main Street 12", Stored(clip.ID).Name);
+    }
+
+    [Fact]
+    public void Set_name_the_same_as_value_does_nothing_and_is_disabled_for_a_blank_value() {
+      ShortcutViewModel clip = NewSnippet(name: "Keep", value: " \r\n \t ");
+      Assert.False(clip.SetNameTheSameAsValueCommand.CanExecute(null));
+      clip.SetNameTheSameAsValueCommand.Execute(null);
+      Assert.Equal("Keep", clip.Name);
+    }
+
+    [Fact]
+    public void Set_name_the_same_as_value_is_enabled_once_the_snippet_gets_text() {
+      ShortcutViewModel clip = NewSnippet(value: "");
+      bool changed = false;
+      clip.SetNameTheSameAsValueCommand.CanExecuteChanged += (s, e) => changed = true;
+      Assert.False(clip.SetNameTheSameAsValueCommand.CanExecute(null));
+      clip.SaveSnippetText("Customer 42");
+      Assert.True(changed);
+      Assert.True(clip.SetNameTheSameAsValueCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void Only_snippets_show_set_name_the_same_as_value() {
+      ShortcutViewModel clip = NewSnippet();
+      Assert.True(clip.ShowSetNameTheSameAsValue);
+      Assert.False(Group("G").ShowSetNameTheSameAsValue);
+      ShortcutViewModel file = new ShortcutViewModel(null, null, 2, null, "f", @"C:\x.txt", ".lnk", "g2", false, false, null, false, null, 0, false, "", "");
+      Assert.False(file.ShowSetNameTheSameAsValue);
+      Assert.True(file.ShowSetNameTheSameAsTarget);
     }
 
     [Fact]
@@ -663,9 +701,12 @@ namespace MDSHO.Tests {
         string all = string.Join(" | ", names);
         int rename = names.IndexOf("Rename");
         Assert.True(rename >= 0, all);
-        Assert.Equal(new[] { "Rename", "Copy snippet to memory", "Comment...", "-", "Edit snippet...", "-", "Cut", "Copy", "Paste", "-", "Delete" },
+        Assert.Equal(new[] { "Rename", "Set name the same as value", "Copy snippet to memory", "Comment...", "-", "Edit snippet...", "-", "Cut", "Copy", "Paste", "-", "Delete" },
           names.Skip(rename).ToArray());
-        MenuItem copy = (MenuItem)visible[rename + 1];
+        MenuItem setName = (MenuItem)visible[rename + 1];
+        Assert.Same(f.Clip.SetNameTheSameAsValueCommand, setName.Command);
+        Assert.Null(setName.Icon);
+        MenuItem copy = (MenuItem)visible[rename + 2];
         Assert.Same(f.Clip.CopySnippetToMemoryCommand, copy.Command);
         Assert.Equal("OwningWindow.Appearance.Icons.Copy", IconPath(copy));
         MenuItem edit = (MenuItem)visible[names.IndexOf("Edit snippet...")];

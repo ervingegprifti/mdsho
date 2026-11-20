@@ -272,7 +272,7 @@ namespace MDSHO.Tests {
         "NewGroupShortcutCommand", "NewNoteShortcutCommand", "NewProcessCommandShortcutCommand", "NewSnippetShortcutCommand", "PasteShortcutCommand" }, Commands(typeof(DesktopWindowViewModel)));
       Assert.Equal(new[] { "CancelEditCommand", "CommitEditCommand", "CopyCommandToMemoryCommand", "CopyShortcutCommand", "CopySnippetToMemoryCommand", "CopyTargetToMemoryCommand", "CutShortcutCommand",
         "DeleteShortcutCommand", "EditCommentCommand", "EditNoteCommand", "EditRunCommandCommand", "EditSnippetCommand", "MarkShortcutCommand", "NewGroupShortcutCommand", "NewNoteShortcutCommand", "NewProcessCommandShortcutCommand", "NewSnippetShortcutCommand", "PasteShortcutCommand",
-        "RenameCommand", "SetNameTheSameAsTargetCommand" }, Commands(typeof(ShortcutViewModel)));
+        "RenameCommand", "SetNameTheSameAsTargetCommand", "SetNameTheSameAsValueCommand" }, Commands(typeof(ShortcutViewModel)));
       Assert.Equal(new[] { "TestRunCommand" }, Commands(typeof(RunCommandViewModel)));
     }
 

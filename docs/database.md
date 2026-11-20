@@ -243,7 +243,7 @@ that worked.
 | 16 | 1.6.1 | `AppSettings` table: settings of the whole app on this PC, starting with the **Bring panels to front** keyboard shortcut (empty at first). |
 | 17 | 1.7.1 | `ScreenSetups` and `ScreenSetupPlaces` tables: the screen setups seen on this PC and the place of every panel, clone and note window in each (empty at first). The 1.7.0 test build created this version without `ScreenSetups.LastUsed`; MDSHO adds the column at start when it is missing. |
 | 18 | 1.16.0 | `NoteWindows.FontSize` (`INTEGER NOT NULL DEFAULT 0`): the text size of each note window (`0` = 12). From 1.16.0 exports and backups also carry the note window places (export format 2); older exports still import, with default note windows. The step also adds `ScreenSetups.LastUsed` when a 1.7.0 test build database lacks it. |
-| 19 | 1.19.0 | `Shortcuts.IsSnippet` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.SnippetText` (`TEXT NOT NULL DEFAULT ''`) for snippets. Exports and backups carry them (still export format 3); older exports import with no snippets. |
+| 19 | 1.19.1 | `Shortcuts.IsSnippet` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.SnippetText` (`TEXT NOT NULL DEFAULT ''`) for snippets. Exports and backups carry them (still export format 3); older exports import with no snippets. |
 
 ### Backup before an upgrade
 
