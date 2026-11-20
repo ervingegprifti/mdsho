@@ -219,12 +219,12 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_about_title_bar_shows_info_and_the_error_title_bar_the_warning() {
+    public void The_about_title_bar_shows_info_and_the_error_title_bar_the_mdsho_logo() {
       WithFixture(f => {
         AboutWindow about = new AboutWindow();
         Shown(about, () => Assert.Equal(new IconGlyphs(true).Info, ((DialogTitleBar)about.FindName("TitleBar")).Glyph));
         ErrorWindow error = new ErrorWindow(new InvalidOperationException("x"));
-        Shown(error, () => Assert.Equal(new IconGlyphs(true).Warning, ((DialogTitleBar)error.FindName("TitleBar")).Glyph));
+        Shown(error, () => Assert.Equal(new IconGlyphs(true).MDSHO, ((DialogTitleBar)error.FindName("TitleBar")).Glyph)); // the warning is in the body
       });
     }
   }

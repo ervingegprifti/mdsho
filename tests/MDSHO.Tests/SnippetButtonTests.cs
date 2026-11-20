@@ -915,6 +915,11 @@ namespace MDSHO.Tests {
           TextBlock heading = (TextBlock)window.FindName("TextHeading");
           Assert.Equal("No place to paste into.", heading.Text);
           Assert.True(heading.FontWeight.ToOpenTypeWeight() >= FontWeights.SemiBold.ToOpenTypeWeight());
+          // The one MDSHO dialog: the logo in the title bar, the heading at the normal size and colour.
+          Assert.IsAssignableFrom<MessageWindow>(window);
+          Assert.Equal(new IconGlyphs(true).MDSHO, ((Controls.DialogTitleBar)window.FindName("TitleBar")).Glyph);
+          Assert.Equal(window.FontSize, heading.FontSize);
+          Assert.Equal(((System.Windows.Media.SolidColorBrush)window.FindResource("Theme.Text")).Color, ((System.Windows.Media.SolidColorBrush)heading.Foreground).Color);
           Assert.Equal("Click in a text field first.\r\n\r\nYour clipboard is unchanged.", ((TextBlock)window.FindName("TextMessage")).Text);
           Button ok = (Button)window.FindName("ButtonOK");
           Assert.Equal("OK", ok.Content);

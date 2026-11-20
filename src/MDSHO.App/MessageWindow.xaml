@@ -1,4 +1,4 @@
-<Window x:Class="MDSHO.PasteMessageWindow"
+<Window x:Class="MDSHO.MessageWindow"
         xmlns:controls="clr-namespace:MDSHO.Controls"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -23,7 +23,9 @@
         Foreground="{DynamicResource Theme.Text}"
         helpers:WindowThemes.IsThemed="True">
 
-    <!--Why a snippet could not paste: an info icon, a bold heading, the text and OK-->
+    <!--The one MDSHO dialog for every message: MDSHO's title bar with the logo, a 28 px Info or Warning icon, the text in
+        one size and Theme.Text (the first line SemiBold), and the buttons (the first one dark, the others light; extra
+        buttons on the left). 26 px outer margins, like every other MDSHO window (AboutWindow.OuterMargin).-->
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="32" ResizeBorderThickness="0" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
@@ -42,15 +44,21 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <TextBlock x:Name="TextIcon" Grid.Column="0" FontFamily="{StaticResource IconFont}" FontSize="28" Margin="0,0,16,0"
-                       VerticalAlignment="Top" Foreground="{DynamicResource Theme.TextStrong}" AutomationProperties.Name="Information"/>
-            <StackPanel Grid.Column="1">
-                <TextBlock x:Name="TextHeading" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Theme.TextStrong}" TextWrapping="Wrap"/>
-                <TextBlock x:Name="TextMessage" Margin="0,6,0,0" TextWrapping="Wrap"/>
-            </StackPanel>
+                       VerticalAlignment="Top" Foreground="{DynamicResource Theme.Text}"/>
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="TextHeading" FontWeight="SemiBold" Foreground="{DynamicResource Theme.Text}" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="TextMessage" Margin="0,6,0,0" Foreground="{DynamicResource Theme.Text}" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="TextNote" Margin="0,10,0,0" Foreground="{DynamicResource Theme.Text}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
 
         <Border x:Name="ButtonBar" Grid.Row="2" Background="{DynamicResource Theme.ButtonBarBackground}" Padding="26">
-            <Button x:Name="ButtonOK" HorizontalAlignment="Right" Style="{StaticResource StyleDarkButton}" Content="OK" MinWidth="80" IsDefault="True" IsCancel="True"/>
+            <DockPanel LastChildFill="False">
+                <StackPanel x:Name="PanelExtraButtons" DockPanel.Dock="Left" Orientation="Horizontal"/>
+                <StackPanel x:Name="PanelButtons" DockPanel.Dock="Right" Orientation="Horizontal"/>
+            </DockPanel>
         </Border>
     </Grid>
 
