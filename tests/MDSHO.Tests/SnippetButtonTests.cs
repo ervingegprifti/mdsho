@@ -185,11 +185,12 @@ namespace MDSHO.Tests {
     // ---- What a snippet shows ----
 
     [Fact]
-    public void Its_kind_and_icon_are_the_paste_glyph_in_both_icon_sets() {
+    public void Its_kind_and_icon_are_the_snippet_glyph_in_both_icon_sets() {
       ShortcutViewModel clip = NewSnippet();
       Assert.Equal(ShortcutTargetKind.Snippet, clip.TargetKind);
-      Assert.Equal(new IconGlyphs(true).Paste, new IconGlyphs(true).ForKind(ShortcutTargetKind.Snippet));
-      Assert.Equal(new IconGlyphs(false).Paste, new IconGlyphs(false).ForKind(ShortcutTargetKind.Snippet));
+      Assert.Equal(new IconGlyphs(true).Snippet, new IconGlyphs(true).ForKind(ShortcutTargetKind.Snippet));
+      Assert.Equal(new IconGlyphs(false).Snippet, new IconGlyphs(false).ForKind(ShortcutTargetKind.Snippet));
+      Assert.NotEqual(new IconGlyphs(true).Paste, new IconGlyphs(true).ForKind(ShortcutTargetKind.Snippet));
     }
 
     [Fact]
@@ -665,7 +666,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_panel_menu_has_new_snippet_after_new_note_with_the_paste_icon() {
+    public void The_panel_menu_has_new_snippet_after_new_note_with_the_snippet_icon() {
       WithSnippet(f => WithView(f, view => {
         TreeView tree = (TreeView)view.FindName("TreeViewShortcuts");
         ContextMenu menu = tree.ContextMenu;
@@ -677,7 +678,7 @@ namespace MDSHO.Tests {
         MenuItem clip = Assert.IsType<MenuItem>(visible[note + 1]);
         Assert.Equal("New snippet", clip.Header);
         Assert.Same(f.Win.NewSnippetShortcutCommand, clip.Command);
-        Assert.Equal("Appearance.Icons.Paste", IconPath(clip));
+        Assert.Equal("Appearance.Icons.Snippet", IconPath(clip));
       }));
     }
 
@@ -688,7 +689,7 @@ namespace MDSHO.Tests {
         List<string> names = visible.Select(Describe).ToList();
         Assert.Equal("New snippet", names[names.IndexOf("New note") + 1]);
         Assert.Same(f.Group.NewSnippetShortcutCommand, ((MenuItem)visible[names.IndexOf("New snippet")]).Command);
-        Assert.Equal("OwningWindow.Appearance.Icons.Paste", IconPath((MenuItem)visible[names.IndexOf("New snippet")]));
+        Assert.Equal("OwningWindow.Appearance.Icons.Snippet", IconPath((MenuItem)visible[names.IndexOf("New snippet")]));
         Assert.DoesNotContain("New snippet", Visible(MenuOf(view, f.Clip)).Select(Describe));
       }));
     }
@@ -711,7 +712,7 @@ namespace MDSHO.Tests {
         Assert.Null(copy.Icon);
         MenuItem edit = (MenuItem)visible[names.IndexOf("Edit snippet...")];
         Assert.Same(f.Clip.EditSnippetCommand, edit.Command);
-        Assert.Equal("OwningWindow.Appearance.Icons.Paste", IconPath(edit));
+        Assert.Equal("OwningWindow.Appearance.Icons.Snippet", IconPath(edit));
         foreach (string other in new[] { "Edit note...", "Edit run command...", "Copy target to memory", "Copy command to memory", "Set name the same as target" }) {
           Assert.DoesNotContain(other, names);
         }
@@ -726,13 +727,13 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_button_shows_the_paste_glyph_as_its_icon() {
+    public void The_button_shows_the_snippet_glyph_as_its_icon() {
       WithSnippet(f => WithView(f, view => {
         TreeView tree = (TreeView)view.FindName("TreeViewShortcuts");
         TreeViewItem item = WpfAppHost.VisualDescendants<TreeViewItem>(tree).Single(i => i.DataContext == f.Clip);
         Button button = WpfAppHost.VisualDescendants<Button>(item).First(b => b.DataContext == f.Clip);
         List<TextBlock> icons = WpfAppHost.VisualDescendants<TextBlock>(button)
-          .Where(t => t.IsVisible && t.Text == f.Win.Appearance.Icons.Paste).ToList();
+          .Where(t => t.IsVisible && t.Text == f.Win.Appearance.Icons.Snippet).ToList();
         Assert.Single(icons);
         Assert.DoesNotContain(WpfAppHost.VisualDescendants<TextBlock>(button), t => t.IsVisible && t.Text == f.Win.Appearance.Icons.Shortcut);
       }));
@@ -779,7 +780,7 @@ namespace MDSHO.Tests {
           Assert.True(window.IsSnippetWindow);
           Assert.Equal("Home address", window.Title);
           Assert.Equal("Home address", Named<TextBlock>(window, "TextTitle").Text);
-          Assert.Equal(f.Win.Appearance.Icons.Paste, Named<TextBlock>(window, "TextTitleIcon").Text);
+          Assert.Equal(f.Win.Appearance.Icons.Snippet, Named<TextBlock>(window, "TextTitleIcon").Text);
           TextBox editor = Named<TextBox>(window, "TextComment");
           Assert.Equal("Main Street 12\r\n1000 Sample Town", editor.Text);
           Assert.True(editor.AcceptsReturn);

@@ -775,7 +775,7 @@ namespace MDSHO {
     }
 
     private void ShowIcons(IconGlyphs icons) {
-      string glyph = this.kind == TextKind.Note ? icons.Note : this.kind == TextKind.Snippet ? icons.Paste : icons.Comment;
+      string glyph = this.kind == TextKind.Note ? icons.Note : this.kind == TextKind.Snippet ? icons.Snippet : icons.Comment;
       this.TextTitleIcon.Text = glyph;
       this.ButtonClose.Content = icons.Times;
       this.ButtonColors.Content = icons.Brush;

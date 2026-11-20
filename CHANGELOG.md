@@ -18,6 +18,7 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 ### Changed
 
 - The suggested export file name has the PC name, like backups: `MDSHO-export-<PC>-yyyy-MM-dd-HHmm.zip`.
+- Snippet buttons have their own icon (MDSHOFont 1.20).
 
 ## [1.18.0]
 

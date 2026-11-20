@@ -11,7 +11,7 @@ namespace MDSHO.ViewModels {
       nameof(DockRight), nameof(Shortcuts), nameof(Shortcut), nameof(Plus), nameof(Delete), nameof(Cut), nameof(Copy),
       nameof(Paste), nameof(Send), nameof(Database), nameof(Command), nameof(Bookmark), nameof(Share), nameof(Star),
       nameof(Folder), nameof(Globe), nameof(Warning), nameof(Run), nameof(Wizard), nameof(Info), nameof(Desktop), nameof(Brush),
-      nameof(Comment), nameof(Note), nameof(PinOff), nameof(PinOn), nameof(Ok), nameof(WrapText), nameof(Heart))]
+      nameof(Comment), nameof(Note), nameof(PinOff), nameof(PinOn), nameof(Ok), nameof(WrapText), nameof(Heart), nameof(Snippet))]
     private bool solidIcons;
 
     /// <summary>Icon font character of the MDSHO logo.</summary>
@@ -92,6 +92,9 @@ namespace MDSHO.ViewModels {
     /// <summary>The heart icon: Support MDSHO in About and the panel title menu (added in font v1.18).</summary>
     public string Heart { get { return this.SolidIcons ? UnicodeText.FromHex("e958") : UnicodeText.FromHex("e959"); } }
 
+    /// <summary>The snippet icon: snippet buttons, New snippet, Edit snippet... and the snippet editor (added in font v1.20).</summary>
+    public string Snippet { get { return this.SolidIcons ? UnicodeText.FromHex("e95a") : UnicodeText.FromHex("e95b"); } }
+
     /// <summary>Icon font character for Info, used for the About window and the About menu items.</summary>
     public string Info { get { return this.SolidIcons ? UnicodeText.FromHex("e92a") : UnicodeText.FromHex("e92b"); } }
 
@@ -103,7 +106,7 @@ namespace MDSHO.ViewModels {
         case ShortcutTargetKind.Missing: return this.Warning;
         case ShortcutTargetKind.Command: return this.Run;
         case ShortcutTargetKind.Note: return this.Note;
-        case ShortcutTargetKind.Snippet: return this.Paste;
+        case ShortcutTargetKind.Snippet: return this.Snippet;
         case ShortcutTargetKind.Group: return this.Shortcuts;
         default: return this.Shortcut;
       }

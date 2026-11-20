@@ -386,7 +386,7 @@
                             </MenuItem>
                             <MenuItem Header="New snippet" Command="{Binding NewSnippetShortcutCommand}">
                                 <MenuItem.Icon>
-                                    <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Paste}"/>
+                                    <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding Appearance.Icons.Snippet}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
                             <Separator/>
@@ -432,7 +432,7 @@
                                         </MenuItem>
                                         <MenuItem Header="New snippet" Command="{Binding NewSnippetShortcutCommand}" Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}">
                                             <MenuItem.Icon>
-                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Paste}"/>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Snippet}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator Visibility="{Binding ShowNewShortcut, Converter={StaticResource BoolToVisibility}}"/>
@@ -539,7 +539,7 @@
                                         <Separator Visibility="{Binding ShowNote, Converter={StaticResource BoolToVisibility}}" />
                                         <MenuItem Header="Edit snippet..." Visibility="{Binding ShowSnippet, Converter={StaticResource BoolToVisibility}}" Command="{Binding EditSnippetCommand}">
                                             <MenuItem.Icon>
-                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Paste}"/>
+                                                <TextBlock Style="{StaticResource StyleMenuItemFontIcon}" Text="{Binding OwningWindow.Appearance.Icons.Snippet}"/>
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator Visibility="{Binding ShowSnippet, Converter={StaticResource BoolToVisibility}}" />
@@ -620,9 +620,9 @@
 				                        Width="16"
 				                        Margin="1,0,5,0"
 				                        VerticalAlignment="Center" />
-                                    <!--This is used to display the clipboard icon-->
+                                    <!--This is used to display the snippet icon-->
                                     <TextBlock x:Name="TextSnippetIcon" Grid.Row="0" Grid.Column="0"
-				                        Text="{Binding DataContext.Appearance.Icons.Paste, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
+				                        Text="{Binding DataContext.Appearance.Icons.Snippet, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}}"
 				                        Visibility="{Binding ShowSnippet, Converter={StaticResource BoolToVisibility}}"
 				                        Foreground="{Binding DataContext.Appearance.TextColor, RelativeSource={RelativeSource FindAncestor, AncestorType=Window}, Converter={StaticResource HexToBrush}}"
 				                        FontFamily="{StaticResource IconFont}"
