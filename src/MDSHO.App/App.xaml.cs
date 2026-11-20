@@ -67,8 +67,7 @@ namespace MDSHO
         UnhandledExceptionsEvents();
 
         if (!AcquireSingleInstanceMutex()) {
-          string message = "MDSHO seems to be running already. Please check the taskbar.";
-          MessageBox.Show(message, "MDSHO already running", MessageBoxButton.OK, MessageBoxImage.Information);
+          AppMessages.AlreadyRunning();
           Application.Current.Shutdown();
           return;
         }
@@ -217,25 +216,14 @@ namespace MDSHO
             // Stored paths of dropped .lnk/.url files still pointing into the old shortcuts folder.
             Data.DataNamesUpgrade.FixShortcutTargetsInAppDataFolder();
           },
-          (message, caption) => MessageBox.Show(message, caption, MessageBoxButton.OK, MessageBoxImage.Warning),
-          AskDatabaseRecovery,
+          AppMessages.StartupWarning,
+          AppMessages.AskDatabaseRecovery,
           () => AppServices.Current.Backups.LatestBackup());
       } catch (Exception ex) {
         // Without a working database nothing else can run.
         ErrorDialog.ShowDialog(ex);
         return false;
       }
-    }
-
-    // Yes / No / Cancel with a backup, OK / Cancel without one (the question says what each button does).
-    private static DatabaseRecoveryChoice AskDatabaseRecovery(string question, bool hasBackup) {
-      if (hasBackup) {
-        MessageBoxResult answer = MessageBox.Show(question, DatabaseStartup.RecoveryCaption, MessageBoxButton.YesNoCancel, MessageBoxImage.Error, MessageBoxResult.Yes);
-        return answer == MessageBoxResult.Yes ? DatabaseRecoveryChoice.RestoreBackup
-          : answer == MessageBoxResult.No ? DatabaseRecoveryChoice.StartEmpty : DatabaseRecoveryChoice.Exit;
-      }
-      MessageBoxResult ok = MessageBox.Show(question, DatabaseStartup.RecoveryCaption, MessageBoxButton.OKCancel, MessageBoxImage.Error, MessageBoxResult.OK);
-      return ok == MessageBoxResult.OK ? DatabaseRecoveryChoice.StartEmpty : DatabaseRecoveryChoice.Exit;
     }
 
     private void SetWindows() {
@@ -534,7 +522,7 @@ namespace MDSHO
       menu.Items.Add("New window").Click += (s, e) => app.NewWindow(null);
       menu.Items.Add("Find MDSHO lost windows").Click += (s, e) => app.FindWindows();
       menu.Items.Add("Find other lost windows").Click += (s, e) => FindOtherLostWindows();
-      Common.AutoStartController autoStartController = new Common.AutoStartController(AppServices.Current.AutoStart, message => MessageBox.Show(message, Common.AutoStartController.MessageTitle, MessageBoxButton.OK, MessageBoxImage.Information));
+      Common.AutoStartController autoStartController = new Common.AutoStartController(AppServices.Current.AutoStart, AppMessages.AutoStart);
       System.Windows.Forms.ToolStripMenuItem autoStartMenuItem = new System.Windows.Forms.ToolStripMenuItem("Start with Windows") { CheckOnClick = false };
       autoStartMenuItem.Click += (s, e) => autoStartController.Toggle();
       menu.Opening += (s, e) => autoStartMenuItem.Checked = autoStartController.IsChecked();
@@ -656,8 +644,7 @@ namespace MDSHO
         if (silent) {
           ExitApplication();
         } else {
-          MessageBoxResult messageBoxResult = MessageBox.Show("Are you sure you want to exit MDSHO?", "Exit MDSHO", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-          if (messageBoxResult == MessageBoxResult.Yes) {
+          if (AppMessages.ConfirmExit()) {
             ExitApplication();
           }
         }
@@ -688,7 +675,7 @@ namespace MDSHO
         if (manifest.MissingFiles.Count > 0) {
           message += "\n\n" + manifest.MissingFiles.Count + " shortcut file(s) did not exist and were not included.";
         }
-        MessageBox.Show(message, "Export MDSHO data", MessageBoxButton.OK, MessageBoxImage.Information);
+        AppMessages.ExportDone(message);
       } catch (Exception ex) {
         ErrorDialog.ShowDialog("The data could not be exported.", ex);
       }
@@ -715,18 +702,17 @@ namespace MDSHO
           return;
         }
         string question = ImportQuestion.Text(manifest, TimeZoneInfo.Local);
-        MessageBoxResult answer = MessageBox.Show(question, "Import MDSHO data", MessageBoxButton.YesNoCancel, MessageBoxImage.Question, MessageBoxResult.Yes);
-        if (answer == MessageBoxResult.Cancel || answer == MessageBoxResult.None) {
+        ImportMode? answer = AppMessages.AskImportMode(question);
+        if (answer == null) {
           return;
         }
-        ImportMode mode = answer == MessageBoxResult.Yes ? ImportMode.Replace : ImportMode.AddAsNew;
+        ImportMode mode = answer.Value;
         ImportResult result;
         try {
           // Typing and places of open notes first, so the backup made by Replace has them. The note windows close after
           // the import, so typing that can't be saved would be lost: ask first.
           IReadOnlyList<string> unsaved = TextEditWindow.SaveOpenNotes();
-          if (unsaved.Count > 0 && MessageBox.Show(TextEditWindow.UnsavedNotesMessage(unsaved) + "\n\nImport anyway? What you typed in them since the last save will be lost.",
-              "Import MDSHO data", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) {
+          if (unsaved.Count > 0 && !AppMessages.ConfirmImportOverUnsavedNotes(TextEditWindow.UnsavedNotesMessage(unsaved))) {
             return;
           }
           result = DataImporter.Import(dialog.FileName, mode);
@@ -756,7 +742,7 @@ namespace MDSHO
           done += "\nYour previous data was saved to:\n" + result.BackupPath;
         }
         done += "\n\nMDSHO will now restart to load the imported data.";
-        MessageBox.Show(done, "Import MDSHO data", MessageBoxButton.OK, MessageBoxImage.Information);
+        AppMessages.ImportDone(done);
         RestartApplication();
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
@@ -787,7 +773,7 @@ namespace MDSHO
       IReadOnlyList<string> unsaved = TextEditWindow.SaveOpenNotesForExit();
       if (unsaved.Count > 0) {
         string question = TextEditWindow.UnsavedNotesMessage(unsaved) + "\n\nExit anyway? What you typed in them since the last save will be lost.";
-        if (MessageBox.Show(question, "Exit MDSHO", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) {
+        if (!AppMessages.ConfirmExitOverUnsavedNotes(question)) {
           TextEditWindow.IsExiting = false;
           this.restartAfterExit = false;
           return;

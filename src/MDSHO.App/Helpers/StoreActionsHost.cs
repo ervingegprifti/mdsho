@@ -7,7 +7,7 @@ using MDSHO.Common;
 
 namespace MDSHO.Helpers {
 
-  /// <summary>Real IStoreActionsHost: the clipboard, browser and Store launcher services, plus the WPF message box and error dialog.</summary>
+  /// <summary>Real IStoreActionsHost: the clipboard, browser and Store launcher services, plus the MDSHO message dialog and error dialog.</summary>
   public sealed class StoreActionsHost : IStoreActionsHost {
     private readonly IClipboardService clipboard;
     private readonly IShellLauncher shell;
@@ -25,9 +25,9 @@ namespace MDSHO.Helpers {
       clipboard.SetText(text);
     }
 
-    /// <summary>Shows an information message box.</summary>
+    /// <summary>Shows an information message in the MDSHO dialog.</summary>
     public void ShowInformation(string message, string caption) {
-      MessageBox.Show(message, caption, MessageBoxButton.OK, MessageBoxImage.Information);
+      MdshoMessage.Show(null, caption, message, MessageIcon.Info);
     }
 
     /// <summary>Opens a web address in the default browser.</summary>

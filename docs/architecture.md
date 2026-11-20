@@ -96,7 +96,12 @@ and MDSHO.App turns them into WPF ones:
 
 Drag and drop on a window's shortcut tree goes through `Helpers/ShortcutDropHandler` (gong-wpf-dragdrop); it calls the
 view model's plain methods to move items and to make shortcuts from dropped files and links. `Helpers/WpfBridge`,
-connected when the `App` type is first used, makes the view models' prompts (`Dialogs`) message boxes.
+connected when the `App` type is first used, makes the view models' prompts (`Dialogs`) MDSHO dialogs.
+
+Every message is the one MDSHO dialog, `MessageWindow`, shown with `MdshoMessage.Show` (the app's own messages are in
+`AppMessages`). It has MDSHO's title bar with the logo, an Info or Warning icon, the text in one size and colour (the first
+line bold) and OK, OK/Cancel, Yes/No or Yes/No/Cancel. `MessageRules` in Common decides the buttons, the default and the
+answer of Esc and the close button. `ErrorWindow`, `CommandErrorWindow` and `PasteMessageWindow` are built on it.
 
 The view models use [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) (plain .NET, MIT):
 
