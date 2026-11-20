@@ -66,6 +66,9 @@ namespace MDSHO
         // Events
         UnhandledExceptionsEvents();
 
+        // Dialogs before the data opens follow Windows' app mode (the saved Window theme is applied after it opens).
+        ApplyThemeBeforeData(new Infrastructure.WindowsAppMode());
+
         if (!AcquireSingleInstanceMutex()) {
           AppMessages.AlreadyRunning();
           Application.Current.Shutdown();
@@ -274,6 +277,19 @@ namespace MDSHO
         AppServices.Current.PanelsToFront?.Toggle();
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
+      }
+    }
+
+    /// <summary>
+    /// Before the data opens: the Window theme choice is saved in the database, which can't be read yet (another MDSHO
+    /// holds it, or it needs an upgrade or a recovery). Dialogs shown until then (already running, database recovery)
+    /// follow Windows' app mode, like Same as Windows; <see cref="StartWindowTheme"/> applies the saved choice later.
+    /// </summary>
+    public static void ApplyThemeBeforeData(Common.IWindowsAppMode windows) {
+      try {
+        Helpers.WindowThemes.Apply(WindowThemeSetting.Resolve(WindowThemeChoice.SameAsWindows, windows.AppsUseLightTheme()));
+      } catch (Exception ex) {
+        Common.AppLog.Warning(ex, "The window theme could not be applied before the data opened");
       }
     }
 
