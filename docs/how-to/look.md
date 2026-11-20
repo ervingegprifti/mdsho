@@ -18,7 +18,7 @@ This page helps you choose the colours of your panels, the style of the icons an
 
 To try ready-made colours, click one of the **Presets** under the colours: three for each season, such as Winter: Frost
 or Summer: Ocean. It sets all five colours at once; click **Apply** to keep them. New panels start with Autumn:
-Halloween, a black title bar over a slightly see-through black body.
+Halloween, a black title bar over a partly see-through black body.
 
 A panel's clones share its colours.
 

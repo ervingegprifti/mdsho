@@ -31,6 +31,8 @@ namespace MDSHO.Core {
     Shortcut CreateProcessCommand(long? parentShortcutID, long? parentWindowID);
     /// <summary>Appends a new empty note named "New note".</summary>
     Shortcut CreateNote(long? parentShortcutID, long? parentWindowID);
+    /// <summary>Adds an empty snippet named "New snippet" as the last child.</summary>
+    Shortcut CreateSnippet(long? parentShortcutID, long? parentWindowID);
     /// <summary>Writes every column of the row.</summary>
     void Update(Shortcut shortcut);
     /// <summary>Deletes the shortcut; its descendants are deleted by the database (cascade).</summary>
@@ -54,6 +56,8 @@ namespace MDSHO.Core {
     void UpdateComment(long id, string comment);
     /// <summary>Saves the text of a note.</summary>
     void UpdateNoteText(long id, string noteText);
+    /// <summary>Saves the text of a snippet (null is saved as empty).</summary>
+    void UpdateSnippetText(long id, string snippetText);
     /// <summary>Saves the five colours of a note's window (empty = the default colour).</summary>
     void UpdateNoteColors(long id, string border, string titleBackground, string titleText, string background, string text);
     /// <summary>Saves the order among the siblings.</summary>

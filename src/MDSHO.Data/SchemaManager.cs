@@ -75,6 +75,8 @@ namespace MDSHO.Data {
           NoteTitleTextColor TEXT NOT NULL DEFAULT '',
           NoteBackgroundColor TEXT NOT NULL DEFAULT '',
           NoteTextColor TEXT NOT NULL DEFAULT '',
+          IsSnippet INTEGER NOT NULL DEFAULT 0,
+          SnippetText TEXT NOT NULL DEFAULT '',
           FOREIGN KEY(ParentShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE,
           FOREIGN KEY(ParentMDSHOWindowID) REFERENCES MDSHOWindows(ID) ON DELETE CASCADE);
 
@@ -327,6 +329,14 @@ namespace MDSHO.Data {
         }
         // A 1.7.0 test build database skips the version 17 repair once it is at 18, so repair it here too.
         AddScreenSetupsLastUsed(conn);
+      }),
+      new DbMigration(19, "snippets: Shortcuts.IsSnippet and Shortcuts.SnippetText", conn => {
+        if (!ColumnExists(conn, "Shortcuts", "IsSnippet")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN IsSnippet INTEGER NOT NULL DEFAULT 0;");
+        }
+        if (!ColumnExists(conn, "Shortcuts", "SnippetText")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN SnippetText TEXT NOT NULL DEFAULT '';");
+        }
       })
     };
 

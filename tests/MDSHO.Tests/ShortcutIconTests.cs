@@ -244,6 +244,8 @@ namespace MDSHO.Tests {
     [InlineData(ShortcutTargetKind.Command, false, 0xE949)]  // run_o
     [InlineData(ShortcutTargetKind.Group, true, 0xE914)]     // shortcuts_s, as before
     [InlineData(ShortcutTargetKind.Group, false, 0xE915)]
+    [InlineData(ShortcutTargetKind.Snippet, true, 0xE95A)]   // snippet_s (font v1.20)
+    [InlineData(ShortcutTargetKind.Snippet, false, 0xE95B)]  // snippet_o
     public void Each_kind_has_its_glyph_in_the_solid_and_outline_set(ShortcutTargetKind kind, bool solid, int code) {
       Assert.Equal(((char)code).ToString(), new IconGlyphs(solid).ForKind(kind));
     }

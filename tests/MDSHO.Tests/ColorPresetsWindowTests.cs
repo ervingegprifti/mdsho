@@ -202,7 +202,7 @@ namespace MDSHO.Tests {
     [Fact]
     public void The_focus_ring_is_hidden_until_hover_or_focus_and_uses_the_accent_in_light_and_dark() {
       WithPanel((window, w) => {
-        w.Appearance.BackgroundColor = "#99000000"; // colours of no preset, so no ring for the selected one
+        w.Appearance.BackgroundColor = "#CC000000"; // colours of no preset (Halloween before 1.19.2), so no ring for the selected one
         WpfAppHost.Pump();
         try {
           foreach (WindowThemeKind theme in new[] { WindowThemeKind.Light, WindowThemeKind.Dark }) {
@@ -280,7 +280,7 @@ namespace MDSHO.Tests {
       using (TempDb db = new TempDb()) {
         WpfAppHost.Run(() => {
           DesktopWindowViewModel w = new AppViewModel().AddWindow("TEST", 100, 100);
-          w.Appearance.BackgroundColor = "#99000000"; // the default before 1.15.2: no preset
+          w.Appearance.BackgroundColor = "#CC000000"; // the default from 1.15.2 to 1.19.1: no preset now
           ColorsWindow window = new ColorsWindow(w);
           Shown(window, () => AssertSelected(window, -1));
         });
@@ -288,10 +288,10 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_Halloween_picture_shows_its_80_percent_black_body_over_the_window_background() {
+    public void The_Halloween_picture_shows_its_60_percent_black_body_over_the_window_background() {
       WithPanel((window, w) => {
         Button halloween = Presets(window)[11];
-        Assert.Equal(Color.FromArgb(0xCC, 0, 0, 0), ColorOf(Part<Border>(halloween, "PresetFrame").Background));
+        Assert.Equal(Color.FromArgb(0x99, 0, 0, 0), ColorOf(Part<Border>(halloween, "PresetFrame").Background));
         Assert.Equal(Colors.Black, ColorOf(Part<Border>(halloween, "PresetTitle").Background));
         // Nothing painted behind the frame: the window background shows through the body.
         foreach (Border border in WpfAppHost.VisualDescendants<Border>(halloween).Where(x => x.Name != "PresetFrame" && x.Name != "PresetTitle")) {

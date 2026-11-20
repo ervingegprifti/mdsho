@@ -43,6 +43,19 @@ namespace MDSHO
     /// </summary>
     public static bool StartupEnabled { get; set; } = true;
 
+    /// <summary>Connects the windows that edit a button: Run Command, Comment, Note and Edit snippet.</summary>
+    public static void ConnectEditors() {
+      // New run commands and "Edit run command..." open the Run Command window.
+      ShortcutViewModel.OpenRunCommandEditor = RunCommandWindow.ShowFor;
+      ShortcutViewModel.OpenCommentEditor = TextEditWindow.ShowCommentFor;
+      ShortcutViewModel.OpenNoteEditor = TextEditWindow.ShowNoteFor;
+      ShortcutViewModel.ToggleNoteEditor = TextEditWindow.ToggleNoteFor;
+      // Deleting a note (or its group or panel) closes its open note window.
+      ShortcutViewModel.NotesDeleted = TextEditWindow.CloseNotesOf;
+      // "Edit snippet..." and an empty snippet open the Edit snippet window.
+      ShortcutViewModel.OpenSnippetEditor = TextEditWindow.ShowSnippetFor;
+    }
+
     /// <summary>Starts MDSHO: makes sure only one copy runs, upgrades the database, opens every saved window and creates the tray icon.</summary>
     protected override void OnStartup(StartupEventArgs e) {
       base.OnStartup(e);
@@ -53,9 +66,11 @@ namespace MDSHO
         // Events
         UnhandledExceptionsEvents();
 
+        // Dialogs before the data opens follow Windows' app mode (the saved Window theme is applied after it opens).
+        ApplyThemeBeforeData(new Infrastructure.WindowsAppMode());
+
         if (!AcquireSingleInstanceMutex()) {
-          string message = "MDSHO seems to be running already. Please check the taskbar.";
-          MessageBox.Show(message, "MDSHO already running", MessageBoxButton.OK, MessageBoxImage.Information);
+          AppMessages.AlreadyRunning();
           Application.Current.Shutdown();
           return;
         }
@@ -78,13 +93,9 @@ namespace MDSHO
           return;
         }
 
-        // New run commands and "Edit run command..." open the Run Command window.
-        ShortcutViewModel.OpenRunCommandEditor = RunCommandWindow.ShowFor;
-        ShortcutViewModel.OpenCommentEditor = TextEditWindow.ShowCommentFor;
-        ShortcutViewModel.OpenNoteEditor = TextEditWindow.ShowNoteFor;
-        ShortcutViewModel.ToggleNoteEditor = TextEditWindow.ToggleNoteFor;
-        // Deleting a note (or its group or panel) closes its open note window.
-        ShortcutViewModel.NotesDeleted = TextEditWindow.CloseNotesOf;
+        ConnectEditors();
+        // snippets paste into the window the user was in before MDSHO.
+        AppServices.Current.ForegroundWindows.Start();
 
         // Get the data context for the application.
         this.DataContext = this.host.Services.GetRequiredService<AppViewModel>();
@@ -208,25 +219,14 @@ namespace MDSHO
             // Stored paths of dropped .lnk/.url files still pointing into the old shortcuts folder.
             Data.DataNamesUpgrade.FixShortcutTargetsInAppDataFolder();
           },
-          (message, caption) => MessageBox.Show(message, caption, MessageBoxButton.OK, MessageBoxImage.Warning),
-          AskDatabaseRecovery,
+          AppMessages.StartupWarning,
+          AppMessages.AskDatabaseRecovery,
           () => AppServices.Current.Backups.LatestBackup());
       } catch (Exception ex) {
         // Without a working database nothing else can run.
         ErrorDialog.ShowDialog(ex);
         return false;
       }
-    }
-
-    // Yes / No / Cancel with a backup, OK / Cancel without one (the question says what each button does).
-    private static DatabaseRecoveryChoice AskDatabaseRecovery(string question, bool hasBackup) {
-      if (hasBackup) {
-        MessageBoxResult answer = MessageBox.Show(question, DatabaseStartup.RecoveryCaption, MessageBoxButton.YesNoCancel, MessageBoxImage.Error, MessageBoxResult.Yes);
-        return answer == MessageBoxResult.Yes ? DatabaseRecoveryChoice.RestoreBackup
-          : answer == MessageBoxResult.No ? DatabaseRecoveryChoice.StartEmpty : DatabaseRecoveryChoice.Exit;
-      }
-      MessageBoxResult ok = MessageBox.Show(question, DatabaseStartup.RecoveryCaption, MessageBoxButton.OKCancel, MessageBoxImage.Error, MessageBoxResult.OK);
-      return ok == MessageBoxResult.OK ? DatabaseRecoveryChoice.StartEmpty : DatabaseRecoveryChoice.Exit;
     }
 
     private void SetWindows() {
@@ -277,6 +277,19 @@ namespace MDSHO
         AppServices.Current.PanelsToFront?.Toggle();
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
+      }
+    }
+
+    /// <summary>
+    /// Before the data opens: the Window theme choice is saved in the database, which can't be read yet (another MDSHO
+    /// holds it, or it needs an upgrade or a recovery). Dialogs shown until then (already running, database recovery)
+    /// follow Windows' app mode, like Same as Windows; <see cref="StartWindowTheme"/> applies the saved choice later.
+    /// </summary>
+    public static void ApplyThemeBeforeData(Common.IWindowsAppMode windows) {
+      try {
+        Helpers.WindowThemes.Apply(WindowThemeSetting.Resolve(WindowThemeChoice.SameAsWindows, windows.AppsUseLightTheme()));
+      } catch (Exception ex) {
+        Common.AppLog.Warning(ex, "The window theme could not be applied before the data opened");
       }
     }
 
@@ -525,7 +538,7 @@ namespace MDSHO
       menu.Items.Add("New window").Click += (s, e) => app.NewWindow(null);
       menu.Items.Add("Find MDSHO lost windows").Click += (s, e) => app.FindWindows();
       menu.Items.Add("Find other lost windows").Click += (s, e) => FindOtherLostWindows();
-      Common.AutoStartController autoStartController = new Common.AutoStartController(AppServices.Current.AutoStart, message => MessageBox.Show(message, Common.AutoStartController.MessageTitle, MessageBoxButton.OK, MessageBoxImage.Information));
+      Common.AutoStartController autoStartController = new Common.AutoStartController(AppServices.Current.AutoStart, AppMessages.AutoStart);
       System.Windows.Forms.ToolStripMenuItem autoStartMenuItem = new System.Windows.Forms.ToolStripMenuItem("Start with Windows") { CheckOnClick = false };
       autoStartMenuItem.Click += (s, e) => autoStartController.Toggle();
       menu.Opening += (s, e) => autoStartMenuItem.Checked = autoStartController.IsChecked();
@@ -647,8 +660,7 @@ namespace MDSHO
         if (silent) {
           ExitApplication();
         } else {
-          MessageBoxResult messageBoxResult = MessageBox.Show("Are you sure you want to exit MDSHO?", "Exit MDSHO", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-          if (messageBoxResult == MessageBoxResult.Yes) {
+          if (AppMessages.ConfirmExit()) {
             ExitApplication();
           }
         }
@@ -669,7 +681,7 @@ namespace MDSHO
           Filter = "MDSHO export (*.zip)|*.zip",
           DefaultExt = ".zip",
           AddExtension = true,
-          FileName = DataExporter.DefaultFileName(DateTime.Now)
+          FileName = DataExporter.DefaultFileName(Environment.MachineName, DateTime.Now)
         };
         if (dialog.ShowDialog() != true) {
           return;
@@ -679,7 +691,7 @@ namespace MDSHO
         if (manifest.MissingFiles.Count > 0) {
           message += "\n\n" + manifest.MissingFiles.Count + " shortcut file(s) did not exist and were not included.";
         }
-        MessageBox.Show(message, "Export MDSHO data", MessageBoxButton.OK, MessageBoxImage.Information);
+        AppMessages.ExportDone(message);
       } catch (Exception ex) {
         ErrorDialog.ShowDialog("The data could not be exported.", ex);
       }
@@ -706,18 +718,17 @@ namespace MDSHO
           return;
         }
         string question = ImportQuestion.Text(manifest, TimeZoneInfo.Local);
-        MessageBoxResult answer = MessageBox.Show(question, "Import MDSHO data", MessageBoxButton.YesNoCancel, MessageBoxImage.Question, MessageBoxResult.Yes);
-        if (answer == MessageBoxResult.Cancel || answer == MessageBoxResult.None) {
+        ImportMode? answer = AppMessages.AskImportMode(question);
+        if (answer == null) {
           return;
         }
-        ImportMode mode = answer == MessageBoxResult.Yes ? ImportMode.Replace : ImportMode.AddAsNew;
+        ImportMode mode = answer.Value;
         ImportResult result;
         try {
           // Typing and places of open notes first, so the backup made by Replace has them. The note windows close after
           // the import, so typing that can't be saved would be lost: ask first.
           IReadOnlyList<string> unsaved = TextEditWindow.SaveOpenNotes();
-          if (unsaved.Count > 0 && MessageBox.Show(TextEditWindow.UnsavedNotesMessage(unsaved) + "\n\nImport anyway? What you typed in them since the last save will be lost.",
-              "Import MDSHO data", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) {
+          if (unsaved.Count > 0 && !AppMessages.ConfirmImportOverUnsavedNotes(TextEditWindow.UnsavedNotesMessage(unsaved))) {
             return;
           }
           result = DataImporter.Import(dialog.FileName, mode);
@@ -747,7 +758,7 @@ namespace MDSHO
           done += "\nYour previous data was saved to:\n" + result.BackupPath;
         }
         done += "\n\nMDSHO will now restart to load the imported data.";
-        MessageBox.Show(done, "Import MDSHO data", MessageBoxButton.OK, MessageBoxImage.Information);
+        AppMessages.ImportDone(done);
         RestartApplication();
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
@@ -778,7 +789,7 @@ namespace MDSHO
       IReadOnlyList<string> unsaved = TextEditWindow.SaveOpenNotesForExit();
       if (unsaved.Count > 0) {
         string question = TextEditWindow.UnsavedNotesMessage(unsaved) + "\n\nExit anyway? What you typed in them since the last save will be lost.";
-        if (MessageBox.Show(question, "Exit MDSHO", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) {
+        if (!AppMessages.ConfirmExitOverUnsavedNotes(question)) {
           TextEditWindow.IsExiting = false;
           this.restartAfterExit = false;
           return;

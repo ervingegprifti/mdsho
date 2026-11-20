@@ -12,12 +12,12 @@ namespace MDSHO.Tests {
 
   /// <summary>
   /// The small MDSHO window that says a run command did not run because of a syntax error: the command's name as the
-  /// title, the error in red, a line saying how to fix it, and OK. Shown off screen.
+  /// title, a warning icon, the error as the bold first line in the normal text colour, a line saying how to fix it, and OK. Shown off screen.
   /// </summary>
   public class CommandErrorWindowTests {
 
     [Fact]
-    public void Shows_the_title_the_error_in_red_the_hint_and_OK() {
+    public void Shows_the_title_a_warning_icon_the_error_in_the_text_colour_the_hint_and_OK() {
       WpfAppHost.Run(() => {
         CommandErrorWindow window = new CommandErrorWindow("Ping", "The group has no value 4.", ShortcutViewModel.RunCommandNotRunText);
         window.WindowStartupLocation = WindowStartupLocation.Manual;
@@ -31,12 +31,18 @@ namespace MDSHO.Tests {
         try {
           WpfAppHost.Pump();
           Assert.StartsWith("Ping", window.Title);
-          TextBlock error = Assert.IsType<TextBlock>(window.FindName("TextError"));
+          Assert.IsAssignableFrom<MessageWindow>(window);
+          TextBlock error = Assert.IsType<TextBlock>(window.FindName("TextHeading"));
           Assert.Equal("The group has no value 4.", error.Text);
-          Color c = Assert.IsType<SolidColorBrush>(error.Foreground).Color;
-          Assert.True(c.R >= 150 && c.G <= 80 && c.B <= 80, "The error is red.");
-          Assert.Equal("The command did not run. Right-click it and choose Edit run command... to fix it.",
-            Assert.IsType<TextBlock>(window.FindName("TextDetail")).Text);
+          Color text = ((SolidColorBrush)window.FindResource("Theme.Text")).Color;
+          Assert.Equal(text, Assert.IsType<SolidColorBrush>(error.Foreground).Color);
+          Assert.Equal(window.FontSize, error.FontSize);
+          Assert.Equal(FontWeights.SemiBold, error.FontWeight);
+          Assert.Equal(new IconGlyphs(true).Warning, Assert.IsType<TextBlock>(window.FindName("TextIcon")).Text);
+          Assert.Equal(new IconGlyphs(true).MDSHO, Assert.IsType<Controls.DialogTitleBar>(window.FindName("TitleBar")).Glyph);
+          TextBlock detail = Assert.IsType<TextBlock>(window.FindName("TextMessage"));
+          Assert.Equal("The command did not run. Right-click it and choose Edit run command... to fix it.", detail.Text);
+          Assert.Equal(text, Assert.IsType<SolidColorBrush>(detail.Foreground).Color);
           Button ok = Assert.IsType<Button>(window.FindName("ButtonOK"));
           Assert.Equal("OK", ok.Content);
           Assert.True(ok.IsDefault);
@@ -65,7 +71,7 @@ namespace MDSHO.Tests {
           WpfBridge.Connect();
           Dialogs.ShowError("Ping", "The group has no value 4.", "Detail");
           CommandErrorWindow window = Assert.Single(shown);
-          Assert.Equal("The group has no value 4.", ((TextBlock)window.FindName("TextError")).Text);
+          Assert.Equal("The group has no value 4.", ((TextBlock)window.FindName("TextHeading")).Text);
           window.Close();
         } finally {
           CommandErrorWindow.ShowWindow = oldShow;

@@ -234,7 +234,7 @@ namespace MDSHO.Tests {
       Assert.Empty(raised);
       icons.SolidIcons = false;
       string[] glyphs = typeof(IconGlyphs).GetProperties().Where(p => p.PropertyType == typeof(string)).Select(p => p.Name).ToArray();
-      Assert.Equal(35, glyphs.Length); // v1.14: Unknown removed; Warning, Run and Wizard added; Info added for the About icons; Desktop added for the tray menu; Brush added for note colours; v1.15: Comment, Note, PinOff and PinOn added; v1.16: Ok added; v1.17: WrapText added; v1.18: Heart added
+      Assert.Equal(36, glyphs.Length); // v1.14: Unknown removed; Warning, Run and Wizard added; Info added for the About icons; Desktop added for the tray menu; Brush added for note colours; v1.15: Comment, Note, PinOff and PinOn added; v1.16: Ok added; v1.17: WrapText added; v1.18: Heart added; v1.20: Snippet added
       Assert.Equal(nameof(icons.SolidIcons), raised[0]);
       Assert.Equal(glyphs.OrderBy(n => n), raised.Skip(1).OrderBy(n => n));
     }
@@ -269,10 +269,10 @@ namespace MDSHO.Tests {
     public void Command_properties_keep_the_names_the_views_bind_to() {
       string[] Commands(Type t) => t.GetProperties().Where(p => typeof(ICommand).IsAssignableFrom(p.PropertyType)).Select(p => p.Name).OrderBy(n => n).ToArray();
       Assert.Equal(new[] { "BeginEditTitleCommand", "CancelEditTitleCommand", "CloseWindowCommand", "CommitEditTitleCommand",
-        "NewGroupShortcutCommand", "NewNoteShortcutCommand", "NewProcessCommandShortcutCommand", "PasteShortcutCommand" }, Commands(typeof(DesktopWindowViewModel)));
-      Assert.Equal(new[] { "CancelEditCommand", "CommitEditCommand", "CopyCommandToMemoryCommand", "CopyShortcutCommand", "CopyTargetToMemoryCommand", "CutShortcutCommand",
-        "DeleteShortcutCommand", "EditCommentCommand", "EditNoteCommand", "EditRunCommandCommand", "MarkShortcutCommand", "NewGroupShortcutCommand", "NewNoteShortcutCommand", "NewProcessCommandShortcutCommand", "PasteShortcutCommand",
-        "RenameCommand", "SetNameTheSameAsTargetCommand" }, Commands(typeof(ShortcutViewModel)));
+        "NewGroupShortcutCommand", "NewNoteShortcutCommand", "NewProcessCommandShortcutCommand", "NewSnippetShortcutCommand", "PasteShortcutCommand" }, Commands(typeof(DesktopWindowViewModel)));
+      Assert.Equal(new[] { "CancelEditCommand", "CommitEditCommand", "CopyCommandToMemoryCommand", "CopyShortcutCommand", "CopySnippetToMemoryCommand", "CopyTargetToMemoryCommand", "CutShortcutCommand",
+        "DeleteShortcutCommand", "EditCommentCommand", "EditNoteCommand", "EditRunCommandCommand", "EditSnippetCommand", "MarkShortcutCommand", "NewGroupShortcutCommand", "NewNoteShortcutCommand", "NewProcessCommandShortcutCommand", "NewSnippetShortcutCommand", "PasteShortcutCommand",
+        "RenameCommand", "SetNameTheSameAsTargetCommand", "SetNameTheSameAsValueCommand" }, Commands(typeof(ShortcutViewModel)));
       Assert.Equal(new[] { "TestRunCommand" }, Commands(typeof(RunCommandViewModel)));
     }
 

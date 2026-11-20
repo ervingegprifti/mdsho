@@ -68,16 +68,16 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Version_is_18_and_the_last_migration_is_18() {
-      Assert.Equal(18, AppConstants.DatabaseVersion);
-      Assert.Equal(18, SchemaManager.Migrations.Last().Version);
+    public void Version_18_is_a_known_step() {
+      Assert.True(AppConstants.DatabaseVersion >= 18);
+      Assert.Single(SchemaManager.Migrations, m => m.Version == 18);
     }
 
     [Fact]
     public void V17_database_migrates_to_18_with_font_size_0_and_keeps_the_place() {
       BuildV17Db();
       DataStore.Upgrade();
-      Assert.Equal(18, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(1, Columns("NoteWindows", "FontSize"));
       NoteWindowPlace place = DataStore.NoteWindows.Get(1);
       Assert.Equal((10L, 20L, true, true, 0L), (place.Left, place.Top, place.IsOpen, place.IsTopmost, place.FontSize));

@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.19.2]
+
+### Added
+
+- Snippets: a button with a name and a text. Click in a text field, then double-click the snippet to paste its text. MDSHO puts your clipboard back afterwards.
+- Copy snippet to memory, Set name the same as value and Edit snippet... in a snippet's menu.
+- New snippet in the panel menu and in a group's menu.
+- Database version 19: the buttons table gets `IsSnippet` and `SnippetText` (backed up first). Exports and backups carry them; older exports still import.
+
+### Changed
+
+- The suggested export file name has the PC name, like backups: `MDSHO-export-<PC>-yyyy-MM-dd-HHmm.zip`.
+- Snippet buttons have their own icon (MDSHOFont 1.20).
+- Autumn: Halloween, the colours of new panels, has a 60% black body (was 80%). Panels that already have the old colours keep them.
+- Enter no longer pastes a snippet; double-click it.
+- All messages use one MDSHO dialog: the same look, an Info or Warning icon, and black text (no red, no Windows message boxes). They follow the Window theme; before your data opens (MDSHO already running, database recovery) they follow Windows' light or dark mode. A message from a panel follows that panel's Solid icons setting.
+
+### Fixed
+
+- Renaming a button no longer brings the clones of its panel on other screens in front of other windows; they keep showing the name.
+- Closing Windows' Problem with Shortcut box no longer shows a second, confusing message; common open errors use plain words.
+
 ## [1.18.0]
 
 ### Added

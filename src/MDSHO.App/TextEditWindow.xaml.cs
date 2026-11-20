@@ -14,8 +14,8 @@ using MDSHO.ViewModels;
 namespace MDSHO {
 
   /// <summary>
-  /// Edits the text of one button: its comment (any button or group) or, for a note button, the note itself. A comment is
-  /// saved only by OK in the title bar (or Ctrl+Enter), which is greyed out while nothing changed; the X button and Esc
+  /// Edits the text of one button: its comment (any button or group), the note of a note button, or the value of a
+  /// snippet. A comment or snippet is saved only by OK in the title bar (or Ctrl+Enter), which is greyed out while nothing changed; the X button and Esc
   /// close it without saving. A note saves itself shortly
   /// after each change and when its window closes, so it has no Save button. A text of only spaces and new lines is saved
   /// as empty.
@@ -26,7 +26,9 @@ namespace MDSHO {
       /// <summary>The comment of a button or group (shown in its tooltip).</summary>
       Comment,
       /// <summary>The text of a note button.</summary>
-      Note
+      Note,
+      /// <summary>The text of a snippet.</summary>
+      Snippet
     }
 
     private readonly ShortcutViewModel shortcut;
@@ -42,6 +44,33 @@ namespace MDSHO {
     /// <summary>Creates the window for the comment of a button or group.</summary>
     public static TextEditWindow ForComment(ShortcutViewModel shortcut) {
       return new TextEditWindow(shortcut, TextKind.Comment);
+    }
+
+    /// <summary>Creates the window for the text of a snippet.</summary>
+    public static TextEditWindow ForSnippet(ShortcutViewModel shortcut) {
+      return new TextEditWindow(shortcut, TextKind.Snippet);
+    }
+
+    /// <summary>True for an Edit snippet window.</summary>
+    public bool IsSnippetWindow => this.kind == TextKind.Snippet;
+
+    /// <summary>The tooltip of an Edit snippet window's title.</summary>
+    public const string RenameSnippetTitleToolTip = "Click twice slowly to rename the snippet";
+
+    /// <summary>Opens the Edit snippet window as a dialog beside the MDSHO window the button belongs to, like the Comment window.</summary>
+    public static void ShowSnippetFor(ShortcutViewModel shortcut) {
+      try {
+        TextEditWindow window = ForSnippet(shortcut);
+        Window owner = RunCommandWindow.FindOwner(shortcut);
+        if (owner != null) {
+          PlaceComment(window, owner);
+        } else {
+          window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        }
+        window.ShowDialog();
+      } catch (Exception ex) {
+        ErrorDialog.ShowDialog(ex);
+      }
     }
 
     /// <summary>Creates the window for the text of a note button.</summary>
@@ -61,8 +90,9 @@ namespace MDSHO {
       };
       shortcut.PropertyChanged += nameChanged;
       this.Closed += (s, e) => shortcut.PropertyChanged -= nameChanged;
-      this.TextComment.Text = (kind == TextKind.Note ? shortcut.NoteText : shortcut.Comment) ?? "";
-      System.Windows.Automation.AutomationProperties.SetName(this.TextComment, kind == TextKind.Note ? "Note" : "Comment");
+      this.TextComment.Text = StoredText() ?? "";
+      System.Windows.Automation.AutomationProperties.SetName(this.TextComment,
+        kind == TextKind.Note ? "Note" : kind == TextKind.Snippet ? "Snippet" : "Comment");
       if (kind == TextKind.Note) {
         // A note is the main content, so its window is bigger; a comment keeps the smaller size.
         this.Width = 640;
@@ -74,9 +104,12 @@ namespace MDSHO {
       this.TextComment.Background = this.Background;
       if (kind == TextKind.Note) {
         UseNoteTitleBar();
-        UseRenamableTitle();
+        UseRenamableTitle(RenameTitleToolTip);
       } else {
         UseCommentTitleBar();
+        if (kind == TextKind.Snippet) {
+          UseRenamableTitle(RenameSnippetTitleToolTip);
+        }
       }
 
       // The title icon, the title bar buttons and the window icon follow the window's solid or outline setting while open.
@@ -93,7 +126,7 @@ namespace MDSHO {
         SaveNotePlace();
       };
       // Wrap text: a note remembers it with its window, the Comment windows of a panel share it.
-      SetWrapText(kind == TextKind.Comment && (shortcut.OwningWindow?.Appearance?.CommentWrapText ?? false));
+      SetWrapText(kind != TextKind.Note && (shortcut.OwningWindow?.Appearance?.CommentWrapText ?? false));
       this.ButtonWrap.Click += (s, e) => {
         SetWrapText(!this.IsWrapText);
         if (this.kind == TextKind.Note) {
@@ -128,9 +161,9 @@ namespace MDSHO {
     /// <summary>What a double click on the title text does: maximise or restore, like the title bar. Tests replace it.</summary>
     public Action TitleDoubleClick { get; set; }
 
-    /// <summary>A note is renamed from its title (see <see cref="TitleRename"/>); the new name is saved at once.</summary>
-    private void UseRenamableTitle() {
-      this.titleRename = new TitleRename(this, this.TextTitle, this.TextTitleEdit, RenameTitleToolTip,
+    /// <summary>A note or snippet is renamed from its title (see <see cref="TitleRename"/>); the new name is saved at once.</summary>
+    private void UseRenamableTitle(string toolTip) {
+      this.titleRename = new TitleRename(this, this.TextTitle, this.TextTitleEdit, toolTip,
         () => this.shortcut.Name, name => this.shortcut.Name = name,
         () => { if (this.IsActive) { this.TextComment.Focus(); } },
         () => (this.TitleDoubleClick ?? (() => TitleRename.ToggleMaximize(this)))());
@@ -584,7 +617,16 @@ namespace MDSHO {
     }
 
     private bool HasCommentChange() {
-      return TextToSave() != (this.shortcut.Comment ?? "");
+      return TextToSave() != (StoredText() ?? "");
+    }
+
+    // The saved text this window edits.
+    private string StoredText() {
+      switch (this.kind) {
+        case TextKind.Note: return this.shortcut.NoteText;
+        case TextKind.Snippet: return this.shortcut.SnippetText;
+        default: return this.shortcut.Comment;
+      }
     }
 
     /// <summary>Shows the Note colours window modally. Tests replace it so no modal window blocks them.</summary>
@@ -727,13 +769,17 @@ namespace MDSHO {
         return;
       }
       string question = "This note could not be saved: " + error.Message + "\n\nClose it anyway? What you typed since the last save will be lost.";
-      if (!Dialogs.Confirm(question, "Note not saved")) {
+      bool close;
+      using (Dialogs.UseIcons(this.icons.SolidIcons)) {
+        close = Dialogs.Confirm(question, "Note not saved");
+      }
+      if (!close) {
         e.Cancel = true;
       }
     }
 
     private void ShowIcons(IconGlyphs icons) {
-      string glyph = this.kind == TextKind.Note ? icons.Note : icons.Comment;
+      string glyph = this.kind == TextKind.Note ? icons.Note : this.kind == TextKind.Snippet ? icons.Snippet : icons.Comment;
       this.TextTitleIcon.Text = glyph;
       this.ButtonClose.Content = icons.Times;
       this.ButtonColors.Content = icons.Brush;
@@ -743,9 +789,22 @@ namespace MDSHO {
       this.Icon = GlyphIcon.Create(glyph);
     }
 
-    // Saves the comment and closes; does nothing while there is no change (OK is greyed out then).
+    // Saves the comment or value and closes; does nothing while there is no change (OK is greyed out then).
     private void Save() {
       if (!HasCommentChange()) {
+        return;
+      }
+      if (this.kind == TextKind.Snippet) {
+        try {
+          this.shortcut.SaveSnippetText(TextToSave());
+        } catch (Exception ex) {
+          // Never the value: it can be a password.
+          AppLog.Warning(null, "A snippet could not be saved: {ErrorType}", ex.GetType().FullName);
+          ErrorDialog.ShowDialog("The snippet could not be saved.", ex);
+          return;
+        }
+        this.Saved = true;
+        Close();
         return;
       }
       this.shortcut.Comment = TextToSave();

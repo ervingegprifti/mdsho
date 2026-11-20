@@ -166,10 +166,8 @@ namespace MDSHO {
 		}
 		private void MenuItemHeaderDeleteWindow_Click(object sender, RoutedEventArgs e) {
       try {
-				MessageBoxResult messageBoxResult1 = MessageBox.Show("This window and all its shortcuts will be deleted. Do you want to delete this window?", "Delete window confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-				if (messageBoxResult1 == MessageBoxResult.Yes) {
-					MessageBoxResult messageBoxResult2 = MessageBox.Show("One last warning. Do you want to delete this window? All its shortcuts will be gone.", "Delete window warning", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
-					if (messageBoxResult2 == MessageBoxResult.Yes) {
+				if (AppMessages.ConfirmDeleteWindow(this, (this.DataContext as DesktopWindowViewModel)?.Appearance?.SolidIcons ?? true)) {
+					{
 						DesktopWindowViewModel desktopWindow = (DesktopWindowViewModel)this.DataContext;
 						if (desktopWindow.IsClone) {
 							// Just check and make sure we do not delete a window from its clone.

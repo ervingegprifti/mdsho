@@ -33,7 +33,7 @@ Select a button first, with a click or the arrow keys.
 
 | Key | What it does |
 | --- | --- |
-| Enter | Opens the button, or folds or unfolds a group. |
+| Enter | Opens the button, or folds or unfolds a group. Does nothing on a snippet; double-click it to paste. |
 | F2 | Renames the button. |
 | Delete | Deletes the button, after asking. |
 | Ctrl+X | Cuts the button. |

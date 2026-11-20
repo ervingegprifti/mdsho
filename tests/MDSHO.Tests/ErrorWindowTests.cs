@@ -76,8 +76,8 @@ namespace MDSHO.Tests {
       WpfAppHost.Run(() => {
         ErrorWindow window = new ErrorWindow("The data could not be exported.", ex);
         Shown(window, () => {
-          Assert.Equal("The data could not be exported.", Named<TextBlock>(window, "TextMessage").Text);
-          Assert.Equal("The file is locked.", Named<TextBlock>(window, "TextDetail").Text);
+          Assert.Equal("The data could not be exported.", Named<TextBlock>(window, "TextHeading").Text);
+          Assert.Equal("The file is locked.", Named<TextBlock>(window, "TextMessage").Text);
           string visible = AllVisibleText(window);
           Assert.DoesNotContain(" at ", visible);
           Assert.DoesNotContain("inner cause", visible);
@@ -107,12 +107,34 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
+    public void It_is_the_one_mdsho_dialog_with_the_logo_a_warning_icon_and_black_text() {
+      WpfAppHost.Run(() => {
+        ErrorWindow window = new ErrorWindow("The data could not be exported.", Thrown());
+        Shown(window, () => {
+          Assert.IsAssignableFrom<MessageWindow>(window);
+          Assert.StartsWith("MDSHO error", window.Title);
+          ViewModels.IconGlyphs icons = new ViewModels.IconGlyphs(true);
+          Assert.Equal(icons.MDSHO, Named<Controls.DialogTitleBar>(window, "TitleBar").Glyph);
+          Assert.Equal(icons.Warning, Named<TextBlock>(window, "TextIcon").Text);
+          Assert.Equal("The details were saved in the log file. Use Copy details to include them in a bug report.",
+            Named<TextBlock>(window, "TextNote").Text);
+          System.Windows.Media.Color text = ((System.Windows.Media.SolidColorBrush)window.FindResource("Theme.Text")).Color;
+          foreach (string name in new[] { "TextHeading", "TextMessage", "TextNote" }) {
+            TextBlock block = Named<TextBlock>(window, name);
+            Assert.Equal(text, ((System.Windows.Media.SolidColorBrush)block.Foreground).Color);
+            Assert.Equal(window.FontSize, block.FontSize);
+          }
+        });
+      });
+    }
+
+    [Fact]
     public void Without_a_message_shows_something_went_wrong() {
       WpfAppHost.Run(() => {
         ErrorWindow window = new ErrorWindow(Thrown());
         Shown(window, () => {
-          Assert.Equal("Something went wrong.", Named<TextBlock>(window, "TextMessage").Text);
-          Assert.Equal("The file is locked.", Named<TextBlock>(window, "TextDetail").Text);
+          Assert.Equal("Something went wrong.", Named<TextBlock>(window, "TextHeading").Text);
+          Assert.Equal("The file is locked.", Named<TextBlock>(window, "TextMessage").Text);
         });
       });
     }

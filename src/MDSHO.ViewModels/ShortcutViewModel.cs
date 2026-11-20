@@ -40,7 +40,9 @@ namespace MDSHO.ViewModels {
     /// <summary>A note button: its text is the note.</summary>
     Note,
     /// <summary>A file or folder path that does not exist (any more).</summary>
-    Missing
+    Missing,
+    /// <summary>A snippet: pastes its text.</summary>
+    Snippet
   }
 
   /// <summary>
@@ -133,6 +135,12 @@ namespace MDSHO.ViewModels {
     private long position;
     private bool isProcessCommand;
     private bool isNote;
+    private bool isSnippet;
+    /// <summary>The text of a snippet (empty for other buttons). Saved at once.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ToolTipText))]
+    [NotifyCanExecuteChangedFor(nameof(SetNameTheSameAsValueCommand))]
+    private string snippetText;
     /// <summary>The text of a note button (empty for other buttons).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ToolTipText))]
@@ -181,6 +189,10 @@ namespace MDSHO.ViewModels {
     /// <summary>Database ID.</summary>
     public long ID { get { return id; } set { id = value; } }
     partial void OnNameChanged(string value) {
+      if (this.isSnippet) {
+        // The tooltip starts with the name.
+        OnPropertyChanged(nameof(this.ToolTipText));
+      }
       if (this.isGroup) {
         // The group value may have changed: the commands directly inside resolve their arguments again.
         foreach (ShortcutViewModel child in this.shortcuts) {
@@ -213,6 +225,7 @@ namespace MDSHO.ViewModels {
       get {
         if (this.isGroup) { return ShortcutTargetKind.Group; }
         if (this.isNote) { return ShortcutTargetKind.Note; }
+        if (this.isSnippet) { return ShortcutTargetKind.Snippet; }
         if (this.isProcessCommand) { return ShortcutTargetKind.Command; }
         if (this.IsWebAddress) { return ShortcutTargetKind.WebLink; }
         return this.pathKind;
@@ -236,7 +249,7 @@ namespace MDSHO.ViewModels {
     // A result for an older target is dropped.
     private void UpdateTargetKind(bool refresh) {
       string path = this.target;
-      if (this.isGroup || this.isProcessCommand || this.isNote || string.IsNullOrWhiteSpace(path) || this.IsWebAddress) {
+      if (this.isGroup || this.isProcessCommand || this.isNote || this.isSnippet || string.IsNullOrWhiteSpace(path) || this.IsWebAddress) {
         ++this.targetCheckVersion;
         SetPathKind(ShortcutTargetKind.File);
         return;
@@ -293,6 +306,7 @@ namespace MDSHO.ViewModels {
         // Only a group can get new items or a paste.
         this.NewGroupShortcutCommand.NotifyCanExecuteChanged();
         this.NewProcessCommandShortcutCommand.NotifyCanExecuteChanged();
+        this.NewSnippetShortcutCommand.NotifyCanExecuteChanged();
         this.PasteShortcutCommand.NotifyCanExecuteChanged();
       }
     }
@@ -345,7 +359,10 @@ namespace MDSHO.ViewModels {
     /// notes in it (set by the app), so nothing is typed into a note that is gone.
     /// </summary>
     public static Action<ShortcutViewModel> NotesDeleted { get; set; }
-    /// <summary>The Windows error code when the user answers No to the administrator (UAC) prompt.</summary>
+    /// <summary>
+    /// The Windows error code when the user answers No to the administrator (UAC) prompt, or closes Windows' own "Problem
+    /// with Shortcut" box (a shortcut whose target is missing).
+    /// </summary>
     public const int ErrorCancelled = 1223;
     /// <summary>
     /// The start information of a run command: the arguments with the group values filled in and the lines joined for the
@@ -440,11 +457,20 @@ namespace MDSHO.ViewModels {
         if (this.isNote) {
           return Preview(this.noteText);
         }
+        if (this.isSnippet && !this.isGroup) {
+          return SnippetToolTip();
+        }
         if (!this.isProcessCommand || this.isGroup) {
           return this.Target;
         }
         return this.CommandLineText;
       }
+    }
+    // The name, the snippet text (cut after 10 lines), then how to paste.
+    private string SnippetToolTip() {
+      string value = Preview(this.snippetText);
+      string nl = Environment.NewLine;
+      return (this.Name ?? "") + nl + (value == null ? "" : value + nl) + nl + this.PasteHint;
     }
     /// <summary>
     /// A run command's command line as its tooltip shows it and "Copy command to memory" copies it: the program (quoted
@@ -533,7 +559,7 @@ namespace MDSHO.ViewModels {
     /// <summary>True for a run command.</summary>
     public bool ShowCopyCommandToMemory => this.ShowCommand;
     /// <summary>True for a file, folder or web link shortcut (not for groups and commands).</summary>
-    public bool ShowShortcut => !this.isGroup && !this.isProcessCommand && !this.isNote;
+    public bool ShowShortcut => !this.isGroup && !this.isProcessCommand && !this.isNote && !this.isSnippet;
     /// <summary>True for a note button.</summary>
     public bool ShowNote => !this.isGroup && this.isNote;
     /// <summary>True when the shortcut is marked.</summary>
@@ -542,13 +568,71 @@ namespace MDSHO.ViewModels {
     public bool ShowCommand => !this.isGroup && this.isProcessCommand;
     /// <summary>True for a group (only groups can get new items).</summary>
     public bool ShowNewShortcut => this.isGroup;
+    /// <summary>True for a snippet.</summary>
+    public bool IsSnippet { get { return this.isSnippet; } }
+    /// <summary>True for a snippet.</summary>
+    public bool ShowSnippet => !this.isGroup && this.isSnippet;
+    /// <summary>True for a snippet.</summary>
+    public bool ShowCopySnippetToMemory => this.ShowSnippet;
+    /// <summary>True for a snippet.</summary>
+    public bool ShowSetNameTheSameAsValue => this.ShowSnippet;
+    // The first non-blank line of the snippet text, trimmed; null when the text is blank.
+    private string SnippetFirstLine() {
+      foreach (string line in (this.snippetText ?? "").Replace("\r\n", "\n").Replace('\r', '\n').Split('\n')) {
+        if (!string.IsNullOrWhiteSpace(line)) {
+          return line.Trim();
+        }
+      }
+      return null;
+    }
+    private bool CanSetNameTheSameAsValue() {
+      return this.isSnippet && SnippetFirstLine() != null;
+    }
+    /// <summary>Renames a snippet to the first non-blank line of its text, trimmed.</summary>
+    [RelayCommand(CanExecute = nameof(CanSetNameTheSameAsValue))]
+    private void SetNameTheSameAsValue() {
+      string line = SnippetFirstLine();
+      if (this.isSnippet && line != null) {
+        this.Name = line;
+      }
+    }
+    /// <summary>
+    /// Pastes a snippet's text into the window the user came from (the app's <see cref="ClipboardPaster"/>).
+    /// Set by the app at startup; tests replace it. Until it is set it throws.
+    /// </summary>
+    public static Func<string, System.Threading.Tasks.Task<PasteOutcome>> PasteValue { get; set; } = value =>
+      throw new InvalidOperationException("ShortcutViewModel.PasteValue is not set.");
+    /// <summary>Opens the Edit snippet window for a snippet (set by the app; tests replace it).</summary>
+    public static Action<ShortcutViewModel> OpenSnippetEditor { get; set; }
+    /// <summary>The error when a paste failed.</summary>
+    public const string CouldNotPasteText = "MDSHO could not paste the snippet.";
+    /// <summary>The line below <see cref="CouldNotPasteText"/>.</summary>
+    public const string CopySnippetInsteadText = "Try again, or right-click the button, choose Copy snippet to memory, then press Ctrl+V.";
+    /// <summary>The tooltip's last line: how to paste in this button's panel.</summary>
+    public string PasteHint => this.SingleClickToOpen ? "Click to paste" : "Double-click to paste";
+    // The Single click to open setting of the panel this button is in.
+    private bool SingleClickToOpen => this.OwningWindow?.Appearance?.SingleClickToOpen ?? false;
+    /// <summary>Prompts raised by this button use its panel's icon set (clones share their parent's setting).</summary>
+    internal IDisposable PanelIcons() {
+      return Dialogs.UseIcons(this.OwningWindow?.Appearance?.SolidIcons ?? true);
+    }
+    /// <summary>Tells the tooltips of the snippets in this button or group that the click setting changed.</summary>
+    public void RaisePasteHintChanged() {
+      if (this.isSnippet) {
+        OnPropertyChanged(nameof(this.PasteHint));
+        OnPropertyChanged(nameof(this.ToolTipText));
+      }
+      foreach (ShortcutViewModel child in this.shortcuts) {
+        child.RaisePasteHintChanged();
+      }
+    }
     // Commands: generated from the [RelayCommand] methods below (NewGroupShortcutCommand, NewProcessCommandShortcutCommand,
     // EditRunCommandCommand, RenameCommand, SetNameTheSameAsTargetCommand, CopyTargetToMemoryCommand, CutShortcutCommand,
     // CopyShortcutCommand, PasteShortcutCommand, MarkShortcutCommand, DeleteShortcutCommand, CommitEditCommand, CancelEditCommand).
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null) {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "") {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -570,6 +654,8 @@ namespace MDSHO.ViewModels {
       this.processWorkingFolder = processWorkingFolder ?? "";
       this.isNote = isNote;
       this.noteText = noteText ?? "";
+      this.isSnippet = isSnippet;
+      this.snippetText = snippetText ?? "";
       this.NoteColors = noteColors ?? new NoteColors();
       UpdateTargetKind(false);
       // Events.
@@ -630,6 +716,11 @@ namespace MDSHO.ViewModels {
         DataStore.Shortcuts.UpdateMarkColor(this.ID, this.MarkColor);
       } else if (e.PropertyName == nameof(this.Comment)) {
         DataStore.Shortcuts.UpdateComment(this.ID, this.Comment ?? "");
+      } else if (e.PropertyName == nameof(this.SnippetText)) {
+        if (!this.savingSnippetText) {
+          DataStore.Shortcuts.UpdateSnippetText(this.ID, this.SnippetText ?? "");
+        }
+        OnPropertyChanged(nameof(this.HasToolTip));
       } else if (e.PropertyName == nameof(this.NoteText)) {
         if (!this.savingNoteText) {
           DataStore.Shortcuts.UpdateNoteText(this.ID, this.NoteText ?? "");
@@ -689,6 +780,71 @@ namespace MDSHO.ViewModels {
       ShortcutViewModel note = ViewModelFactory.NewNoteShortcut(this.AppViewModel, this, null);
       this.Children.Add(note);
       OpenNoteEditor?.Invoke(note);
+    }
+    /// <summary>Adds a new snippet inside this group and starts its rename.</summary>
+    [RelayCommand(CanExecute = nameof(CanExecuteNewProcessCommandShortcut))]
+    private void NewSnippetShortcut() {
+      ShortcutViewModel clip = ViewModelFactory.NewSnippetShortcut(this.AppViewModel, this, null);
+      this.IsGroupExpanded = true;
+      this.Children.Add(clip);
+      clip.BeginEdit(EditField.Name);
+    }
+    /// <summary>Opens the Edit snippet window for this snippet.</summary>
+    [RelayCommand]
+    private void EditSnippet() {
+      if (this.isSnippet) {
+        OpenSnippetEditor?.Invoke(this);
+      }
+    }
+    /// <summary>Copies the value to the clipboard and leaves it there (a normal copy). Group values are not filled in.</summary>
+    [RelayCommand]
+    private void CopySnippetToMemory() {
+      if (this.isSnippet && !string.IsNullOrEmpty(this.snippetText)) {
+        CopyText(this.snippetText);
+      }
+    }
+    // True while SaveSnippetText sets the text it already wrote to the database.
+    private bool savingSnippetText;
+    /// <summary>Saves the value: the database first, then memory (a failed write throws and keeps the old value).</summary>
+    public void SaveSnippetText(string value) {
+      value ??= "";
+      DataStore.Shortcuts.UpdateSnippetText(this.ID, value);
+      this.savingSnippetText = true;
+      try {
+        this.SnippetText = value;
+      } finally {
+        this.savingSnippetText = false;
+      }
+    }
+    /// <summary>
+    /// Pastes the text into the window the user came from and says why when it can't. An empty snippet opens Edit snippet
+    /// instead. The value is used as it is (no group values) and is never logged.
+    /// </summary>
+    public async System.Threading.Tasks.Task PasteForUserAsync() {
+      if (string.IsNullOrEmpty(this.snippetText)) {
+        OpenSnippetEditor?.Invoke(this);
+        return;
+      }
+      bool singleClick = this.SingleClickToOpen;
+      // Panels brought to front go back first.
+      Opened?.Invoke();
+      PasteOutcome outcome;
+      try {
+        outcome = await PasteValue(this.snippetText);
+      } catch (Exception ex) {
+        // The type only: a message could hold the value.
+        Common.AppLog.Warning(null, "A snippet could not paste: {ErrorType}", ex.GetType().FullName);
+        using (PanelIcons()) {
+          Dialogs.ShowError(this.Name, CouldNotPasteText, CopySnippetInsteadText);
+        }
+        return;
+      }
+      ClipboardPasteMessage message = ClipboardPasteMessage.For(outcome, this.Name, singleClick);
+      if (message != null) {
+        using (PanelIcons()) {
+          Dialogs.ShowInfo(ClipboardPasteMessage.Caption, message.Heading, message.Text);
+        }
+      }
     }
     /// <summary>Opens the Note window for this note.</summary>
     [RelayCommand]
@@ -791,7 +947,11 @@ namespace MDSHO.ViewModels {
         message = $"Delete shortcut '{this.Name}'?";
         caption = "Delete shortcut confirmation";
       }
-      if (!Dialogs.Confirm(message, caption)) {
+      bool delete;
+      using (PanelIcons()) {
+        delete = Dialogs.Confirm(message, caption);
+      }
+      if (!delete) {
         return;
       }
       // Delete from the database and renumber the remaining siblings in one transaction.
@@ -823,9 +983,22 @@ namespace MDSHO.ViewModels {
     public const string NoProgramMessage = "Set a program first. Use Set Run Command... to choose one.";
     /// <summary>The caption of <see cref="NoProgramMessage"/>.</summary>
     public const string NoProgramCaption = "Run command";
-    /// <summary>Opens the shortcut or runs the command, optionally elevated; shows a message when Windows cannot open it.</summary>
+    /// <summary>
+    /// Opens the shortcut or runs the command, optionally elevated; shows a message when Windows cannot open it, with the
+    /// panel's icon set.
+    /// </summary>
     public void RunShortcut(bool runAsAdministrator) {
+      using (PanelIcons()) {
+        RunShortcutInPanel(runAsAdministrator);
+      }
+    }
+    private void RunShortcutInPanel(bool runAsAdministrator) {
       if (this.IsEditing) {
+        return;
+      }
+      if (this.isSnippet) {
+        // A snippet pastes its text into the window the user came from.
+        _ = PasteForUserAsync();
         return;
       }
       if (this.isNote) {
@@ -868,32 +1041,51 @@ namespace MDSHO.ViewModels {
             Opened?.Invoke();
           }
         }
+      } catch (System.ComponentModel.Win32Exception ex) when (!this.IsProcessCommand && ex.NativeErrorCode == ErrorCancelled) {
+        // Windows showed its own "Problem with Shortcut" box (the target is missing) and the user closed it: Windows has
+        // said it already, so no second message.
+        Common.AppLog.Information("Shortcut file {File} was not opened: Windows' message was closed", this.Guid + this.Ext);
       } catch (Exception ex) {
         // A short plain message; the details go to the log. A run command was already logged by StartRunCommand
         // (without its arguments, which can hold passwords).
         if (this.IsProcessCommand) {
-          Dialogs.ShowError(this.Name, CouldNotStartText + RunFailureReason(ex), CheckProgramText);
+          Dialogs.ShowError(this.Name, CouldNotStartText, FailureDetail(ex, CheckProgramText));
         } else {
           Common.AppLog.Warning(ex, "Shortcut file {File} could not be opened", this.Guid + this.Ext);
-          Dialogs.ShowError(this.Name, CouldNotOpenText + RunFailureReason(ex), CheckTargetText);
+          Dialogs.ShowError(this.Name, CouldNotOpenText, FailureDetail(ex, CheckTargetText));
         }
       }
     }
-    /// <summary>The start of the message when Windows can't open a shortcut's file.</summary>
-    public const string CouldNotOpenText = "Windows could not open this file: ";
-    /// <summary>The start of the message when Windows can't start a run command's program.</summary>
-    public const string CouldNotStartText = "Windows could not start the program: ";
+    /// <summary>The bold first line when Windows can't open a shortcut's file.</summary>
+    public const string CouldNotOpenText = "Windows could not open this file.";
+    /// <summary>The bold first line when Windows can't start a run command's program.</summary>
+    public const string CouldNotStartText = "Windows could not start the program.";
+    /// <summary>The lines below the first one: the reason, then what to check.</summary>
+    public static string FailureDetail(Exception ex, string check) {
+      return RunFailureReason(ex) + "\n" + check;
+    }
     /// <summary>The line below a shortcut that can't be opened.</summary>
     public const string CheckTargetText = "Check that the file or folder it points to still exists.";
     /// <summary>The line below a run command that can't start.</summary>
     public const string CheckProgramText = "Check that the program and its folder are correct.";
     /// <summary>
-    /// A short reason for a failed start: the Windows text for the error code (not ex.Message, which can hold the working
-    /// folder), or the message of any other exception. Never the HRESULT or a stack trace.
+    /// A short reason for a failed start: plain words for the common Windows codes, else the Windows text for the code
+    /// (not ex.Message, which can hold the working folder), or the message of any other exception. Never the HRESULT or a
+    /// stack trace.
     /// </summary>
     public static string RunFailureReason(Exception ex) {
       if (ex is System.ComponentModel.Win32Exception win32) {
-        return new System.ComponentModel.Win32Exception(win32.NativeErrorCode).Message;
+        switch (win32.NativeErrorCode) {
+          case 2: // file not found
+          case 3: // path not found
+            return "The file or folder is missing.";
+          case 5: // access denied
+            return "Windows doesn't allow MDSHO to open it.";
+          case 1155: // no application is associated
+            return "No app is set to open this kind of file.";
+          default:
+            return new System.ComponentModel.Win32Exception(win32.NativeErrorCode).Message;
+        }
       }
       return ex.Message;
     }

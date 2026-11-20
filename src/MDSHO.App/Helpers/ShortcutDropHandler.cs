@@ -357,10 +357,7 @@ namespace MDSHO.Helpers {
                 foreach (string format in formats) {
                   if (format == "Shell IDList Array") {
                     // Virtual file/s been draged.
-                    string message = "To create this kind of shortcut please do:\n";
-                    message += "1. Drag to create a desktop shortcut first,\n";
-                    message += "2. Drag the shortcut from desktop to MDSHO";
-                    MessageBox.Show(message, "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                    AppMessages.VirtualFilesDropped(window?.Appearance?.SolidIcons ?? true);
                   }
                 }
               }

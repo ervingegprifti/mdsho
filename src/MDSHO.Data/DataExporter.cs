@@ -17,9 +17,9 @@ namespace MDSHO.Data {
   /// </summary>
   public static class DataExporter {
 
-    /// <summary>MDSHO-export-yyyy-MM-dd-HHmm.zip</summary>
-    public static string DefaultFileName(DateTime localNow) {
-      return "MDSHO-export-" + localNow.ToString("yyyy-MM-dd-HHmm", System.Globalization.CultureInfo.InvariantCulture) + ".zip";
+    /// <summary>MDSHO-export-PC-yyyy-MM-dd-HHmm.zip, with the PC name cleaned like in backup names.</summary>
+    public static string DefaultFileName(string machineName, DateTime localNow) {
+      return "MDSHO-export-" + MDSHO.Common.FileNames.SafePcName(machineName) + "-" + localNow.ToString("yyyy-MM-dd-HHmm", System.Globalization.CultureInfo.InvariantCulture) + ".zip";
     }
 
     /// <summary>The application version as Major.Minor.Build (1.1.0).</summary>

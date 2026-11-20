@@ -17,6 +17,8 @@ window with your own buttons, and you can have as many panels as you like, on as
   working folder or as administrator.
 - **Notes:** buttons that hold a note of their own. The note opens in its own window, which you can keep on top,
   colour and wrap, and it saves itself as you type. Opening the button again closes it.
+- **Snippets:** buttons that hold a piece of text, like an address. Click in a text field, then double-click the
+  snippet: MDSHO pastes the text and puts your clipboard back.
 - **Comments:** add a comment to any button or group; it shows in the button's tooltip.
 - **Groups:** fold buttons into groups, and put values in a group's name, like `Prod {SRV01} {user=admin}`, to reuse them in the commands inside it as `{=1}` or `{=user}`.
 - **Clones:** show the same panel on another screen; a change in one shows in all of its clones.
@@ -41,6 +43,7 @@ window with your own buttons, and you can have as many panels as you like, on as
 - [Make your first panel](how-to/first-panel.md): add files, folders and web links as buttons.
 - [Run commands with group values](how-to/group-values.md): one command for many servers, users or folders.
 - [Keep notes beside your work](how-to/notes.md): note buttons, keep on top, colours.
+- [Paste text with snippets](how-to/snippets.md): paste a saved text into any text field.
 - [Use several screens](how-to/screens.md): clones, docking, screen setups and lost windows.
 - [Use the keyboard](how-to/keyboard.md): bring panels to front, pick a button, rename.
 - [Back up, restore and move to another PC](how-to/backups.md): backups, synced folders, import.

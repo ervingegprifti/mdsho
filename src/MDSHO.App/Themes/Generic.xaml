@@ -24,7 +24,7 @@
                             VerticalAlignment="Center"/>
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsEditing" Value="True">
+                        <Trigger Property="ShowsEditBox" Value="True">
                             <Setter TargetName="PART_Display" Property="Visibility" Value="Hidden"/>
                             <Setter TargetName="PART_EditBox" Property="Visibility" Value="Visible"/>
                         </Trigger>

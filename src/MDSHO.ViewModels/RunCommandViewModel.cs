@@ -175,6 +175,11 @@ namespace MDSHO.ViewModels {
     /// </summary>
     [RelayCommand]
     public void TestRun() {
+      using (this.shortcut?.PanelIcons()) {
+        TestRunInPanel();
+      }
+    }
+    private void TestRunInPanel() {
       if (this.HasError) {
         this.FooterError = FixToRunText;
         return;
@@ -189,7 +194,7 @@ namespace MDSHO.ViewModels {
           this.program, this.StoredArguments, this.workingFolder, this.runAsAdministrator, this.GroupValues));
       } catch (Exception ex) when (ex is System.ComponentModel.Win32Exception || ex is InvalidOperationException) {
         // StartRunCommand has logged it; a short plain reason here.
-        Dialogs.ShowError("Test run", ShortcutViewModel.CouldNotStartText + ShortcutViewModel.RunFailureReason(ex), ShortcutViewModel.CheckProgramText);
+        Dialogs.ShowError("Test run", ShortcutViewModel.CouldNotStartText, ShortcutViewModel.FailureDetail(ex, ShortcutViewModel.CheckProgramText));
       }
     }
 
@@ -201,8 +206,14 @@ namespace MDSHO.ViewModels {
       if (example == null) {
         return false;
       }
-      if (this.HasTypedSomething && !Dialogs.Confirm("Replace what you've typed?", "Examples")) {
-        return false;
+      if (this.HasTypedSomething) {
+        bool replace;
+        using (this.shortcut?.PanelIcons()) {
+          replace = Dialogs.Confirm("Replace what you've typed?", "Examples");
+        }
+        if (!replace) {
+          return false;
+        }
       }
       this.Program = example.ProgramFileName;
       this.WorkingFolder = example.WorkingFolder;

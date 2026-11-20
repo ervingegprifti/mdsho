@@ -50,8 +50,8 @@ namespace MDSHO.Core {
       Preset("Autumn", "Maple", "#FFD9A07A", "#FFA63F17", "#FFFFF5EC", "#FFFFF6EE", "#FF4A2412"),
       Preset("Autumn", "Harvest", "#FFD6B25E", "#FF7A5B16", "#FFFFF8E6", "#FFFBF4E2", "#FF4A3A15"),
       // Also MDSHO's own panel colours (AppConstants.DefaultWindow*Color; ColorPresetsTests keeps them equal). Its body is
-      // 80 % opaque black, so the desktop shows through a little.
-      Preset("Autumn", "Halloween", "#FF000000", "#FF000000", "#FFFFFFFF", "#CC000000", "#FFFFFFFF"),
+      // 60 % opaque black, so the desktop shows through.
+      Preset("Autumn", "Halloween", "#FF000000", "#FF000000", "#FFFFFFFF", "#99000000", "#FFFFFFFF"),
     };
 
     /// <summary>Autumn: Halloween, the last preset: the colours of a new panel and of Default colours without saved defaults.</summary>

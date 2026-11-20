@@ -26,7 +26,7 @@
     /// <summary>
     /// We use this to identify the current database schema version.
     /// </summary>
-    public const int DatabaseVersion = 18;
+    public const int DatabaseVersion = 19;
 
     // Database file name.
     /// <summary>File name of the database of the Release build.</summary>
@@ -76,7 +76,7 @@
     /// <summary>Border colour of a new window.</summary>
     public const string DefaultWindowBorderColor = "#FF000000";
     /// <summary>Background colour of a new window.</summary>
-    public const string DefaultWindowBackgroundColor = "#CC000000";
+    public const string DefaultWindowBackgroundColor = "#99000000";
     /// <summary>Text colour of a new window.</summary>
     public const string DefaultWindowTextColor = "#FFFFFFFF";
     /// <summary>Title bar background colour of a new window.</summary>

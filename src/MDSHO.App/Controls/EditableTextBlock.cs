@@ -1,8 +1,12 @@
+using System;
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using MDSHO.Common;
 
 namespace MDSHO.Controls {
 
@@ -10,6 +14,8 @@ namespace MDSHO.Controls {
   /// In-place edit control: shows a TextBlock (Text) or, while IsEditing, a TextBox (EditText).
   /// Enter runs CommitCommand, Esc runs CancelCommand, leaving the box runs CommitCommand.
   /// While editing it swallows its own mouse down/up/double-click so a parent Button never sees them.
+  /// Clones of a panel share their buttons, so IsEditing turns on in every clone: only the control in the active window
+  /// shows and focuses the edit box (see <see cref="EditBoxRules"/>); the others keep showing the text (ShowsEditBox).
   /// Lookless control (default style in Themes/Generic.xaml) so each use can restyle through the normal Control properties.
   /// </summary>
   [TemplatePart(Name = "PART_Display", Type = typeof(TextBlock))]
@@ -52,6 +58,23 @@ namespace MDSHO.Controls {
     /// <summary>Space around the text inside the edit box.</summary>
     public Thickness EditPadding { get { return (Thickness)GetValue(EditPaddingProperty); } set { SetValue(EditPaddingProperty, value); } }
 
+    private static readonly DependencyPropertyKey ShowsEditBoxPropertyKey =
+      DependencyProperty.RegisterReadOnly(nameof(ShowsEditBox), typeof(bool), typeof(EditableTextBlock), new PropertyMetadata(false));
+    /// <summary>Dependency property of ShowsEditBox.</summary>
+    public static readonly DependencyProperty ShowsEditBoxProperty = ShowsEditBoxPropertyKey.DependencyProperty;
+    /// <summary>True while this control shows the edit box: editing, and not a clone of the window where the edit started.</summary>
+    public bool ShowsEditBox { get { return (bool)GetValue(ShowsEditBoxProperty); } private set { SetValue(ShowsEditBoxPropertyKey, value); } }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetActiveWindow();
+    [ThreadStatic]
+    private static Func<IntPtr> activeWindow;
+    /// <summary>The active window of the UI thread; tests replace it (per thread). Null restores GetActiveWindow.</summary>
+    public static Func<IntPtr> ActiveWindow {
+      get { return activeWindow ?? GetActiveWindow; }
+      set { activeWindow = value; }
+    }
+
     private TextBox editBox;
     private bool movingFocus;
 
@@ -81,20 +104,47 @@ namespace MDSHO.Controls {
     }
 
     private void SwallowMouse(object sender, MouseButtonEventArgs e) {
-      if (IsEditing) { e.Handled = true; }
+      if (ShowsEditBox) { e.Handled = true; }
     }
 
     private static void OnIsEditingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) {
       EditableTextBlock control = (EditableTextBlock)d;
-      if ((bool)e.NewValue) {
-        // Deferred so it runs after a closing context menu has given focus back.
-        control.Dispatcher.BeginInvoke(DispatcherPriority.Input, new System.Action(() => {
-          if (control.IsEditing && control.editBox != null) {
-            control.editBox.Focus();
-            control.editBox.SelectAll();
-          }
-        }));
+      if (!(bool)e.NewValue) {
+        control.ShowsEditBox = false;
+        return;
       }
+      control.ApplyEditMode(false);
+      // Deferred so it runs after a closing context menu has given focus back (and a new button is in its window).
+      control.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() => control.ApplyEditMode(true)));
+    }
+
+    /// <summary>
+    /// Opens the edit box unless the rename started in another window (a clone). Focus goes to the box only while its window
+    /// is the active one: focusing a box in an inactive window would bring that window in front of other apps.
+    /// </summary>
+    private void ApplyEditMode(bool focus) {
+      if (!IsEditing) {
+        return;
+      }
+      HwndSource source = PresentationSource.FromVisual(this) as HwndSource;
+      if (source == null && focus) {
+        // Not in a window yet (a new button): decide once it is.
+        Loaded -= EditableTextBlock_Loaded;
+        Loaded += EditableTextBlock_Loaded;
+      }
+      EditBoxMode mode = EditBoxRules.Decide(source?.Handle ?? IntPtr.Zero, ActiveWindow());
+      ShowsEditBox = mode != EditBoxMode.ShowName;
+      if (focus && ShowsEditBox && editBox != null) {
+        if (mode == EditBoxMode.ShowAndFocus) {
+          editBox.Focus();
+        }
+        editBox.SelectAll();
+      }
+    }
+
+    private void EditableTextBlock_Loaded(object sender, RoutedEventArgs e) {
+      Loaded -= EditableTextBlock_Loaded;
+      ApplyEditMode(true);
     }
 
     private void EditBox_KeyDown(object sender, KeyEventArgs e) {

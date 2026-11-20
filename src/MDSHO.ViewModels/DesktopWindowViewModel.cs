@@ -251,6 +251,10 @@ namespace MDSHO.ViewModels {
         DataStore.Windows.UpdateSolidIcons(windowID, this.Appearance.SolidIcons);
       } else if (e.PropertyName == nameof(this.Appearance.SingleClickToOpen)) {
         DataStore.Windows.UpdateSingleClickToOpen(windowID, this.Appearance.SingleClickToOpen);
+        // The snippets' tooltips say "Click to paste" or "Double-click to paste".
+        foreach (ShortcutViewModel shortcut in this.RootShortcuts) {
+          shortcut.RaisePasteHintChanged();
+        }
       } else if (e.PropertyName == nameof(this.Appearance.CommentWrapText)) {
         DataStore.Windows.UpdateCommentWrapText(windowID, this.Appearance.CommentWrapText);
       } else if (e.PropertyName == nameof(this.Appearance.ShowVersionInTitle)) {
@@ -305,6 +309,14 @@ namespace MDSHO.ViewModels {
       shortcutParentWindow.RootShortcuts.Add(note);
       ShortcutViewModel.OpenNoteEditor?.Invoke(note);
     }
+    /// <summary>Adds a new snippet at the window root and starts its rename.</summary>
+    [RelayCommand]
+    private void NewSnippetShortcut() {
+      DesktopWindowViewModel shortcutParentWindow = this.IsClone ? this.ParentWindow : this;
+      ShortcutViewModel clip = ViewModelFactory.NewSnippetShortcut(this.AppViewModel, null, shortcutParentWindow);
+      shortcutParentWindow.RootShortcuts.Add(clip);
+      clip.BeginEdit(EditField.Name);
+    }
     /// <summary>Pastes the cut or copied shortcut at the window root.</summary>
     [RelayCommand(CanExecute = nameof(CanExecutePasteShortcut))]
     private void PasteShortcut() {
@@ -347,6 +359,9 @@ namespace MDSHO.ViewModels {
         selected.CutShortcutCommand.Execute(null);
       } else if (ctrl && key == ShortcutKey.C) {
         selected.CopyShortcutCommand.Execute(null);
+      } else if (none && (key == ShortcutKey.Enter || key == ShortcutKey.Space) && selected.IsSnippet) {
+        // Pasting from the keyboard is confusing: a snippet pastes on double click only. Handled, so the focused button
+        // does not click itself (a click pastes in a single-click panel).
       } else if (none && key == ShortcutKey.Enter) {
         if (selected.IsGroup) {
           selected.IsGroupExpanded = !selected.IsGroupExpanded;

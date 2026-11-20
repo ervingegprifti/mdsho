@@ -63,6 +63,10 @@ namespace MDSHO.Core {
     public string NoteBackgroundColor { get; set; } = "";
     /// <summary>Text colour of the note's window; empty = the default colour.</summary>
     public string NoteTextColor { get; set; } = "";
+    /// <summary>1 when the button is a snippet (its text is <see cref="SnippetText"/>), otherwise 0 (also 0 when an older export file has no value).</summary>
+    public long IsSnippet { get; set; }
+    /// <summary>The text a snippet pastes; empty for other buttons (also empty when an older export file has no value).</summary>
+    public string SnippetText { get; set; } = "";
     /// <summary>
     /// Children shortcuts.
     /// </summary>
