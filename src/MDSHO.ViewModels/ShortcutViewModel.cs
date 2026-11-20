@@ -359,7 +359,10 @@ namespace MDSHO.ViewModels {
     /// notes in it (set by the app), so nothing is typed into a note that is gone.
     /// </summary>
     public static Action<ShortcutViewModel> NotesDeleted { get; set; }
-    /// <summary>The Windows error code when the user answers No to the administrator (UAC) prompt.</summary>
+    /// <summary>
+    /// The Windows error code when the user answers No to the administrator (UAC) prompt, or closes Windows' own "Problem
+    /// with Shortcut" box (a shortcut whose target is missing).
+    /// </summary>
     public const int ErrorCancelled = 1223;
     /// <summary>
     /// The start information of a run command: the arguments with the group values filled in and the lines joined for the
@@ -1018,32 +1021,51 @@ namespace MDSHO.ViewModels {
             Opened?.Invoke();
           }
         }
+      } catch (System.ComponentModel.Win32Exception ex) when (!this.IsProcessCommand && ex.NativeErrorCode == ErrorCancelled) {
+        // Windows showed its own "Problem with Shortcut" box (the target is missing) and the user closed it: Windows has
+        // said it already, so no second message.
+        Common.AppLog.Information("Shortcut file {File} was not opened: Windows' message was closed", this.Guid + this.Ext);
       } catch (Exception ex) {
         // A short plain message; the details go to the log. A run command was already logged by StartRunCommand
         // (without its arguments, which can hold passwords).
         if (this.IsProcessCommand) {
-          Dialogs.ShowError(this.Name, CouldNotStartText + RunFailureReason(ex), CheckProgramText);
+          Dialogs.ShowError(this.Name, CouldNotStartText, FailureDetail(ex, CheckProgramText));
         } else {
           Common.AppLog.Warning(ex, "Shortcut file {File} could not be opened", this.Guid + this.Ext);
-          Dialogs.ShowError(this.Name, CouldNotOpenText + RunFailureReason(ex), CheckTargetText);
+          Dialogs.ShowError(this.Name, CouldNotOpenText, FailureDetail(ex, CheckTargetText));
         }
       }
     }
-    /// <summary>The start of the message when Windows can't open a shortcut's file.</summary>
-    public const string CouldNotOpenText = "Windows could not open this file: ";
-    /// <summary>The start of the message when Windows can't start a run command's program.</summary>
-    public const string CouldNotStartText = "Windows could not start the program: ";
+    /// <summary>The bold first line when Windows can't open a shortcut's file.</summary>
+    public const string CouldNotOpenText = "Windows could not open this file.";
+    /// <summary>The bold first line when Windows can't start a run command's program.</summary>
+    public const string CouldNotStartText = "Windows could not start the program.";
+    /// <summary>The lines below the first one: the reason, then what to check.</summary>
+    public static string FailureDetail(Exception ex, string check) {
+      return RunFailureReason(ex) + "\n" + check;
+    }
     /// <summary>The line below a shortcut that can't be opened.</summary>
     public const string CheckTargetText = "Check that the file or folder it points to still exists.";
     /// <summary>The line below a run command that can't start.</summary>
     public const string CheckProgramText = "Check that the program and its folder are correct.";
     /// <summary>
-    /// A short reason for a failed start: the Windows text for the error code (not ex.Message, which can hold the working
-    /// folder), or the message of any other exception. Never the HRESULT or a stack trace.
+    /// A short reason for a failed start: plain words for the common Windows codes, else the Windows text for the code
+    /// (not ex.Message, which can hold the working folder), or the message of any other exception. Never the HRESULT or a
+    /// stack trace.
     /// </summary>
     public static string RunFailureReason(Exception ex) {
       if (ex is System.ComponentModel.Win32Exception win32) {
-        return new System.ComponentModel.Win32Exception(win32.NativeErrorCode).Message;
+        switch (win32.NativeErrorCode) {
+          case 2: // file not found
+          case 3: // path not found
+            return "The file or folder is missing.";
+          case 5: // access denied
+            return "Windows doesn't allow MDSHO to open it.";
+          case 1155: // no application is associated
+            return "No app is set to open this kind of file.";
+          default:
+            return new System.ComponentModel.Win32Exception(win32.NativeErrorCode).Message;
+        }
       }
       return ex.Message;
     }

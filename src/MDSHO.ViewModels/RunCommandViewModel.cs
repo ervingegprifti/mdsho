@@ -189,7 +189,7 @@ namespace MDSHO.ViewModels {
           this.program, this.StoredArguments, this.workingFolder, this.runAsAdministrator, this.GroupValues));
       } catch (Exception ex) when (ex is System.ComponentModel.Win32Exception || ex is InvalidOperationException) {
         // StartRunCommand has logged it; a short plain reason here.
-        Dialogs.ShowError("Test run", ShortcutViewModel.CouldNotStartText + ShortcutViewModel.RunFailureReason(ex), ShortcutViewModel.CheckProgramText);
+        Dialogs.ShowError("Test run", ShortcutViewModel.CouldNotStartText, ShortcutViewModel.FailureDetail(ex, ShortcutViewModel.CheckProgramText));
       }
     }
 

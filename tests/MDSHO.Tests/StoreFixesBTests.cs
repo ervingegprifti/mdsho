@@ -98,16 +98,45 @@ namespace MDSHO.Tests {
       Assert.DoesNotContain("Exception", text);
     }
 
-    [Fact]
-    public void A_shortcut_Windows_cannot_open_shows_the_Windows_reason_without_the_HRESULT() {
+    // The heading is a short sentence; the reason is on its own line in plain words, then what to check.
+    [Theory]
+    [InlineData(2, "The file or folder is missing.")]
+    [InlineData(3, "The file or folder is missing.")]
+    [InlineData(5, "Windows doesn't allow MDSHO to open it.")]
+    [InlineData(1155, "No app is set to open this kind of file.")]
+    public void A_shortcut_Windows_cannot_open_says_why_in_plain_words(int code, string reason) {
       ShortcutViewModel s = FileShortcut(null, "Tool");
-      ShortcutViewModel.ProcessStarter = psi => throw new Win32Exception(2);
+      ShortcutViewModel.ProcessStarter = psi => throw new Win32Exception(code);
       s.RunShortcut(false);
       var e = Assert.Single(errors);
       Assert.Equal("Tool", e.Caption);
-      Assert.Equal("Windows could not open this file: " + new Win32Exception(2).Message, e.Error);
+      Assert.Equal("Windows could not open this file.", e.Error);
+      Assert.Equal(reason + "\n" + ShortcutViewModel.CheckTargetText, e.Detail);
       AssertPlain(e.Error + e.Detail);
       Assert.Contains(log.Events, x => x.Level == LogEventLevel.Warning);
+    }
+
+    [Fact]
+    public void Other_codes_keep_the_Windows_text_without_the_HRESULT() {
+      ShortcutViewModel s = FileShortcut(null, "Tool");
+      ShortcutViewModel.ProcessStarter = psi => throw new Win32Exception(1392);
+      s.RunShortcut(false);
+      var e = Assert.Single(errors);
+      Assert.Equal("Windows could not open this file.", e.Error);
+      Assert.Equal(new Win32Exception(1392).Message + "\n" + ShortcutViewModel.CheckTargetText, e.Detail);
+      AssertPlain(e.Error + e.Detail);
+    }
+
+    [Fact]
+    public void Closing_windows_problem_with_shortcut_box_shows_nothing_and_logs_one_line() {
+      // Windows shows its own "Problem with Shortcut" box for a missing target; closing it fails the open with 1223.
+      ShortcutViewModel s = FileShortcut(null, "Tool");
+      ShortcutViewModel.ProcessStarter = psi => throw new Win32Exception(ShortcutViewModel.ErrorCancelled);
+      s.RunShortcut(false);
+      Assert.Empty(errors);
+      LogEvent line = Assert.Single(log.Events);
+      Assert.Equal(LogEventLevel.Information, line.Level);
+      Assert.Null(line.Exception);
     }
 
     [Fact]
@@ -116,7 +145,8 @@ namespace MDSHO.Tests {
       ShortcutViewModel.ProcessStarter = psi => throw new InvalidOperationException("No application is associated.");
       s.RunShortcut(false);
       var e = Assert.Single(errors);
-      Assert.Equal("Windows could not open this file: No application is associated.", e.Error);
+      Assert.Equal("Windows could not open this file.", e.Error);
+      Assert.Equal("No application is associated.\n" + ShortcutViewModel.CheckTargetText, e.Detail);
       AssertPlain(e.Error + e.Detail);
       Assert.Contains(log.Events, x => x.Exception is InvalidOperationException);
     }
@@ -129,8 +159,22 @@ namespace MDSHO.Tests {
       ShortcutViewModel.ProcessStarter = psi => throw new Win32Exception(2);
       s.RunShortcut(false);
       var e = Assert.Single(errors);
-      Assert.Equal("Windows could not start the program: " + new Win32Exception(2).Message, e.Error);
+      Assert.Equal("Windows could not start the program.", e.Error);
+      Assert.Equal("The file or folder is missing.\n" + ShortcutViewModel.CheckProgramText, e.Detail);
       AssertPlain(e.Error + e.Detail);
+    }
+
+    [Theory]
+    [InlineData(5, "Windows doesn't allow MDSHO to open it.")]
+    [InlineData(1155, "No app is set to open this kind of file.")]
+    public void A_run_command_says_why_in_plain_words_too(int code, string reason) {
+      ShortcutViewModel s = ViewModelFactory.NewProcessCommandShortcut(app, null, win);
+      win.RootShortcuts.Add(s);
+      s.ProcessFileName = "tool.exe";
+      ShortcutViewModel.ProcessStarter = psi => throw new Win32Exception(code);
+      s.RunShortcut(false);
+      var e = Assert.Single(errors);
+      Assert.Equal(reason + "\n" + ShortcutViewModel.CheckProgramText, e.Detail);
     }
 
     [Fact]
@@ -142,7 +186,8 @@ namespace MDSHO.Tests {
       ShortcutViewModel.ProcessStarter = psi => throw new Win32Exception(2);
       vm.TestRun();
       var e = Assert.Single(errors);
-      Assert.Equal("Windows could not start the program: " + new Win32Exception(2).Message, e.Error);
+      Assert.Equal("Windows could not start the program.", e.Error);
+      Assert.Equal("The file or folder is missing.\n" + ShortcutViewModel.CheckProgramText, e.Detail);
       AssertPlain(e.Error + e.Detail);
     }
 

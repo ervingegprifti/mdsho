@@ -26,6 +26,7 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 ### Fixed
 
 - Renaming a button no longer brings the clones of its panel on other screens in front of other windows; they keep showing the name.
+- Closing Windows' Problem with Shortcut box no longer shows a second, confusing message; common open errors use plain words.
 
 ## [1.18.0]
 
