@@ -112,6 +112,7 @@ namespace MDSHO {
         }
       }
       if (kind != TextKind.Comment) {
+        UseSizeButton();
         UseFontButton();
       }
 
@@ -138,8 +139,9 @@ namespace MDSHO {
           shortcut.OwningWindow.Appearance.CommentWrapText = this.IsWrapText;
         }
       };
-      // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a comment starts at 12 each time.
-      this.TextComment.FontSize = NoteWindowPlace.DefaultFontSize;
+      // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a snippet starts at 12 pt and a
+      // comment at 12 each time.
+      SetTextSize(kind == TextKind.Comment ? NoteWindowPlace.CommentFontSize : NoteWindowPlace.DefaultFontSize);
       this.TextComment.PreviewMouseWheel += TextComment_PreviewMouseWheel;
       this.sizeLabelTimer = NewSizeLabelTimer();
       this.Closed += (s, e) => this.sizeLabelTimer.Stop();
@@ -304,7 +306,7 @@ namespace MDSHO {
       this.Height = Math.Max(this.MinHeight, place.Height);
       SetPinned(place.IsTopmost);
       SetWrapText(place.IsWrapText);
-      this.TextComment.FontSize = NoteWindowPlace.FontSizeOrDefault(place.FontSize);
+      SetTextSize(NoteWindowPlace.FontSizeOrDefault(place.FontSize));
       this.savedState = place.State == NoteWindowPlace.Maximized ? WindowState.Maximized
         : place.State == NoteWindowPlace.Minimized ? WindowState.Minimized : WindowState.Normal;
       EventHandler placeOnHandle = null;
@@ -397,7 +399,7 @@ namespace MDSHO {
       try {
         DataStore.NoteWindows.Save(new NoteWindowPlace(this.shortcut.ID, (long)Math.Round(normal.X), (long)Math.Round(normal.Y),
           (long)Math.Round(normal.Width), (long)Math.Round(normal.Height), state, isOpen) { IsTopmost = this.Topmost, IsWrapText = this.IsWrapText,
-          FontSize = (long)Math.Round(this.TextComment.FontSize) });
+          FontSize = TextSize });
       } catch (Exception ex) {
         // A place that can't be saved must never break the note window.
         AppLog.Warning(ex, "Could not save the place of a note window");
@@ -575,7 +577,7 @@ namespace MDSHO {
       this.TitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "Theme.BarBackground");
       this.TextTitle.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
       this.TextTitleIcon.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonFont, this.ButtonWrap, this.ButtonOk, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonOk, this.ButtonClose }) {
         button.SetResourceReference(ForegroundProperty, "Theme.TextStrong");
       }
       this.TextSizeLabel.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
@@ -597,7 +599,7 @@ namespace MDSHO {
       this.TitleBar.SetBinding(System.Windows.Controls.Border.BackgroundProperty, Bind(nameof(NoteColors.TitleBackgroundColor)));
       this.TextTitle.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       this.TextTitleIcon.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonFont, this.ButtonColors, this.ButtonWrap, this.ButtonPin, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonColors, this.ButtonWrap, this.ButtonPin, this.ButtonClose }) {
         button.SetBinding(ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       }
       this.TextSizeLabel.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
@@ -675,16 +677,74 @@ namespace MDSHO {
         return;
       }
       e.Handled = true;
-      long size = NoteWindowPlace.NextFontSize((long)Math.Round(this.TextComment.FontSize), e.Delta);
-      if (size == (long)Math.Round(this.TextComment.FontSize)) {
+      long size = NoteWindowPlace.NextFontSize(TextSize, e.Delta);
+      if (size == TextSize) {
         return;
       }
-      this.TextComment.FontSize = size;
-      ShowSizeLabel();
+      SetTextSize(size);
+      if (this.kind == TextKind.Comment) {
+        ShowSizeLabel();
+      }
       SaveNotePlace();
     }
 
-    // ---- The size label ----
+    /// <summary>The text size now, in DIPs.</summary>
+    private long TextSize => (long)Math.Round(this.TextComment.FontSize);
+
+    // Sizes the text and shows the size on the size button.
+    private void SetTextSize(long size) {
+      this.TextComment.FontSize = size;
+      this.ButtonSize.Content = NoteFonts.PointsLabel(size);
+    }
+
+    // ---- The text size button and menu ----
+
+    /// <summary>The text of the menu item that goes back to the default size.</summary>
+    public static readonly string DefaultSizeText = "Default (" + NoteFonts.PointsLabel(NoteWindowPlace.DefaultFontSize) + ")";
+
+    /// <summary>The size menu while it is open (or last open); null before the size button was clicked.</summary>
+    public System.Windows.Controls.ContextMenu SizeMenu { get; private set; }
+
+    // A note and a snippet have a size button left of the font button; a pick applies at once (a note saves it).
+    private void UseSizeButton() {
+      this.ButtonSize.Visibility = Visibility.Visible;
+      this.ButtonSize.Click += (s, e) => {
+        this.SizeMenu = BuildSizeMenu();
+        this.SizeMenu.PlacementTarget = this.ButtonSize;
+        this.SizeMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        this.SizeMenu.IsOpen = true;
+      };
+    }
+
+    /// <summary>
+    /// The size menu: a small "Text size" label, the preset sizes in points with a tick on the size in use (none for a
+    /// size from the wheel that isn't a preset), then "Default (12 pt)".
+    /// </summary>
+    public System.Windows.Controls.ContextMenu BuildSizeMenu() {
+      System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();
+      menu.Items.Add(new System.Windows.Controls.MenuItem { Header = "Text size", IsEnabled = false, FontSize = 11 });
+      long current = TextSize;
+      foreach (long size in NoteWindowPlace.SizePresets) {
+        menu.Items.Add(SizeItem(NoteFonts.PointsLabel(size), size, size == current));
+      }
+      menu.Items.Add(new System.Windows.Controls.Separator());
+      menu.Items.Add(SizeItem(DefaultSizeText, NoteWindowPlace.DefaultFontSize, false));
+      return menu;
+    }
+
+    private System.Windows.Controls.MenuItem SizeItem(string header, long size, bool isChecked) {
+      System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem { Header = header, IsChecked = isChecked };
+      item.Click += (s, e) => PickSize(size);
+      return item;
+    }
+
+    /// <summary>Uses a text size at once; a note saves it with its window, like the wheel does.</summary>
+    public void PickSize(long size) {
+      SetTextSize(Math.Clamp(size, NoteWindowPlace.MinFontSize, NoteWindowPlace.MaxFontSize));
+      SaveNotePlace();
+    }
+
+    // ---- The size label (Comment window only) ----
 
     /// <summary>How long the size label stays after the last size change, before it fades.</summary>
     public static readonly TimeSpan SizeLabelDelay = TimeSpan.FromSeconds(2);
@@ -694,10 +754,10 @@ namespace MDSHO {
 
     private readonly IOneShotTimer sizeLabelTimer;
 
-    /// <summary>True while the title bar shows the text size (until it fades).</summary>
+    /// <summary>True while a comment's title bar shows the text size (until it fades); never in a note or snippet.</summary>
     public bool IsSizeLabelShown { get; private set; }
 
-    // Shows the size in points in the middle of the title bar, and fades it out a moment after the last change.
+    // Shows a comment's size in points in the middle of the title bar, and fades it out a moment after the last change.
     private void ShowSizeLabel() {
       this.TextSizeLabel.Text = NoteFonts.PointsLabel(this.TextComment.FontSize);
       this.TextSizeLabel.BeginAnimation(OpacityProperty, null);

@@ -18,8 +18,8 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// The font button and menu in the title bar of the Note window and the snippet editor, the size label in points,
-  /// and how the fonts load (shipped ones from embedded resources, Courier New when a file is missing).
+  /// The font and text size buttons and menus in the title bar of the Note window and the snippet editor, the size label
+  /// of the Comment window, and how the fonts load (shipped ones from embedded resources, Courier New when a file is missing).
   /// </summary>
   public class NoteFontViewTests {
     private static readonly ScreenRect TestArea = new ScreenRect(-20000, -20000, 15000, 15000);
@@ -359,103 +359,200 @@ namespace MDSHO.Tests {
       });
     }
 
-    // ---- The size label ----
+    // ---- The text size button ----
+
+    private static List<string> SizeShape(ContextMenu menu) {
+      return menu.Items.Cast<object>().Select(i => i is Separator ? "-" : i is MenuItem m ? (m.IsEnabled ? "" : "label:") + m.Header : "?").ToList();
+    }
+
+    private static List<MenuItem> SizeItems(ContextMenu menu) => menu.Items.OfType<MenuItem>().Where(i => i.IsEnabled).ToList();
+
+    private static MenuItem SizeItem(ContextMenu menu, string header) => SizeItems(menu).Single(i => (string)i.Header == header);
+
+    private static List<string> Ticked(ContextMenu menu) => SizeItems(menu).Where(i => i.IsChecked).Select(i => (string)i.Header).ToList();
 
     [Fact]
-    public void The_size_label_is_hidden_until_the_size_changes() {
+    public void The_note_window_has_a_text_size_button_just_left_of_the_font_button() {
       WithButtons(f => {
         TextEditWindow window = OpenNote(f.Note);
-        Assert.False(window.IsSizeLabelShown);
-        Assert.Equal(0, Named<TextBlock>(window, "TextSizeLabel").Opacity);
+        Button size = Named<Button>(window, "ButtonSize");
+        Assert.Equal(Visibility.Visible, size.Visibility);
+        Assert.Equal("Text size", size.ToolTip);
+        Assert.Equal("Text size", System.Windows.Automation.AutomationProperties.GetName(size));
+        Assert.Equal("12 pt", size.Content);
+        Assert.Equal(ColumnOf(Named<Button>(window, "ButtonFont")) - 1, ColumnOf(size));
+        Assert.True(WindowChromeHit(size));
+        Assert.NotNull(System.Windows.Data.BindingOperations.GetBinding(size, Control.ForegroundProperty));
       });
     }
 
     [Fact]
-    public void Ctrl_wheel_shows_the_size_in_points_in_the_title_bar() {
-      WithButtons(f => {
-        TextEditWindow window = OpenNote(f.Note);
-        Assert.True(Wheel(window, 120));
-        TextBlock label = Named<TextBlock>(window, "TextSizeLabel");
-        Assert.True(window.IsSizeLabelShown);
-        Assert.Equal("10.5 pt", label.Text);
-        Assert.Equal(1, label.Opacity);
-        Wheel(window, 120);
-        Assert.Equal("12 pt", label.Text);
-        Assert.Same(Named<Border>(window, "TitleBar"), FindAncestor<Border>(label, b => b.Name == "TitleBar"));
-      });
-    }
-
-    [Fact]
-    public void The_label_fades_two_seconds_after_the_last_change() {
-      WithButtons(f => {
-        TextEditWindow window = OpenNote(f.Note);
-        Wheel(window, 120);
-        Assert.Equal(TimeSpan.FromSeconds(2), f.Timer.Delay);
-        Assert.Equal(TimeSpan.FromSeconds(2), TextEditWindow.SizeLabelDelay);
-        Wheel(window, -120);
-        Assert.Equal(2, f.Timer.Starts);
-        Assert.True(window.IsSizeLabelShown);
-        f.Timer.Fire();
-        WpfAppHost.Pump();
-        Assert.False(window.IsSizeLabelShown);
-      });
-    }
-
-    [Fact]
-    public void A_wheel_turn_at_the_limit_changes_nothing_and_shows_no_label() {
-      WithButtons(f => {
-        TextEditWindow window = OpenNote(f.Note);
-        for (int i = 0; i < 40; i++) { Wheel(window, 120); }
-        f.Timer.Fire();
-        WpfAppHost.Pump();
-        int starts = f.Timer.Starts;
-        Wheel(window, 120);
-        Assert.Equal(starts, f.Timer.Starts);
-        Assert.False(window.IsSizeLabelShown);
-      });
-    }
-
-    [Fact]
-    public void The_label_never_takes_clicks_from_the_title_bar() {
-      WithButtons(f => {
-        TextEditWindow window = OpenNote(f.Note);
-        Wheel(window, 120);
-        TextBlock label = Named<TextBlock>(window, "TextSizeLabel");
-        Assert.False(label.IsHitTestVisible);
-        Assert.False(System.Windows.Shell.WindowChrome.GetIsHitTestVisibleInChrome(label));
-        Border bar = Named<Border>(window, "TitleBar");
-        Point middle = label.TranslatePoint(new Point(label.ActualWidth / 2, label.ActualHeight / 2), bar);
-        // What the mouse would click there (input hit testing skips elements that aren't hit test visible).
-        DependencyObject hit = bar.InputHitTest(middle) as DependencyObject;
-        Assert.NotNull(hit);
-        Assert.False(IsInside(hit, label), "The label must let clicks through");
-      });
-    }
-
-    [Fact]
-    public void The_snippet_editor_shows_the_size_label_too() {
+    public void The_snippet_editor_has_the_text_size_button_too() {
       WithButtons(f => {
         TextEditWindow window = TextEditWindow.ForSnippet(f.Snippet);
         Shown(window, () => {
-          Wheel(window, -120);
-          Assert.True(window.IsSizeLabelShown);
-          Assert.Equal("7.5 pt", Named<TextBlock>(window, "TextSizeLabel").Text);
+          Button size = Named<Button>(window, "ButtonSize");
+          Assert.Equal(Visibility.Visible, size.Visibility);
+          Assert.Equal("12 pt", size.Content);
+          Assert.Equal(16, Text(window).FontSize);
+          Assert.Equal(ColumnOf(Named<Button>(window, "ButtonFont")) - 1, ColumnOf(size));
         });
       });
     }
 
-    private static bool IsInside(DependencyObject child, DependencyObject parent) {
-      for (DependencyObject d = child; d != null; d = VisualTreeHelper.GetParent(d)) {
-        if (ReferenceEquals(d, parent)) { return true; }
-      }
-      return false;
+    [Fact]
+    public void A_comment_window_has_no_text_size_button() {
+      WithButtons(f => {
+        TextEditWindow window = TextEditWindow.ForComment(f.Command);
+        Shown(window, () => Assert.NotEqual(Visibility.Visible, Named<Button>(window, "ButtonSize").Visibility));
+      });
     }
 
-    private static T FindAncestor<T>(DependencyObject child, Func<T, bool> match) where T : DependencyObject {
-      for (DependencyObject d = VisualTreeHelper.GetParent(child); d != null; d = VisualTreeHelper.GetParent(d)) {
-        if (d is T t && match(t)) { return t; }
-      }
-      return null;
+    [Fact]
+    public void The_size_menu_has_a_header_the_presets_and_the_default() {
+      WithButtons(f => {
+        ContextMenu menu = OpenNote(f.Note).BuildSizeMenu();
+        Assert.Equal(new[] {
+          "label:Text size", "7.5 pt", "9 pt", "10.5 pt", "12 pt", "13.5 pt", "15 pt", "18 pt", "21 pt", "24 pt", "36 pt", "-",
+          "Default (12 pt)" }, SizeShape(menu));
+        Assert.Equal(new[] { "12 pt" }, Ticked(menu));
+      });
+    }
+
+    [Fact]
+    public void The_size_button_opens_the_menu_below_it() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        Button size = Named<Button>(window, "ButtonSize");
+        size.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, size));
+        WpfAppHost.Pump();
+        ContextMenu menu = window.SizeMenu;
+        Assert.NotNull(menu);
+        try {
+          Assert.True(menu.IsOpen);
+          Assert.Same(size, menu.PlacementTarget);
+          Assert.Equal(PlacementMode.Bottom, menu.Placement);
+        } finally {
+          menu.IsOpen = false;
+          WpfAppHost.Pump();
+        }
+      });
+    }
+
+    [Fact]
+    public void Picking_a_size_applies_it_at_once_saves_it_and_moves_the_tick() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        Click(SizeItem(window.BuildSizeMenu(), "18 pt"));
+        Assert.Equal(24, Text(window).FontSize);
+        Assert.Equal("18 pt", Named<Button>(window, "ButtonSize").Content);
+        Assert.Equal(24, DataStore.NoteWindows.Get(f.Note.ID).FontSize);
+        Assert.Equal(new[] { "18 pt" }, Ticked(window.BuildSizeMenu()));
+        window.Close();
+        WpfAppHost.Pump();
+        TextEditWindow again = OpenNote(f.Note);
+        Assert.Equal(24, Text(again).FontSize);
+        Assert.Equal("18 pt", Named<Button>(again, "ButtonSize").Content);
+      });
+    }
+
+    [Fact]
+    public void Default_goes_back_to_12_pt_and_saves_it() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        Click(SizeItem(window.BuildSizeMenu(), "36 pt"));
+        Click(SizeItem(window.BuildSizeMenu(), "Default (12 pt)"));
+        Assert.Equal(16, Text(window).FontSize);
+        Assert.Equal("12 pt", Named<Button>(window, "ButtonSize").Content);
+        Assert.Equal(16, DataStore.NoteWindows.Get(f.Note.ID).FontSize);
+      });
+    }
+
+    [Fact]
+    public void Ctrl_wheel_updates_the_button_and_shows_no_size_label_in_a_note() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        Assert.True(Wheel(window, 120));
+        Assert.Equal(18, Text(window).FontSize);
+        Assert.Equal("13.5 pt", Named<Button>(window, "ButtonSize").Content);
+        Assert.False(window.IsSizeLabelShown);
+        Assert.Equal(0, f.Timer.Starts);
+        Assert.Equal(new[] { "13.5 pt" }, Ticked(window.BuildSizeMenu()));
+      });
+    }
+
+    [Fact]
+    public void A_wheel_size_that_is_not_a_preset_shows_on_the_button_with_no_tick() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        Wheel(window, 120);
+        Wheel(window, 120);
+        Wheel(window, 120);
+        Assert.Equal(22, Text(window).FontSize);
+        Assert.Equal("16.5 pt", Named<Button>(window, "ButtonSize").Content);
+        Assert.Empty(Ticked(window.BuildSizeMenu()));
+      });
+    }
+
+    [Fact]
+    public void The_wheel_still_stops_at_the_limits_and_the_button_follows() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        for (int i = 0; i < 40; i++) { Wheel(window, 120); }
+        Assert.Equal(72, Text(window).FontSize);
+        Assert.Equal("54 pt", Named<Button>(window, "ButtonSize").Content);
+        for (int i = 0; i < 40; i++) { Wheel(window, -120); }
+        Assert.Equal(8, Text(window).FontSize);
+        Assert.Equal("6 pt", Named<Button>(window, "ButtonSize").Content);
+      });
+    }
+
+    [Fact]
+    public void The_snippet_editor_applies_a_picked_size_and_shows_no_size_label() {
+      WithButtons(f => {
+        TextEditWindow window = TextEditWindow.ForSnippet(f.Snippet);
+        Shown(window, () => {
+          Click(SizeItem(window.BuildSizeMenu(), "9 pt"));
+          Assert.Equal(12, Text(window).FontSize);
+          Assert.Equal("9 pt", Named<Button>(window, "ButtonSize").Content);
+          Wheel(window, -120);
+          Assert.Equal("7.5 pt", Named<Button>(window, "ButtonSize").Content);
+          Assert.False(window.IsSizeLabelShown);
+        });
+      });
+    }
+
+    [Fact]
+    public void The_size_button_follows_the_note_title_text_colour() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        Button size = Named<Button>(window, "ButtonSize");
+        Button close = Named<Button>(window, "ButtonClose");
+        Assert.Equal(((SolidColorBrush)close.Foreground).Color, ((SolidColorBrush)size.Foreground).Color);
+      });
+    }
+
+    // ---- The size label (Comment window only) ----
+
+    [Fact]
+    public void A_comment_window_still_shows_the_size_label_and_fades_it() {
+      WithButtons(f => {
+        TextEditWindow window = TextEditWindow.ForComment(f.Command);
+        Shown(window, () => {
+          Assert.False(window.IsSizeLabelShown);
+          Assert.True(Wheel(window, 120));
+          Assert.Equal(14, Text(window).FontSize);
+          TextBlock label = Named<TextBlock>(window, "TextSizeLabel");
+          Assert.True(window.IsSizeLabelShown);
+          Assert.Equal("10.5 pt", label.Text);
+          Assert.Equal(1, label.Opacity);
+          Assert.False(label.IsHitTestVisible);
+          Assert.Equal(TimeSpan.FromSeconds(2), f.Timer.Delay);
+          f.Timer.Fire();
+          WpfAppHost.Pump();
+          Assert.False(window.IsSizeLabelShown);
+        });
+      });
     }
 
     // ---- Loading the fonts ----

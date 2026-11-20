@@ -35,8 +35,12 @@ namespace MDSHO.Core {
     /// <summary>Size of the note's text (Ctrl + mouse wheel); 0 = <see cref="DefaultFontSize"/>.</summary>
     public long FontSize { get; set; }
 
-    /// <summary>The text size of a new note or a comment.</summary>
-    public const long DefaultFontSize = 12;
+    /// <summary>The text size of a new note and of the snippet editor (16 DIPs = 12 pt).</summary>
+    public const long DefaultFontSize = 16;
+    /// <summary>The text size a Comment window starts at each time.</summary>
+    public const long CommentFontSize = 12;
+    /// <summary>The sizes in the text size menu, in whole DIPs (7.5 to 36 pt).</summary>
+    public static readonly System.Collections.Generic.IReadOnlyList<long> SizePresets = new long[] { 10, 12, 14, 16, 18, 20, 24, 28, 32, 48 };
     /// <summary>The smallest text size.</summary>
     public const long MinFontSize = 8;
     /// <summary>The biggest text size.</summary>

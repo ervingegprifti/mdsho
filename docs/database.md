@@ -112,7 +112,7 @@ exports import with default note windows. Added in version 8.
 | `IsOpen` | INTEGER | NOT NULL | `0` | `1` = the window was open (also when MDSHO or Windows closed it at exit), so it opens again at start. |
 | `IsTopmost` | INTEGER | NOT NULL | `0` | `1` = the window stays on top of other apps (the pin in its title bar). Added in version 9. |
 | `IsWrapText` | INTEGER | NOT NULL | `0` | `1` = the note's text wraps at the window's edge (the wrap text button in its title bar). Added in version 11. |
-| `FontSize` | INTEGER | NOT NULL | `0` | Size of the note's text, set with Ctrl + mouse wheel: 8 to 72 in steps of 2; `0` = 12. Added in version 18. |
+| `FontSize` | INTEGER | NOT NULL | `0` | Size of the note's text, set with the Text size button or Ctrl + mouse wheel: 8 to 72 (DIPs); `0` = 16 (12 pt) from 1.20.1, 12 before. Added in version 18. |
 
 ### DefaultColors
 

@@ -11,6 +11,12 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 ### Added
 
 - Verdana and Calibri in the font menu of notes and snippets, under From Windows.
+- A Text size button in the title bar of notes and the snippet editor, left of the font button. It shows the size in points and opens a menu of sizes from 7.5 to 36 pt, plus Default (12 pt).
+
+### Changed
+
+- New notes and the snippet editor start at 12 pt. Other notes keep the size saved with them.
+- Notes and the snippet editor no longer show the size label in the title bar; the Text size button shows the size.
 
 ### Fixed
 
