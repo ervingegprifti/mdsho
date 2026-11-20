@@ -35,7 +35,7 @@ namespace MDSHO.Common {
     Edit,
     /// <summary>A document.</summary>
     Document,
-    /// <summary>A window, pane, group, custom or unknown control: can hold anything.</summary>
+    /// <summary>A window, pane, group, custom or unknown control: a text field only when a caret shows.</summary>
     Container,
     /// <summary>A control that is not for text (button, list, tree, menu...).</summary>
     Other
@@ -102,18 +102,38 @@ namespace MDSHO.Common {
 
   /// <summary>Decides from UI Automation facts whether the focused element takes text.</summary>
   public static class FocusedFieldRules {
+    // The desktop (its icon list) and the taskbars.
+    private static readonly string[] DesktopAndTaskbarClasses = { "Progman", "WorkerW", "Shell_TrayWnd", "Shell_SecondaryTrayWnd" };
+
     /// <summary>
-    /// A Value pattern decides when there is one (read-only = not a text field). Otherwise a Text pattern, an edit box or
-    /// a document counts as a text field. A container can't tell; any other control is clearly not a text field.
+    /// A Value pattern decides first (read-only = not a text field). Otherwise a Text pattern, an edit box or a document
+    /// counts as a text field. A container (pane, window, group, custom) counts only when the window's thread shows a
+    /// caret; any other control is not a text field.
     /// </summary>
-    public static FieldCheck Decide(FocusedControlKind kind, bool hasValuePattern, bool valueIsReadOnly, bool hasTextPattern) {
+    public static FieldCheck Decide(FocusedControlKind kind, bool hasValuePattern, bool valueIsReadOnly, bool hasTextPattern, bool hasCaret) {
       if (hasValuePattern) {
         return valueIsReadOnly ? FieldCheck.NotEditable : FieldCheck.Editable;
       }
       if (hasTextPattern || kind == FocusedControlKind.Edit || kind == FocusedControlKind.Document) {
         return FieldCheck.Editable;
       }
-      return kind == FocusedControlKind.Container ? FieldCheck.Unknown : FieldCheck.NotEditable;
+      return kind == FocusedControlKind.Container && hasCaret ? FieldCheck.Editable : FieldCheck.NotEditable;
+    }
+
+    /// <summary>
+    /// True for the desktop and the taskbar: the top-level window class (of the target, or of the focused window's root,
+    /// which covers the desktop's SysListView32 child) is Progman, WorkerW, Shell_TrayWnd or Shell_SecondaryTrayWnd.
+    /// </summary>
+    public static bool IsDesktopOrTaskbar(string windowClass, string focusClass) {
+      return windowClass != null && Array.IndexOf(DesktopAndTaskbarClasses, windowClass) >= 0;
+    }
+
+    /// <summary>The facts of one check for the log: never the field's content or name.</summary>
+    public static string Describe(string controlType, string className, bool hasValuePattern, bool valueIsReadOnly, bool hasTextPattern, bool hasCaret, FieldCheck decision) {
+      string YesNo(bool b) => b ? "yes" : "no";
+      return "control " + controlType + ", class " + className + ", value pattern " + YesNo(hasValuePattern)
+        + (hasValuePattern ? " (read-only " + YesNo(valueIsReadOnly) + ")" : "")
+        + ", text pattern " + YesNo(hasTextPattern) + ", caret " + YesNo(hasCaret) + ": " + decision;
     }
   }
 

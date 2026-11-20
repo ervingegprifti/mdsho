@@ -7,7 +7,7 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// The paste flow of a snippet (1.19.1), with fakes for every Windows part: the window the user came from,
+  /// The paste flow of a snippet (1.19.2), with fakes for every Windows part: the window the user came from,
   /// the elevation check, the focused-field check, the clipboard, the key sender and the waits.
   /// </summary>
   public class ClipboardPasterTests {
@@ -384,20 +384,53 @@ namespace MDSHO.Tests {
     // ---- What counts as an editable text field (UI Automation facts) ----
 
     [Theory]
-    [InlineData(FocusedControlKind.Edit, true, false, false, FieldCheck.Editable)]
-    [InlineData(FocusedControlKind.Edit, true, true, false, FieldCheck.NotEditable)]
-    [InlineData(FocusedControlKind.Edit, false, false, false, FieldCheck.Editable)]
-    [InlineData(FocusedControlKind.Document, false, false, true, FieldCheck.Editable)]
-    [InlineData(FocusedControlKind.Document, true, true, true, FieldCheck.NotEditable)]
-    [InlineData(FocusedControlKind.Container, true, false, false, FieldCheck.Editable)]
-    [InlineData(FocusedControlKind.Container, false, false, true, FieldCheck.Editable)]
-    [InlineData(FocusedControlKind.Container, false, false, false, FieldCheck.Unknown)]
-    [InlineData(FocusedControlKind.Other, false, false, false, FieldCheck.NotEditable)]
-    [InlineData(FocusedControlKind.Other, true, false, false, FieldCheck.Editable)]
-    [InlineData(FocusedControlKind.Other, true, true, false, FieldCheck.NotEditable)]
-    [InlineData(FocusedControlKind.Other, false, false, true, FieldCheck.Editable)]
-    public void The_focused_field_rules(FocusedControlKind kind, bool hasValue, bool readOnly, bool hasText, FieldCheck expected) {
-      Assert.Equal(expected, FocusedFieldRules.Decide(kind, hasValue, readOnly, hasText));
+    // kind, Value pattern, read-only, Text pattern, caret in the window's thread -> decision
+    [InlineData(FocusedControlKind.Edit, true, false, false, false, FieldCheck.Editable)]       // editable value
+    [InlineData(FocusedControlKind.Edit, true, true, false, false, FieldCheck.NotEditable)]
+    [InlineData(FocusedControlKind.Edit, false, false, false, false, FieldCheck.Editable)]
+    [InlineData(FocusedControlKind.Document, false, false, true, false, FieldCheck.Editable)]
+    [InlineData(FocusedControlKind.Document, true, true, true, false, FieldCheck.NotEditable)]   // read-only value document (a browser page)
+    [InlineData(FocusedControlKind.Document, true, true, true, true, FieldCheck.NotEditable)]    // the Value pattern decides first
+    [InlineData(FocusedControlKind.Container, true, false, false, false, FieldCheck.Editable)]
+    [InlineData(FocusedControlKind.Container, false, false, true, false, FieldCheck.Editable)]
+    [InlineData(FocusedControlKind.Container, false, false, false, false, FieldCheck.NotEditable)] // the desktop's FolderView pane
+    [InlineData(FocusedControlKind.Container, false, false, false, true, FieldCheck.Editable)]     // a custom text box with a caret
+    [InlineData(FocusedControlKind.Other, false, false, false, false, FieldCheck.NotEditable)]
+    [InlineData(FocusedControlKind.Other, true, false, false, false, FieldCheck.Editable)]
+    [InlineData(FocusedControlKind.Other, true, true, false, false, FieldCheck.NotEditable)]
+    [InlineData(FocusedControlKind.Other, false, false, true, false, FieldCheck.Editable)]
+    public void The_focused_field_rules(FocusedControlKind kind, bool hasValue, bool readOnly, bool hasText, bool hasCaret, FieldCheck expected) {
+      Assert.Equal(expected, FocusedFieldRules.Decide(kind, hasValue, readOnly, hasText, hasCaret));
+    }
+
+    [Theory]
+    [InlineData("Progman", "SysListView32", true)]
+    [InlineData("WorkerW", "SysListView32", true)]
+    [InlineData("Shell_TrayWnd", "Start", true)]
+    [InlineData("Shell_SecondaryTrayWnd", "", true)]
+    [InlineData("Notepad", "Edit", false)]
+    [InlineData("Chrome_WidgetWin_1", "Chrome_RenderWidgetHostHWND", false)]
+    [InlineData("CabinetWClass", "SysListView32", false)] // a list in a File Explorer window is not the desktop
+    [InlineData(null, null, false)]
+    public void The_desktop_and_the_taskbar_are_never_text_fields(string windowClass, string focusClass, bool desktop) {
+      Assert.Equal(desktop, FocusedFieldRules.IsDesktopOrTaskbar(windowClass, focusClass));
+    }
+
+    [Fact]
+    public void Clicking_the_desktop_first_says_no_place_to_paste_into_and_touches_nothing() {
+      // The facts UI Automation gives for the desktop: a pane (FolderView), no Value or Text pattern, no caret.
+      Fixture f = new Fixture();
+      f.Fields.Result = FocusedFieldRules.Decide(FocusedControlKind.Container, false, false, false, false);
+      Assert.Equal(PasteOutcome.NotEditable, f.Paste());
+      Assert.Equal(100u, f.Clipboard.Sequence);
+      Assert.DoesNotContain("ctrl+v", f.Log.Steps);
+      Assert.Equal("No place to paste into.", MDSHO.ViewModels.ClipboardPasteMessage.For(PasteOutcome.NotEditable, "Home", false).Heading);
+    }
+
+    [Fact]
+    public void The_check_log_line_has_the_facts_only() {
+      string line = FocusedFieldRules.Describe("Pane", "SysListView32", true, true, false, false, FieldCheck.NotEditable);
+      Assert.Equal("control Pane, class SysListView32, value pattern yes (read-only yes), text pattern no, caret no: NotEditable", line);
     }
   }
 }

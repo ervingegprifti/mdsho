@@ -19,7 +19,7 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// Snippets (1.19.1): a name and a value. Double click (single click in Single click to open panels) pastes the
+  /// Snippets (1.19.2): a name and a value. Double click (single click in Single click to open panels) pastes the
   /// value into the window the user came from; Copy snippet to memory copies it; Edit snippet... edits it. Stored in
   /// Shortcuts.IsSnippet and Shortcuts.SnippetText (database version 19). The real paste never runs here: it goes
   /// through <see cref="ShortcutViewModel.PasteValue"/>, which the tests replace.
