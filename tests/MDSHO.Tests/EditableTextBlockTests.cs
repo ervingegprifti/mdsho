@@ -60,6 +60,77 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
+    public void A_clone_in_a_window_that_is_not_active_keeps_showing_the_name_and_does_not_take_focus() {
+      Sta((c, edit, display, parent, src) => {
+        // The rename started in another panel (the active window); this control is in a clone on another screen.
+        EditableTextBlock.ActiveWindow = () => new IntPtr(0x7FFF0001);
+        try {
+          c.IsEditing = true;
+          parent.UpdateLayout();
+          Pump();
+          Assert.Equal(Visibility.Visible, display.Visibility);
+          Assert.NotEqual(Visibility.Visible, edit.Visibility);
+          Assert.False(c.ShowsEditBox);
+          Assert.False(edit.IsKeyboardFocusWithin);
+        } finally {
+          EditableTextBlock.ActiveWindow = null;
+        }
+      });
+    }
+
+    [Fact]
+    public void The_window_where_the_rename_started_shows_the_edit_box() {
+      Sta((c, edit, display, parent, src) => {
+        EditableTextBlock.ActiveWindow = () => src.Handle;
+        try {
+          c.IsEditing = true;
+          Assert.True(c.ShowsEditBox);
+          Assert.Equal(Visibility.Visible, edit.Visibility);
+          Assert.NotEqual(Visibility.Visible, display.Visibility);
+          c.IsEditing = false;
+          Assert.False(c.ShowsEditBox);
+          Assert.Equal(Visibility.Visible, display.Visibility);
+        } finally {
+          EditableTextBlock.ActiveWindow = null;
+        }
+      });
+    }
+
+    [Fact]
+    public void A_clone_that_showed_the_name_opens_the_box_when_a_rename_starts_in_it() {
+      Sta((c, edit, display, parent, src) => {
+        IntPtr active = new IntPtr(0x7FFF0001);
+        EditableTextBlock.ActiveWindow = () => active;
+        try {
+          c.IsEditing = true;
+          Assert.False(c.ShowsEditBox);
+          c.IsEditing = false;
+          active = src.Handle;
+          c.IsEditing = true;
+          Assert.True(c.ShowsEditBox);
+        } finally {
+          EditableTextBlock.ActiveWindow = null;
+        }
+      });
+    }
+
+    [Fact]
+    public void Mouse_events_reach_the_parent_of_a_clone_that_shows_the_name() {
+      Sta((c, edit, display, parent, src) => {
+        EditableTextBlock.ActiveWindow = () => new IntPtr(0x7FFF0001);
+        try {
+          int seen = 0;
+          parent.MouseDown += (o, e) => seen++;
+          c.IsEditing = true;
+          RaiseMouse(display, src, UIElement.MouseDownEvent);
+          Assert.Equal(1, seen);
+        } finally {
+          EditableTextBlock.ActiveWindow = null;
+        }
+      });
+    }
+
+    [Fact]
     public void Starting_an_edit_selects_all_the_text() {
       Sta((c, edit, display, parent, src) => {
         c.IsEditing = true;

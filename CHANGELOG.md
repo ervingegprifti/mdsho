@@ -20,6 +20,10 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - The suggested export file name has the PC name, like backups: `MDSHO-export-<PC>-yyyy-MM-dd-HHmm.zip`.
 - Snippet buttons have their own icon (MDSHOFont 1.20).
 
+### Fixed
+
+- Renaming a button no longer brings the clones of its panel on other screens in front of other windows; they keep showing the name.
+
 ## [1.18.0]
 
 ### Added
