@@ -343,6 +343,14 @@ namespace MDSHO.Data {
         if (!ColumnExists(conn, "Shortcuts", "TextFont")) {
           Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN TextFont TEXT NOT NULL DEFAULT 'Courier New';");
         }
+      }),
+      // Runs once (the version is raised in the same transaction): a size can't tell DIPs from points.
+      new DbMigration(21, "Note text sizes: NoteWindows.FontSize from DIPs to whole points", conn => {
+        if (TableExists(conn, "NoteWindows") && ColumnExists(conn, "NoteWindows", "FontSize")) {
+          // The same as NoteWindowPlace.FontSizeFromDips: 0 or less is 0 (the default), else round(DIPs × 0.75) in 8 to 72.
+          Execute(conn, "UPDATE NoteWindows SET FontSize = CASE WHEN FontSize <= 0 THEN 0 "
+            + "ELSE MIN(72, MAX(8, CAST(ROUND(FontSize * 0.75) AS INTEGER))) END;");
+        }
       })
     };
 

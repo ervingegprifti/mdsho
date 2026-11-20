@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 20**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 21**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -112,7 +112,7 @@ exports import with default note windows. Added in version 8.
 | `IsOpen` | INTEGER | NOT NULL | `0` | `1` = the window was open (also when MDSHO or Windows closed it at exit), so it opens again at start. |
 | `IsTopmost` | INTEGER | NOT NULL | `0` | `1` = the window stays on top of other apps (the pin in its title bar). Added in version 9. |
 | `IsWrapText` | INTEGER | NOT NULL | `0` | `1` = the note's text wraps at the window's edge (the wrap text button in its title bar). Added in version 11. |
-| `FontSize` | INTEGER | NOT NULL | `0` | Size of the note's text, set with the Text size button or Ctrl + mouse wheel: 10 to 48 DIPs (7.5 to 36 pt) from 1.20.2, 8 to 72 before (still loaded as they are); `0` = 16 (12 pt) from 1.20.1, 12 before. Added in version 18. |
+| `FontSize` | INTEGER | NOT NULL | `0` | Size of the note's text in whole points, set with the Text size button or Ctrl + mouse wheel (Word's sizes, 8 to 72 pt); a saved size outside 8 to 72 loads as the nearest limit; `0` = 12 pt. Added in version 18 in DIPs; version 21 converts it to points. |
 
 ### DefaultColors
 
@@ -246,6 +246,7 @@ that worked.
 | 18 | 1.16.0 | `NoteWindows.FontSize` (`INTEGER NOT NULL DEFAULT 0`): the text size of each note window (`0` = 12). From 1.16.0 exports and backups also carry the note window places (export format 2); older exports still import, with default note windows. The step also adds `ScreenSetups.LastUsed` when a 1.7.0 test build database lacks it. |
 | 19 | 1.19.2 | `Shortcuts.IsSnippet` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.SnippetText` (`TEXT NOT NULL DEFAULT ''`) for snippets. Exports and backups carry them (still export format 3); older exports import with no snippets. |
 | 20 | 1.20.2 | `Shortcuts.TextFont` (`TEXT NOT NULL DEFAULT 'Courier New'`): the font of each note and snippet, so existing ones switch to Courier New. Copies, exports and backups carry it (still export format 3); older exports import with Courier New. |
+| 21 | 1.20.2 | `NoteWindows.FontSize` changes from DIPs to whole points: `0` stays `0` (the default, 12 pt), others become `round(DIPs × 0.75)` within 8 to 72 (12 → 9, 16 → 12, 22 → 17). Still export format 3: an import whose manifest has `schemaVersion` 20 or lower converts its sizes the same way. |
 
 ### Backup before an upgrade
 

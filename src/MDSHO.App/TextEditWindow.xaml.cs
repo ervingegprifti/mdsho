@@ -140,7 +140,7 @@ namespace MDSHO {
         }
       };
       // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a snippet starts at 12 pt and a
-      // comment at 12 each time.
+      // comment at 9 pt each time.
       SetTextSize(kind == TextKind.Comment ? NoteWindowPlace.CommentFontSize : NoteWindowPlace.DefaultFontSize);
       this.TextComment.PreviewMouseWheel += TextComment_PreviewMouseWheel;
       this.sizeLabelTimer = NewSizeLabelTimer();
@@ -688,19 +688,22 @@ namespace MDSHO {
       SaveNotePlace();
     }
 
-    /// <summary>The text size now, in DIPs.</summary>
-    private long TextSize => (long)Math.Round(this.TextComment.FontSize);
+    private long textPoints;
 
-    // Sizes the text and shows the size on the size button.
-    private void SetTextSize(long size) {
-      this.TextComment.FontSize = size;
-      this.ButtonSize.Content = NoteFonts.PointsLabel(size);
+    /// <summary>The text size now, in whole points.</summary>
+    private long TextSize => this.textPoints;
+
+    // Sizes the text (WPF wants DIPs) and shows the size on the size button.
+    private void SetTextSize(long points) {
+      this.textPoints = points;
+      this.TextComment.FontSize = NoteWindowPlace.ToDips(points);
+      this.ButtonSize.Content = NoteWindowPlace.SizeLabel(points);
     }
 
     // ---- The text size button and menu ----
 
     /// <summary>The text of the menu item that goes back to the default size.</summary>
-    public static readonly string DefaultSizeText = "Default (" + NoteFonts.PointsLabel(NoteWindowPlace.DefaultFontSize) + ")";
+    public static readonly string DefaultSizeText = "Default (" + NoteWindowPlace.SizeLabel(NoteWindowPlace.DefaultFontSize) + ")";
 
     /// <summary>The size menu while it is open (or last open); null before the size button was clicked.</summary>
     public System.Windows.Controls.ContextMenu SizeMenu { get; private set; }
@@ -725,7 +728,7 @@ namespace MDSHO {
       menu.Items.Add(new System.Windows.Controls.MenuItem { Header = "Text size", IsEnabled = false, FontSize = 11 });
       long current = TextSize;
       foreach (long size in NoteWindowPlace.SizePresets) {
-        menu.Items.Add(SizeItem(NoteFonts.PointsLabel(size), size, size == current));
+        menu.Items.Add(SizeItem(NoteWindowPlace.SizeLabel(size), size, size == current));
       }
       menu.Items.Add(new System.Windows.Controls.Separator());
       menu.Items.Add(SizeItem(DefaultSizeText, NoteWindowPlace.DefaultFontSize, false));
@@ -759,7 +762,7 @@ namespace MDSHO {
 
     // Shows a comment's size in points in the middle of the title bar, and fades it out a moment after the last change.
     private void ShowSizeLabel() {
-      this.TextSizeLabel.Text = NoteFonts.PointsLabel(this.TextComment.FontSize);
+      this.TextSizeLabel.Text = NoteWindowPlace.SizeLabel(this.textPoints);
       this.TextSizeLabel.BeginAnimation(OpacityProperty, null);
       this.TextSizeLabel.Opacity = 1;
       this.IsSizeLabelShown = true;

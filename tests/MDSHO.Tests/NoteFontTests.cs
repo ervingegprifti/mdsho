@@ -111,16 +111,16 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Version_is_20_and_the_last_migration_is_20() {
-      Assert.Equal(20, AppConstants.DatabaseVersion);
-      Assert.Equal(20, SchemaManager.Migrations.Last().Version);
+    public void Version_20_is_a_known_step() {
+      Assert.True(AppConstants.DatabaseVersion >= 20);
+      Assert.Single(SchemaManager.Migrations, m => m.Version == 20);
     }
 
     [Fact]
     public void V19_database_migrates_to_20_with_courier_new_for_every_button_and_keeps_the_rest() {
       BuildV19Db();
       DataStore.Upgrade();
-      Assert.Equal(20, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(1, Columns("Shortcuts", "TextFont"));
       Shortcut note = DataStore.Shortcuts.Get(1), command = DataStore.Shortcuts.Get(2), snippet = DataStore.Shortcuts.Get(3);
       Assert.Equal(("text", "Courier New"), (note.NoteText, note.TextFont));

@@ -10,7 +10,8 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 
 ### Changed
 
-- Ctrl + mouse wheel steps through the sizes of the Text size menu.
+- Text sizes are the same as in Word, 8 to 72 pt; Ctrl + mouse wheel steps through them.
+- Database version 21: note text sizes are saved in whole points (backed up first). Older exports and backups convert their sizes when imported. Export your data before installing if you may want to go back to an older version.
 
 ## [1.20.1]
 

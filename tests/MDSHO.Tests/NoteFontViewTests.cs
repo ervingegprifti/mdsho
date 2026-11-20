@@ -394,7 +394,7 @@ namespace MDSHO.Tests {
           Button size = Named<Button>(window, "ButtonSize");
           Assert.Equal(Visibility.Visible, size.Visibility);
           Assert.Equal("12 pt", size.Content);
-          Assert.Equal(16, Text(window).FontSize);
+          Assert.Equal(16, Text(window).FontSize, 6);
           Assert.Equal(ColumnOf(Named<Button>(window, "ButtonFont")) - 1, ColumnOf(size));
         });
       });
@@ -413,7 +413,8 @@ namespace MDSHO.Tests {
       WithButtons(f => {
         ContextMenu menu = OpenNote(f.Note).BuildSizeMenu();
         Assert.Equal(new[] {
-          "label:Text size", "7.5 pt", "9 pt", "10.5 pt", "12 pt", "13.5 pt", "15 pt", "18 pt", "21 pt", "24 pt", "36 pt", "-",
+          "label:Text size", "8 pt", "9 pt", "10 pt", "11 pt", "12 pt", "14 pt", "16 pt", "18 pt", "20 pt", "22 pt", "24 pt",
+          "26 pt", "28 pt", "36 pt", "48 pt", "72 pt", "-",
           "Default (12 pt)" }, SizeShape(menu));
         Assert.Equal(new[] { "12 pt" }, Ticked(menu));
       });
@@ -444,14 +445,14 @@ namespace MDSHO.Tests {
       WithButtons(f => {
         TextEditWindow window = OpenNote(f.Note);
         Click(SizeItem(window.BuildSizeMenu(), "18 pt"));
-        Assert.Equal(24, Text(window).FontSize);
+        Assert.Equal(24, Text(window).FontSize, 6);
         Assert.Equal("18 pt", Named<Button>(window, "ButtonSize").Content);
-        Assert.Equal(24, DataStore.NoteWindows.Get(f.Note.ID).FontSize);
+        Assert.Equal(18, DataStore.NoteWindows.Get(f.Note.ID).FontSize);
         Assert.Equal(new[] { "18 pt" }, Ticked(window.BuildSizeMenu()));
         window.Close();
         WpfAppHost.Pump();
         TextEditWindow again = OpenNote(f.Note);
-        Assert.Equal(24, Text(again).FontSize);
+        Assert.Equal(24, Text(again).FontSize, 6);
         Assert.Equal("18 pt", Named<Button>(again, "ButtonSize").Content);
       });
     }
@@ -462,9 +463,9 @@ namespace MDSHO.Tests {
         TextEditWindow window = OpenNote(f.Note);
         Click(SizeItem(window.BuildSizeMenu(), "36 pt"));
         Click(SizeItem(window.BuildSizeMenu(), "Default (12 pt)"));
-        Assert.Equal(16, Text(window).FontSize);
+        Assert.Equal(16, Text(window).FontSize, 6);
         Assert.Equal("12 pt", Named<Button>(window, "ButtonSize").Content);
-        Assert.Equal(16, DataStore.NoteWindows.Get(f.Note.ID).FontSize);
+        Assert.Equal(12, DataStore.NoteWindows.Get(f.Note.ID).FontSize);
       });
     }
 
@@ -473,21 +474,21 @@ namespace MDSHO.Tests {
       WithButtons(f => {
         TextEditWindow window = OpenNote(f.Note);
         Assert.True(Wheel(window, 120));
-        Assert.Equal(18, Text(window).FontSize);
-        Assert.Equal("13.5 pt", Named<Button>(window, "ButtonSize").Content);
+        Assert.Equal(NoteFontSizeTests.Dip(14), Text(window).FontSize, 6);
+        Assert.Equal("14 pt", Named<Button>(window, "ButtonSize").Content);
         Assert.False(window.IsSizeLabelShown);
         Assert.Equal(0, f.Timer.Starts);
-        Assert.Equal(new[] { "13.5 pt" }, Ticked(window.BuildSizeMenu()));
+        Assert.Equal(new[] { "14 pt" }, Ticked(window.BuildSizeMenu()));
       });
     }
 
     [Fact]
     public void A_saved_size_that_is_not_a_preset_shows_on_the_button_with_no_tick() {
       WithButtons(f => {
-        DataStore.NoteWindows.Save(new NoteWindowPlace(f.Note.ID, -9200, -9100, 720, 610, NoteWindowPlace.Normal, isOpen: true) { FontSize = 22 });
+        DataStore.NoteWindows.Save(new NoteWindowPlace(f.Note.ID, -9200, -9100, 720, 610, NoteWindowPlace.Normal, isOpen: true) { FontSize = 17 });
         TextEditWindow window = OpenNote(f.Note);
-        Assert.Equal(22, Text(window).FontSize);
-        Assert.Equal("16.5 pt", Named<Button>(window, "ButtonSize").Content);
+        Assert.Equal(NoteFontSizeTests.Dip(17), Text(window).FontSize, 6);
+        Assert.Equal("17 pt", Named<Button>(window, "ButtonSize").Content);
         Assert.Empty(Ticked(window.BuildSizeMenu()));
         Wheel(window, 120);
         Assert.Equal("18 pt", Named<Button>(window, "ButtonSize").Content);
@@ -511,11 +512,11 @@ namespace MDSHO.Tests {
       WithButtons(f => {
         TextEditWindow window = OpenNote(f.Note);
         for (int i = 0; i < 40; i++) { Wheel(window, 120); }
-        Assert.Equal(48, Text(window).FontSize);
-        Assert.Equal("36 pt", Named<Button>(window, "ButtonSize").Content);
+        Assert.Equal(96, Text(window).FontSize, 6);
+        Assert.Equal("72 pt", Named<Button>(window, "ButtonSize").Content);
         for (int i = 0; i < 40; i++) { Wheel(window, -120); }
-        Assert.Equal(10, Text(window).FontSize);
-        Assert.Equal("7.5 pt", Named<Button>(window, "ButtonSize").Content);
+        Assert.Equal(NoteFontSizeTests.Dip(8), Text(window).FontSize, 6);
+        Assert.Equal("8 pt", Named<Button>(window, "ButtonSize").Content);
       });
     }
 
@@ -525,10 +526,10 @@ namespace MDSHO.Tests {
         TextEditWindow window = TextEditWindow.ForSnippet(f.Snippet);
         Shown(window, () => {
           Click(SizeItem(window.BuildSizeMenu(), "9 pt"));
-          Assert.Equal(12, Text(window).FontSize);
+          Assert.Equal(12, Text(window).FontSize, 6);
           Assert.Equal("9 pt", Named<Button>(window, "ButtonSize").Content);
           Wheel(window, -120);
-          Assert.Equal("7.5 pt", Named<Button>(window, "ButtonSize").Content);
+          Assert.Equal("8 pt", Named<Button>(window, "ButtonSize").Content);
           Assert.False(window.IsSizeLabelShown);
         });
       });
@@ -553,10 +554,10 @@ namespace MDSHO.Tests {
         Shown(window, () => {
           Assert.False(window.IsSizeLabelShown);
           Assert.True(Wheel(window, 120));
-          Assert.Equal(14, Text(window).FontSize);
+          Assert.Equal(NoteFontSizeTests.Dip(10), Text(window).FontSize, 6);
           TextBlock label = Named<TextBlock>(window, "TextSizeLabel");
           Assert.True(window.IsSizeLabelShown);
-          Assert.Equal("10.5 pt", label.Text);
+          Assert.Equal("10 pt", label.Text);
           Assert.Equal(1, label.Opacity);
           Assert.False(label.IsHitTestVisible);
           Assert.Equal(TimeSpan.FromSeconds(2), f.Timer.Delay);

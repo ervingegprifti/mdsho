@@ -407,6 +407,12 @@ namespace MDSHO.Data {
         }
         // Format 1 files have no note window places: the notes get default windows.
         d.NoteWindows = d.NoteWindows ?? new List<NoteWindowPlace>();
+        // Data from database version 20 or older has its text sizes in DIPs: convert them like the database upgrade.
+        if (Manifest.SchemaVersion < NoteWindowPlace.FontSizeInPointsFromVersion) {
+          foreach (NoteWindowPlace place in d.NoteWindows.Where(p => p != null)) {
+            place.FontSize = NoteWindowPlace.FontSizeFromDips(place.FontSize);
+          }
+        }
         return d;
       }
 

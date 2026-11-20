@@ -32,19 +32,21 @@ namespace MDSHO.Core {
     public bool IsTopmost { get; set; }
     /// <summary>True when the note's text wraps at the window's edge (off for new notes).</summary>
     public bool IsWrapText { get; set; }
-    /// <summary>Size of the note's text (Ctrl + mouse wheel); 0 = <see cref="DefaultFontSize"/>.</summary>
+    /// <summary>Size of the note's text in whole points (DIPs up to database version 20); 0 = <see cref="DefaultFontSize"/>.</summary>
     public long FontSize { get; set; }
 
-    /// <summary>The text size of a new note and of the snippet editor (16 DIPs = 12 pt).</summary>
-    public const long DefaultFontSize = 16;
-    /// <summary>The text size a Comment window starts at each time.</summary>
-    public const long CommentFontSize = 12;
-    /// <summary>The sizes in the text size menu and the steps of the wheel, in whole DIPs (7.5 to 36 pt).</summary>
-    public static readonly IReadOnlyList<long> SizePresets = new long[] { 10, 12, 14, 16, 18, 20, 24, 28, 32, 48 };
-    /// <summary>The smallest saved size that is loaded as it is (older builds saved 8 to 72 in steps of 2).</summary>
+    /// <summary>The text size of a new note and of the snippet editor, in points.</summary>
+    public const long DefaultFontSize = 12;
+    /// <summary>The text size a Comment window starts at each time, in points.</summary>
+    public const long CommentFontSize = 9;
+    /// <summary>The sizes in the text size menu and the steps of the wheel, in points (Word's list).</summary>
+    public static readonly IReadOnlyList<long> SizePresets = new long[] { 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72 };
+    /// <summary>The smallest text size in points; a smaller saved size loads as this.</summary>
     public const long MinFontSize = 8;
-    /// <summary>The biggest saved size that is loaded as it is.</summary>
+    /// <summary>The biggest text size in points; a bigger saved size loads as this.</summary>
     public const long MaxFontSize = 72;
+    /// <summary>The database version from which FontSize is in points (before, DIPs). Imports of older data convert it.</summary>
+    public const int FontSizeInPointsFromVersion = 21;
 
     /// <summary>
     /// The size after one turn of the wheel: the next bigger preset for up (positive), the next smaller one for down. It
@@ -61,6 +63,27 @@ namespace MDSHO.Core {
         }
       }
       return size;
+    }
+
+    /// <summary>A size as shown: "12 pt".</summary>
+    public static string SizeLabel(long points) {
+      return points.ToString(System.Globalization.CultureInfo.InvariantCulture) + " pt";
+    }
+
+    /// <summary>WPF's size (DIPs, 96 per inch) of a size in points (72 per inch).</summary>
+    public static double ToDips(long points) {
+      return points * 96.0 / 72.0;
+    }
+
+    /// <summary>
+    /// A size saved in DIPs (database version 20 or older) in whole points: 0 or less stays 0 (the default), others are
+    /// rounded (half away from zero, like SQLite's ROUND) and kept within the limits. Database version 21 converts the same way.
+    /// </summary>
+    public static long FontSizeFromDips(long dips) {
+      if (dips <= 0) {
+        return 0;
+      }
+      return Math.Clamp((long)Math.Round(dips * 0.75, MidpointRounding.AwayFromZero), MinFontSize, MaxFontSize);
     }
 
     /// <summary>A saved size to use: 0 or less is the default, others are kept within the limits.</summary>
