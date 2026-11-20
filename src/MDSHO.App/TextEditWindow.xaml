@@ -97,7 +97,7 @@
                                  Visibility="Collapsed" WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="Note title"/>
                     </StackPanel>
                 </Grid>
-                <!--The text "Aa" until the font glyph comes (TextEditWindow.FontButtonText); it opens the font menu.-->
+                <!--The font button opens the font menu (a note or snippet only).-->
                 <Button x:Name="ButtonFont" Grid.Column="1" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Font" AutomationProperties.Name="Font" Visibility="Collapsed"/>
                 <Button x:Name="ButtonColors" Grid.Column="2" Style="{StaticResource StyleTitleBarButton}" FontSize="14"

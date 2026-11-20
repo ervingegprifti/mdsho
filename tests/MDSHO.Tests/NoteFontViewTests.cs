@@ -151,8 +151,7 @@ namespace MDSHO.Tests {
         Assert.Equal(Visibility.Visible, font.Visibility);
         Assert.Equal("Font", font.ToolTip);
         Assert.Equal("Font", System.Windows.Automation.AutomationProperties.GetName(font));
-        Assert.Equal(TextEditWindow.FontButtonText, font.Content);
-        Assert.Equal("Aa", TextEditWindow.FontButtonText);
+        Assert.Equal(f.Win.Appearance.Icons.Font, font.Content);
         int column = ColumnOf(font);
         foreach (string other in new[] { "ButtonColors", "ButtonWrap", "ButtonPin", "ButtonClose" }) {
           Assert.True(column < ColumnOf(Named<Button>(window, other)), "Font should be left of " + other);
@@ -164,10 +163,25 @@ namespace MDSHO.Tests {
     private static bool WindowChromeHit(Button b) => System.Windows.Shell.WindowChrome.GetIsHitTestVisibleInChrome(b);
 
     [Fact]
-    public void The_placeholder_text_is_drawn_in_a_text_font_not_the_icon_font() {
+    public void The_font_button_shows_the_font_glyph_in_the_icon_font_and_follows_the_icon_set() {
       WithButtons(f => {
-        Button font = Named<Button>(OpenNote(f.Note), "ButtonFont");
-        Assert.DoesNotContain("MDSHOFont", font.FontFamily.Source);
+        TextEditWindow window = OpenNote(f.Note);
+        Button font = Named<Button>(window, "ButtonFont");
+        Assert.Contains("MDSHOFont", font.FontFamily.Source);
+        f.Win.Appearance.Icons.SolidIcons = true;
+        WpfAppHost.Pump();
+        Assert.Equal("\uE95C", font.Content);
+        f.Win.Appearance.Icons.SolidIcons = false;
+        WpfAppHost.Pump();
+        Assert.Equal("\uE95D", font.Content);
+      });
+    }
+
+    [Fact]
+    public void The_snippet_editor_font_button_shows_the_font_glyph() {
+      WithButtons(f => {
+        TextEditWindow window = TextEditWindow.ForSnippet(f.Snippet);
+        Shown(window, () => Assert.Equal(f.Win.Appearance.Icons.Font, Named<Button>(window, "ButtonFont").Content));
       });
     }
 

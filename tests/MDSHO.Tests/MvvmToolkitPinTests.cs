@@ -234,7 +234,7 @@ namespace MDSHO.Tests {
       Assert.Empty(raised);
       icons.SolidIcons = false;
       string[] glyphs = typeof(IconGlyphs).GetProperties().Where(p => p.PropertyType == typeof(string)).Select(p => p.Name).ToArray();
-      Assert.Equal(36, glyphs.Length); // v1.14: Unknown removed; Warning, Run and Wizard added; Info added for the About icons; Desktop added for the tray menu; Brush added for note colours; v1.15: Comment, Note, PinOff and PinOn added; v1.16: Ok added; v1.17: WrapText added; v1.18: Heart added; v1.20: Snippet added
+      Assert.Equal(37, glyphs.Length); // v1.14: Unknown removed; Warning, Run and Wizard added; Info added for the About icons; Desktop added for the tray menu; Brush added for note colours; v1.15: Comment, Note, PinOff and PinOn added; v1.16: Ok added; v1.17: WrapText added; v1.18: Heart added; v1.20: Snippet added; v1.21: Font added
       Assert.Equal(nameof(icons.SolidIcons), raised[0]);
       Assert.Equal(glyphs.OrderBy(n => n), raised.Skip(1).OrderBy(n => n));
     }

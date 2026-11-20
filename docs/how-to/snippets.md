@@ -18,7 +18,7 @@ double-click.
 4. Type the text. It can have several lines.
 5. Click **OK** in the title bar, or press Ctrl+Enter. Esc closes the window without saving.
 
-To change the font of the text, click **Font** (**Aa**) in the title bar and pick one. The snippet keeps its font, even
+To change the font of the text, click **Font** in the title bar and pick one. The snippet keeps its font, even
 if you close the window without OK. Snippets start in Courier New. Hold Ctrl and turn the mouse wheel to make the text
 bigger or smaller while you edit; the title bar shows the size in points.
 

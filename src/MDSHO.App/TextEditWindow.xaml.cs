@@ -714,16 +714,12 @@ namespace MDSHO {
 
     // ---- The font button and menu ----
 
-    /// <summary>What the font button shows: "Aa" for now. With MDSHOFont 1.21 it becomes the font glyph (see ShowFontButton).</summary>
-    public const string FontButtonText = "Aa";
-
     /// <summary>The font menu while it is open (or last open); null before the font button was clicked.</summary>
     public System.Windows.Controls.ContextMenu FontMenu { get; private set; }
 
     // A note and a snippet have a font button left of the other title bar buttons; a pick applies and saves at once.
     private void UseFontButton() {
       this.ButtonFont.Visibility = Visibility.Visible;
-      ShowFontButton();
       this.ButtonFont.Click += (s, e) => {
         this.FontMenu = BuildFontMenu();
         this.FontMenu.PlacementTarget = this.ButtonFont;
@@ -731,12 +727,6 @@ namespace MDSHO {
         this.FontMenu.IsOpen = true;
       };
       ApplyFont();
-    }
-
-    // The placeholder text in a text font. For the glyph: set Content to this.icons.Font and drop the FontFamily line.
-    private void ShowFontButton() {
-      this.ButtonFont.Content = FontButtonText;
-      this.ButtonFont.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
     }
 
     private void ApplyFont() {
@@ -890,6 +880,7 @@ namespace MDSHO {
       this.TextTitleIcon.Text = glyph;
       this.ButtonClose.Content = icons.Times;
       this.ButtonColors.Content = icons.Brush;
+      this.ButtonFont.Content = icons.Font;
       this.ButtonOk.Content = icons.Ok;
       this.ButtonWrap.Content = icons.WrapText;
       this.ButtonPin.Content = this.Topmost ? icons.PinOn : icons.PinOff;
