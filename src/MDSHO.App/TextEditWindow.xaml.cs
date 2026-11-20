@@ -111,6 +111,9 @@ namespace MDSHO {
           UseRenamableTitle(RenameSnippetTitleToolTip);
         }
       }
+      if (kind != TextKind.Comment) {
+        UseFontButton();
+      }
 
       // The title icon, the title bar buttons and the window icon follow the window's solid or outline setting while open.
       IconGlyphs icons = this.icons;
@@ -138,6 +141,8 @@ namespace MDSHO {
       // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a comment starts at 12 each time.
       this.TextComment.FontSize = NoteWindowPlace.DefaultFontSize;
       this.TextComment.PreviewMouseWheel += TextComment_PreviewMouseWheel;
+      this.sizeLabelTimer = NewSizeLabelTimer();
+      this.Closed += (s, e) => this.sizeLabelTimer.Stop();
       this.PreviewKeyDown += Window_PreviewKeyDown;
       this.TextComment.PreviewMouseLeftButtonDown += TextComment_PreviewMouseLeftButtonDown;
       this.Loaded += (s, e) => {
@@ -570,9 +575,10 @@ namespace MDSHO {
       this.TitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "Theme.BarBackground");
       this.TextTitle.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
       this.TextTitleIcon.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonWrap, this.ButtonOk, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonFont, this.ButtonWrap, this.ButtonOk, this.ButtonClose }) {
         button.SetResourceReference(ForegroundProperty, "Theme.TextStrong");
       }
+      this.TextSizeLabel.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
       this.Body.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "Theme.WindowBackground");
       this.TextComment.SetResourceReference(System.Windows.Controls.Control.BackgroundProperty, "Theme.WindowBackground");
       this.TextComment.SetResourceReference(System.Windows.Controls.Control.ForegroundProperty, "Theme.Text");
@@ -591,9 +597,10 @@ namespace MDSHO {
       this.TitleBar.SetBinding(System.Windows.Controls.Border.BackgroundProperty, Bind(nameof(NoteColors.TitleBackgroundColor)));
       this.TextTitle.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       this.TextTitleIcon.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonColors, this.ButtonWrap, this.ButtonPin, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonFont, this.ButtonColors, this.ButtonWrap, this.ButtonPin, this.ButtonClose }) {
         button.SetBinding(ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       }
+      this.TextSizeLabel.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       SetBinding(BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
       this.Body.SetBinding(System.Windows.Controls.Panel.BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
       this.TextComment.SetBinding(System.Windows.Controls.Control.BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
@@ -673,7 +680,107 @@ namespace MDSHO {
         return;
       }
       this.TextComment.FontSize = size;
+      ShowSizeLabel();
       SaveNotePlace();
+    }
+
+    // ---- The size label ----
+
+    /// <summary>How long the size label stays after the last size change, before it fades.</summary>
+    public static readonly TimeSpan SizeLabelDelay = TimeSpan.FromSeconds(2);
+
+    /// <summary>Makes the timer that hides the size label. Tests replace it.</summary>
+    public static Func<IOneShotTimer> NewSizeLabelTimer = () => new DispatcherOneShotTimer();
+
+    private readonly IOneShotTimer sizeLabelTimer;
+
+    /// <summary>True while the title bar shows the text size (until it fades).</summary>
+    public bool IsSizeLabelShown { get; private set; }
+
+    // Shows the size in points in the middle of the title bar, and fades it out a moment after the last change.
+    private void ShowSizeLabel() {
+      this.TextSizeLabel.Text = NoteFonts.PointsLabel(this.TextComment.FontSize);
+      this.TextSizeLabel.BeginAnimation(OpacityProperty, null);
+      this.TextSizeLabel.Opacity = 1;
+      this.IsSizeLabelShown = true;
+      this.sizeLabelTimer.Start(SizeLabelDelay, HideSizeLabel);
+    }
+
+    private void HideSizeLabel() {
+      this.IsSizeLabelShown = false;
+      System.Windows.Media.Animation.DoubleAnimation fade = new System.Windows.Media.Animation.DoubleAnimation(0, TimeSpan.FromMilliseconds(300));
+      this.TextSizeLabel.BeginAnimation(OpacityProperty, fade);
+    }
+
+    // ---- The font button and menu ----
+
+    /// <summary>What the font button shows: "Aa" for now. With MDSHOFont 1.21 it becomes the font glyph (see ShowFontButton).</summary>
+    public const string FontButtonText = "Aa";
+
+    /// <summary>The font menu while it is open (or last open); null before the font button was clicked.</summary>
+    public System.Windows.Controls.ContextMenu FontMenu { get; private set; }
+
+    // A note and a snippet have a font button left of the other title bar buttons; a pick applies and saves at once.
+    private void UseFontButton() {
+      this.ButtonFont.Visibility = Visibility.Visible;
+      ShowFontButton();
+      this.ButtonFont.Click += (s, e) => {
+        this.FontMenu = BuildFontMenu();
+        this.FontMenu.PlacementTarget = this.ButtonFont;
+        this.FontMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        this.FontMenu.IsOpen = true;
+      };
+      ApplyFont();
+    }
+
+    // The placeholder text in a text font. For the glyph: set Content to this.icons.Font and drop the FontFamily line.
+    private void ShowFontButton() {
+      this.ButtonFont.Content = FontButtonText;
+      this.ButtonFont.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
+    }
+
+    private void ApplyFont() {
+      this.TextComment.FontFamily = NoteFontFamilies.Resolve(this.shortcut.TextFont);
+    }
+
+    /// <summary>
+    /// The font menu: "From Windows" and "Comes with MDSHO", each a small label over its fonts, each name drawn in its own
+    /// font, with a check mark on the current one.
+    /// </summary>
+    public System.Windows.Controls.ContextMenu BuildFontMenu() {
+      System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();
+      AddFontGroup(menu, NoteFonts.FromWindowsLabel, NoteFonts.FromWindows);
+      menu.Items.Add(new System.Windows.Controls.Separator());
+      AddFontGroup(menu, NoteFonts.ComesWithMdshoLabel, NoteFonts.ComesWithMdsho);
+      return menu;
+    }
+
+    private void AddFontGroup(System.Windows.Controls.ContextMenu menu, string label, IEnumerable<string> fonts) {
+      menu.Items.Add(new System.Windows.Controls.MenuItem { Header = label, IsEnabled = false, FontSize = 11 });
+      string current = NoteFonts.OrDefault(this.shortcut.TextFont);
+      foreach (string font in fonts) {
+        System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem {
+          Header = font,
+          FontFamily = NoteFontFamilies.Resolve(font),
+          FontSize = 14,
+          IsChecked = font == current
+        };
+        string picked = font;
+        item.Click += (s, e) => PickFont(picked);
+        menu.Items.Add(item);
+      }
+    }
+
+    /// <summary>Uses a font for this note or snippet at once and saves it.</summary>
+    public void PickFont(string font) {
+      try {
+        this.shortcut.SaveTextFont(font);
+      } catch (Exception ex) {
+        AppLog.Warning(ex, "The font could not be saved");
+        ErrorDialog.ShowDialog("The font could not be saved.", ex);
+        return;
+      }
+      ApplyFont();
     }
 
     /// <summary>True while the text wraps at the window's edge.</summary>

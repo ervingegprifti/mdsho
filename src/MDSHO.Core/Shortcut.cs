@@ -67,6 +67,8 @@ namespace MDSHO.Core {
     public long IsSnippet { get; set; }
     /// <summary>The text a snippet pastes; empty for other buttons (also empty when an older export file has no value).</summary>
     public string SnippetText { get; set; } = "";
+    /// <summary>The font of a note's or snippet's text (see <see cref="NoteFonts"/>); Courier New also when an older export file has no value.</summary>
+    public string TextFont { get; set; } = NoteFonts.Default;
     /// <summary>
     /// Children shortcuts.
     /// </summary>

@@ -28,6 +28,24 @@ Note on the Windows SDK projection: it comes with the `net10.0-windows10.0.19041
 
 Build-time only (not shipped): `Microsoft.Windows.SDK.BuildTools` is referenced by the MSIX packaging project with `PrivateAssets="all"` and only provides the packaging tools.
 
+## Fonts that come with MDSHO
+
+The note fonts in the "Comes with MDSHO" part of a note's font menu. Each is embedded from
+`src/MDSHO.App/Assets/Fonts` (Regular weight only) and shows under "Third Party Notices" in the About window once its
+file is there; until then the menu shows it in Courier New. Versions are filled in when the files are added. The
+licence texts go in `assets/Font/licenses`.
+
+| Font | Version | License | Included files | License text | Project URL | GPLv3-compatible |
+| :--- | :--- | :--- | :--- | :--- | :--- | :---: |
+| JetBrains Mono | TBD | OFL-1.1 | `JetBrainsMono-Regular.ttf` | https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt | https://github.com/JetBrains/JetBrainsMono | Font data shipped beside the GPL code, not linked into it (see note) |
+| Source Code Pro | TBD | OFL-1.1 | `SourceCodePro-Regular.ttf` | https://github.com/adobe-fonts/source-code-pro/blob/release/LICENSE.md | https://github.com/adobe-fonts/source-code-pro | Font data shipped beside the GPL code, not linked into it (see note) |
+| IBM Plex Mono | TBD | OFL-1.1 | `IBMPlexMono-Regular.ttf` | https://github.com/IBM/plex/blob/master/LICENSE.txt | https://github.com/IBM/plex | Font data shipped beside the GPL code, not linked into it (see note) |
+| Latin Modern Roman | TBD | GUST Font License | `lmroman10-regular.otf` | https://www.gust.org.pl/projects/e-foundry/licenses | https://www.gust.org.pl/projects/e-foundry/latin-modern | Font data shipped beside the GPL code, not linked into it (see note) |
+| Latin Modern Mono | TBD | GUST Font License | `lmmono10-regular.otf` | https://www.gust.org.pl/projects/e-foundry/licenses | https://www.gust.org.pl/projects/e-foundry/latin-modern | Font data shipped beside the GPL code, not linked into it (see note) |
+
+Note on the fonts: the FSF lists the OFL and LPPL-based licences as free but not GPL-compatible for code. The fonts are
+separate data files that MDSHO loads at run time, with their own licence texts, which both licences allow.
+
 ## Tests only (not shipped)
 
 | Package | Version | License | Project URL |

@@ -632,7 +632,7 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "") {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default) {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -656,6 +656,7 @@ namespace MDSHO.ViewModels {
       this.noteText = noteText ?? "";
       this.isSnippet = isSnippet;
       this.snippetText = snippetText ?? "";
+      this.textFont = textFont ?? NoteFonts.Default;
       this.NoteColors = noteColors ?? new NoteColors();
       UpdateTargetKind(false);
       // Events.
@@ -801,6 +802,18 @@ namespace MDSHO.ViewModels {
     private void CopySnippetToMemory() {
       if (this.isSnippet && !string.IsNullOrEmpty(this.snippetText)) {
         CopyText(this.snippetText);
+      }
+    }
+    private string textFont = NoteFonts.Default;
+    /// <summary>The font of a note's or snippet's text (Courier New by default).</summary>
+    public string TextFont => this.textFont;
+    /// <summary>Saves the font: the database first, then memory. A font not in the list is saved as Courier New.</summary>
+    public void SaveTextFont(string font) {
+      font = NoteFonts.OrDefault(font);
+      DataStore.Shortcuts.UpdateTextFont(this.ID, font);
+      if (font != this.textFont) {
+        this.textFont = font;
+        OnPropertyChanged(nameof(TextFont));
       }
     }
     // True while SaveSnippetText sets the text it already wrote to the database.

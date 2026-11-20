@@ -77,6 +77,7 @@ namespace MDSHO.Data {
           NoteTextColor TEXT NOT NULL DEFAULT '',
           IsSnippet INTEGER NOT NULL DEFAULT 0,
           SnippetText TEXT NOT NULL DEFAULT '',
+          TextFont TEXT NOT NULL DEFAULT 'Courier New',
           FOREIGN KEY(ParentShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE,
           FOREIGN KEY(ParentMDSHOWindowID) REFERENCES MDSHOWindows(ID) ON DELETE CASCADE);
 
@@ -336,6 +337,11 @@ namespace MDSHO.Data {
         }
         if (!ColumnExists(conn, "Shortcuts", "SnippetText")) {
           Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN SnippetText TEXT NOT NULL DEFAULT '';");
+        }
+      }),
+      new DbMigration(20, "Note fonts: Shortcuts.TextFont (Courier New)", conn => {
+        if (!ColumnExists(conn, "Shortcuts", "TextFont")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN TextFont TEXT NOT NULL DEFAULT 'Courier New';");
         }
       })
     };

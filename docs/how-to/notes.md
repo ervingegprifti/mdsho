@@ -37,7 +37,17 @@ You can also select the button and press F2.
 
 Click **Wrap text** to fit long lines to the window's width.
 
-Hold Ctrl and turn the mouse wheel to make the text bigger or smaller. The note keeps its size. Text starts at size 12.
+Hold Ctrl and turn the mouse wheel to make the text bigger or smaller. The title bar shows the size in points for a
+moment. The note keeps its size. Text starts at 9 pt.
+
+## Pick a font
+
+1. Click **Font** (**Aa**) in the note's title bar.
+2. Pick a font. Each name shows in its own font, and the current one has a check mark.
+
+The note changes at once and keeps its font. New notes start in Courier New. **From Windows** lists Courier New,
+Consolas and Arial; **Comes with MDSHO** lists fonts that are part of MDSHO. Copying text from a note still copies
+plain text, without the font.
 
 ## Colour a note
 

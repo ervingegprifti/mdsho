@@ -108,7 +108,8 @@ namespace MDSHO.ViewModels {
         noteColors: new NoteColors(shortcutRecord.NoteBorderColor, shortcutRecord.NoteTitleBackgroundColor, shortcutRecord.NoteTitleTextColor,
           shortcutRecord.NoteBackgroundColor, shortcutRecord.NoteTextColor),
         isSnippet: Convert.ToBoolean(shortcutRecord.IsSnippet),
-        snippetText: shortcutRecord.SnippetText);
+        snippetText: shortcutRecord.SnippetText,
+        textFont: shortcutRecord.TextFont);
       foreach (Shortcut childRecord in shortcutRecord.Shortcuts) {
         ShortcutViewModel child = ShortcutToViewModel(appViewModel: appViewModel, parentShortcut: shortcut, shortcutRecord: childRecord);
         shortcut.Children.Add(child);
@@ -244,6 +245,7 @@ namespace MDSHO.ViewModels {
       template.NoteTextColor = colors.Text;
       template.IsSnippet = Convert.ToInt64(shortcut.IsSnippet);
       template.SnippetText = shortcut.SnippetText ?? "";
+      template.TextFont = shortcut.TextFont;
       Shortcut savedRecord = DataStore.Shortcuts.Append(template);
       // Copy the physical file after the insert, so a failed insert (rollback) never leaves an orphan file behind.
       // Notes, snippets, groups and run commands have no shortcut file.

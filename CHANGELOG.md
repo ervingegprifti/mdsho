@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.20.0]
+
+### Added
+
+- A font button ("Aa" for now) in the title bar of note windows and the snippet editor. Its menu lists Courier New, Consolas and Arial from Windows, and JetBrains Mono, Source Code Pro, IBM Plex Mono, Latin Modern Roman and Latin Modern Mono that come with MDSHO. Each name shows in its own font.
+- Each note and snippet keeps its own font. The font applies and saves as soon as you pick it.
+- While you change the text size, the title bar shows it in points, for example "10.5 pt". It fades after 2 seconds.
+- Database version 20: the buttons table gets `TextFont` (backed up first). Notes and snippets start in Courier New. Copies, exports and backups carry the font; older exports import with Courier New.
+
+### Changed
+
+- Notes and snippets use Courier New until you pick another font.
+- The Arguments box of the Run Command window uses Courier New.
+
 ## [1.19.2]
 
 ### Added

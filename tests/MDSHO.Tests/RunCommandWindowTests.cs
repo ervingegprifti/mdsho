@@ -452,7 +452,7 @@ namespace MDSHO.Tests {
           Named<Button>(window, "ButtonBrowseFolder");
           TextBox args = Named<TextBox>(window, "TextArguments");
           Assert.True(args.AcceptsReturn);
-          Assert.Equal("Consolas", args.FontFamily.Source);
+          Assert.Equal("Courier New", args.FontFamily.Source);
           Assert.Equal("ping {=1}", args.Text);
           Assert.True(Named<CheckBox>(window, "CheckKeepOpen").IsChecked);
           Assert.False(Named<CheckBox>(window, "CheckRunAsAdmin").IsChecked);

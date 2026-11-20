@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -105,16 +105,16 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Version_is_19_and_the_last_migration_is_19() {
-      Assert.Equal(19, AppConstants.DatabaseVersion);
-      Assert.Equal(19, SchemaManager.Migrations.Last().Version);
+    public void Version_19_is_a_known_step() {
+      Assert.True(AppConstants.DatabaseVersion >= 19);
+      Assert.Single(SchemaManager.Migrations, m => m.Version == 19);
     }
 
     [Fact]
     public void V18_database_migrates_to_19_with_no_snippets_and_keeps_the_rest() {
       BuildV18Db();
       DataStore.Upgrade();
-      Assert.Equal(19, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(1, Columns("Shortcuts", "IsSnippet"));
       Assert.Equal(1, Columns("Shortcuts", "SnippetText"));
       Shortcut note = Stored(1), command = Stored(2);
