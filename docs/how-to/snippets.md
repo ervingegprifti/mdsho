@@ -16,10 +16,10 @@ double-click.
 2. Type a name for the snippet and press Enter.
 3. Right-click the snippet and choose **Edit snippet...**.
 4. Type the text. It can have several lines.
-5. Click **OK** in the title bar, or press Ctrl+Enter. Esc closes the window without saving.
+5. Close the window (X, Esc or Ctrl+Enter). The snippet saves itself while you type and when the window closes.
 
-To change the font of the text, click **Font** in the title bar and pick one. The snippet keeps its font, even
-if you close the window without OK. Snippets start in Courier New. The **Text size** button left of **Font** shows the size
+To change the font of the text, click **Font** in the title bar and pick one. The snippet keeps its font. Snippets
+start in Courier New. The **Text size** button left of **Font** shows the size
 in points: click it to pick a size, or hold Ctrl and turn the mouse wheel to step through the same sizes. The size is
 only for editing; the editor starts at 12 pt each time.
 

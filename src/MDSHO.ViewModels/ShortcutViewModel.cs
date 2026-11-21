@@ -718,7 +718,9 @@ namespace MDSHO.ViewModels {
       } else if (e.PropertyName == nameof(this.MarkColor)) {
         DataStore.Shortcuts.UpdateMarkColor(this.ID, this.MarkColor);
       } else if (e.PropertyName == nameof(this.Comment)) {
-        DataStore.Shortcuts.UpdateComment(this.ID, this.Comment ?? "");
+        if (!this.savingComment) {
+          DataStore.Shortcuts.UpdateComment(this.ID, this.Comment ?? "");
+        }
       } else if (e.PropertyName == nameof(this.SnippetText)) {
         if (!this.savingSnippetText) {
           DataStore.Shortcuts.UpdateSnippetText(this.ID, this.SnippetText ?? "");
@@ -844,6 +846,19 @@ namespace MDSHO.ViewModels {
     // True while SaveSnippetText sets the text it already wrote to the database.
     private bool savingSnippetText;
     /// <summary>Saves the value: the database first, then memory (a failed write throws and keeps the old value).</summary>
+    /// <summary>Saves the comment: the database first, then memory, so a failed save leaves the old comment in both.</summary>
+    public void SaveComment(string value) {
+      value ??= "";
+      DataStore.Shortcuts.UpdateComment(this.ID, value);
+      this.savingComment = true;
+      try {
+        this.Comment = value;
+      } finally {
+        this.savingComment = false;
+      }
+    }
+    // True while SaveComment sets the comment it already wrote to the database.
+    private bool savingComment;
     public void SaveSnippetText(string value) {
       value ??= "";
       DataStore.Shortcuts.UpdateSnippetText(this.ID, value);

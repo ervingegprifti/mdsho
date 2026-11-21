@@ -198,12 +198,12 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Save_stores_the_comment_and_closes() {
+    public void Closing_stores_the_comment() {
       WithButtons(f => {
         TextEditWindow window = TextEditWindow.ForComment(f.Command);
         Shown(window, () => {
           Named<TextBox>(window, "TextComment").Text = "line 1\r\nline 2";
-          Click(Named<Button>(window, "ButtonOk"));
+          Click(Named<Button>(window, "ButtonClose"));
           Assert.False(window.IsVisible);
         });
         Assert.Equal("line 1\r\nline 2", f.Command.Comment);
@@ -218,7 +218,7 @@ namespace MDSHO.Tests {
         TextEditWindow window = TextEditWindow.ForComment(f.Command);
         Shown(window, () => {
           Named<TextBox>(window, "TextComment").Text = "   \r\n ";
-          Click(Named<Button>(window, "ButtonOk"));
+          Click(Named<Button>(window, "ButtonClose"));
         });
         Assert.Equal("", f.Command.Comment);
         Assert.Equal("", StoredComment(f.Command.ID));
@@ -226,7 +226,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Close_and_escape_keep_the_old_comment() {
+    public void Close_and_escape_save_the_comment() {
       foreach (string way in new[] { "ButtonClose", "Escape" }) {
         WithButtons(f => {
           f.Command.Comment = "old";
@@ -240,76 +240,22 @@ namespace MDSHO.Tests {
             }
             Assert.False(window.IsVisible, way + " did not close the window");
           });
-          Assert.Equal("old", f.Command.Comment);
-          Assert.Equal("old", StoredComment(f.Command.ID));
+          Assert.Equal("changed", f.Command.Comment);
+          Assert.Equal("changed", StoredComment(f.Command.ID));
         });
       }
     }
 
     [Fact]
-    public void OK_uses_the_ok_icon_of_the_solid_or_outline_set() {
+    public void There_is_no_OK_button() {
       WithButtons(f => {
-        IconGlyphs icons = f.Command.OwningWindow.Appearance.Icons;
-        bool solid = icons.SolidIcons;
         TextEditWindow window = TextEditWindow.ForComment(f.Command);
-        try {
-          Shown(window, () => {
-            Button ok = Named<Button>(window, "ButtonOk");
-            Assert.NotEqual("Segoe MDL2 Assets", ok.FontFamily.Source);
-            Assert.Equal(icons.Ok, ok.Content);
-            icons.SolidIcons = !solid;
-            WpfAppHost.Pump();
-            Assert.Equal(icons.Ok, ok.Content);
-          });
-        } finally {
-          icons.SolidIcons = solid;
-        }
+        Shown(window, () => Assert.Null(window.FindName("ButtonOk")));
       });
     }
 
     [Fact]
-    public void OK_is_greyed_out_until_the_comment_changes() {
-      WithButtons(f => {
-        f.Command.Comment = "old";
-        TextEditWindow window = TextEditWindow.ForComment(f.Command);
-        Shown(window, () => {
-          Button ok = Named<Button>(window, "ButtonOk");
-          TextBox text = Named<TextBox>(window, "TextComment");
-          Assert.False(ok.IsEnabled);
-          text.Text = "old and new";
-          Assert.True(ok.IsEnabled);
-          text.Text = "old";
-          Assert.False(ok.IsEnabled);
-        });
-      });
-    }
-
-    [Fact]
-    public void Only_spaces_in_an_empty_comment_is_no_change() {
-      WithButtons(f => {
-        TextEditWindow window = TextEditWindow.ForComment(f.Command);
-        Shown(window, () => {
-          Named<TextBox>(window, "TextComment").Text = "  \r\n ";
-          Assert.False(Named<Button>(window, "ButtonOk").IsEnabled);
-        });
-      });
-    }
-
-    [Fact]
-    public void Ctrl_Enter_does_nothing_while_there_is_no_change() {
-      WithButtons(f => {
-        f.Command.Comment = "old";
-        TextEditWindow window = TextEditWindow.ForComment(f.Command);
-        Shown(window, () => {
-          PressKey(window, Key.Enter, ModifierKeys.Control);
-          Assert.True(window.IsVisible);
-          Assert.False(window.Saved);
-        });
-      });
-    }
-
-    [Fact]
-    public void Ctrl_Enter_saves_and_plain_Enter_does_not() {
+    public void Ctrl_Enter_closes_and_saves_and_plain_Enter_does_not() {
       WithButtons(f => {
         TextEditWindow window = TextEditWindow.ForComment(f.Command);
         Shown(window, () => {

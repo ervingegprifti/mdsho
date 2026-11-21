@@ -785,26 +785,24 @@ namespace MDSHO.Tests {
           Assert.Equal("Main Street 12\r\n1000 Sample Town", editor.Text);
           Assert.True(editor.AcceptsReturn);
           Assert.Equal("Snippet", System.Windows.Automation.AutomationProperties.GetName(editor));
-          Assert.Equal(Visibility.Visible, Named<Button>(window, "ButtonOk").Visibility);
+          Assert.Null(window.FindName("ButtonOk"));
           Assert.Equal(Visibility.Visible, Named<Button>(window, "ButtonWrap").Visibility);
           Assert.Equal(Visibility.Visible, Named<Button>(window, "ButtonClose").Visibility);
           Assert.NotEqual(Visibility.Visible, Named<Button>(window, "ButtonPin").Visibility);
           Assert.NotEqual(Visibility.Visible, Named<Button>(window, "ButtonColors").Visibility);
-          Assert.False(Named<Button>(window, "ButtonOk").IsEnabled);
           Assert.Equal(TextEditWindow.RenameSnippetTitleToolTip, Named<TextBlock>(window, "TextTitle").ToolTip);
         });
       });
     }
 
     [Fact]
-    public void OK_saves_the_text_and_closes() {
+    public void Closing_saves_the_text() {
       WithSnippet(f => {
         TextEditWindow window = TextEditWindow.ForSnippet(f.Clip);
         Shown(window, () => {
           Named<TextBox>(window, "TextComment").Text = "New Street 1";
-          Button ok = Named<Button>(window, "ButtonOk");
-          Assert.True(ok.IsEnabled);
-          Click(ok);
+          window.Close();
+          WpfAppHost.Pump();
           Assert.True(window.Saved);
           Assert.Equal("New Street 1", f.Clip.SnippetText);
           Assert.Equal("New Street 1", DataStore.Shortcuts.Get(f.Clip.ID).SnippetText);
@@ -814,7 +812,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Ctrl_enter_saves_and_esc_closes_without_saving() {
+    public void Esc_and_ctrl_enter_close_and_save() {
       WithSnippet(f => {
         Func<ModifierKeys> oldModifiers = TextEditWindow.KeyboardModifiers;
         try {
@@ -822,8 +820,8 @@ namespace MDSHO.Tests {
           Shown(window, () => {
             Named<TextBox>(window, "TextComment").Text = "typed";
             Press(window, Key.Escape);
-            Assert.False(window.Saved);
-            Assert.Equal("Main Street 12\r\n1000 Sample Town", f.Clip.SnippetText);
+            Assert.True(window.Saved);
+            Assert.Equal("typed", f.Clip.SnippetText);
           });
           TextEditWindow second = TextEditWindow.ForSnippet(f.Clip);
           Shown(second, () => {

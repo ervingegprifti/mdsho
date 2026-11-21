@@ -122,6 +122,7 @@ namespace MDSHO {
       }
       UseSizeButton();
       UseFontButton();
+      UseAutoSave();
 
       // The title icon, the title bar buttons and the window icon follow the window's solid or outline setting while open.
       IconGlyphs icons = this.icons;
@@ -131,7 +132,6 @@ namespace MDSHO {
       this.Closed += (s, e) => icons.PropertyChanged -= iconsChanged;
 
       this.ButtonClose.Click += (s, e) => Close();
-      this.ButtonOk.Click += (s, e) => Save();
       this.ButtonPin.Click += (s, e) => {
         SetPinned(!this.Topmost);
         SaveNotePlace();
@@ -146,8 +146,8 @@ namespace MDSHO {
           shortcut.OwningWindow.Appearance.CommentWrapText = this.IsWrapText;
         }
       };
-      // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a snippet starts at 12 pt and a
-      // comment at 9 pt each time.
+      // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a comment with its button, and the
+      // snippet editor starts at 12 pt each time.
       SetTextSize(kind == TextKind.Comment ? NoteWindowPlace.FontSizeOrDefault(shortcut.CommentFontSize) : NoteWindowPlace.DefaultFontSize);
       this.TextComment.PreviewMouseWheel += TextComment_PreviewMouseWheel;
       this.PreviewKeyDown += Window_PreviewKeyDown;
@@ -450,11 +450,18 @@ namespace MDSHO {
     }
 
     /// <summary>
-    /// Saves unsaved typing and the place of every open note window, marked as open (before an import too). Each note is
-    /// saved on its own, so one that fails doesn't stop the others. Returns the names of the notes that could not be saved.
+    /// Saves unsaved typing in every open Comment window and snippet editor, and the typing and place of every open note
+    /// window, marked as open (before an import too). Each is saved on its own, so one that fails doesn't stop the others.
+    /// Returns the names of the buttons whose text could not be saved.
     /// </summary>
     public static IReadOnlyList<string> SaveOpenNotes() {
       List<string> failed = new List<string>();
+      foreach (TextEditWindow window in openTextWindows.ToList()) {
+        window.noteSaveTimer.Stop();
+        if (!window.discarded && window.SaveText() != null) {
+          failed.Add(string.IsNullOrWhiteSpace(window.shortcut.Name) ? "(no name)" : window.shortcut.Name);
+        }
+      }
       foreach (TextEditWindow window in openNoteWindows.ToList()) {
         if (window.discarded) {
           continue;
@@ -554,8 +561,6 @@ namespace MDSHO {
 
     /// <summary>
     /// A note has colours, pin (keep on top) and close in its title bar and no bottom bar, so the text gets the whole window.
-    /// It saves itself shortly after each change (not on every key, to keep database writes few) and at once when the
-    /// window closes (X or Esc), so nothing typed is lost.
     /// </summary>
     private void UseNoteTitleBar() {
       this.ButtonColors.Visibility = Visibility.Visible;
@@ -563,12 +568,6 @@ namespace MDSHO {
       this.ButtonPin.Visibility = Visibility.Visible;
       this.ButtonClose.ToolTip = "Close (Esc)";
       SetPinned(false);
-      this.noteSaveTimer.Tick += (s, e) => SaveNoteNow();
-      this.TextComment.TextChanged += (s, e) => {
-        this.noteSaveTimer.Stop();
-        this.noteSaveTimer.Start();
-      };
-      this.Closing += (s, e) => SaveBeforeClosing(e);
       UseNoteColours();
     }
 
@@ -582,7 +581,7 @@ namespace MDSHO {
       this.TitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "Theme.BarBackground");
       this.TextTitle.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
       this.TextTitleIcon.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonOk, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonClose }) {
         button.SetResourceReference(ForegroundProperty, "Theme.TextStrong");
       }
       this.Body.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "Theme.WindowBackground");
@@ -613,24 +612,36 @@ namespace MDSHO {
       this.TextComment.SetBinding(System.Windows.Controls.Primitives.TextBoxBase.CaretBrushProperty, Bind(nameof(NoteColors.TextColor)));
     }
 
-    /// <summary>A comment has OK and close in its title bar: OK saves and closes, X and Esc close without saving.</summary>
+    /// <summary>A comment and a snippet have the window theme's colours and close in their title bar; they save by themselves.</summary>
     private void UseCommentTitleBar() {
       UseWindowTheme();
-      this.ButtonOk.Visibility = Visibility.Visible;
-      this.ButtonClose.ToolTip = "Close without saving (Esc)";
-      System.Windows.Automation.AutomationProperties.SetName(this.ButtonClose, "Close without saving");
-      this.TextComment.TextChanged += (s, e) => UpdateOk();
-      UpdateOk();
+      this.ButtonClose.ToolTip = "Close (Esc)";
+      System.Windows.Automation.AutomationProperties.SetName(this.ButtonClose, "Close");
     }
 
-    // OK is active only when the text differs from the saved comment (only spaces counts as no comment).
-    private void UpdateOk() {
-      this.ButtonOk.IsEnabled = HasCommentChange();
+    /// <summary>
+    /// Every kind saves itself shortly after each change (not on every key, to keep database writes few) and at once when
+    /// the window closes (X, Esc or Ctrl+Enter), so nothing typed is lost. A comment or snippet window open at exit is
+    /// saved with the open notes.
+    /// </summary>
+    private void UseAutoSave() {
+      this.noteSaveTimer.Tick += (s, e) => SaveNoteNow();
+      this.TextComment.TextChanged += (s, e) => {
+        this.noteSaveTimer.Stop();
+        this.noteSaveTimer.Start();
+      };
+      this.Closing += (s, e) => SaveBeforeClosing(e);
+      if (this.kind != TextKind.Note) {
+        openTextWindows.Add(this);
+        this.Closed += (s, e) => openTextWindows.Remove(this);
+      }
     }
 
-    private bool HasCommentChange() {
-      return TextToSave() != (StoredText() ?? "");
-    }
+    // The open Comment windows and snippet editors (they save at exit like notes).
+    private static readonly List<TextEditWindow> openTextWindows = new List<TextEditWindow>();
+
+    // "note", "snippet" or "comment", for messages.
+    private string KindWord => this.kind == TextKind.Note ? "note" : this.kind == TextKind.Snippet ? "snippet" : "comment";
 
     // The saved text this window edits.
     private string StoredText() {
@@ -874,8 +885,9 @@ namespace MDSHO {
     private bool saveErrorShown;
 
     /// <summary>
-    /// Saves the note now if its text changed, and keeps the window open (autosave, Ctrl+Enter and Ctrl+S). Returns false
-    /// when the save failed: the text then still counts as unsaved, so the next save or closing tries again.
+    /// Saves the note, comment or snippet now if its text changed, and keeps the window open (autosave, and Ctrl+Enter or
+    /// Ctrl+S in a note). Returns false when the save failed: the text then still counts as unsaved, so the next save or
+    /// closing tries again.
     /// </summary>
     public bool SaveNoteNow() {
       this.noteSaveTimer.Stop();
@@ -888,7 +900,7 @@ namespace MDSHO {
       }
       if (!this.saveErrorShown) {
         this.saveErrorShown = true;
-        ErrorDialog.ShowDialog("This note could not be saved. MDSHO tries again when you type more and when you close it.", error);
+        ErrorDialog.ShowDialog("This " + KindWord + " could not be saved. MDSHO tries again when you type more and when you close it.", error);
       }
       return false;
     }
@@ -896,16 +908,25 @@ namespace MDSHO {
     // Saves the text if it changed. Returns null when saved (or nothing to save), else the error (logged).
     private Exception SaveText() {
       string value = TextToSave();
-      if (value == (this.shortcut.NoteText ?? "")) {
+      if (value == (StoredText() ?? "")) {
         return null;
       }
       try {
-        this.shortcut.SaveNoteText(value);
+        switch (this.kind) {
+          case TextKind.Note: this.shortcut.SaveNoteText(value); break;
+          case TextKind.Snippet: this.shortcut.SaveSnippetText(value); break;
+          default: this.shortcut.SaveComment(value); break;
+        }
         this.Saved = true;
         this.saveErrorShown = false;
         return null;
       } catch (Exception ex) {
-        AppLog.Warning(ex, "A note could not be saved");
+        if (this.kind == TextKind.Snippet) {
+          // Never the value: it can be a password.
+          AppLog.Warning(null, "A snippet could not be saved: {ErrorType}", ex.GetType().FullName);
+        } else {
+          AppLog.Warning(ex, "A " + KindWord + " could not be saved");
+        }
         return ex;
       }
     }
@@ -921,10 +942,10 @@ namespace MDSHO {
       if (error == null || IsExiting) {
         return;
       }
-      string question = "This note could not be saved: " + error.Message + "\n\nClose it anyway? What you typed since the last save will be lost.";
+      string question = "This " + KindWord + " could not be saved: " + error.Message + "\n\nClose it anyway? What you typed since the last save will be lost.";
       bool close;
       using (Dialogs.UseIcons(this.icons.SolidIcons)) {
-        close = Dialogs.Confirm(question, "Note not saved");
+        close = Dialogs.Confirm(question, char.ToUpperInvariant(KindWord[0]) + KindWord.Substring(1) + " not saved");
       }
       if (!close) {
         e.Cancel = true;
@@ -937,33 +958,9 @@ namespace MDSHO {
       this.ButtonClose.Content = icons.Times;
       this.ButtonColors.Content = icons.Brush;
       this.ButtonFont.Content = icons.Font;
-      this.ButtonOk.Content = icons.Ok;
       this.ButtonWrap.Content = icons.WrapText;
       this.ButtonPin.Content = this.Topmost ? icons.PinOn : icons.PinOff;
       this.Icon = GlyphIcon.Create(glyph);
-    }
-
-    // Saves the comment or value and closes; does nothing while there is no change (OK is greyed out then).
-    private void Save() {
-      if (!HasCommentChange()) {
-        return;
-      }
-      if (this.kind == TextKind.Snippet) {
-        try {
-          this.shortcut.SaveSnippetText(TextToSave());
-        } catch (Exception ex) {
-          // Never the value: it can be a password.
-          AppLog.Warning(null, "A snippet could not be saved: {ErrorType}", ex.GetType().FullName);
-          ErrorDialog.ShowDialog("The snippet could not be saved.", ex);
-          return;
-        }
-        this.Saved = true;
-        Close();
-        return;
-      }
-      this.shortcut.Comment = TextToSave();
-      this.Saved = true;
-      Close();
     }
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e) {
@@ -977,8 +974,9 @@ namespace MDSHO {
         e.Handled = true;
         SaveNoteNow();
       } else if (e.Key == Key.Enter && (KeyboardModifiers() & ModifierKeys.Control) == ModifierKeys.Control) {
+        // A comment or snippet closes (closing saves it).
         e.Handled = true;
-        Save();
+        Close();
       }
     }
   }
