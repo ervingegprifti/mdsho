@@ -69,13 +69,14 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!--Title bar: icon and the button's name, then for a note text size, font, colours, wrap text and pin (keep on top), for a snippet or
-            a comment text size, font and wrap text, then close. Every kind saves itself while you type and when it closes, so there is no OK.
+        <!--Title bar: icon and the button's name, then for a note text size, font, colours, wrap text, history and pin (keep on top), for a
+            snippet or a comment text size, font, wrap text and history, then close. Every kind saves itself while you type and when it closes, so there is no OK.
             The pin is a thumbtack pointing left, or down while the note is on top.-->
         <Border x:Name="TitleBar" Grid.Row="0" Background="#FFDFDACB">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -107,9 +108,12 @@
                 <Button x:Name="ButtonColors" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Note colours" AutomationProperties.Name="Note colours" Visibility="Collapsed"/>
                 <Button x:Name="ButtonWrap" Grid.Column="4" Style="{StaticResource StyleTitleBarButton}" FontSize="14" ToolTip="Wrap text" AutomationProperties.Name="Wrap text"/>
-                <Button x:Name="ButtonPin" Grid.Column="5" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
+                <!--The history button opens the text history menu ("H" until it has its own icon).-->
+                <Button x:Name="ButtonHistory" Grid.Column="5" Style="{StaticResource StyleTitleBarButton}" FontFamily="Segoe UI" FontSize="14" Content="H"
+                        ToolTip="Text history" AutomationProperties.Name="Text history"/>
+                <Button x:Name="ButtonPin" Grid.Column="6" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Keep on top" AutomationProperties.Name="Keep on top" Visibility="Collapsed"/>
-                <Button x:Name="ButtonClose" Grid.Column="6" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"/>
+                <Button x:Name="ButtonClose" Grid.Column="7" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"/>
             </Grid>
         </Border>
 

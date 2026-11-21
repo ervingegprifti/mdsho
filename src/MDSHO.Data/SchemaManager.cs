@@ -80,6 +80,14 @@ namespace MDSHO.Data {
           TextFont TEXT NOT NULL DEFAULT 'Courier New',
           CommentFont TEXT NOT NULL DEFAULT 'Courier New',
           CommentFontSize INTEGER NOT NULL DEFAULT 0,
+          TextPrevious1 TEXT NOT NULL DEFAULT '',
+          TextPrevious1Time TEXT NOT NULL DEFAULT '',
+          TextPrevious2 TEXT NOT NULL DEFAULT '',
+          TextPrevious2Time TEXT NOT NULL DEFAULT '',
+          CommentPrevious1 TEXT NOT NULL DEFAULT '',
+          CommentPrevious1Time TEXT NOT NULL DEFAULT '',
+          CommentPrevious2 TEXT NOT NULL DEFAULT '',
+          CommentPrevious2Time TEXT NOT NULL DEFAULT '',
           FOREIGN KEY(ParentShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE,
           FOREIGN KEY(ParentMDSHOWindowID) REFERENCES MDSHOWindows(ID) ON DELETE CASCADE);
 
@@ -354,12 +362,18 @@ namespace MDSHO.Data {
             + "ELSE MIN(72, MAX(8, CAST(ROUND(FontSize * 0.75) AS INTEGER))) END;");
         }
       }),
-      new DbMigration(22, "Comment fonts and sizes: Shortcuts.CommentFont and Shortcuts.CommentFontSize", conn => {
+      new DbMigration(22, "Comment fonts and sizes, and text history: Shortcuts.CommentFont, CommentFontSize, TextPrevious1/2 and CommentPrevious1/2 with their times", conn => {
         if (!ColumnExists(conn, "Shortcuts", "CommentFont")) {
           Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN CommentFont TEXT NOT NULL DEFAULT 'Courier New';");
         }
         if (!ColumnExists(conn, "Shortcuts", "CommentFontSize")) {
           Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN CommentFontSize INTEGER NOT NULL DEFAULT 0;");
+        }
+        foreach (string column in new[] { "TextPrevious1", "TextPrevious1Time", "TextPrevious2", "TextPrevious2Time",
+            "CommentPrevious1", "CommentPrevious1Time", "CommentPrevious2", "CommentPrevious2Time" }) {
+          if (!ColumnExists(conn, "Shortcuts", column)) {
+            Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN " + column + " TEXT NOT NULL DEFAULT '';");
+          }
         }
       })
     };

@@ -9,19 +9,21 @@ namespace MDSHO.Data {
     internal const string SelectColumns = @"ID, ParentShortcutID, ParentMDSHOWindowID AS ParentWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded,
       Comment, IsMarked, MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText,
       NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor, IsSnippet, SnippetText, TextFont,
-      CommentFont, CommentFontSize";
+      CommentFont, CommentFontSize, TextPrevious1, TextPrevious1Time, TextPrevious2, TextPrevious2Time, CommentPrevious1, CommentPrevious1Time, CommentPrevious2, CommentPrevious2Time";
 
     private const string InsertSql = @"
       INSERT INTO Shortcuts (
         ID, ParentShortcutID, ParentMDSHOWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded, Comment, IsMarked,
         MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText,
         NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor, IsSnippet, SnippetText, TextFont,
-        CommentFont, CommentFontSize)
+        CommentFont, CommentFontSize, TextPrevious1, TextPrevious1Time, TextPrevious2, TextPrevious2Time, CommentPrevious1, CommentPrevious1Time, CommentPrevious2, CommentPrevious2Time)
       VALUES (
         NULLIF(@ID, 0), @ParentShortcutID, @ParentWindowID, @Name, @Target, @Ext, @Guid, @IsGroup, @IsGroupExpanded, @Comment, @IsMarked,
         @MarkColor, @Position, @IsProcessCommand, @ProcessFileName, @ProcessArguments, @ProcessRunAsAdmin, COALESCE(@ProcessWorkingFolder, ''), @IsNote, COALESCE(@NoteText, ''),
         COALESCE(@NoteBorderColor, ''), COALESCE(@NoteTitleBackgroundColor, ''), COALESCE(@NoteTitleTextColor, ''), COALESCE(@NoteBackgroundColor, ''), COALESCE(@NoteTextColor, ''), @IsSnippet, COALESCE(@SnippetText, ''), COALESCE(@TextFont, 'Courier New'),
-        COALESCE(@CommentFont, 'Courier New'), @CommentFontSize)";
+        COALESCE(@CommentFont, 'Courier New'), @CommentFontSize,
+        COALESCE(@TextPrevious1, ''), COALESCE(@TextPrevious1Time, ''), COALESCE(@TextPrevious2, ''), COALESCE(@TextPrevious2Time, ''),
+        COALESCE(@CommentPrevious1, ''), COALESCE(@CommentPrevious1Time, ''), COALESCE(@CommentPrevious2, ''), COALESCE(@CommentPrevious2Time, ''))";
 
     private const string UpdateSql = @"
       UPDATE Shortcuts SET
@@ -31,7 +33,11 @@ namespace MDSHO.Data {
         ProcessArguments = @ProcessArguments, ProcessRunAsAdmin = @ProcessRunAsAdmin, IsNote = @IsNote, NoteText = COALESCE(@NoteText, ''),
         NoteBorderColor = COALESCE(@NoteBorderColor, ''), NoteTitleBackgroundColor = COALESCE(@NoteTitleBackgroundColor, ''), NoteTitleTextColor = COALESCE(@NoteTitleTextColor, ''), NoteBackgroundColor = COALESCE(@NoteBackgroundColor, ''), NoteTextColor = COALESCE(@NoteTextColor, ''),
         ProcessWorkingFolder = COALESCE(@ProcessWorkingFolder, ''), IsSnippet = @IsSnippet, SnippetText = COALESCE(@SnippetText, ''),
-        TextFont = COALESCE(@TextFont, 'Courier New'), CommentFont = COALESCE(@CommentFont, 'Courier New'), CommentFontSize = @CommentFontSize
+        TextFont = COALESCE(@TextFont, 'Courier New'), CommentFont = COALESCE(@CommentFont, 'Courier New'), CommentFontSize = @CommentFontSize,
+        TextPrevious1 = COALESCE(@TextPrevious1, ''), TextPrevious1Time = COALESCE(@TextPrevious1Time, ''),
+        TextPrevious2 = COALESCE(@TextPrevious2, ''), TextPrevious2Time = COALESCE(@TextPrevious2Time, ''),
+        CommentPrevious1 = COALESCE(@CommentPrevious1, ''), CommentPrevious1Time = COALESCE(@CommentPrevious1Time, ''),
+        CommentPrevious2 = COALESCE(@CommentPrevious2, ''), CommentPrevious2Time = COALESCE(@CommentPrevious2Time, '')
       WHERE ID = @ID";
 
     #region QUERIES
@@ -89,6 +95,14 @@ namespace MDSHO.Data {
         copy.TextFont = template.TextFont ?? NoteFonts.Default;
         copy.CommentFont = template.CommentFont ?? NoteFonts.Default;
         copy.CommentFontSize = template.CommentFontSize;
+        copy.TextPrevious1 = template.TextPrevious1 ?? "";
+        copy.TextPrevious1Time = template.TextPrevious1Time ?? "";
+        copy.TextPrevious2 = template.TextPrevious2 ?? "";
+        copy.TextPrevious2Time = template.TextPrevious2Time ?? "";
+        copy.CommentPrevious1 = template.CommentPrevious1 ?? "";
+        copy.CommentPrevious1Time = template.CommentPrevious1Time ?? "";
+        copy.CommentPrevious2 = template.CommentPrevious2 ?? "";
+        copy.CommentPrevious2Time = template.CommentPrevious2Time ?? "";
         return Get(Add(copy));
       });
     }
@@ -177,6 +191,18 @@ namespace MDSHO.Data {
 
     public void UpdateCommentFontSize(long id, long points) {
       Run("UPDATE Shortcuts SET CommentFontSize = @points WHERE ID = @id;", new { id, points });
+    }
+
+    public void UpdateTextHistory(long id, TextHistorySlots history) {
+      history ??= TextHistorySlots.Empty;
+      Run("UPDATE Shortcuts SET TextPrevious1 = @p1, TextPrevious1Time = @t1, TextPrevious2 = @p2, TextPrevious2Time = @t2 WHERE ID = @id;",
+        new { id, p1 = history.Previous1 ?? "", t1 = history.Previous1Time ?? "", p2 = history.Previous2 ?? "", t2 = history.Previous2Time ?? "" });
+    }
+
+    public void UpdateCommentHistory(long id, TextHistorySlots history) {
+      history ??= TextHistorySlots.Empty;
+      Run("UPDATE Shortcuts SET CommentPrevious1 = @p1, CommentPrevious1Time = @t1, CommentPrevious2 = @p2, CommentPrevious2Time = @t2 WHERE ID = @id;",
+        new { id, p1 = history.Previous1 ?? "", t1 = history.Previous1Time ?? "", p2 = history.Previous2 ?? "", t2 = history.Previous2Time ?? "" });
     }
     public void UpdatePosition(long id, long position) {
       Run("UPDATE Shortcuts SET Position = @position WHERE ID = @id;", new { id, position });

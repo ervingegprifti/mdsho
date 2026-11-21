@@ -47,7 +47,9 @@ The button is named after the page or link title when the browser gives one, oth
   click it again. The slow click doesn't rename in a panel set to **Single click to open**. **Set name the same as
   target** gives it the name of what it opens.
 - **Move** a button: drag it, or use **Cut** and **Paste** from its right-click menu.
-- **Comment** on a button: right-click it and choose **Comment...**. The comment shows in its tooltip.
+- **Comment** on a button: right-click it and choose **Comment...**. The comment shows in its tooltip. It saves itself
+  while you type and when you close the window. The title bar has **Text size**, **Font** and **H** (Text history: the
+  two earlier versions of the comment, to put one back), like a note.
 - **Delete** a button: right-click it and choose **Delete**. The file it opens is not deleted.
 
 ## Add another panel

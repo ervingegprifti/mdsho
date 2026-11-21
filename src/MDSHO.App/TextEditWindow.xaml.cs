@@ -132,6 +132,7 @@ namespace MDSHO {
       UseSizeButton();
       UseFontButton();
       UseAutoSave();
+      UseHistory();
 
       // The title icon, the title bar buttons and the window icon follow the window's solid or outline setting while open.
       IconGlyphs icons = this.icons;
@@ -579,7 +580,7 @@ namespace MDSHO {
       this.TitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "Theme.BarBackground");
       this.TextTitle.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
       this.TextTitleIcon.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonHistory, this.ButtonClose }) {
         button.SetResourceReference(ForegroundProperty, "Theme.TextStrong");
       }
       this.Body.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "Theme.WindowBackground");
@@ -600,7 +601,7 @@ namespace MDSHO {
       this.TitleBar.SetBinding(System.Windows.Controls.Border.BackgroundProperty, Bind(nameof(NoteColors.TitleBackgroundColor)));
       this.TextTitle.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       this.TextTitleIcon.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonColors, this.ButtonWrap, this.ButtonPin, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonColors, this.ButtonWrap, this.ButtonHistory, this.ButtonPin, this.ButtonClose }) {
         button.SetBinding(ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       }
       SetBinding(BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
@@ -768,6 +769,117 @@ namespace MDSHO {
     public void PickSize(long size) {
       SetTextSize(Math.Clamp(size, NoteWindowPlace.MinFontSize, NoteWindowPlace.MaxFontSize));
       SaveTextSize();
+    }
+
+    // ---- The text history ----
+
+    /// <summary>The clock of the text history. Tests replace it.</summary>
+    public static Func<DateTime> Now = () => DateTime.Now;
+
+    /// <summary>The history menu while it is open (or last open); null before the history button was clicked.</summary>
+    public System.Windows.Controls.ContextMenu HistoryMenu { get; private set; }
+
+    private readonly TextHistoryTracker historyTracker = new TextHistoryTracker();
+    // The text before the latest change: the copy that is kept when a burst starts or a big removal happens.
+    private string historyLastText = "";
+    // True while a pick from the history puts its text in the window: that change keeps no copy.
+    private bool pickingHistory;
+
+    // Every kind keeps two earlier copies of its text: the text before the change is kept as "Before" at the first change
+    // after the window opens, after 10 minutes without a change, and at once for an edit that removes a lot.
+    private void UseHistory() {
+      this.historyLastText = this.TextComment.Text ?? "";
+      this.ButtonHistory.Click += (s, e) => {
+        this.HistoryMenu = BuildHistoryMenu();
+        this.HistoryMenu.PlacementTarget = this.ButtonHistory;
+        this.HistoryMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        this.HistoryMenu.IsOpen = true;
+      };
+      this.TextComment.TextChanged += (s, e) => {
+        string before = this.historyLastText;
+        this.historyLastText = this.TextComment.Text ?? "";
+        if (this.pickingHistory || this.shortcut.ID == 0) {
+          return;
+        }
+        int removed = e.Changes.Sum(c => c.RemovedLength);
+        if (this.historyTracker.OnChange(Now(), removed, before.Length)) {
+          KeepHistory(string.IsNullOrWhiteSpace(before) ? "" : before);
+        }
+      };
+    }
+
+    // A comment has its own history; a note and a snippet keep theirs in the text history.
+    private TextHistorySlots CurrentHistory => this.kind == TextKind.Comment ? this.shortcut.CommentHistory : this.shortcut.TextHistory;
+
+    private void SaveHistory(TextHistorySlots history) {
+      if (this.kind == TextKind.Comment) {
+        this.shortcut.SaveCommentHistory(history);
+      } else {
+        this.shortcut.SaveTextHistory(history);
+      }
+    }
+
+    private void KeepHistory(string text) {
+      TextHistorySlots now = CurrentHistory;
+      TextHistorySlots kept = TextHistory.Keep(text, now, Now());
+      if (ReferenceEquals(kept, now)) {
+        return;
+      }
+      try {
+        SaveHistory(kept);
+      } catch (Exception ex) {
+        // A copy that can't be kept must never break typing; the text itself still saves. Never the text in the log.
+        AppLog.Warning(null, "The text history could not be saved: {ErrorType}", ex.GetType().FullName);
+      }
+    }
+
+    /// <summary>
+    /// The history menu: a small "Text history" label, then Now (ticked), Before and Earlier, each with the time it was
+    /// kept and its first line cut short. An empty copy is greyed out.
+    /// </summary>
+    public System.Windows.Controls.ContextMenu BuildHistoryMenu() {
+      System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();
+      menu.Items.Add(new System.Windows.Controls.MenuItem { Header = "Text history", IsEnabled = false, FontSize = 11 });
+      DateTime now = Now();
+      string first = TextHistory.FirstLine(TextToSave());
+      menu.Items.Add(new System.Windows.Controls.MenuItem { Header = first.Length == 0 ? "Now" : "Now  ·  " + first, Tag = "Now", IsChecked = true });
+      TextHistorySlots history = CurrentHistory;
+      menu.Items.Add(HistoryItem("Before", history.Previous1, history.Previous1Time, 1, now));
+      menu.Items.Add(HistoryItem("Earlier", history.Previous2, history.Previous2Time, 2, now));
+      return menu;
+    }
+
+    private System.Windows.Controls.MenuItem HistoryItem(string label, string text, string time, int slot, DateTime now) {
+      if (string.IsNullOrEmpty(text)) {
+        return new System.Windows.Controls.MenuItem { Header = label, Tag = label, IsEnabled = false };
+      }
+      string when = TextHistory.TimeLabel(time, now);
+      string header = label + (when.Length == 0 ? "" : "  ·  " + when) + "  ·  " + TextHistory.FirstLine(text);
+      System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem { Header = header, Tag = label };
+      item.Click += (s, e) => PickHistory(slot);
+      return item;
+    }
+
+    /// <summary>Puts copy 1 (Before) or 2 (Earlier) in the window and saves it; the text you had becomes Before.</summary>
+    public void PickHistory(int slot) {
+      (string text, TextHistorySlots after) = TextHistory.Pick(slot, TextToSave(), CurrentHistory, Now());
+      try {
+        SaveHistory(after);
+      } catch (Exception ex) {
+        AppLog.Warning(null, "The text history could not be saved: {ErrorType}", ex.GetType().FullName);
+        ErrorDialog.ShowDialog("The text could not be put back.", ex);
+        return;
+      }
+      this.pickingHistory = true;
+      try {
+        this.TextComment.Text = text;
+        this.TextComment.CaretIndex = this.TextComment.Text.Length;
+      } finally {
+        this.pickingHistory = false;
+      }
+      // The pick counts as part of an editing burst, so typing right after it keeps no copy of the picked text.
+      this.historyTracker.OnChange(Now(), 0, 0);
+      SaveNoteNow();
     }
 
     // ---- The font button and menu ----

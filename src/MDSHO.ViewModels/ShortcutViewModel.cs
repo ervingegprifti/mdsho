@@ -632,7 +632,7 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0) {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0, TextHistorySlots textHistory = null, TextHistorySlots commentHistory = null) {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -659,6 +659,8 @@ namespace MDSHO.ViewModels {
       this.textFont = textFont ?? NoteFonts.Default;
       this.commentFont = commentFont ?? NoteFonts.Default;
       this.commentFontSize = commentFontSize;
+      this.textHistory = textHistory ?? TextHistorySlots.Empty;
+      this.commentHistory = commentHistory ?? TextHistorySlots.Empty;
       this.NoteColors = noteColors ?? new NoteColors();
       UpdateTargetKind(false);
       // Events.
@@ -841,6 +843,30 @@ namespace MDSHO.ViewModels {
       if (points != this.commentFontSize) {
         this.commentFontSize = points;
         OnPropertyChanged(nameof(CommentFontSize));
+      }
+    }
+    private TextHistorySlots textHistory = TextHistorySlots.Empty;
+    /// <summary>The two earlier copies of the note's or snippet's text (the history menu).</summary>
+    public TextHistorySlots TextHistory => this.textHistory;
+    /// <summary>Saves the text history: the database first, then memory.</summary>
+    public void SaveTextHistory(TextHistorySlots history) {
+      history ??= TextHistorySlots.Empty;
+      DataStore.Shortcuts.UpdateTextHistory(this.ID, history);
+      if (history != this.textHistory) {
+        this.textHistory = history;
+        OnPropertyChanged(nameof(TextHistory));
+      }
+    }
+    private TextHistorySlots commentHistory = TextHistorySlots.Empty;
+    /// <summary>The two earlier copies of the comment (the history menu).</summary>
+    public TextHistorySlots CommentHistory => this.commentHistory;
+    /// <summary>Saves the comment history: the database first, then memory.</summary>
+    public void SaveCommentHistory(TextHistorySlots history) {
+      history ??= TextHistorySlots.Empty;
+      DataStore.Shortcuts.UpdateCommentHistory(this.ID, history);
+      if (history != this.commentHistory) {
+        this.commentHistory = history;
+        OnPropertyChanged(nameof(CommentHistory));
       }
     }
     // True while SaveSnippetText sets the text it already wrote to the database.
