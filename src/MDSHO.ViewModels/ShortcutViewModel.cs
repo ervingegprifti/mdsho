@@ -632,7 +632,7 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default) {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0) {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -657,6 +657,8 @@ namespace MDSHO.ViewModels {
       this.isSnippet = isSnippet;
       this.snippetText = snippetText ?? "";
       this.textFont = textFont ?? NoteFonts.Default;
+      this.commentFont = commentFont ?? NoteFonts.Default;
+      this.commentFontSize = commentFontSize;
       this.NoteColors = noteColors ?? new NoteColors();
       UpdateTargetKind(false);
       // Events.
@@ -814,6 +816,29 @@ namespace MDSHO.ViewModels {
       if (font != this.textFont) {
         this.textFont = font;
         OnPropertyChanged(nameof(TextFont));
+      }
+    }
+    private string commentFont = NoteFonts.Default;
+    /// <summary>The font of the comment's text (Courier New by default).</summary>
+    public string CommentFont => this.commentFont;
+    /// <summary>Saves the comment's font: the database first, then memory. A font not in the list is saved as Courier New.</summary>
+    public void SaveCommentFont(string font) {
+      font = NoteFonts.OrDefault(font);
+      DataStore.Shortcuts.UpdateCommentFont(this.ID, font);
+      if (font != this.commentFont) {
+        this.commentFont = font;
+        OnPropertyChanged(nameof(CommentFont));
+      }
+    }
+    private long commentFontSize;
+    /// <summary>The comment's text size in whole points; 0 = <see cref="NoteWindowPlace.DefaultFontSize"/>.</summary>
+    public long CommentFontSize => this.commentFontSize;
+    /// <summary>Saves the comment's text size in whole points: the database first, then memory.</summary>
+    public void SaveCommentFontSize(long points) {
+      DataStore.Shortcuts.UpdateCommentFontSize(this.ID, points);
+      if (points != this.commentFontSize) {
+        this.commentFontSize = points;
+        OnPropertyChanged(nameof(CommentFontSize));
       }
     }
     // True while SaveSnippetText sets the text it already wrote to the database.

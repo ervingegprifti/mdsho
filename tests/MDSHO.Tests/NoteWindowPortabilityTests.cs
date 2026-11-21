@@ -201,11 +201,11 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void An_export_from_version_21_keeps_its_points() {
+    public void An_export_from_version_21_or_newer_keeps_its_points() {
       (Shortcut open, _, _) = Seed();
       DataStore.NoteWindows.Save(new NoteWindowPlace(open.ID, 110, 120, 530, 440, NoteWindowPlace.Normal, isOpen: true) { FontSize = 16 });
       DataExporter.Export(Zip());
-      Assert.Equal(21L, (long)ReadEntry(Zip(), "manifest.json")["schemaVersion"]);
+      Assert.Equal((long)AppConstants.DatabaseVersion, (long)ReadEntry(Zip(), "manifest.json")["schemaVersion"]);
 
       DataImporter.Import(Zip(), ImportMode.Replace);
 

@@ -8,17 +8,20 @@ namespace MDSHO.Data {
     /// <summary>Column list for SELECTs: the database column ParentMDSHOWindowID is exposed as the property ParentWindowID.</summary>
     internal const string SelectColumns = @"ID, ParentShortcutID, ParentMDSHOWindowID AS ParentWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded,
       Comment, IsMarked, MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText,
-      NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor, IsSnippet, SnippetText, TextFont";
+      NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor, IsSnippet, SnippetText, TextFont,
+      CommentFont, CommentFontSize";
 
     private const string InsertSql = @"
       INSERT INTO Shortcuts (
         ID, ParentShortcutID, ParentMDSHOWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded, Comment, IsMarked,
         MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText,
-        NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor, IsSnippet, SnippetText, TextFont)
+        NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor, IsSnippet, SnippetText, TextFont,
+        CommentFont, CommentFontSize)
       VALUES (
         NULLIF(@ID, 0), @ParentShortcutID, @ParentWindowID, @Name, @Target, @Ext, @Guid, @IsGroup, @IsGroupExpanded, @Comment, @IsMarked,
         @MarkColor, @Position, @IsProcessCommand, @ProcessFileName, @ProcessArguments, @ProcessRunAsAdmin, COALESCE(@ProcessWorkingFolder, ''), @IsNote, COALESCE(@NoteText, ''),
-        COALESCE(@NoteBorderColor, ''), COALESCE(@NoteTitleBackgroundColor, ''), COALESCE(@NoteTitleTextColor, ''), COALESCE(@NoteBackgroundColor, ''), COALESCE(@NoteTextColor, ''), @IsSnippet, COALESCE(@SnippetText, ''), COALESCE(@TextFont, 'Courier New'))";
+        COALESCE(@NoteBorderColor, ''), COALESCE(@NoteTitleBackgroundColor, ''), COALESCE(@NoteTitleTextColor, ''), COALESCE(@NoteBackgroundColor, ''), COALESCE(@NoteTextColor, ''), @IsSnippet, COALESCE(@SnippetText, ''), COALESCE(@TextFont, 'Courier New'),
+        COALESCE(@CommentFont, 'Courier New'), @CommentFontSize)";
 
     private const string UpdateSql = @"
       UPDATE Shortcuts SET
@@ -28,7 +31,7 @@ namespace MDSHO.Data {
         ProcessArguments = @ProcessArguments, ProcessRunAsAdmin = @ProcessRunAsAdmin, IsNote = @IsNote, NoteText = COALESCE(@NoteText, ''),
         NoteBorderColor = COALESCE(@NoteBorderColor, ''), NoteTitleBackgroundColor = COALESCE(@NoteTitleBackgroundColor, ''), NoteTitleTextColor = COALESCE(@NoteTitleTextColor, ''), NoteBackgroundColor = COALESCE(@NoteBackgroundColor, ''), NoteTextColor = COALESCE(@NoteTextColor, ''),
         ProcessWorkingFolder = COALESCE(@ProcessWorkingFolder, ''), IsSnippet = @IsSnippet, SnippetText = COALESCE(@SnippetText, ''),
-        TextFont = COALESCE(@TextFont, 'Courier New')
+        TextFont = COALESCE(@TextFont, 'Courier New'), CommentFont = COALESCE(@CommentFont, 'Courier New'), CommentFontSize = @CommentFontSize
       WHERE ID = @ID";
 
     #region QUERIES
@@ -84,6 +87,8 @@ namespace MDSHO.Data {
         copy.IsSnippet = template.IsSnippet;
         copy.SnippetText = template.SnippetText ?? "";
         copy.TextFont = template.TextFont ?? NoteFonts.Default;
+        copy.CommentFont = template.CommentFont ?? NoteFonts.Default;
+        copy.CommentFontSize = template.CommentFontSize;
         return Get(Add(copy));
       });
     }
@@ -164,6 +169,14 @@ namespace MDSHO.Data {
     }
     public void UpdateTextFont(long id, string font) {
       Run("UPDATE Shortcuts SET TextFont = @font WHERE ID = @id;", new { id, font = font ?? NoteFonts.Default });
+    }
+
+    public void UpdateCommentFont(long id, string font) {
+      Run("UPDATE Shortcuts SET CommentFont = @font WHERE ID = @id;", new { id, font = font ?? NoteFonts.Default });
+    }
+
+    public void UpdateCommentFontSize(long id, long points) {
+      Run("UPDATE Shortcuts SET CommentFontSize = @points WHERE ID = @id;", new { id, points });
     }
     public void UpdatePosition(long id, long position) {
       Run("UPDATE Shortcuts SET Position = @position WHERE ID = @id;", new { id, position });

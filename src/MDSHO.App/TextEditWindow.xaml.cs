@@ -120,10 +120,8 @@ namespace MDSHO {
           UseRenamableTitle(RenameSnippetTitleToolTip);
         }
       }
-      if (kind != TextKind.Comment) {
-        UseSizeButton();
-        UseFontButton();
-      }
+      UseSizeButton();
+      UseFontButton();
 
       // The title icon, the title bar buttons and the window icon follow the window's solid or outline setting while open.
       IconGlyphs icons = this.icons;
@@ -150,10 +148,8 @@ namespace MDSHO {
       };
       // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a snippet starts at 12 pt and a
       // comment at 9 pt each time.
-      SetTextSize(kind == TextKind.Comment ? NoteWindowPlace.CommentFontSize : NoteWindowPlace.DefaultFontSize);
+      SetTextSize(kind == TextKind.Comment ? NoteWindowPlace.FontSizeOrDefault(shortcut.CommentFontSize) : NoteWindowPlace.DefaultFontSize);
       this.TextComment.PreviewMouseWheel += TextComment_PreviewMouseWheel;
-      this.sizeLabelTimer = NewSizeLabelTimer();
-      this.Closed += (s, e) => this.sizeLabelTimer.Stop();
       this.PreviewKeyDown += Window_PreviewKeyDown;
       this.TextComment.PreviewMouseLeftButtonDown += TextComment_PreviewMouseLeftButtonDown;
       this.Loaded += (s, e) => {
@@ -589,7 +585,6 @@ namespace MDSHO {
       foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonOk, this.ButtonClose }) {
         button.SetResourceReference(ForegroundProperty, "Theme.TextStrong");
       }
-      this.TextSizeLabel.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
       this.Body.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "Theme.WindowBackground");
       this.TextComment.SetResourceReference(System.Windows.Controls.Control.BackgroundProperty, "Theme.WindowBackground");
       this.TextComment.SetResourceReference(System.Windows.Controls.Control.ForegroundProperty, "Theme.Text");
@@ -611,7 +606,6 @@ namespace MDSHO {
       foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonColors, this.ButtonWrap, this.ButtonPin, this.ButtonClose }) {
         button.SetBinding(ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       }
-      this.TextSizeLabel.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       SetBinding(BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
       this.Body.SetBinding(System.Windows.Controls.Panel.BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
       this.TextComment.SetBinding(System.Windows.Controls.Control.BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
@@ -691,10 +685,21 @@ namespace MDSHO {
         return;
       }
       SetTextSize(size);
-      if (this.kind == TextKind.Comment) {
-        ShowSizeLabel();
+      SaveTextSize();
+    }
+
+    // A note saves its size with its window, a comment with its button; the snippet editor's size is only for editing.
+    private void SaveTextSize() {
+      if (this.kind == TextKind.Note) {
+        SaveNotePlace();
+      } else if (this.kind == TextKind.Comment && this.shortcut.ID != 0) {
+        try {
+          this.shortcut.SaveCommentFontSize(this.textPoints);
+        } catch (Exception ex) {
+          // A size that can't be saved must never break the window.
+          AppLog.Warning(ex, "Could not save the text size of a comment");
+        }
       }
-      SaveNotePlace();
     }
 
     private long textPoints;
@@ -750,38 +755,10 @@ namespace MDSHO {
       return item;
     }
 
-    /// <summary>Uses a text size at once; a note saves it with its window, like the wheel does.</summary>
+    /// <summary>Uses a text size at once; a note and a comment save it, like the wheel does.</summary>
     public void PickSize(long size) {
       SetTextSize(Math.Clamp(size, NoteWindowPlace.MinFontSize, NoteWindowPlace.MaxFontSize));
-      SaveNotePlace();
-    }
-
-    // ---- The size label (Comment window only) ----
-
-    /// <summary>How long the size label stays after the last size change, before it fades.</summary>
-    public static readonly TimeSpan SizeLabelDelay = TimeSpan.FromSeconds(2);
-
-    /// <summary>Makes the timer that hides the size label. Tests replace it.</summary>
-    public static Func<IOneShotTimer> NewSizeLabelTimer = () => new DispatcherOneShotTimer();
-
-    private readonly IOneShotTimer sizeLabelTimer;
-
-    /// <summary>True while a comment's title bar shows the text size (until it fades); never in a note or snippet.</summary>
-    public bool IsSizeLabelShown { get; private set; }
-
-    // Shows a comment's size in points in the middle of the title bar, and fades it out a moment after the last change.
-    private void ShowSizeLabel() {
-      this.TextSizeLabel.Text = NoteWindowPlace.SizeLabel(this.textPoints);
-      this.TextSizeLabel.BeginAnimation(OpacityProperty, null);
-      this.TextSizeLabel.Opacity = 1;
-      this.IsSizeLabelShown = true;
-      this.sizeLabelTimer.Start(SizeLabelDelay, HideSizeLabel);
-    }
-
-    private void HideSizeLabel() {
-      this.IsSizeLabelShown = false;
-      System.Windows.Media.Animation.DoubleAnimation fade = new System.Windows.Media.Animation.DoubleAnimation(0, TimeSpan.FromMilliseconds(300));
-      this.TextSizeLabel.BeginAnimation(OpacityProperty, fade);
+      SaveTextSize();
     }
 
     // ---- The font button and menu ----
@@ -789,7 +766,7 @@ namespace MDSHO {
     /// <summary>The font menu while it is open (or last open); null before the font button was clicked.</summary>
     public System.Windows.Controls.ContextMenu FontMenu { get; private set; }
 
-    // A note and a snippet have a font button left of the other title bar buttons; a pick applies and saves at once.
+    // Every kind has a font button left of the other title bar buttons; a pick applies and saves at once.
     private void UseFontButton() {
       this.ButtonFont.Visibility = Visibility.Visible;
       this.ButtonFont.Click += (s, e) => {
@@ -801,8 +778,11 @@ namespace MDSHO {
       ApplyFont();
     }
 
+    // A comment has its own font; a note and a snippet use the text font.
+    private string CurrentFont => this.kind == TextKind.Comment ? this.shortcut.CommentFont : this.shortcut.TextFont;
+
     private void ApplyFont() {
-      this.TextComment.FontFamily = NoteFontFamilies.Resolve(this.shortcut.TextFont);
+      this.TextComment.FontFamily = NoteFontFamilies.Resolve(CurrentFont);
     }
 
     /// <summary>
@@ -819,7 +799,7 @@ namespace MDSHO {
 
     private void AddFontGroup(System.Windows.Controls.ContextMenu menu, string label, IEnumerable<string> fonts) {
       menu.Items.Add(new System.Windows.Controls.MenuItem { Header = label, IsEnabled = false, FontSize = 11 });
-      string current = NoteFonts.OrDefault(this.shortcut.TextFont);
+      string current = NoteFonts.OrDefault(CurrentFont);
       foreach (string font in fonts) {
         System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem {
           Header = font,
@@ -833,10 +813,14 @@ namespace MDSHO {
       }
     }
 
-    /// <summary>Uses a font for this note or snippet at once and saves it.</summary>
+    /// <summary>Uses a font for this note, snippet or comment at once and saves it.</summary>
     public void PickFont(string font) {
       try {
-        this.shortcut.SaveTextFont(font);
+        if (this.kind == TextKind.Comment) {
+          this.shortcut.SaveCommentFont(font);
+        } else {
+          this.shortcut.SaveTextFont(font);
+        }
       } catch (Exception ex) {
         AppLog.Warning(ex, "The font could not be saved");
         ErrorDialog.ShowDialog("The font could not be saved.", ex);

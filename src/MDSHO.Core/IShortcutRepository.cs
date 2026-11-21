@@ -60,6 +60,10 @@ namespace MDSHO.Core {
     void UpdateSnippetText(long id, string snippetText);
     /// <summary>Saves the font of a note's or snippet's text (null = Courier New).</summary>
     void UpdateTextFont(long id, string font);
+    /// <summary>Saves the font of a button's comment; null means Courier New.</summary>
+    void UpdateCommentFont(long id, string font);
+    /// <summary>Saves the text size of a button's comment in whole points (0 = 12 pt).</summary>
+    void UpdateCommentFontSize(long id, long points);
     /// <summary>Saves the five colours of a note's window (empty = the default colour).</summary>
     void UpdateNoteColors(long id, string border, string titleBackground, string titleText, string background, string text);
     /// <summary>Saves the order among the siblings.</summary>

@@ -78,6 +78,8 @@ namespace MDSHO.Data {
           IsSnippet INTEGER NOT NULL DEFAULT 0,
           SnippetText TEXT NOT NULL DEFAULT '',
           TextFont TEXT NOT NULL DEFAULT 'Courier New',
+          CommentFont TEXT NOT NULL DEFAULT 'Courier New',
+          CommentFontSize INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(ParentShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE,
           FOREIGN KEY(ParentMDSHOWindowID) REFERENCES MDSHOWindows(ID) ON DELETE CASCADE);
 
@@ -350,6 +352,14 @@ namespace MDSHO.Data {
           // The same as NoteWindowPlace.FontSizeFromDips: 0 or less is 0 (the default), else round(DIPs × 0.75) in 8 to 72.
           Execute(conn, "UPDATE NoteWindows SET FontSize = CASE WHEN FontSize <= 0 THEN 0 "
             + "ELSE MIN(72, MAX(8, CAST(ROUND(FontSize * 0.75) AS INTEGER))) END;");
+        }
+      }),
+      new DbMigration(22, "Comment fonts and sizes: Shortcuts.CommentFont and Shortcuts.CommentFontSize", conn => {
+        if (!ColumnExists(conn, "Shortcuts", "CommentFont")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN CommentFont TEXT NOT NULL DEFAULT 'Courier New';");
+        }
+        if (!ColumnExists(conn, "Shortcuts", "CommentFontSize")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN CommentFontSize INTEGER NOT NULL DEFAULT 0;");
         }
       })
     };

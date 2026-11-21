@@ -35,10 +35,8 @@ namespace MDSHO.Core {
     /// <summary>Size of the note's text in whole points (DIPs up to database version 20); 0 = <see cref="DefaultFontSize"/>.</summary>
     public long FontSize { get; set; }
 
-    /// <summary>The text size of a new note and of the snippet editor, in points.</summary>
+    /// <summary>The text size of a new note or comment and of the snippet editor, in points.</summary>
     public const long DefaultFontSize = 12;
-    /// <summary>The text size a Comment window starts at each time, in points.</summary>
-    public const long CommentFontSize = 9;
     /// <summary>The sizes in the text size menu and the steps of the wheel, in points (Word's list).</summary>
     public static readonly IReadOnlyList<long> SizePresets = new long[] { 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72 };
     /// <summary>The smallest text size in points; a smaller saved size loads as this.</summary>

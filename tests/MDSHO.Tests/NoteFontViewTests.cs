@@ -18,21 +18,11 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// The font and text size buttons and menus in the title bar of the Note window and the snippet editor, the size label
-  /// of the Comment window, and how the fonts load (shipped ones from embedded resources, Courier New when a file is missing).
+  /// The font and text size buttons and menus in the title bar of the Note window, the snippet editor and the Comment
+  /// window, and how the fonts load (shipped ones from embedded resources, Courier New when a file is missing).
   /// </summary>
   public class NoteFontViewTests {
     private static readonly ScreenRect TestArea = new ScreenRect(-20000, -20000, 15000, 15000);
-
-    /// <summary>A timer the test fires by hand.</summary>
-    internal sealed class FakeTimer : IOneShotTimer {
-      public TimeSpan? Delay;
-      public Action Elapsed;
-      public int Starts;
-      public void Start(TimeSpan delay, Action elapsed) { Delay = delay; Elapsed = elapsed; Starts++; }
-      public void Stop() { Delay = null; Elapsed = null; }
-      public void Fire() { Action a = Elapsed; Delay = null; Elapsed = null; a?.Invoke(); }
-    }
 
     private sealed class Fixture {
       public AppViewModel App;
@@ -40,7 +30,6 @@ namespace MDSHO.Tests {
       public ShortcutViewModel Note;
       public ShortcutViewModel Snippet;
       public ShortcutViewModel Command;
-      public FakeTimer Timer = new FakeTimer();
     }
 
     private static void WithButtons(Action<Fixture> body) {
@@ -50,7 +39,6 @@ namespace MDSHO.Tests {
         Action<TextEditWindow> oldPlace = TextEditWindow.PlaceNoteWindow;
         Func<IList<ScreenRect>> oldAreas = TextEditWindow.WorkAreas;
         Func<ModifierKeys> oldModifiers = TextEditWindow.KeyboardModifiers;
-        Func<IOneShotTimer> oldTimer = TextEditWindow.NewSizeLabelTimer;
         ShortcutViewModel.OpenNoteEditor = s => { };
         ShortcutViewModel.OpenSnippetEditor = s => { };
         TextEditWindow.PlaceNoteWindow = w => {
@@ -60,7 +48,6 @@ namespace MDSHO.Tests {
         };
         TextEditWindow.WorkAreas = () => new List<ScreenRect> { TestArea };
         Fixture f = new Fixture();
-        TextEditWindow.NewSizeLabelTimer = () => f.Timer;
         try {
           using (TempDb tempDb = new TempDb()) {
             f.App = new AppViewModel();
@@ -89,7 +76,6 @@ namespace MDSHO.Tests {
           TextEditWindow.PlaceNoteWindow = oldPlace;
           TextEditWindow.WorkAreas = oldAreas;
           TextEditWindow.KeyboardModifiers = oldModifiers;
-          TextEditWindow.NewSizeLabelTimer = oldTimer;
         }
       });
     }
@@ -204,7 +190,7 @@ namespace MDSHO.Tests {
           Button font = Named<Button>(window, "ButtonFont");
           Assert.Equal(Visibility.Visible, font.Visibility);
           Assert.Equal("Font", font.ToolTip);
-          foreach (string other in new[] { "ButtonWrap", "ButtonOk", "ButtonClose" }) {
+          foreach (string other in new[] { "ButtonWrap", "ButtonClose" }) {
             Assert.True(ColumnOf(font) < ColumnOf(Named<Button>(window, other)), "Font should be left of " + other);
           }
         });
@@ -212,16 +198,53 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void A_comment_window_has_no_font_button_and_keeps_its_font() {
+    public void A_comment_window_has_the_font_button_and_starts_in_courier_new_at_12_pt() {
       WithButtons(f => {
         TextEditWindow window = TextEditWindow.ForComment(f.Command);
-        double before = 0;
         Shown(window, () => {
-          Assert.NotEqual(Visibility.Visible, Named<Button>(window, "ButtonFont").Visibility);
-          Assert.NotEqual("Courier New", Text(window).FontFamily.Source);
-          before = Text(window).FontSize;
+          Button font = Named<Button>(window, "ButtonFont");
+          Assert.Equal(Visibility.Visible, font.Visibility);
+          Assert.Equal(f.Win.Appearance.Icons.Font, font.Content);
+          Assert.Equal("Courier New", Text(window).FontFamily.Source);
+          Assert.Equal(16, Text(window).FontSize, 6);
+          foreach (string other in new[] { "ButtonWrap", "ButtonClose" }) {
+            Assert.True(ColumnOf(font) < ColumnOf(Named<Button>(window, other)), "Font should be left of " + other);
+          }
         });
-        Assert.Equal(12, before);
+      });
+    }
+
+    [Fact]
+    public void A_comment_keeps_its_own_font_and_size_apart_from_the_text_font() {
+      WithButtons(f => {
+        TextEditWindow window = TextEditWindow.ForComment(f.Command);
+        Shown(window, () => {
+          Click(FontItems(window.BuildFontMenu()).Single(i => (string)i.Header == "Consolas"));
+          Click(SizeItem(window.BuildSizeMenu(), "18 pt"));
+          Assert.Equal("Consolas", Text(window).FontFamily.Source);
+          Assert.Equal(24, Text(window).FontSize, 6);
+          Assert.Equal(new[] { "Consolas" }, FontItems(window.BuildFontMenu()).Where(i => i.IsChecked).Select(i => (string)i.Header));
+        });
+        Shortcut row = DataStore.Shortcuts.Get(f.Command.ID);
+        Assert.Equal(("Consolas", 18L, "Courier New"), (row.CommentFont, row.CommentFontSize, row.TextFont));
+        TextEditWindow again = TextEditWindow.ForComment(f.Command);
+        Shown(again, () => {
+          Assert.Equal("Consolas", Text(again).FontFamily.Source);
+          Assert.Equal(24, Text(again).FontSize, 6);
+          Assert.Equal("18 pt", Named<Button>(again, "ButtonSize").Content);
+        });
+      });
+    }
+
+    [Fact]
+    public void Ctrl_wheel_in_a_comment_saves_its_size() {
+      WithButtons(f => {
+        TextEditWindow window = TextEditWindow.ForComment(f.Command);
+        Shown(window, () => {
+          Assert.True(Wheel(window, 120));
+          Assert.Equal("14 pt", Named<Button>(window, "ButtonSize").Content);
+        });
+        Assert.Equal(14, DataStore.Shortcuts.Get(f.Command.ID).CommentFontSize);
       });
     }
 
@@ -332,13 +355,12 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Picking_a_font_in_the_snippet_editor_saves_it_even_without_ok() {
+    public void Picking_a_font_in_the_snippet_editor_saves_it_and_is_not_a_change_to_the_value() {
       WithButtons(f => {
         TextEditWindow window = TextEditWindow.ForSnippet(f.Snippet);
         Shown(window, () => {
           Click(FontItems(window.BuildFontMenu()).Single(i => (string)i.Header == "Consolas"));
           Assert.Equal("Consolas", Text(window).FontFamily.Source);
-          Assert.False(Named<Button>(window, "ButtonOk").IsEnabled);
         });
         Assert.False(window.Saved);
         Assert.Equal("Consolas", DataStore.Shortcuts.Get(f.Snippet.ID).TextFont);
@@ -412,10 +434,15 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void A_comment_window_has_no_text_size_button() {
+    public void A_comment_window_has_the_text_size_button_just_left_of_the_font_button() {
       WithButtons(f => {
         TextEditWindow window = TextEditWindow.ForComment(f.Command);
-        Shown(window, () => Assert.NotEqual(Visibility.Visible, Named<Button>(window, "ButtonSize").Visibility));
+        Shown(window, () => {
+          Button size = Named<Button>(window, "ButtonSize");
+          Assert.Equal(Visibility.Visible, size.Visibility);
+          Assert.Equal("12 pt", size.Content);
+          Assert.Equal(ColumnOf(Named<Button>(window, "ButtonFont")) - 1, ColumnOf(size));
+        });
       });
     }
 
@@ -481,14 +508,12 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Ctrl_wheel_updates_the_button_and_shows_no_size_label_in_a_note() {
+    public void Ctrl_wheel_updates_the_button_in_a_note() {
       WithButtons(f => {
         TextEditWindow window = OpenNote(f.Note);
         Assert.True(Wheel(window, 120));
         Assert.Equal(NoteFontSizeTests.Dip(14), Text(window).FontSize, 6);
         Assert.Equal("14 pt", Named<Button>(window, "ButtonSize").Content);
-        Assert.False(window.IsSizeLabelShown);
-        Assert.Equal(0, f.Timer.Starts);
         Assert.Equal(new[] { "14 pt" }, Ticked(window.BuildSizeMenu()));
       });
     }
@@ -532,7 +557,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_snippet_editor_applies_a_picked_size_and_shows_no_size_label() {
+    public void The_snippet_editor_applies_a_picked_size() {
       WithButtons(f => {
         TextEditWindow window = TextEditWindow.ForSnippet(f.Snippet);
         Shown(window, () => {
@@ -541,7 +566,6 @@ namespace MDSHO.Tests {
           Assert.Equal("9 pt", Named<Button>(window, "ButtonSize").Content);
           Wheel(window, -120);
           Assert.Equal("8 pt", Named<Button>(window, "ButtonSize").Content);
-          Assert.False(window.IsSizeLabelShown);
         });
       });
     }
@@ -556,26 +580,17 @@ namespace MDSHO.Tests {
       });
     }
 
-    // ---- The size label (Comment window only) ----
+    // ---- No size label ----
 
     [Fact]
-    public void A_comment_window_still_shows_the_size_label_and_fades_it() {
+    public void No_window_has_the_centred_size_label_any_more() {
       WithButtons(f => {
-        TextEditWindow window = TextEditWindow.ForComment(f.Command);
-        Shown(window, () => {
-          Assert.False(window.IsSizeLabelShown);
-          Assert.True(Wheel(window, 120));
-          Assert.Equal(NoteFontSizeTests.Dip(10), Text(window).FontSize, 6);
-          TextBlock label = Named<TextBlock>(window, "TextSizeLabel");
-          Assert.True(window.IsSizeLabelShown);
-          Assert.Equal("10 pt", label.Text);
-          Assert.Equal(1, label.Opacity);
-          Assert.False(label.IsHitTestVisible);
-          Assert.Equal(TimeSpan.FromSeconds(2), f.Timer.Delay);
-          f.Timer.Fire();
-          WpfAppHost.Pump();
-          Assert.False(window.IsSizeLabelShown);
+        TextEditWindow comment = TextEditWindow.ForComment(f.Command);
+        Shown(comment, () => {
+          Wheel(comment, 120);
+          Assert.Null(comment.FindName("TextSizeLabel"));
         });
+        Assert.Null(OpenNote(f.Note).FindName("TextSizeLabel"));
       });
     }
 

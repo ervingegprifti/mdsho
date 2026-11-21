@@ -17,7 +17,7 @@ namespace MDSHO.Tests {
   /// <summary>
   /// Ctrl + mouse wheel makes the text of a Note or Comment window bigger or smaller through Word's sizes, 8 to 72 pt. A
   /// note starts at 12 pt and keeps its size in whole points in NoteWindows.FontSize (version 18 added it in DIPs, version
-  /// 21 converts it; 0 = 12 pt); a comment starts at 9 pt each time.
+  /// 21 converts it; 0 = 12 pt); a comment keeps its size with its button (Shortcuts.CommentFontSize).
   /// </summary>
   public class NoteFontSizeTests : IDisposable {
     private TempDb db;
@@ -32,7 +32,6 @@ namespace MDSHO.Tests {
     public void The_sizes_are_word_s_list_in_whole_points() {
       Assert.Equal(new long[] { 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72 }, NoteWindowPlace.SizePresets);
       Assert.Equal(12, NoteWindowPlace.DefaultFontSize);
-      Assert.Equal(9, NoteWindowPlace.CommentFontSize);
       Assert.Equal(8, NoteWindowPlace.MinFontSize);
       Assert.Equal(72, NoteWindowPlace.MaxFontSize);
       Assert.Equal("12 pt", NoteWindowPlace.SizeLabel(12));
@@ -162,8 +161,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Version_21_is_a_known_step() {
-      Assert.Equal(21, AppConstants.DatabaseVersion);
-      Assert.Equal(21, SchemaManager.Migrations.Last().Version);
+      Assert.True(AppConstants.DatabaseVersion >= 21);
       Assert.Single(SchemaManager.Migrations, m => m.Version == 21);
     }
 
@@ -189,9 +187,9 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void A_new_database_starts_at_version_21_and_keeps_points_as_they_are() {
+    public void A_new_database_starts_at_the_current_version_and_keeps_points_as_they_are() {
       db = new TempDb();
-      Assert.Equal(21, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       long windowId = DataStore.Windows.GetAll().First().ID;
       long id = DataStore.Shortcuts.CreateNote(null, windowId).ID;
       DataStore.NoteWindows.Save(new NoteWindowPlace(id, 1, 2, 300, 200, NoteWindowPlace.Normal, isOpen: true) { FontSize = 14 });
@@ -358,16 +356,16 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void A_comment_window_steps_through_the_list_but_starts_at_9_pt_next_time() {
+    public void A_comment_window_steps_through_the_list_and_keeps_its_size_next_time() {
       WithNote(f => {
         ShortcutViewModel command = ViewModelFactory.NewProcessCommandShortcut(f.App, null, f.Win);
         f.Win.RootShortcuts.Add(command);
         command.Name = "Ping";
         TextEditWindow first = ShowOffScreen(TextEditWindow.ForComment(command));
         try {
-          Assert.Equal(12, Text(first).FontSize, 6);
+          Assert.Equal(16, Text(first).FontSize, 6);
           Assert.True(Wheel(first, 120, ctrl: true));
-          Assert.Equal(Dip(10), Text(first).FontSize, 6);
+          Assert.Equal(Dip(14), Text(first).FontSize, 6);
           for (int i = 0; i < 20; i++) { Wheel(first, 120, ctrl: true); }
           Assert.Equal(96, Text(first).FontSize, 6);
           Wheel(first, -120, ctrl: true);
@@ -378,7 +376,7 @@ namespace MDSHO.Tests {
         }
         TextEditWindow second = ShowOffScreen(TextEditWindow.ForComment(command));
         try {
-          Assert.Equal(12, Text(second).FontSize, 6);
+          Assert.Equal(64, Text(second).FontSize, 6);
         } finally {
           second.Close();
           WpfAppHost.Pump();
