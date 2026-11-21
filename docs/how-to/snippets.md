@@ -54,7 +54,7 @@ MDSHO doesn't touch your clipboard when it can't paste. It tells you why:
 - **Can't paste into this window.** The window runs as administrator, and Windows doesn't let MDSHO paste into it.
   Use **Copy snippet to memory**, then press Ctrl+V in that window.
 
-## Keep secrets out
+## Not for passwords
 
-MDSHO stores snippets as plain text in its data file, in exports and in backups. Don't put passwords or other secrets
-in a snippet.
+Snippets are for everyday text. Don't keep passwords in them: the text is stored as plain text, and its earlier versions
+are kept in the text history and in exports and backups.
