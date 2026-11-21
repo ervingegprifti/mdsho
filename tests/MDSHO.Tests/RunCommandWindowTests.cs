@@ -735,8 +735,28 @@ namespace MDSHO.Tests {
       });
     }
 
+    /// <summary>The group headers of the Examples list, in order.</summary>
+    internal static List<Expander> ExampleGroups(ListBox list) {
+      list.UpdateLayout();
+      WpfAppHost.Pump();
+      return WpfAppHost.VisualDescendants<Expander>(list).ToList();
+    }
+
+    /// <summary>The header of an example group (it shows the sign and the name and toggles the group).</summary>
+    internal static ToggleButton GroupHeader(Expander group) {
+      return WpfAppHost.VisualDescendants<ToggleButton>(group).Single(t => t.Name == "GroupHeader");
+    }
+
+    internal static string GroupSign(Expander group) {
+      return WpfAppHost.VisualDescendants<TextBlock>(GroupHeader(group)).Single(t => t.Name == "GroupSign").Text;
+    }
+
     /// <summary>The texts of an example's tooltip (what it does, then the command), read from its list item.</summary>
     internal static string[] ExampleToolTipTexts(ListBox list, RunCommandExample example) {
+      // Groups start collapsed: open the example's group first.
+      ExampleGroups(list).Single(g => (string)((CollectionViewGroup)g.DataContext).Name == example.Category).IsExpanded = true;
+      list.UpdateLayout();
+      WpfAppHost.Pump();
       list.ScrollIntoView(example);
       list.UpdateLayout();
       WpfAppHost.Pump();
@@ -745,6 +765,104 @@ namespace MDSHO.Tests {
       StackPanel panel = Assert.IsType<StackPanel>(tip.Content);
       panel.DataContext = example;
       return panel.Children.OfType<TextBlock>().Select(t => t.Text).ToArray();
+    }
+
+    [Fact]
+    public void Every_example_group_starts_collapsed_with_a_plus() {
+      WithCommand("cmd.exe", "", f => {
+        RunCommandExamplesWindow window = new RunCommandExamplesWindow(new RunCommandViewModel(f.Command, true));
+        Shown(window, () => {
+          ListBox list = Named<ListBox>(window, "ListExamples");
+          List<Expander> groups = ExampleGroups(list);
+          Assert.Equal(new[] { "Command Prompt (cmd)", "PowerShell", "Explorer", "Git", "Docker", "Other" },
+            groups.Select(g => (string)((CollectionViewGroup)g.DataContext).Name).ToArray());
+          Assert.All(groups, g => Assert.False(g.IsExpanded));
+          Assert.All(groups, g => Assert.Equal("+", GroupSign(g)));
+          Assert.DoesNotContain(WpfAppHost.VisualDescendants<ListBoxItem>(list), i => i.IsVisible);
+          Assert.Equal("Git", System.Windows.Automation.AutomationProperties.GetName(GroupHeader(groups[3])));
+        });
+      });
+    }
+
+    [Fact]
+    public void Clicking_a_group_header_opens_it_with_a_minus_and_again_closes_it() {
+      WithCommand("cmd.exe", "", f => {
+        RunCommandExamplesWindow window = new RunCommandExamplesWindow(new RunCommandViewModel(f.Command, true));
+        Shown(window, () => {
+          ListBox list = Named<ListBox>(window, "ListExamples");
+          Expander git = ExampleGroups(list)[3];
+          ToggleButton header = GroupHeader(git);
+          ClickHeader(header);
+          list.UpdateLayout();
+          WpfAppHost.Pump();
+          Assert.True(git.IsExpanded);
+          Assert.Equal("−", GroupSign(git));
+          Assert.Contains(WpfAppHost.VisualDescendants<ListBoxItem>(git), i => i.IsVisible && ((RunCommandExample)i.DataContext).Category == "Git");
+          Assert.All(ExampleGroups(list).Where(g => g != git), g => Assert.False(g.IsExpanded));
+          ClickHeader(header);
+          Assert.False(git.IsExpanded);
+          Assert.Equal("+", GroupSign(git));
+        });
+      });
+    }
+
+    [Theory]
+    [InlineData(Key.Enter)]
+    [InlineData(Key.Space)]
+    public void Enter_or_space_on_a_group_header_toggles_it_and_does_not_use_an_example(Key key) {
+      WithCommand("cmd.exe", "", f => {
+        RunCommandViewModel vm = new RunCommandViewModel(f.Command, true);
+        RunCommandExamplesWindow window = new RunCommandExamplesWindow(vm);
+        Shown(window, () => {
+          ListBox list = Named<ListBox>(window, "ListExamples");
+          Expander docker = ExampleGroups(list)[4];
+          ToggleButton header = GroupHeader(docker);
+          Assert.True(header.Focusable);
+          header.Focus();
+          PressOn(header, key);
+          Assert.True(docker.IsExpanded);
+          PressOn(header, key);
+          Assert.False(docker.IsExpanded);
+          Assert.True(window.IsVisible);
+        });
+      });
+    }
+
+    // A click on a toggle button, as the mouse does it (through the button's own click handling).
+    private static void ClickHeader(ToggleButton header) {
+      ((System.Windows.Automation.Provider.IToggleProvider)new System.Windows.Automation.Peers.ToggleButtonAutomationPeer(header)).Toggle();
+      WpfAppHost.Pump();
+    }
+
+    private static void PressOn(UIElement target, Key key) {
+      KeyEventArgs down = new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(target), Environment.TickCount, key) { RoutedEvent = UIElement.PreviewKeyDownEvent };
+      target.RaiseEvent(down);
+      if (!down.Handled) {
+        target.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(target), Environment.TickCount, key) { RoutedEvent = UIElement.KeyDownEvent });
+      }
+      WpfAppHost.Pump();
+    }
+
+    [Fact]
+    public void Groups_start_collapsed_again_in_a_new_window_and_selection_still_works() {
+      WithCommand("cmd.exe", "", f => {
+        RunCommandViewModel vm = new RunCommandViewModel(f.Command, true);
+        RunCommandExamplesWindow first = new RunCommandExamplesWindow(vm);
+        Shown(first, () => ExampleGroups(Named<ListBox>(first, "ListExamples"))[0].IsExpanded = true);
+        RunCommandExamplesWindow second = new RunCommandExamplesWindow(vm);
+        Shown(second, () => {
+          ListBox list = Named<ListBox>(second, "ListExamples");
+          Assert.All(ExampleGroups(list), g => Assert.False(g.IsExpanded));
+          RunCommandExample ping = RunCommandExamples.All.Single(e => e.Name == "Ping a computer");
+          ExampleToolTipTexts(list, ping);
+          list.SelectedItem = ping;
+          WpfAppHost.Pump();
+          Assert.True(Named<Button>(second, "ButtonUse").IsEnabled);
+          ListBoxItem item = (ListBoxItem)list.ItemContainerGenerator.ContainerFromItem(ping);
+          Assert.True(item.IsVisible);
+          Assert.True(item.Focusable);
+        });
+      });
     }
 
     [Fact]
