@@ -122,9 +122,11 @@ namespace MDSHO.Tests {
         window.UpdateLayout();
         ScrollViewer scroll = NoticesScroll(window);
         WpfAppHost.Pump();
-        Assert.Equal(Visibility.Collapsed, scroll.ComputedVerticalScrollBarVisibility);
         // Never taller than the screen's work area.
         Assert.True(window.ActualHeight <= SystemParameters.WorkArea.Height + 1, "Height " + window.ActualHeight + " is above the work area " + SystemParameters.WorkArea.Height);
+        // Every notice shows, unless the screen is too short (a small build machine): then the window fills the work area and the notices scroll.
+        bool fillsWorkArea = window.ActualHeight >= SystemParameters.WorkArea.Height - 1;
+        Assert.Equal(fillsWorkArea ? Visibility.Visible : Visibility.Collapsed, scroll.ComputedVerticalScrollBarVisibility);
       });
     }
 
