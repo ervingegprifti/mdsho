@@ -814,8 +814,9 @@ namespace MDSHO {
           return;
         }
         if (start && TextHistory.IsBigRemoval(removed, before.Length)) {
-          // A big removal keeps the text from before it at once (and a copy still waiting, when it differs).
-          TextHistorySlots undo = this.historyKeptFrom ?? CurrentHistory;
+          // A big removal keeps the text from before it at once (and a copy still waiting, when it differs). Undoing it goes
+          // back to the history just before this removal's own copies, never to an older one.
+          TextHistorySlots undo = CurrentHistory;
           if (this.historyPending != null && this.historyPending != before) {
             KeepHistory(this.historyPending);
           }

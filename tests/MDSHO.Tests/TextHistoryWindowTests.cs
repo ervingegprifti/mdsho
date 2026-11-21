@@ -228,6 +228,57 @@ namespace MDSHO.Tests {
       });
     }
 
+    // Undoing a big removal goes back to the history just before that removal, never to an older one: the text the
+    // window opened with stays in the history.
+    [Fact]
+    public void Pasting_back_after_cut_all_keeps_the_opening_text_in_the_history() {
+      WithButtons(f => {
+        f.Note.SaveTextHistory(new TextHistorySlots("h0", "2026-11-20T18:30:00", "", ""));
+        TextEditWindow window = OpenNote(f.Note);
+        TypeAtEnd(window, "x");
+        TypeAtEnd(window, "\r\nbread");
+        string b = Text(window).Text;
+        TextHistorySlots afterFirst = f.Note.TextHistory;
+        Assert.Equal("milk\r\neggs", afterFirst.Previous1);
+        TypeOverAll(window, "");
+        Assert.Equal((b, "milk\r\neggs"), (f.Note.TextHistory.Previous1, f.Note.TextHistory.Previous2));
+        TypeOverAll(window, b);
+        Assert.Equal(afterFirst, f.Note.TextHistory);
+        Assert.Equal("milk\r\neggs", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious1);
+        Assert.Equal("h0", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious2);
+      });
+    }
+
+    [Fact]
+    public void Deleting_all_right_after_typing_and_pasting_it_back_keeps_the_opening_text_as_before() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        TypeAtEnd(window, "x");
+        TypeOverAll(window, "");
+        TypeOverAll(window, "milk\r\neggsx");
+        Assert.Equal("milk\r\neggs", f.Note.TextHistory.Previous1);
+        Assert.Equal("", f.Note.TextHistory.Previous2);
+        Assert.Equal("milk\r\neggs", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious1);
+      });
+    }
+
+    // After a copy was taken back, the next real change keeps it again and an undo of that goes back only one step.
+    [Fact]
+    public void Undo_after_a_taken_back_copy_goes_back_one_step_only() {
+      WithButtons(f => {
+        f.Note.SaveTextHistory(new TextHistorySlots("h0", "2026-11-20T18:30:00", "", ""));
+        TextEditWindow window = OpenNote(f.Note);
+        TypeAtEnd(window, "x");
+        DeleteLast(window);
+        Assert.Equal("h0", f.Note.TextHistory.Previous1);
+        TypeAtEnd(window, "y");
+        Assert.Equal(("milk\r\neggs", "h0"), (f.Note.TextHistory.Previous1, f.Note.TextHistory.Previous2));
+        TypeOverAll(window, "");
+        TypeOverAll(window, "milk\r\neggsy");
+        Assert.Equal(("milk\r\neggs", "h0"), (f.Note.TextHistory.Previous1, f.Note.TextHistory.Previous2));
+      });
+    }
+
     [Fact]
     public void A_window_kept_open_keeps_no_more_copies_however_long_it_waits() {
       WithButtons(f => {
