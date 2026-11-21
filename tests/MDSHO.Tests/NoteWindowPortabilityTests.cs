@@ -171,6 +171,59 @@ namespace MDSHO.Tests {
       Assert.Equal(22, DataStore.NoteWindows.Get(open.ID).FontSize);
     }
 
+    // ---- Text sizes: points from database version 21, DIPs before ----
+
+    [Fact]
+    public void An_export_from_database_version_20_or_older_converts_dip_sizes_to_points() {
+      (Shortcut open, Shortcut closed, _) = Seed();
+      DataStore.NoteWindows.Save(new NoteWindowPlace(open.ID, 110, 120, 530, 440, NoteWindowPlace.Normal, isOpen: true) { FontSize = 16 });
+      DataExporter.Export(Zip());
+      string old = MutateJson(Zip(), "manifest.json", n => n["schemaVersion"] = 20, "v20.zip");
+
+      DataImporter.Import(old, ImportMode.Replace);
+
+      Assert.Equal(12, DataStore.NoteWindows.Get(open.ID).FontSize);
+      Assert.Equal(0, DataStore.NoteWindows.Get(closed.ID).FontSize);
+    }
+
+    [Fact]
+    public void An_old_export_converts_each_size_like_the_database_upgrade() {
+      (Shortcut open, _, _) = Seed();
+      DataStore.NoteWindows.Save(new NoteWindowPlace(open.ID, 110, 120, 530, 440, NoteWindowPlace.Normal, isOpen: true) { FontSize = 22 });
+      DataExporter.Export(Zip());
+      string old = MutateJson(Zip(), "manifest.json", n => n["schemaVersion"] = 18, "v18.zip");
+
+      DataImporter.Import(old, ImportMode.AddAsNew);
+
+      long copy = DataStore.Shortcuts.GetAll().Max(s => s.ID);
+      Assert.Equal(17, DataStore.NoteWindows.Get(copy - 2).FontSize);
+      Assert.Equal(22, DataStore.NoteWindows.Get(open.ID).FontSize);
+    }
+
+    [Fact]
+    public void An_export_from_version_21_or_newer_keeps_its_points() {
+      (Shortcut open, _, _) = Seed();
+      DataStore.NoteWindows.Save(new NoteWindowPlace(open.ID, 110, 120, 530, 440, NoteWindowPlace.Normal, isOpen: true) { FontSize = 16 });
+      DataExporter.Export(Zip());
+      Assert.Equal((long)AppConstants.DatabaseVersion, (long)ReadEntry(Zip(), "manifest.json")["schemaVersion"]);
+
+      DataImporter.Import(Zip(), ImportMode.Replace);
+
+      Assert.Equal(16, DataStore.NoteWindows.Get(open.ID).FontSize);
+    }
+
+    [Fact]
+    public void Sizes_in_points_survive_an_export_and_import_round_trip() {
+      (Shortcut open, _, _) = Seed();
+      foreach (long size in NoteWindowPlace.SizePresets.Append(13)) {
+        DataStore.NoteWindows.Save(new NoteWindowPlace(open.ID, 110, 120, 530, 440, NoteWindowPlace.Normal, isOpen: true) { FontSize = size });
+        DataExporter.Export(Zip());
+        DataStore.NoteWindows.Save(new NoteWindowPlace(open.ID, 110, 120, 530, 440, NoteWindowPlace.Normal, isOpen: true) { FontSize = 0 });
+        DataImporter.Import(Zip(), ImportMode.Replace);
+        Assert.Equal(size, DataStore.NoteWindows.Get(open.ID).FontSize);
+      }
+    }
+
     [Fact]
     public void A_format_1_file_without_note_windows_still_imports_and_notes_get_default_windows() {
       (Shortcut open, _, _) = Seed();
@@ -332,7 +385,7 @@ namespace MDSHO.Tests {
             Assert.Equal(noteId, window.Shortcut.ID);
             Assert.Equal((-9400.0, -9300.0, 610.0, 470.0), (window.Left, window.Top, window.Width, window.Height));
             TextBox text = (TextBox)window.FindName("TextComment");
-            Assert.Equal(20, text.FontSize);
+            Assert.Equal(NoteFontSizeTests.Dip(20), text.FontSize, 6);
             Assert.Equal(TextWrapping.Wrap, text.TextWrapping);
           }
         });

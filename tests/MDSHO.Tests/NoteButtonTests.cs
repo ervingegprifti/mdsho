@@ -96,8 +96,11 @@ namespace MDSHO.Tests {
           Assert.Equal(note.OwningWindow.Appearance.Icons.WrapText, wrap.Content);
           FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
           Rect rColors = BoundsIn(Named<Button>(window, "ButtonColors"), bar), rWrap = BoundsIn(wrap, bar), rPin = BoundsIn(Named<Button>(window, "ButtonPin"), bar);
+          Rect rHistory = BoundsIn(Named<Button>(window, "ButtonHistory"), bar);
           Assert.Equal(rColors.Right, rWrap.Left, 1);
-          Assert.Equal(rWrap.Right, rPin.Left, 1);
+          // Text history sits between wrap text and the pin.
+          Assert.Equal(rWrap.Right, rHistory.Left, 1);
+          Assert.Equal(rHistory.Right, rPin.Left, 1);
           AssertWraps(window, false);
         });
       });
@@ -331,7 +334,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_comment_window_has_wrap_text_just_left_of_ok() {
+    public void The_comment_window_has_wrap_text_then_history_left_of_close() {
       WithGroup(f => {
         TextEditWindow window = TextEditWindow.ForComment(f.Group);
         Shown(window, () => {
@@ -340,7 +343,9 @@ namespace MDSHO.Tests {
           Assert.Equal(Visibility.Visible, wrap.Visibility);
           Assert.Equal(f.Win.Appearance.Icons.WrapText, wrap.Content);
           FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
-          Assert.Equal(BoundsIn(Named<Button>(window, "ButtonOk"), bar).Left, BoundsIn(wrap, bar).Right, 1);
+          Rect rHistory = BoundsIn(Named<Button>(window, "ButtonHistory"), bar);
+          Assert.Equal(rHistory.Left, BoundsIn(wrap, bar).Right, 1);
+          Assert.Equal(BoundsIn(Named<Button>(window, "ButtonClose"), bar).Left, rHistory.Right, 1);
           AssertWraps(window, false);
         });
       });
@@ -375,7 +380,7 @@ namespace MDSHO.Tests {
           AssertWraps(window, true);
           Assert.True(f.Win.Appearance.CommentWrapText);
           Assert.True(DataStore.Windows.Get(f.Win.ID).CommentWrapText);
-          Assert.False(Named<Button>(window, "ButtonOk").IsEnabled);
+          Assert.False(window.Saved);
           Click(wrap);
           AssertWraps(window, false);
           Assert.False(f.Win.Appearance.CommentWrapText);
@@ -712,7 +717,8 @@ namespace MDSHO.Tests {
           Assert.Equal(640, window.Width);
           Assert.Equal(520, window.Height);
           // A note keeps its own smallest size.
-          Assert.Equal(380, window.MinWidth);
+          Assert.Equal(460, TextEditWindow.NoteMinWidth);
+          Assert.Equal(460, window.MinWidth);
           Assert.Equal(300, window.MinHeight);
           text.Text = "new text";
           PumpUntil(() => note.NoteText == "new text");
@@ -762,7 +768,7 @@ namespace MDSHO.Tests {
         Shown(window, () => {
           window.UpdateLayout();
           Assert.Null(window.FindName("Footer"));
-          Assert.Equal(Visibility.Collapsed, Named<Button>(window, "ButtonOk").Visibility);
+          Assert.Null(window.FindName("ButtonOk"));
           Button pin = Named<Button>(window, "ButtonPin");
           Button close = Named<Button>(window, "ButtonClose");
           // The note saves itself, so there is no Save button.
@@ -819,7 +825,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_comment_window_has_ok_and_close_in_its_title_bar_and_no_bottom_bar() {
+    public void The_comment_window_has_close_and_no_ok_in_its_title_bar_and_no_bottom_bar() {
       WithGroup(f => {
         TextEditWindow window = TextEditWindow.ForComment(f.Group);
         Shown(window, () => {
@@ -829,17 +835,13 @@ namespace MDSHO.Tests {
           }
           Assert.Equal(Visibility.Collapsed, Named<Button>(window, "ButtonPin").Visibility);
           Assert.Equal(Visibility.Collapsed, Named<Button>(window, "ButtonColors").Visibility);
-          Button ok = Named<Button>(window, "ButtonOk");
+          Assert.Null(window.FindName("ButtonOk"));
           Button close = Named<Button>(window, "ButtonClose");
-          Assert.Equal(Visibility.Visible, ok.Visibility);
-          Assert.Equal("Save (Ctrl+Enter)", ok.ToolTip);
-          Assert.Equal("Save", System.Windows.Automation.AutomationProperties.GetName(ok));
-          Assert.Equal("Close without saving (Esc)", close.ToolTip);
-          Assert.Equal("Close without saving", System.Windows.Automation.AutomationProperties.GetName(close));
-          // OK sits just left of X.
+          Assert.Equal("Close (Esc)", close.ToolTip);
+          Assert.Equal("Close", System.Windows.Automation.AutomationProperties.GetName(close));
+          // Text history sits just left of X.
           FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
-          Rect rOk = BoundsIn(ok, bar), rClose = BoundsIn(close, bar);
-          Assert.Equal(rClose.Left, rOk.Right, 1);
+          Assert.Equal(BoundsIn(close, bar).Left, BoundsIn(Named<Button>(window, "ButtonHistory"), bar).Right, 1);
           // The text reaches the bottom of the window.
           FrameworkElement client = (FrameworkElement)window.Content;
           Assert.Equal(client.ActualHeight, BoundsIn(Named<TextBox>(window, "TextComment"), client).Bottom, 1);
@@ -971,10 +973,11 @@ namespace MDSHO.Tests {
           Assert.Equal(TextWrapping.NoWrap, editor.TextWrapping);
           Assert.Equal(ScrollBarVisibility.Auto, editor.HorizontalScrollBarVisibility);
           Assert.Equal(ScrollBarVisibility.Auto, editor.VerticalScrollBarVisibility);
-          // A comment is short: its window is small (300 x 150), and may be made that small again by hand.
-          Assert.Equal(300, window.Width);
+          // A comment is short: its window is small (420 x 150, the same smallest width as the snippet editor).
+          Assert.Equal(420, TextEditWindow.TextMinWidth);
+          Assert.Equal(420, window.Width);
           Assert.Equal(150, window.Height);
-          Assert.Equal(300, window.MinWidth);
+          Assert.Equal(420, window.MinWidth);
           Assert.Equal(150, window.MinHeight);
         });
       });

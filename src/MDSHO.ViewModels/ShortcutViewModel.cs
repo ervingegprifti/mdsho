@@ -360,8 +360,8 @@ namespace MDSHO.ViewModels {
     /// </summary>
     public static Action<ShortcutViewModel> NotesDeleted { get; set; }
     /// <summary>
-    /// The Windows error code when the user answers No to the administrator (UAC) prompt, or closes Windows' own "Problem
-    /// with Shortcut" box (a shortcut whose target is missing).
+    /// The Windows error code when the user answers No to the administrator (UAC) prompt. Windows also returns it, without
+    /// showing anything, for a shortcut whose target is missing (.NET starts with SEE_MASK_FLAG_NO_UI).
     /// </summary>
     public const int ErrorCancelled = 1223;
     /// <summary>
@@ -632,7 +632,7 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "") {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0, TextHistorySlots textHistory = null, TextHistorySlots commentHistory = null, long textFontSize = 0) {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -656,6 +656,12 @@ namespace MDSHO.ViewModels {
       this.noteText = noteText ?? "";
       this.isSnippet = isSnippet;
       this.snippetText = snippetText ?? "";
+      this.textFont = textFont ?? NoteFonts.Default;
+      this.commentFont = commentFont ?? NoteFonts.Default;
+      this.commentFontSize = commentFontSize;
+      this.textFontSize = textFontSize;
+      this.textHistory = textHistory ?? TextHistorySlots.Empty;
+      this.commentHistory = commentHistory ?? TextHistorySlots.Empty;
       this.NoteColors = noteColors ?? new NoteColors();
       UpdateTargetKind(false);
       // Events.
@@ -715,7 +721,9 @@ namespace MDSHO.ViewModels {
       } else if (e.PropertyName == nameof(this.MarkColor)) {
         DataStore.Shortcuts.UpdateMarkColor(this.ID, this.MarkColor);
       } else if (e.PropertyName == nameof(this.Comment)) {
-        DataStore.Shortcuts.UpdateComment(this.ID, this.Comment ?? "");
+        if (!this.savingComment) {
+          DataStore.Shortcuts.UpdateComment(this.ID, this.Comment ?? "");
+        }
       } else if (e.PropertyName == nameof(this.SnippetText)) {
         if (!this.savingSnippetText) {
           DataStore.Shortcuts.UpdateSnippetText(this.ID, this.SnippetText ?? "");
@@ -803,9 +811,92 @@ namespace MDSHO.ViewModels {
         CopyText(this.snippetText);
       }
     }
+    private string textFont = NoteFonts.Default;
+    /// <summary>The font of a note's or snippet's text (Courier New by default).</summary>
+    public string TextFont => this.textFont;
+    /// <summary>Saves the font: the database first, then memory. A font not in the list is saved as Courier New.</summary>
+    public void SaveTextFont(string font) {
+      font = NoteFonts.OrDefault(font);
+      DataStore.Shortcuts.UpdateTextFont(this.ID, font);
+      if (font != this.textFont) {
+        this.textFont = font;
+        OnPropertyChanged(nameof(TextFont));
+      }
+    }
+    private string commentFont = NoteFonts.Default;
+    /// <summary>The font of the comment's text (Courier New by default).</summary>
+    public string CommentFont => this.commentFont;
+    /// <summary>Saves the comment's font: the database first, then memory. A font not in the list is saved as Courier New.</summary>
+    public void SaveCommentFont(string font) {
+      font = NoteFonts.OrDefault(font);
+      DataStore.Shortcuts.UpdateCommentFont(this.ID, font);
+      if (font != this.commentFont) {
+        this.commentFont = font;
+        OnPropertyChanged(nameof(CommentFont));
+      }
+    }
+    private long commentFontSize;
+    /// <summary>The comment's text size in whole points; 0 = <see cref="NoteWindowPlace.DefaultFontSize"/>.</summary>
+    public long CommentFontSize => this.commentFontSize;
+    /// <summary>Saves the comment's text size in whole points: the database first, then memory.</summary>
+    public void SaveCommentFontSize(long points) {
+      DataStore.Shortcuts.UpdateCommentFontSize(this.ID, points);
+      if (points != this.commentFontSize) {
+        this.commentFontSize = points;
+        OnPropertyChanged(nameof(CommentFontSize));
+      }
+    }
+    private long textFontSize;
+    /// <summary>The snippet's text size in whole points; 0 = <see cref="NoteWindowPlace.DefaultFontSize"/>.</summary>
+    public long TextFontSize => this.textFontSize;
+    /// <summary>Saves the snippet's text size in whole points: the database first, then memory.</summary>
+    public void SaveTextFontSize(long points) {
+      DataStore.Shortcuts.UpdateTextFontSize(this.ID, points);
+      if (points != this.textFontSize) {
+        this.textFontSize = points;
+        OnPropertyChanged(nameof(TextFontSize));
+      }
+    }
+    private TextHistorySlots textHistory = TextHistorySlots.Empty;
+    /// <summary>The two earlier copies of the note's or snippet's text (the history menu).</summary>
+    public TextHistorySlots TextHistory => this.textHistory;
+    /// <summary>Saves the text history: the database first, then memory.</summary>
+    public void SaveTextHistory(TextHistorySlots history) {
+      history ??= TextHistorySlots.Empty;
+      DataStore.Shortcuts.UpdateTextHistory(this.ID, history);
+      if (history != this.textHistory) {
+        this.textHistory = history;
+        OnPropertyChanged(nameof(TextHistory));
+      }
+    }
+    private TextHistorySlots commentHistory = TextHistorySlots.Empty;
+    /// <summary>The two earlier copies of the comment (the history menu).</summary>
+    public TextHistorySlots CommentHistory => this.commentHistory;
+    /// <summary>Saves the comment history: the database first, then memory.</summary>
+    public void SaveCommentHistory(TextHistorySlots history) {
+      history ??= TextHistorySlots.Empty;
+      DataStore.Shortcuts.UpdateCommentHistory(this.ID, history);
+      if (history != this.commentHistory) {
+        this.commentHistory = history;
+        OnPropertyChanged(nameof(CommentHistory));
+      }
+    }
     // True while SaveSnippetText sets the text it already wrote to the database.
     private bool savingSnippetText;
     /// <summary>Saves the value: the database first, then memory (a failed write throws and keeps the old value).</summary>
+    /// <summary>Saves the comment: the database first, then memory, so a failed save leaves the old comment in both.</summary>
+    public void SaveComment(string value) {
+      value ??= "";
+      DataStore.Shortcuts.UpdateComment(this.ID, value);
+      this.savingComment = true;
+      try {
+        this.Comment = value;
+      } finally {
+        this.savingComment = false;
+      }
+    }
+    // True while SaveComment sets the comment it already wrote to the database.
+    private bool savingComment;
     public void SaveSnippetText(string value) {
       value ??= "";
       DataStore.Shortcuts.UpdateSnippetText(this.ID, value);
@@ -1042,9 +1133,15 @@ namespace MDSHO.ViewModels {
           }
         }
       } catch (System.ComponentModel.Win32Exception ex) when (!this.IsProcessCommand && ex.NativeErrorCode == ErrorCancelled) {
-        // Windows showed its own "Problem with Shortcut" box (the target is missing) and the user closed it: Windows has
-        // said it already, so no second message.
-        Common.AppLog.Information("Shortcut file {File} was not opened: Windows' message was closed", this.Guid + this.Ext);
+        // Windows shows no box here (SEE_MASK_FLAG_NO_UI). Its own box isn't turned on: it offers Delete, which would
+        // delete MDSHO's .lnk file.
+        if (this.TargetKind == ShortcutTargetKind.Missing) {
+          Common.AppLog.Warning(null, "Shortcut file {File} was not opened: its target can't be found", this.Guid + this.Ext);
+          Dialogs.ShowError(this.Name, CouldNotOpenText, TargetNotFoundText + "\n" + CheckTargetText);
+        } else {
+          // The target exists, so the user said No to the administrator prompt: nothing to say.
+          Common.AppLog.Information("Shortcut file {File} was not opened: the administrator prompt was declined", this.Guid + this.Ext);
+        }
       } catch (Exception ex) {
         // A short plain message; the details go to the log. A run command was already logged by StartRunCommand
         // (without its arguments, which can hold passwords).
@@ -1064,6 +1161,8 @@ namespace MDSHO.ViewModels {
     public static string FailureDetail(Exception ex, string check) {
       return RunFailureReason(ex) + "\n" + check;
     }
+    /// <summary>The reason when a shortcut's target is gone.</summary>
+    public const string TargetNotFoundText = "The file or folder it points to can't be found.";
     /// <summary>The line below a shortcut that can't be opened.</summary>
     public const string CheckTargetText = "Check that the file or folder it points to still exists.";
     /// <summary>The line below a run command that can't start.</summary>

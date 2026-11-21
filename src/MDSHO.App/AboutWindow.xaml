@@ -164,8 +164,8 @@
                 Outer margins are 26 px (AboutWindow.OuterMargin), the button height the other windows use; the bottom padding of 20
                 plus the 6 px under each line puts the last line 26 px above the bottom.-->
             <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="0,10,0,20">
-                <!--Entries come from ThirdPartyNotices.All (kept in sync with the shipped packages by ThirdPartyNoticesTests)-->
-                <ItemsControl x:Name="ItemsThirdPartyNotices" ItemsSource="{x:Static local:ThirdPartyNotices.All}" Focusable="False" Margin="26,0,26,0">
+                <!--Entries come from ThirdPartyNotices.All (kept in sync with the shipped packages by ThirdPartyNoticesTests), then the embedded fonts-->
+                <ItemsControl x:Name="ItemsThirdPartyNotices" ItemsSource="{x:Static local:ThirdPartyNotices.ShownNow}" Focusable="False" Margin="26,0,26,0">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type local:ThirdPartyNotice}">
                             <!--Name (bold) version, License link (licence type), Project link; the inlines touch so no extra spaces appear-->

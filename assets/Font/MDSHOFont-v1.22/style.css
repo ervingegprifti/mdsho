@@ -1,10 +1,10 @@
 @font-face {
   font-family: 'MDSHOFont';
-  src:  url('fonts/MDSHOFont.eot?r83e5y');
-  src:  url('fonts/MDSHOFont.eot?r83e5y#iefix') format('embedded-opentype'),
-    url('fonts/MDSHOFont.ttf?r83e5y') format('truetype'),
-    url('fonts/MDSHOFont.woff?r83e5y') format('woff'),
-    url('fonts/MDSHOFont.svg?r83e5y#MDSHOFont') format('svg');
+  src:  url('fonts/MDSHOFont.eot?37lpy4');
+  src:  url('fonts/MDSHOFont.eot?37lpy4#iefix') format('embedded-opentype'),
+    url('fonts/MDSHOFont.ttf?37lpy4') format('truetype'),
+    url('fonts/MDSHOFont.woff?37lpy4') format('woff'),
+    url('fonts/MDSHOFont.svg?37lpy4#MDSHOFont') format('svg');
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -300,4 +300,16 @@ i {
 }
 .mdshofont_snippet_o:before {
   content: "\e95b";
+}
+.mdshofont_font_s:before {
+  content: "\e95c";
+}
+.mdshofont_font_o:before {
+  content: "\e95d";
+}
+.mdshofont_time_s:before {
+  content: "\e95e";
+}
+.mdshofont_time_o:before {
+  content: "\e95f";
 }

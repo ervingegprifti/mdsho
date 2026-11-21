@@ -67,6 +67,30 @@ namespace MDSHO.Core {
     public long IsSnippet { get; set; }
     /// <summary>The text a snippet pastes; empty for other buttons (also empty when an older export file has no value).</summary>
     public string SnippetText { get; set; } = "";
+    /// <summary>The font of a note's or snippet's text (see <see cref="NoteFonts"/>); Courier New also when an older export file has no value.</summary>
+    public string TextFont { get; set; } = NoteFonts.Default;
+    /// <summary>The font of the comment's text (Courier New by default).</summary>
+    public string CommentFont { get; set; } = NoteFonts.Default;
+    /// <summary>The size of the comment's text in whole points; 0 = 12 pt.</summary>
+    public long CommentFontSize { get; set; }
+    /// <summary>The size of a snippet's text in whole points; 0 = 12 pt (a note keeps its size with its window).</summary>
+    public long TextFontSize { get; set; }
+    /// <summary>The note's or snippet's text before the last kept change ("Before" in the history menu).</summary>
+    public string TextPrevious1 { get; set; } = "";
+    /// <summary>When <see cref="TextPrevious1"/> was kept ("yyyy-MM-ddTHH:mm:ss" local time, or empty).</summary>
+    public string TextPrevious1Time { get; set; } = "";
+    /// <summary>The copy before that ("Earlier").</summary>
+    public string TextPrevious2 { get; set; } = "";
+    /// <summary>When <see cref="TextPrevious2"/> was kept.</summary>
+    public string TextPrevious2Time { get; set; } = "";
+    /// <summary>The comment before the last kept change.</summary>
+    public string CommentPrevious1 { get; set; } = "";
+    /// <summary>When <see cref="CommentPrevious1"/> was kept.</summary>
+    public string CommentPrevious1Time { get; set; } = "";
+    /// <summary>The comment copy before that.</summary>
+    public string CommentPrevious2 { get; set; } = "";
+    /// <summary>When <see cref="CommentPrevious2"/> was kept.</summary>
+    public string CommentPrevious2Time { get; set; } = "";
     /// <summary>
     /// Children shortcuts.
     /// </summary>

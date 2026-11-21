@@ -21,7 +21,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Assets\Fonts\MDSHOFont.ttf" />
+    <None Remove="Assets\Fonts\*.ttf" />
+    <None Remove="Assets\Fonts\*.otf" />
     <None Remove="Resources\logo.ico" />
   </ItemGroup>
 
@@ -43,7 +44,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Assets\Fonts\MDSHOFont.ttf" />
+    <!-- The icon font and the note fonts that come with MDSHO (a missing note font shows Courier New). -->
+    <Resource Include="Assets\Fonts\*.ttf" />
+    <Resource Include="Assets\Fonts\*.otf" />
+    <!-- The note fonts' licence texts, shipped beside the app. -->
+    <Content Include="..\..\assets\Font\licenses\*.txt" Link="Assets\Fonts\licenses\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Resource Include="Resources\logo.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Resource>

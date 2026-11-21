@@ -56,4 +56,4 @@ To rename a panel, right-click its title and choose **Rename window title**, or 
 ## Notes and comments
 
 - In a note, Esc closes the note. It is already saved.
-- In a comment, Ctrl+Enter saves it and Esc closes it without saving.
+- In a comment or the snippet editor, Esc or Ctrl+Enter closes the window. What you typed is already saved.

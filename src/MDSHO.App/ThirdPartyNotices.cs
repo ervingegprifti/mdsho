@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MDSHO {
 
@@ -88,6 +89,31 @@ namespace MDSHO {
         "Microsoft.Extensions.FileProviders.Abstractions", "Microsoft.Extensions.FileProviders.Physical", "Microsoft.Extensions.FileSystemGlobbing",
         "Microsoft.Extensions.Options", "Microsoft.Extensions.Options.ConfigurationExtensions", "Microsoft.Extensions.Primitives"),
     };
+
+    /// <summary>
+    /// The note fonts that come with MDSHO, in menu order. Each shows in About only once its file is embedded
+    /// (<see cref="Shown"/>). The licence texts are in assets/Font/licenses and ship in Assets/Fonts/licenses.
+    /// </summary>
+    public static readonly IReadOnlyList<ThirdPartyNotice> Fonts = new[] {
+      new ThirdPartyNotice("JetBrains Mono", "2.304", "OFL-1.1",
+        "https://github.com/JetBrains/JetBrainsMono/blob/master/OFL.txt", "https://github.com/JetBrains/JetBrainsMono"),
+      new ThirdPartyNotice("Source Code Pro", "2.042", "OFL-1.1",
+        "https://github.com/adobe-fonts/source-code-pro/blob/release/LICENSE.md", "https://github.com/adobe-fonts/source-code-pro"),
+      new ThirdPartyNotice("IBM Plex Mono", "2.5.0", "OFL-1.1",
+        "https://github.com/IBM/plex/blob/master/LICENSE.txt", "https://github.com/IBM/plex"),
+      new ThirdPartyNotice("Latin Modern Roman", "2.004", "GUST Font License",
+        "https://www.gust.org.pl/projects/e-foundry/licenses", "https://www.gust.org.pl/projects/e-foundry/latin-modern"),
+      new ThirdPartyNotice("Latin Modern Mono", "2.004", "GUST Font License",
+        "https://www.gust.org.pl/projects/e-foundry/licenses", "https://www.gust.org.pl/projects/e-foundry/latin-modern"),
+    };
+
+    /// <summary>What the About window lists: <see cref="All"/>, then each font whose file is embedded.</summary>
+    public static IReadOnlyList<ThirdPartyNotice> Shown() {
+      return All.Concat(Fonts.Where(f => Helpers.NoteFontFamilies.IsAvailable(f.Name))).ToList();
+    }
+
+    /// <summary>The About window's list (see <see cref="Shown"/>).</summary>
+    public static IReadOnlyList<ThirdPartyNotice> ShownNow => Shown();
 
     /// <summary>Copyright line shown in the About window for the given year.</summary>
     public static string CopyrightFor(int currentYear) {

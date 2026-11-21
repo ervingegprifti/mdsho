@@ -163,7 +163,7 @@
                          AcceptsReturn="True"
                          AcceptsTab="False"
                          TextWrapping="NoWrap"
-                         FontFamily="Consolas"
+                         FontFamily="Courier New"
                          FontSize="13"
                          Padding="2"
                          VerticalScrollBarVisibility="Auto"

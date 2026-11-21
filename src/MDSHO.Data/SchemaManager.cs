@@ -77,6 +77,18 @@ namespace MDSHO.Data {
           NoteTextColor TEXT NOT NULL DEFAULT '',
           IsSnippet INTEGER NOT NULL DEFAULT 0,
           SnippetText TEXT NOT NULL DEFAULT '',
+          TextFont TEXT NOT NULL DEFAULT 'Courier New',
+          CommentFont TEXT NOT NULL DEFAULT 'Courier New',
+          CommentFontSize INTEGER NOT NULL DEFAULT 0,
+          TextPrevious1 TEXT NOT NULL DEFAULT '',
+          TextPrevious1Time TEXT NOT NULL DEFAULT '',
+          TextPrevious2 TEXT NOT NULL DEFAULT '',
+          TextPrevious2Time TEXT NOT NULL DEFAULT '',
+          CommentPrevious1 TEXT NOT NULL DEFAULT '',
+          CommentPrevious1Time TEXT NOT NULL DEFAULT '',
+          CommentPrevious2 TEXT NOT NULL DEFAULT '',
+          CommentPrevious2Time TEXT NOT NULL DEFAULT '',
+          TextFontSize INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(ParentShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE,
           FOREIGN KEY(ParentMDSHOWindowID) REFERENCES MDSHOWindows(ID) ON DELETE CASCADE);
 
@@ -336,6 +348,38 @@ namespace MDSHO.Data {
         }
         if (!ColumnExists(conn, "Shortcuts", "SnippetText")) {
           Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN SnippetText TEXT NOT NULL DEFAULT '';");
+        }
+      }),
+      new DbMigration(20, "Note fonts: Shortcuts.TextFont (Courier New)", conn => {
+        if (!ColumnExists(conn, "Shortcuts", "TextFont")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN TextFont TEXT NOT NULL DEFAULT 'Courier New';");
+        }
+      }),
+      // Runs once (the version is raised in the same transaction): a size can't tell DIPs from points.
+      new DbMigration(21, "Note text sizes: NoteWindows.FontSize from DIPs to whole points", conn => {
+        if (TableExists(conn, "NoteWindows") && ColumnExists(conn, "NoteWindows", "FontSize")) {
+          // The same as NoteWindowPlace.FontSizeFromDips: 0 or less is 0 (the default), else round(DIPs × 0.75) in 8 to 72.
+          Execute(conn, "UPDATE NoteWindows SET FontSize = CASE WHEN FontSize <= 0 THEN 0 "
+            + "ELSE MIN(72, MAX(8, CAST(ROUND(FontSize * 0.75) AS INTEGER))) END;");
+        }
+      }),
+      new DbMigration(22, "Comment fonts and sizes, and text history: Shortcuts.CommentFont, CommentFontSize, TextPrevious1/2 and CommentPrevious1/2 with their times", conn => {
+        if (!ColumnExists(conn, "Shortcuts", "CommentFont")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN CommentFont TEXT NOT NULL DEFAULT 'Courier New';");
+        }
+        if (!ColumnExists(conn, "Shortcuts", "CommentFontSize")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN CommentFontSize INTEGER NOT NULL DEFAULT 0;");
+        }
+        foreach (string column in new[] { "TextPrevious1", "TextPrevious1Time", "TextPrevious2", "TextPrevious2Time",
+            "CommentPrevious1", "CommentPrevious1Time", "CommentPrevious2", "CommentPrevious2Time" }) {
+          if (!ColumnExists(conn, "Shortcuts", column)) {
+            Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN " + column + " TEXT NOT NULL DEFAULT '';");
+          }
+        }
+      }),
+      new DbMigration(23, "Snippet text sizes: Shortcuts.TextFontSize", conn => {
+        if (!ColumnExists(conn, "Shortcuts", "TextFontSize")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN TextFontSize INTEGER NOT NULL DEFAULT 0;");
         }
       })
     };

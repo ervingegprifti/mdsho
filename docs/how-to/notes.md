@@ -37,7 +37,32 @@ You can also select the button and press F2.
 
 Click **Wrap text** to fit long lines to the window's width.
 
-Hold Ctrl and turn the mouse wheel to make the text bigger or smaller. The note keeps its size. Text starts at size 12.
+## Change the text size
+
+The **Text size** button left of **Font** shows the note's size in points. Click it and pick a size from 8 to 72 pt
+(the same sizes as in Word), or **Default (12 pt)**; the current one has a tick. You can also hold Ctrl and turn the
+mouse wheel to step through the same sizes, and the button follows. The note keeps its size. New notes start at 12 pt; other notes keep the size saved
+with them.
+
+## Go back to earlier text
+
+A note keeps two earlier versions of its text. When you start changing it after opening the note, or when one change
+removes a lot (half the text or more), the text you had becomes **Before**, and **Before** becomes
+**Earlier**.
+
+1. Click the clock (**Text history**) in the note's title bar.
+2. Each version shows when it was kept and its first line. Pick **Before** or **Earlier**.
+
+The note shows that text and saves it. The text you had becomes **Before**, so you can pick it back.
+
+## Pick a font
+
+1. Click **Font** in the note's title bar.
+2. Pick a font. Each name shows in its own font, and the current one has a check mark.
+
+The note changes at once and keeps its font. New notes start in Courier New. **From Windows** lists Courier New,
+Consolas, Arial, Verdana and Calibri; **Comes with MDSHO** lists fonts that are part of MDSHO. Copying text from a note still copies
+plain text, without the font.
 
 ## Colour a note
 

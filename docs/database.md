@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 19**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 23**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -92,6 +92,18 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `NoteTextColor` | TEXT | NOT NULL | `''` | Text colour of the note's window; empty = the default. Added in version 10. |
 | `IsSnippet` | INTEGER | NOT NULL | `0` | `1` = a snippet (it pastes `SnippetText`; no shortcut file). Added in version 19. |
 | `SnippetText` | TEXT | NOT NULL | `''` | The text a snippet pastes, stored as plain text; empty for other buttons. Added in version 19. |
+| `TextFont` | TEXT | NOT NULL | `'Courier New'` | The font of a note's or snippet's text, by name (see the font menu); a name MDSHO doesn't know shows Courier New. Added in version 20. |
+| `CommentFont` | TEXT | NOT NULL | `'Courier New'` | The font of the button's comment, by name, like `TextFont`. Added in version 22. |
+| `CommentFontSize` | INTEGER | NOT NULL | `0` | The text size of the button's comment in whole points (8 to 72); `0` = 12 pt. Added in version 22. |
+| `TextPrevious1` | TEXT | NOT NULL | `''` | Text history of a note or snippet: its text before the last kept change ("Before" in the history menu). Added in version 22. |
+| `TextPrevious1Time` | TEXT | NOT NULL | `''` | When `TextPrevious1` was kept, `yyyy-MM-ddTHH:mm:ss` local time; empty when there is none. Added in version 22. |
+| `TextPrevious2` | TEXT | NOT NULL | `''` | The copy before that ("Earlier"). Added in version 22. |
+| `TextPrevious2Time` | TEXT | NOT NULL | `''` | When `TextPrevious2` was kept. Added in version 22. |
+| `CommentPrevious1` | TEXT | NOT NULL | `''` | Text history of the button's comment: the comment before the last kept change. Added in version 22. |
+| `CommentPrevious1Time` | TEXT | NOT NULL | `''` | When `CommentPrevious1` was kept. Added in version 22. |
+| `CommentPrevious2` | TEXT | NOT NULL | `''` | The comment copy before that. Added in version 22. |
+| `CommentPrevious2Time` | TEXT | NOT NULL | `''` | When `CommentPrevious2` was kept. Added in version 22. |
+| `TextFontSize` | INTEGER | NOT NULL | `0` | The text size of a snippet in whole points (8 to 72); `0` = 12 pt. A note keeps its size in `NoteWindows.FontSize`. Added in version 23. |
 
 ### NoteWindows
 
@@ -111,7 +123,7 @@ exports import with default note windows. Added in version 8.
 | `IsOpen` | INTEGER | NOT NULL | `0` | `1` = the window was open (also when MDSHO or Windows closed it at exit), so it opens again at start. |
 | `IsTopmost` | INTEGER | NOT NULL | `0` | `1` = the window stays on top of other apps (the pin in its title bar). Added in version 9. |
 | `IsWrapText` | INTEGER | NOT NULL | `0` | `1` = the note's text wraps at the window's edge (the wrap text button in its title bar). Added in version 11. |
-| `FontSize` | INTEGER | NOT NULL | `0` | Size of the note's text, set with Ctrl + mouse wheel: 8 to 72 in steps of 2; `0` = 12. Added in version 18. |
+| `FontSize` | INTEGER | NOT NULL | `0` | Size of the note's text in whole points, set with the Text size button or Ctrl + mouse wheel (Word's sizes, 8 to 72 pt); a saved size outside 8 to 72 loads as the nearest limit; `0` = 12 pt. Added in version 18 in DIPs; version 21 converts it to points. |
 
 ### DefaultColors
 
@@ -244,6 +256,10 @@ that worked.
 | 17 | 1.7.1 | `ScreenSetups` and `ScreenSetupPlaces` tables: the screen setups seen on this PC and the place of every panel, clone and note window in each (empty at first). The 1.7.0 test build created this version without `ScreenSetups.LastUsed`; MDSHO adds the column at start when it is missing. |
 | 18 | 1.16.0 | `NoteWindows.FontSize` (`INTEGER NOT NULL DEFAULT 0`): the text size of each note window (`0` = 12). From 1.16.0 exports and backups also carry the note window places (export format 2); older exports still import, with default note windows. The step also adds `ScreenSetups.LastUsed` when a 1.7.0 test build database lacks it. |
 | 19 | 1.19.2 | `Shortcuts.IsSnippet` (`INTEGER NOT NULL DEFAULT 0`) and `Shortcuts.SnippetText` (`TEXT NOT NULL DEFAULT ''`) for snippets. Exports and backups carry them (still export format 3); older exports import with no snippets. |
+| 20 | 1.20.0 | `Shortcuts.TextFont` (`TEXT NOT NULL DEFAULT 'Courier New'`): the font of each note and snippet, so existing ones switch to Courier New. Copies, exports and backups carry it (still export format 3); older exports import with Courier New. |
+| 21 | 1.20.2 | `NoteWindows.FontSize` changes from DIPs to whole points: `0` stays `0` (the default, 12 pt), others become `round(DIPs × 0.75)` within 8 to 72 (12 → 9, 16 → 12, 22 → 17). Still export format 3: an import whose manifest has `schemaVersion` 20 or lower converts its sizes the same way. |
+| 22 | 1.21.0 | `Shortcuts.CommentFont` (`TEXT NOT NULL DEFAULT 'Courier New'`) and `Shortcuts.CommentFontSize` (`INTEGER NOT NULL DEFAULT 0`): each comment keeps its own font and text size. The text history: `TextPrevious1`, `TextPrevious2`, `CommentPrevious1` and `CommentPrevious2`, each with a `...Time` column (all `TEXT NOT NULL DEFAULT ''`). Copies, exports and backups carry them (still export format 3); older exports import with Courier New, 12 pt and no history. |
+| 23 | 1.21.1 | `Shortcuts.TextFontSize` (`INTEGER NOT NULL DEFAULT 0`): each snippet keeps its own text size. Copies, exports and backups carry it (still export format 3); older exports import with `0` (12 pt). |
 
 ### Backup before an upgrade
 

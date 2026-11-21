@@ -8,8 +8,8 @@ using MDSHO.ViewModels;
 namespace MDSHO {
 
   /// <summary>
-  /// The Examples popup of the Run Command window: a grouped list of ready-made commands. Use (or a double-click) fills
-  /// the Run Command window; X and Esc close the popup without changes.
+  /// The Examples popup of the Run Command window: a grouped list of ready-made commands, each group collapsed at first
+  /// under a "+" header. Use (or a double-click) fills the Run Command window; X and Esc close the popup without changes.
   /// </summary>
   public partial class RunCommandExamplesWindow : Window {
     private readonly RunCommandViewModel viewModel;
@@ -24,6 +24,13 @@ namespace MDSHO {
       view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(RunCommandExample.Category)));
       this.ListExamples.ItemsSource = view;
 
+      // Enter or Space on a group header opens or closes the group (Enter must not reach Use, the default button).
+      this.ListExamples.AddHandler(PreviewKeyDownEvent, new KeyEventHandler((s, e) => {
+        if ((e.Key == Key.Enter || e.Key == Key.Space) && e.OriginalSource is System.Windows.Controls.Primitives.ToggleButton header && header.Name == "GroupHeader") {
+          e.Handled = true;
+          header.IsChecked = header.IsChecked != true;
+        }
+      }));
       this.ListExamples.SelectionChanged += (s, e) => ShowSelected();
       this.ListExamples.MouseDoubleClick += (s, e) => { if (this.ListExamples.SelectedItem != null) { UseSelected(); } };
       this.ButtonUse.Click += (s, e) => UseSelected();

@@ -20,6 +20,15 @@ namespace MDSHO.Tests {
 
     #region WINDOWS
     [Fact]
+    public void A_panel_with_the_old_halloween_body_keeps_it() {
+      DesktopWindow w = NewWindow();
+      w.BackgroundColor = "#99000000";
+      Windows.Update(w);
+      Assert.Equal("#99000000", Windows.Get(w.ID).BackgroundColor);
+      Assert.Equal("#99000000", Windows.GetAll().Single(x => x.ID == w.ID).BackgroundColor);
+    }
+
+    [Fact]
     public void Window_Create_uses_defaults_and_returns_the_stored_row() {
       DesktopWindow w = Windows.Create("\\\\.\\DISPLAY2", 11, 22);
       Assert.True(w.ID > 0);
@@ -30,7 +39,7 @@ namespace MDSHO.Tests {
       Assert.Equal(MDSHO.Common.AppConstants.InitialWindowWidth, w.Width);
       Assert.Equal(MDSHO.Common.AppConstants.InitialWindowHeight, w.Height);
       Assert.Equal("#FF000000", w.BorderColor);
-      Assert.Equal("#99000000", w.BackgroundColor);
+      Assert.Equal("#80000000", w.BackgroundColor);
       Assert.Equal("#FFFFFFFF", w.TextColor);
       Assert.Equal("#FF000000", w.TitleBackgroundColor);
       Assert.Equal("#FFFFFFFF", w.TitleTextColor);

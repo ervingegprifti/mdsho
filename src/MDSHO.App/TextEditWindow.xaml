@@ -2,9 +2,9 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Comment"
-        Width="300"
+        Width="420"
         Height="150"
-        MinWidth="300"
+        MinWidth="420"
         MinHeight="150"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -69,12 +69,15 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!--Title bar: icon and the button's name, then for a note colours, wrap text and pin (keep on top), for a comment wrap text and OK, then close.
-            A note saves itself while you type, so it has no OK. The pin is a thumbtack pointing left, or down while the note is on top.-->
+        <!--Title bar: icon and the button's name, then for a note text size, font, colours, wrap text, history and pin (keep on top), for a
+            snippet or a comment text size, font, wrap text and history, then close. Every kind saves itself while you type and when it closes, so there is no OK.
+            The pin is a thumbtack pointing left, or down while the note is on top.-->
         <Border x:Name="TitleBar" Grid.Row="0" Background="#FFDFDACB">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -95,19 +98,27 @@
                                  Visibility="Collapsed" WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="Note title"/>
                     </StackPanel>
                 </Grid>
-                <Button x:Name="ButtonColors" Grid.Column="1" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
+                <!--The text size button shows the size in points and opens the size menu. Wide enough for "72 pt", so the other buttons
+                    don't move when the size changes.-->
+                <Button x:Name="ButtonSize" Grid.Column="1" Style="{StaticResource StyleTitleBarButton}" FontFamily="Segoe UI" FontSize="12" Width="60"
+                        ToolTip="Text size" AutomationProperties.Name="Text size" Visibility="Collapsed"/>
+                <!--The font button opens the font menu.-->
+                <Button x:Name="ButtonFont" Grid.Column="2" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
+                        ToolTip="Font" AutomationProperties.Name="Font" Visibility="Collapsed"/>
+                <Button x:Name="ButtonColors" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Note colours" AutomationProperties.Name="Note colours" Visibility="Collapsed"/>
-                <Button x:Name="ButtonWrap" Grid.Column="2" Style="{StaticResource StyleTitleBarButton}" FontSize="14" ToolTip="Wrap text" AutomationProperties.Name="Wrap text"/>
-                <Button x:Name="ButtonPin" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
+                <Button x:Name="ButtonWrap" Grid.Column="4" Style="{StaticResource StyleTitleBarButton}" FontSize="14" ToolTip="Wrap text" AutomationProperties.Name="Wrap text"/>
+                <!--The history button (the time icon) opens the text history menu.-->
+                <Button x:Name="ButtonHistory" Grid.Column="5" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
+                        ToolTip="Text history" AutomationProperties.Name="Text history"/>
+                <Button x:Name="ButtonPin" Grid.Column="6" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Keep on top" AutomationProperties.Name="Keep on top" Visibility="Collapsed"/>
-                <Button x:Name="ButtonOk" Grid.Column="4" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
-                        ToolTip="Save (Ctrl+Enter)" AutomationProperties.Name="Save" Visibility="Collapsed"/>
-                <Button x:Name="ButtonClose" Grid.Column="5" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"/>
+                <Button x:Name="ButtonClose" Grid.Column="7" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"/>
             </Grid>
         </Border>
 
         <!--Body: the text fills it (window colour, no border, 10 px padding, no word wrap, each scroll bar only when needed).
-            Its size is set in code: 12 at first, Ctrl + mouse wheel changes it.-->
+            Its size is set in code: 12 pt at first; the size button and Ctrl + mouse wheel change it.-->
         <Grid x:Name="Body" Grid.Row="1" Background="#FFF4F3ED">
             <TextBox x:Name="TextComment"
                      AcceptsReturn="True"

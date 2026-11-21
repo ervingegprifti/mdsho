@@ -57,6 +57,50 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!--An example group: a header with "+" (collapsed) or "−" (expanded) and the group's name, then its examples.
+            The header is a toggle button, so a click, Enter or Space opens and closes the group.-->
+        <Style x:Key="StyleExampleGroup" TargetType="{x:Type Expander}">
+            <Setter Property="IsExpanded" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Expander}">
+                        <DockPanel>
+                            <ToggleButton x:Name="GroupHeader" DockPanel.Dock="Top" Focusable="True" Cursor="Hand"
+                                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          AutomationProperties.Name="{Binding Name}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                        <Border x:Name="HeaderBorder" Background="Transparent" Padding="2,6,2,2">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock x:Name="GroupSign" Text="+" Width="14" FontWeight="SemiBold" Foreground="{DynamicResource Theme.TextMuted}"/>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource Theme.TextMuted}"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="GroupSign" Property="Text" Value="−"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="HeaderBorder" Property="Background" Value="{DynamicResource Theme.BarButtonHover}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                                <Setter TargetName="HeaderBorder" Property="Background" Value="{DynamicResource Theme.BarButtonHover}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter x:Name="GroupItems" Visibility="Collapsed"/>
+                        </DockPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="GroupItems" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -83,13 +127,22 @@
         <Grid x:Name="Body" Grid.Row="1" Background="{DynamicResource Theme.WindowBackground}">
             <Grid x:Name="BodyContent">
                 <ListBox x:Name="ListExamples" DisplayMemberPath="Name" Padding="10" BorderThickness="0" Background="{DynamicResource Theme.WindowBackground}" IsSynchronizedWithCurrentItem="False">
+                    <!--Each group starts collapsed every time the popup opens.-->
                     <ListBox.GroupStyle>
                         <GroupStyle>
-                            <GroupStyle.HeaderTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource Theme.TextMuted}" Margin="2,6,0,2"/>
-                                </DataTemplate>
-                            </GroupStyle.HeaderTemplate>
+                            <GroupStyle.ContainerStyle>
+                                <Style TargetType="{x:Type GroupItem}">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type GroupItem}">
+                                                <Expander Style="{StaticResource StyleExampleGroup}">
+                                                    <ItemsPresenter/>
+                                                </Expander>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </GroupStyle.ContainerStyle>
                         </GroupStyle>
                     </ListBox.GroupStyle>
                     <ListBox.ItemContainerStyle>

@@ -2,7 +2,7 @@
 
 ### Used in MDSHO application.
 
-Version: **1.20**
+Version: **1.22**
 
 | Icon | Name | Code | Icon | Name | Code |
 | :---: | :--- | :--- | :---: | :--- | :--- |
@@ -52,5 +52,7 @@ Version: **1.20**
 | ![](Icons/png/wraptext_s.png) | wraptext_s | \&#xe956; | ![](Icons/png/wraptext_o.png) | wraptext_o | \&#xe957; |
 | ![](Icons/png/heart_s.png) | heart_s | \&#xe958; | ![](Icons/png/heart_o.png) | heart_o | \&#xe959; |
 | ![](Icons/png/snippet_s.png) | snippet_s | \&#xe95a; | ![](Icons/png/snippet_o.png) | snippet_o | \&#xe95b; |
+| ![](Icons/png/font_s.png) | font_s | \&#xe95c; | ![](Icons/png/font_o.png) | font_o | \&#xe95d; |
+| ![](Icons/png/time_s.png) | time_s | \&#xe95e; | ![](Icons/png/time_o.png) | time_o | \&#xe95f; |
 
 MDSHO Font was created using the free version of <b>[IcoMoon](https://icomoon.io)</b> generator.

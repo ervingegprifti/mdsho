@@ -51,6 +51,9 @@ namespace MDSHO {
       return new TextEditWindow(shortcut, TextKind.Snippet);
     }
 
+    /// <summary>Shows a Comment window or snippet editor as a dialog. Tests replace it so no modal window blocks them.</summary>
+    public static Func<TextEditWindow, bool?> ShowTextDialog = w => w.ShowDialog();
+
     /// <summary>True for an Edit snippet window.</summary>
     public bool IsSnippetWindow => this.kind == TextKind.Snippet;
 
@@ -59,15 +62,21 @@ namespace MDSHO {
 
     /// <summary>Opens the Edit snippet window as a dialog beside the MDSHO window the button belongs to, like the Comment window.</summary>
     public static void ShowSnippetFor(ShortcutViewModel shortcut) {
+      ShowBesidePanel(shortcut, ForSnippet);
+    }
+
+    // Comment... and Edit snippet... open the same way: a dialog beside the panel, level with the button
+    // (see PlaceComment), or centred on the screen when the panel can't be found.
+    private static void ShowBesidePanel(ShortcutViewModel shortcut, Func<ShortcutViewModel, TextEditWindow> create) {
       try {
-        TextEditWindow window = ForSnippet(shortcut);
+        TextEditWindow window = create(shortcut);
         Window owner = RunCommandWindow.FindOwner(shortcut);
         if (owner != null) {
           PlaceComment(window, owner);
         } else {
           window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
         }
-        window.ShowDialog();
+        ShowTextDialog(window);
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
       }
@@ -77,6 +86,11 @@ namespace MDSHO {
     public static TextEditWindow ForNote(ShortcutViewModel shortcut) {
       return new TextEditWindow(shortcut, TextKind.Note);
     }
+
+    /// <summary>The smallest width of a Note window.</summary>
+    public const double NoteMinWidth = 460;
+    /// <summary>The smallest width of the Comment window and the snippet editor.</summary>
+    public const double TextMinWidth = 420;
 
     private TextEditWindow(ShortcutViewModel shortcut, TextKind kind) {
       InitializeComponent();
@@ -97,8 +111,12 @@ namespace MDSHO {
         // A note is the main content, so its window is bigger; a comment keeps the smaller size.
         this.Width = 640;
         this.Height = 520;
-        this.MinWidth = 380;
+        this.MinWidth = NoteMinWidth;
         this.MinHeight = 300;
+      } else {
+        // The Comment window and the snippet editor share one smallest width, wide enough for their title bar buttons.
+        this.Width = TextMinWidth;
+        this.MinWidth = TextMinWidth;
       }
       // The editor has the window's colour (a note then follows its own colours).
       this.TextComment.Background = this.Background;
@@ -111,6 +129,10 @@ namespace MDSHO {
           UseRenamableTitle(RenameSnippetTitleToolTip);
         }
       }
+      UseSizeButton();
+      UseFontButton();
+      UseAutoSave();
+      UseHistory();
 
       // The title icon, the title bar buttons and the window icon follow the window's solid or outline setting while open.
       IconGlyphs icons = this.icons;
@@ -120,7 +142,6 @@ namespace MDSHO {
       this.Closed += (s, e) => icons.PropertyChanged -= iconsChanged;
 
       this.ButtonClose.Click += (s, e) => Close();
-      this.ButtonOk.Click += (s, e) => Save();
       this.ButtonPin.Click += (s, e) => {
         SetPinned(!this.Topmost);
         SaveNotePlace();
@@ -135,8 +156,9 @@ namespace MDSHO {
           shortcut.OwningWindow.Appearance.CommentWrapText = this.IsWrapText;
         }
       };
-      // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a comment starts at 12 each time.
-      this.TextComment.FontSize = NoteWindowPlace.DefaultFontSize;
+      // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a comment and a snippet with their button.
+      SetTextSize(kind == TextKind.Comment ? NoteWindowPlace.FontSizeOrDefault(shortcut.CommentFontSize)
+        : kind == TextKind.Snippet ? NoteWindowPlace.FontSizeOrDefault(shortcut.TextFontSize) : NoteWindowPlace.DefaultFontSize);
       this.TextComment.PreviewMouseWheel += TextComment_PreviewMouseWheel;
       this.PreviewKeyDown += Window_PreviewKeyDown;
       this.TextComment.PreviewMouseLeftButtonDown += TextComment_PreviewMouseLeftButtonDown;
@@ -205,18 +227,7 @@ namespace MDSHO {
 
     /// <summary>Opens the comment window as a dialog beside the MDSHO window the button belongs to, level with the button (see <see cref="PlaceComment"/>).</summary>
     public static void ShowCommentFor(ShortcutViewModel shortcut) {
-      try {
-        TextEditWindow window = ForComment(shortcut);
-        Window owner = RunCommandWindow.FindOwner(shortcut);
-        if (owner != null) {
-          PlaceComment(window, owner);
-        } else {
-          window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        }
-        window.ShowDialog();
-      } catch (Exception ex) {
-        ErrorDialog.ShowDialog(ex);
-      }
+      ShowBesidePanel(shortcut, ForComment);
     }
 
     /// <summary>
@@ -299,7 +310,7 @@ namespace MDSHO {
       this.Height = Math.Max(this.MinHeight, place.Height);
       SetPinned(place.IsTopmost);
       SetWrapText(place.IsWrapText);
-      this.TextComment.FontSize = NoteWindowPlace.FontSizeOrDefault(place.FontSize);
+      SetTextSize(NoteWindowPlace.FontSizeOrDefault(place.FontSize));
       this.savedState = place.State == NoteWindowPlace.Maximized ? WindowState.Maximized
         : place.State == NoteWindowPlace.Minimized ? WindowState.Minimized : WindowState.Normal;
       EventHandler placeOnHandle = null;
@@ -392,7 +403,7 @@ namespace MDSHO {
       try {
         DataStore.NoteWindows.Save(new NoteWindowPlace(this.shortcut.ID, (long)Math.Round(normal.X), (long)Math.Round(normal.Y),
           (long)Math.Round(normal.Width), (long)Math.Round(normal.Height), state, isOpen) { IsTopmost = this.Topmost, IsWrapText = this.IsWrapText,
-          FontSize = (long)Math.Round(this.TextComment.FontSize) });
+          FontSize = TextSize });
       } catch (Exception ex) {
         // A place that can't be saved must never break the note window.
         AppLog.Warning(ex, "Could not save the place of a note window");
@@ -438,11 +449,18 @@ namespace MDSHO {
     }
 
     /// <summary>
-    /// Saves unsaved typing and the place of every open note window, marked as open (before an import too). Each note is
-    /// saved on its own, so one that fails doesn't stop the others. Returns the names of the notes that could not be saved.
+    /// Saves unsaved typing in every open Comment window and snippet editor, and the typing and place of every open note
+    /// window, marked as open (before an import too). Each is saved on its own, so one that fails doesn't stop the others.
+    /// Returns the names of the buttons whose text could not be saved.
     /// </summary>
     public static IReadOnlyList<string> SaveOpenNotes() {
       List<string> failed = new List<string>();
+      foreach (TextEditWindow window in openTextWindows.ToList()) {
+        window.noteSaveTimer.Stop();
+        if (!window.discarded && window.SaveText() != null) {
+          failed.Add(string.IsNullOrWhiteSpace(window.shortcut.Name) ? "(no name)" : window.shortcut.Name);
+        }
+      }
       foreach (TextEditWindow window in openNoteWindows.ToList()) {
         if (window.discarded) {
           continue;
@@ -542,8 +560,6 @@ namespace MDSHO {
 
     /// <summary>
     /// A note has colours, pin (keep on top) and close in its title bar and no bottom bar, so the text gets the whole window.
-    /// It saves itself shortly after each change (not on every key, to keep database writes few) and at once when the
-    /// window closes (X or Esc), so nothing typed is lost.
     /// </summary>
     private void UseNoteTitleBar() {
       this.ButtonColors.Visibility = Visibility.Visible;
@@ -551,12 +567,6 @@ namespace MDSHO {
       this.ButtonPin.Visibility = Visibility.Visible;
       this.ButtonClose.ToolTip = "Close (Esc)";
       SetPinned(false);
-      this.noteSaveTimer.Tick += (s, e) => SaveNoteNow();
-      this.TextComment.TextChanged += (s, e) => {
-        this.noteSaveTimer.Stop();
-        this.noteSaveTimer.Start();
-      };
-      this.Closing += (s, e) => SaveBeforeClosing(e);
       UseNoteColours();
     }
 
@@ -570,7 +580,7 @@ namespace MDSHO {
       this.TitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "Theme.BarBackground");
       this.TextTitle.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
       this.TextTitleIcon.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonWrap, this.ButtonOk, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonHistory, this.ButtonClose }) {
         button.SetResourceReference(ForegroundProperty, "Theme.TextStrong");
       }
       this.Body.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "Theme.WindowBackground");
@@ -591,7 +601,7 @@ namespace MDSHO {
       this.TitleBar.SetBinding(System.Windows.Controls.Border.BackgroundProperty, Bind(nameof(NoteColors.TitleBackgroundColor)));
       this.TextTitle.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       this.TextTitleIcon.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonColors, this.ButtonWrap, this.ButtonPin, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonColors, this.ButtonWrap, this.ButtonHistory, this.ButtonPin, this.ButtonClose }) {
         button.SetBinding(ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       }
       SetBinding(BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
@@ -601,24 +611,36 @@ namespace MDSHO {
       this.TextComment.SetBinding(System.Windows.Controls.Primitives.TextBoxBase.CaretBrushProperty, Bind(nameof(NoteColors.TextColor)));
     }
 
-    /// <summary>A comment has OK and close in its title bar: OK saves and closes, X and Esc close without saving.</summary>
+    /// <summary>A comment and a snippet have the window theme's colours and close in their title bar; they save by themselves.</summary>
     private void UseCommentTitleBar() {
       UseWindowTheme();
-      this.ButtonOk.Visibility = Visibility.Visible;
-      this.ButtonClose.ToolTip = "Close without saving (Esc)";
-      System.Windows.Automation.AutomationProperties.SetName(this.ButtonClose, "Close without saving");
-      this.TextComment.TextChanged += (s, e) => UpdateOk();
-      UpdateOk();
+      this.ButtonClose.ToolTip = "Close (Esc)";
+      System.Windows.Automation.AutomationProperties.SetName(this.ButtonClose, "Close");
     }
 
-    // OK is active only when the text differs from the saved comment (only spaces counts as no comment).
-    private void UpdateOk() {
-      this.ButtonOk.IsEnabled = HasCommentChange();
+    /// <summary>
+    /// Every kind saves itself shortly after each change (not on every key, to keep database writes few) and at once when
+    /// the window closes (X, Esc or Ctrl+Enter), so nothing typed is lost. A comment or snippet window open at exit is
+    /// saved with the open notes.
+    /// </summary>
+    private void UseAutoSave() {
+      this.noteSaveTimer.Tick += (s, e) => SaveNoteNow();
+      this.TextComment.TextChanged += (s, e) => {
+        this.noteSaveTimer.Stop();
+        this.noteSaveTimer.Start();
+      };
+      this.Closing += (s, e) => SaveBeforeClosing(e);
+      if (this.kind != TextKind.Note) {
+        openTextWindows.Add(this);
+        this.Closed += (s, e) => openTextWindows.Remove(this);
+      }
     }
 
-    private bool HasCommentChange() {
-      return TextToSave() != (StoredText() ?? "");
-    }
+    // The open Comment windows and snippet editors (they save at exit like notes).
+    private static readonly List<TextEditWindow> openTextWindows = new List<TextEditWindow>();
+
+    // "note", "snippet" or "comment", for messages.
+    private string KindWord => this.kind == TextKind.Note ? "note" : this.kind == TextKind.Snippet ? "snippet" : "comment";
 
     // The saved text this window edits.
     private string StoredText() {
@@ -668,12 +690,320 @@ namespace MDSHO {
         return;
       }
       e.Handled = true;
-      long size = NoteWindowPlace.NextFontSize((long)Math.Round(this.TextComment.FontSize), e.Delta);
-      if (size == (long)Math.Round(this.TextComment.FontSize)) {
+      long size = NoteWindowPlace.NextFontSize(TextSize, e.Delta);
+      if (size == TextSize) {
         return;
       }
-      this.TextComment.FontSize = size;
-      SaveNotePlace();
+      SetTextSize(size);
+      SaveTextSize();
+    }
+
+    // A note saves its size with its window, a comment and a snippet with their button.
+    private void SaveTextSize() {
+      if (this.kind == TextKind.Note) {
+        SaveNotePlace();
+      } else if (this.kind == TextKind.Comment && this.shortcut.ID != 0) {
+        try {
+          this.shortcut.SaveCommentFontSize(this.textPoints);
+        } catch (Exception ex) {
+          // A size that can't be saved must never break the window.
+          AppLog.Warning(ex, "Could not save the text size of a comment");
+        }
+      } else if (this.kind == TextKind.Snippet && this.shortcut.ID != 0) {
+        try {
+          this.shortcut.SaveTextFontSize(this.textPoints);
+        } catch (Exception ex) {
+          AppLog.Warning(ex, "Could not save the text size of a snippet");
+        }
+      }
+    }
+
+    private long textPoints;
+
+    /// <summary>The text size now, in whole points.</summary>
+    private long TextSize => this.textPoints;
+
+    // Sizes the text (WPF wants DIPs) and shows the size on the size button.
+    private void SetTextSize(long points) {
+      this.textPoints = points;
+      this.TextComment.FontSize = NoteWindowPlace.ToDips(points);
+      this.ButtonSize.Content = NoteWindowPlace.SizeLabel(points);
+    }
+
+    // ---- The text size button and menu ----
+
+    /// <summary>The text of the menu item that goes back to the default size.</summary>
+    public static readonly string DefaultSizeText = "Default (" + NoteWindowPlace.SizeLabel(NoteWindowPlace.DefaultFontSize) + ")";
+
+    /// <summary>The size menu while it is open (or last open); null before the size button was clicked.</summary>
+    public System.Windows.Controls.ContextMenu SizeMenu { get; private set; }
+
+    // A note and a snippet have a size button left of the font button; a pick applies at once (a note saves it).
+    private void UseSizeButton() {
+      this.ButtonSize.Visibility = Visibility.Visible;
+      this.ButtonSize.Click += (s, e) => {
+        this.SizeMenu = BuildSizeMenu();
+        this.SizeMenu.PlacementTarget = this.ButtonSize;
+        this.SizeMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        this.SizeMenu.IsOpen = true;
+      };
+    }
+
+    /// <summary>
+    /// The size menu: a small "Text size" label, the preset sizes in points with a tick on the size in use (none for a
+    /// size from the wheel that isn't a preset), then "Default (12 pt)".
+    /// </summary>
+    public System.Windows.Controls.ContextMenu BuildSizeMenu() {
+      System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();
+      menu.Items.Add(new System.Windows.Controls.MenuItem { Header = "Text size", IsEnabled = false, FontSize = 11 });
+      long current = TextSize;
+      foreach (long size in NoteWindowPlace.SizePresets) {
+        menu.Items.Add(SizeItem(NoteWindowPlace.SizeLabel(size), size, size == current));
+      }
+      menu.Items.Add(new System.Windows.Controls.Separator());
+      menu.Items.Add(SizeItem(DefaultSizeText, NoteWindowPlace.DefaultFontSize, false));
+      return menu;
+    }
+
+    private System.Windows.Controls.MenuItem SizeItem(string header, long size, bool isChecked) {
+      System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem { Header = header, IsChecked = isChecked };
+      item.Click += (s, e) => PickSize(size);
+      return item;
+    }
+
+    /// <summary>Uses a text size at once; a note and a comment save it, like the wheel does.</summary>
+    public void PickSize(long size) {
+      SetTextSize(Math.Clamp(size, NoteWindowPlace.MinFontSize, NoteWindowPlace.MaxFontSize));
+      SaveTextSize();
+    }
+
+    // ---- The text history ----
+
+    /// <summary>The clock for the times the text history shows (labels only). Tests replace it.</summary>
+    public static Func<DateTime> Now = () => DateTime.Now;
+
+    /// <summary>The history menu while it is open (or last open); null before the history button was clicked.</summary>
+    public System.Windows.Controls.ContextMenu HistoryMenu { get; private set; }
+
+    private readonly TextHistoryTracker historyTracker = new TextHistoryTracker();
+    // The text before the latest change: the copy that is kept when a burst starts or a big removal happens.
+    private string historyLastText = "";
+    // True while a pick from the history puts its text in the window: that change keeps no copy.
+    private bool pickingHistory;
+
+    // Every kind keeps two earlier copies of its text: the text before the change is kept as "Before" at the first change
+    // after the window opens, and at once for an edit that removes a lot. Nothing is time-based.
+    private void UseHistory() {
+      this.historyLastText = this.TextComment.Text ?? "";
+      this.ButtonHistory.Click += (s, e) => {
+        this.HistoryMenu = BuildHistoryMenu();
+        this.HistoryMenu.PlacementTarget = this.ButtonHistory;
+        this.HistoryMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        this.HistoryMenu.IsOpen = true;
+      };
+      this.TextComment.TextChanged += (s, e) => {
+        string before = this.historyLastText;
+        string text = this.TextComment.Text ?? "";
+        this.historyLastText = text;
+        if (this.pickingHistory || this.shortcut.ID == 0) {
+          return;
+        }
+        int removed = e.Changes.Sum(c => c.RemovedLength);
+        bool start = this.historyTracker.OnChange(removed, before.Length);
+        if (this.historyKeptFrom != null && text == this.historyKeptText) {
+          // Back to the very text that was kept (a letter typed and deleted, an undone removal): take the copy back,
+          // so Before is never the same as the text, and keep it again if the text changes once more.
+          TextHistorySlots undo = this.historyKeptFrom;
+          this.historyPending = this.historyKeptText;
+          this.historyKeptFrom = null;
+          RestoreHistory(undo);
+          return;
+        }
+        if (start && TextHistory.IsBigRemoval(removed, before.Length)) {
+          // A big removal keeps the text from before it at once (and a copy still waiting, when it differs). Undoing it goes
+          // back to the history just before this removal's own copies, never to an older one.
+          TextHistorySlots undo = CurrentHistory;
+          if (this.historyPending != null && this.historyPending != before) {
+            KeepHistory(this.historyPending);
+          }
+          KeepHistory(Normalized(before));
+          this.historyKeptFrom = undo;
+          this.historyKeptText = before;
+          this.historyPending = null;
+        } else if (start && this.historyPending == null && this.historyKeptFrom == null) {
+          // The first change: remember the text, and keep it once the text really differs from it.
+          this.historyPending = before;
+        }
+        if (this.historyPending != null && text != this.historyPending) {
+          this.historyKeptFrom = CurrentHistory;
+          this.historyKeptText = this.historyPending;
+          KeepHistory(Normalized(this.historyPending));
+          this.historyPending = null;
+        }
+      };
+    }
+
+    // The text the first change started from, while it waits to differ; null otherwise.
+    private string historyPending;
+    // After a copy was kept: the history before it and the text that was kept, so going back to that text takes it back.
+    private TextHistorySlots historyKeptFrom;
+    private string historyKeptText;
+
+    private static string Normalized(string text) => string.IsNullOrWhiteSpace(text) ? "" : text;
+
+    private void RestoreHistory(TextHistorySlots history) {
+      if (history == CurrentHistory) {
+        return;
+      }
+      try {
+        SaveHistory(history);
+      } catch (Exception ex) {
+        AppLog.Warning(null, "The text history could not be saved: {ErrorType}", ex.GetType().FullName);
+      }
+    }
+
+    // A comment has its own history; a note and a snippet keep theirs in the text history.
+    private TextHistorySlots CurrentHistory => this.kind == TextKind.Comment ? this.shortcut.CommentHistory : this.shortcut.TextHistory;
+
+    private void SaveHistory(TextHistorySlots history) {
+      if (this.kind == TextKind.Comment) {
+        this.shortcut.SaveCommentHistory(history);
+      } else {
+        this.shortcut.SaveTextHistory(history);
+      }
+    }
+
+    private void KeepHistory(string text) {
+      TextHistorySlots now = CurrentHistory;
+      TextHistorySlots kept = TextHistory.Keep(text, now, Now());
+      if (ReferenceEquals(kept, now)) {
+        return;
+      }
+      try {
+        SaveHistory(kept);
+      } catch (Exception ex) {
+        // A copy that can't be kept must never break typing; the text itself still saves. Never the text in the log.
+        AppLog.Warning(null, "The text history could not be saved: {ErrorType}", ex.GetType().FullName);
+      }
+    }
+
+    /// <summary>
+    /// The history menu: a small "Text history" label, then Now (ticked), Before and Earlier, each with the time it was
+    /// kept and its first line cut short. An empty copy is greyed out.
+    /// </summary>
+    public System.Windows.Controls.ContextMenu BuildHistoryMenu() {
+      System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();
+      menu.Items.Add(new System.Windows.Controls.MenuItem { Header = "Text history", IsEnabled = false, FontSize = 11 });
+      DateTime now = Now();
+      string first = TextHistory.FirstLine(TextToSave());
+      menu.Items.Add(new System.Windows.Controls.MenuItem { Header = first.Length == 0 ? "Now" : "Now  ·  " + first, Tag = "Now", IsChecked = true });
+      TextHistorySlots history = CurrentHistory;
+      menu.Items.Add(HistoryItem("Before", history.Previous1, history.Previous1Time, 1, now));
+      menu.Items.Add(HistoryItem("Earlier", history.Previous2, history.Previous2Time, 2, now));
+      return menu;
+    }
+
+    private System.Windows.Controls.MenuItem HistoryItem(string label, string text, string time, int slot, DateTime now) {
+      if (string.IsNullOrEmpty(text)) {
+        return new System.Windows.Controls.MenuItem { Header = label, Tag = label, IsEnabled = false };
+      }
+      string when = TextHistory.TimeLabel(time, now);
+      string header = label + (when.Length == 0 ? "" : "  ·  " + when) + "  ·  " + TextHistory.FirstLine(text);
+      System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem { Header = header, Tag = label };
+      item.Click += (s, e) => PickHistory(slot);
+      return item;
+    }
+
+    /// <summary>Puts copy 1 (Before) or 2 (Earlier) in the window and saves it; the text you had becomes Before.</summary>
+    public void PickHistory(int slot) {
+      (string text, TextHistorySlots after) = TextHistory.Pick(slot, TextToSave(), CurrentHistory, Now());
+      try {
+        SaveHistory(after);
+      } catch (Exception ex) {
+        AppLog.Warning(null, "The text history could not be saved: {ErrorType}", ex.GetType().FullName);
+        ErrorDialog.ShowDialog("The text could not be put back.", ex);
+        return;
+      }
+      this.pickingHistory = true;
+      try {
+        this.TextComment.Text = text;
+        this.TextComment.CaretIndex = this.TextComment.Text.Length;
+      } finally {
+        this.pickingHistory = false;
+      }
+      // The pick counts as part of an editing burst, so typing right after it keeps no copy of the picked text.
+      this.historyTracker.OnChange(0, 0);
+      this.historyPending = null;
+      this.historyKeptFrom = null;
+      SaveNoteNow();
+    }
+
+    // ---- The font button and menu ----
+
+    /// <summary>The font menu while it is open (or last open); null before the font button was clicked.</summary>
+    public System.Windows.Controls.ContextMenu FontMenu { get; private set; }
+
+    // Every kind has a font button left of the other title bar buttons; a pick applies and saves at once.
+    private void UseFontButton() {
+      this.ButtonFont.Visibility = Visibility.Visible;
+      this.ButtonFont.Click += (s, e) => {
+        this.FontMenu = BuildFontMenu();
+        this.FontMenu.PlacementTarget = this.ButtonFont;
+        this.FontMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        this.FontMenu.IsOpen = true;
+      };
+      ApplyFont();
+    }
+
+    // A comment has its own font; a note and a snippet use the text font.
+    private string CurrentFont => this.kind == TextKind.Comment ? this.shortcut.CommentFont : this.shortcut.TextFont;
+
+    private void ApplyFont() {
+      this.TextComment.FontFamily = NoteFontFamilies.Resolve(CurrentFont);
+    }
+
+    /// <summary>
+    /// The font menu: "From Windows" and "Comes with MDSHO", each a small label over its fonts, each name drawn in its own
+    /// font, with a check mark on the current one.
+    /// </summary>
+    public System.Windows.Controls.ContextMenu BuildFontMenu() {
+      System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();
+      AddFontGroup(menu, NoteFonts.FromWindowsLabel, NoteFonts.FromWindows);
+      menu.Items.Add(new System.Windows.Controls.Separator());
+      AddFontGroup(menu, NoteFonts.ComesWithMdshoLabel, NoteFonts.ComesWithMdsho);
+      return menu;
+    }
+
+    private void AddFontGroup(System.Windows.Controls.ContextMenu menu, string label, IEnumerable<string> fonts) {
+      menu.Items.Add(new System.Windows.Controls.MenuItem { Header = label, IsEnabled = false, FontSize = 11 });
+      string current = NoteFonts.OrDefault(CurrentFont);
+      foreach (string font in fonts) {
+        System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem {
+          Header = font,
+          FontFamily = NoteFontFamilies.Resolve(font),
+          FontSize = 14,
+          IsChecked = font == current
+        };
+        string picked = font;
+        item.Click += (s, e) => PickFont(picked);
+        menu.Items.Add(item);
+      }
+    }
+
+    /// <summary>Uses a font for this note, snippet or comment at once and saves it.</summary>
+    public void PickFont(string font) {
+      try {
+        if (this.kind == TextKind.Comment) {
+          this.shortcut.SaveCommentFont(font);
+        } else {
+          this.shortcut.SaveTextFont(font);
+        }
+      } catch (Exception ex) {
+        AppLog.Warning(ex, "The font could not be saved");
+        ErrorDialog.ShowDialog("The font could not be saved.", ex);
+        return;
+      }
+      ApplyFont();
     }
 
     /// <summary>True while the text wraps at the window's edge.</summary>
@@ -721,8 +1051,9 @@ namespace MDSHO {
     private bool saveErrorShown;
 
     /// <summary>
-    /// Saves the note now if its text changed, and keeps the window open (autosave, Ctrl+Enter and Ctrl+S). Returns false
-    /// when the save failed: the text then still counts as unsaved, so the next save or closing tries again.
+    /// Saves the note, comment or snippet now if its text changed, and keeps the window open (autosave, and Ctrl+Enter or
+    /// Ctrl+S in a note). Returns false when the save failed: the text then still counts as unsaved, so the next save or
+    /// closing tries again.
     /// </summary>
     public bool SaveNoteNow() {
       this.noteSaveTimer.Stop();
@@ -735,7 +1066,7 @@ namespace MDSHO {
       }
       if (!this.saveErrorShown) {
         this.saveErrorShown = true;
-        ErrorDialog.ShowDialog("This note could not be saved. MDSHO tries again when you type more and when you close it.", error);
+        ErrorDialog.ShowDialog("This " + KindWord + " could not be saved. MDSHO tries again when you type more and when you close it.", error);
       }
       return false;
     }
@@ -743,16 +1074,25 @@ namespace MDSHO {
     // Saves the text if it changed. Returns null when saved (or nothing to save), else the error (logged).
     private Exception SaveText() {
       string value = TextToSave();
-      if (value == (this.shortcut.NoteText ?? "")) {
+      if (value == (StoredText() ?? "")) {
         return null;
       }
       try {
-        this.shortcut.SaveNoteText(value);
+        switch (this.kind) {
+          case TextKind.Note: this.shortcut.SaveNoteText(value); break;
+          case TextKind.Snippet: this.shortcut.SaveSnippetText(value); break;
+          default: this.shortcut.SaveComment(value); break;
+        }
         this.Saved = true;
         this.saveErrorShown = false;
         return null;
       } catch (Exception ex) {
-        AppLog.Warning(ex, "A note could not be saved");
+        if (this.kind == TextKind.Snippet) {
+          // A snippet's text never goes into the log.
+          AppLog.Warning(null, "A snippet could not be saved: {ErrorType}", ex.GetType().FullName);
+        } else {
+          AppLog.Warning(ex, "A " + KindWord + " could not be saved");
+        }
         return ex;
       }
     }
@@ -768,10 +1108,10 @@ namespace MDSHO {
       if (error == null || IsExiting) {
         return;
       }
-      string question = "This note could not be saved: " + error.Message + "\n\nClose it anyway? What you typed since the last save will be lost.";
+      string question = "This " + KindWord + " could not be saved: " + error.Message + "\n\nClose it anyway? What you typed since the last save will be lost.";
       bool close;
       using (Dialogs.UseIcons(this.icons.SolidIcons)) {
-        close = Dialogs.Confirm(question, "Note not saved");
+        close = Dialogs.Confirm(question, char.ToUpperInvariant(KindWord[0]) + KindWord.Substring(1) + " not saved");
       }
       if (!close) {
         e.Cancel = true;
@@ -783,33 +1123,11 @@ namespace MDSHO {
       this.TextTitleIcon.Text = glyph;
       this.ButtonClose.Content = icons.Times;
       this.ButtonColors.Content = icons.Brush;
-      this.ButtonOk.Content = icons.Ok;
+      this.ButtonFont.Content = icons.Font;
       this.ButtonWrap.Content = icons.WrapText;
+      this.ButtonHistory.Content = icons.Time;
       this.ButtonPin.Content = this.Topmost ? icons.PinOn : icons.PinOff;
       this.Icon = GlyphIcon.Create(glyph);
-    }
-
-    // Saves the comment or value and closes; does nothing while there is no change (OK is greyed out then).
-    private void Save() {
-      if (!HasCommentChange()) {
-        return;
-      }
-      if (this.kind == TextKind.Snippet) {
-        try {
-          this.shortcut.SaveSnippetText(TextToSave());
-        } catch (Exception ex) {
-          // Never the value: it can be a password.
-          AppLog.Warning(null, "A snippet could not be saved: {ErrorType}", ex.GetType().FullName);
-          ErrorDialog.ShowDialog("The snippet could not be saved.", ex);
-          return;
-        }
-        this.Saved = true;
-        Close();
-        return;
-      }
-      this.shortcut.Comment = TextToSave();
-      this.Saved = true;
-      Close();
     }
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e) {
@@ -823,8 +1141,9 @@ namespace MDSHO {
         e.Handled = true;
         SaveNoteNow();
       } else if (e.Key == Key.Enter && (KeyboardModifiers() & ModifierKeys.Control) == ModifierKeys.Control) {
+        // A comment or snippet closes (closing saves it).
         e.Handled = true;
-        Save();
+        Close();
       }
     }
   }

@@ -6,6 +6,71 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.21.1]
+
+### Fixed
+
+- Snippets keep their text size.
+
+### Changed
+
+- Database version 23: snippet text sizes (backed up first). Older exports and backups import with 12 pt. Export your data before installing if you may want to go back to an older version.
+
+## [1.21.0]
+
+### Added
+
+- Comments have the Text size and Font buttons, like notes. Each comment keeps its own font and size.
+- Text history: the clock button in notes, comments and snippets lists the two earlier versions of the text, with when each was kept. Pick one to put it back; the text you had becomes Before, so you can undo it.
+
+### Changed
+
+- Comments and snippets save by themselves while you type and when you close them, like notes. They have no OK button any more; Ctrl+Enter closes.
+- Comments start in Courier New at 12 pt.
+- The size label in the middle of the title bar is gone; the Text size button shows the size.
+- Edit snippet opens next to the panel, like Comment.
+- In the Run command Examples, each group is a "+" header and starts closed. Click it, or press Enter or Space, to open it.
+- Note windows are at least 460 wide; Comment windows and the snippet editor at least 420.
+- Autumn: Halloween has a 50% see-through body (it was 60%). Panels keep the colours they have.
+- Database version 22: comment fonts and sizes and the text history (backed up first). Older exports and backups import with the defaults. Export your data before installing if you may want to go back to an older version.
+
+## [1.20.2]
+
+### Changed
+
+- Text sizes are the same as in Word, 8 to 72 pt; Ctrl + mouse wheel steps through them.
+- Database version 21: note text sizes are saved in whole points (backed up first). Older exports and backups convert their sizes when imported. Export your data before installing if you may want to go back to an older version.
+
+## [1.20.1]
+
+### Added
+
+- Verdana and Calibri in the font menu of notes and snippets, under From Windows.
+- A Text size button in the title bar of notes and the snippet editor, left of the font button. It shows the size in points and opens a menu of sizes from 7.5 to 36 pt, plus Default (12 pt).
+
+### Changed
+
+- New notes and the snippet editor start at 12 pt. Other notes keep the size saved with them.
+- Notes and the snippet editor no longer show the size label in the title bar; the Text size button shows the size.
+
+### Fixed
+
+- Clicking a shortcut whose file or folder is gone shows a message again.
+
+## [1.20.0]
+
+### Added
+
+- A font button in the title bar of note windows and the snippet editor, with its own icon (MDSHOFont 1.21). Its menu lists Courier New, Consolas and Arial from Windows, and JetBrains Mono, Source Code Pro, IBM Plex Mono, Latin Modern Roman and Latin Modern Mono that come with MDSHO. Each name shows in its own font.
+- Each note and snippet keeps its own font. The font applies and saves as soon as you pick it.
+- While you change the text size, the title bar shows it in points, for example "10.5 pt". It fades after 2 seconds.
+- Database version 20: the buttons table gets `TextFont` (backed up first). Notes and snippets start in Courier New. Copies, exports and backups carry the font; older exports import with Courier New.
+
+### Changed
+
+- Notes and snippets use Courier New until you pick another font.
+- The Arguments box of the Run Command window uses Courier New.
+
 ## [1.19.2]
 
 ### Added

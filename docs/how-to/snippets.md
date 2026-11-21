@@ -16,7 +16,15 @@ double-click.
 2. Type a name for the snippet and press Enter.
 3. Right-click the snippet and choose **Edit snippet...**.
 4. Type the text. It can have several lines.
-5. Click **OK** in the title bar, or press Ctrl+Enter. Esc closes the window without saving.
+5. Close the window (X, Esc or Ctrl+Enter). The snippet saves itself while you type and when the window closes.
+
+To change the font of the text, click **Font** in the title bar and pick one. The snippet keeps its font. Snippets
+start in Courier New. The **Text size** button left of **Font** shows the size
+in points: click it to pick a size, or hold Ctrl and turn the mouse wheel to step through the same sizes. Each snippet
+keeps its own size.
+
+The snippet editor keeps two earlier versions of the text, like a note: click the clock (**Text history**) in its title bar and
+pick **Before** or **Earlier** to put one back.
 
 Hover over the snippet to see its name and its text. To name it after its text, right-click it and choose
 **Set name the same as value**.
@@ -46,7 +54,7 @@ MDSHO doesn't touch your clipboard when it can't paste. It tells you why:
 - **Can't paste into this window.** The window runs as administrator, and Windows doesn't let MDSHO paste into it.
   Use **Copy snippet to memory**, then press Ctrl+V in that window.
 
-## Keep secrets out
+## Not for passwords
 
-MDSHO stores snippets as plain text in its data file, in exports and in backups. Don't put passwords or other secrets
-in a snippet.
+Snippets are for everyday text. Don't keep passwords in them: the text is stored as plain text, and its earlier versions
+are kept in the text history and in exports and backups.
