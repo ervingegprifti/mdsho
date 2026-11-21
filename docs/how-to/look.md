@@ -51,4 +51,5 @@ MDSHO's own windows, comments and menus follow Windows' light or dark mode. To c
 
 The theme is for this PC. Panels and notes keep their own colours.
 
-> In **Settings** on the **General** page, **Show version in title** adds the MDSHO version after the panel's title.
+> In **Settings** on the **General** page, **Show version in title** adds the MDSHO version after the panel's title, and
+> **Text history** sets how many earlier texts notes, snippets and comments keep (see [Notes](notes.md#go-back-to-earlier-text)).

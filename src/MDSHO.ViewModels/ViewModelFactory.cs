@@ -112,10 +112,6 @@ namespace MDSHO.ViewModels {
         textFont: shortcutRecord.TextFont,
         commentFont: shortcutRecord.CommentFont,
         commentFontSize: shortcutRecord.CommentFontSize,
-        textHistory: new TextHistorySlots(shortcutRecord.TextPrevious1 ?? "", shortcutRecord.TextPrevious1Time ?? "",
-          shortcutRecord.TextPrevious2 ?? "", shortcutRecord.TextPrevious2Time ?? ""),
-        commentHistory: new TextHistorySlots(shortcutRecord.CommentPrevious1 ?? "", shortcutRecord.CommentPrevious1Time ?? "",
-          shortcutRecord.CommentPrevious2 ?? "", shortcutRecord.CommentPrevious2Time ?? ""),
         textFontSize: shortcutRecord.TextFontSize);
       foreach (Shortcut childRecord in shortcutRecord.Shortcuts) {
         ShortcutViewModel child = ShortcutToViewModel(appViewModel: appViewModel, parentShortcut: shortcut, shortcutRecord: childRecord);
@@ -256,14 +252,7 @@ namespace MDSHO.ViewModels {
       template.CommentFont = shortcut.CommentFont;
       template.CommentFontSize = shortcut.CommentFontSize;
       template.TextFontSize = shortcut.TextFontSize;
-      template.TextPrevious1 = shortcut.TextHistory.Previous1;
-      template.TextPrevious1Time = shortcut.TextHistory.Previous1Time;
-      template.TextPrevious2 = shortcut.TextHistory.Previous2;
-      template.TextPrevious2Time = shortcut.TextHistory.Previous2Time;
-      template.CommentPrevious1 = shortcut.CommentHistory.Previous1;
-      template.CommentPrevious1Time = shortcut.CommentHistory.Previous1Time;
-      template.CommentPrevious2 = shortcut.CommentHistory.Previous2;
-      template.CommentPrevious2Time = shortcut.CommentHistory.Previous2Time;
+      // A copied button starts with no text history.
       Shortcut savedRecord = DataStore.Shortcuts.Append(template);
       // Copy the physical file after the insert, so a failed insert (rollback) never leaves an orphan file behind.
       // Notes, snippets, groups and run commands have no shortcut file.

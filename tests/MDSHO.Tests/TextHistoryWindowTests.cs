@@ -12,8 +12,10 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// The History button (the time icon) in the title bar of notes, comments and snippets: the window keeps a copy of the
-  /// saved text when an editing burst starts, the menu lists Now, Before and Earlier, and a pick puts a copy back.
+  /// The History button (the time icon) in the title bar of notes, comments and snippets (1.22.0): the window keeps a copy
+  /// at the first change after it opens, when it is left after a change (the text from before that run of edits), and at
+  /// once for a big removal; never one equal to Now or to the newest copy. The menu lists Now and up to N copies, newest
+  /// first, and Clear history...; a pick puts a copy back.
   /// </summary>
   public class TextHistoryWindowTests {
     private static readonly ScreenRect TestArea = new ScreenRect(-20000, -20000, 15000, 15000);
@@ -128,6 +130,24 @@ namespace MDSHO.Tests {
       WpfAppHost.Pump();
     }
 
+    private static string[] TextRows(ShortcutViewModel s) => s.History(HistoryFields.Text).Select(h => h.Text).ToArray();
+    private static string[] CommentRows(ShortcutViewModel s) => s.History(HistoryFields.Comment).Select(h => h.Text).ToArray();
+
+    private static HistoryEntry AddRow(ShortcutViewModel s, string field, string text, string keptAt) {
+      HistoryEntry row = new HistoryEntry { ShortcutID = s.ID, Field = field, Text = text, KeptAt = keptAt };
+      DataStore.History.Add(row);
+      return row;
+    }
+
+    // Focus moves to another window (Window.Deactivated).
+    private static void Deactivate(Window window) {
+      typeof(Window).GetMethod("OnDeactivated", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+        .Invoke(window, new object[] { EventArgs.Empty });
+      WpfAppHost.Pump();
+    }
+
+    private static MenuItem Row(ContextMenu menu, string text) => Items(menu).Single(i => i.Tag is HistoryEntry h && h.Text == text);
+
     // ---- The button ----
 
     [Fact]
@@ -159,12 +179,12 @@ namespace MDSHO.Tests {
         Button history = Named(window, "ButtonHistory");
         f.Win.Appearance.Icons.SolidIcons = true;
         WpfAppHost.Pump();
-        Assert.Equal("\uE95E", history.Content);
+        Assert.Equal("", history.Content);
         f.Win.Appearance.Icons.SolidIcons = false;
         WpfAppHost.Pump();
-        Assert.Equal("\uE95F", history.Content);
+        Assert.Equal("", history.Content);
         foreach (TextEditWindow other in new[] { Show(TextEditWindow.ForComment(f.Command)), Show(TextEditWindow.ForSnippet(f.Snippet)) }) {
-          Assert.Equal("\uE95F", Named(other, "ButtonHistory").Content);
+          Assert.Equal("", Named(other, "ButtonHistory").Content);
         }
       });
     }
@@ -190,20 +210,19 @@ namespace MDSHO.Tests {
     // ---- Keeping copies while typing ----
 
     [Fact]
-    public void The_first_change_after_opening_keeps_the_saved_text_as_before() {
+    public void The_first_change_after_opening_keeps_the_saved_text() {
       WithButtons(f => {
         TextEditWindow window = OpenNote(f.Note);
         TypeAtEnd(window, "\r\nbread");
-        Assert.Equal(new TextHistorySlots("milk\r\neggs", "2026-11-21T09:00:00", "", ""), f.Note.TextHistory);
-        Assert.Equal("milk\r\neggs", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious1);
+        HistoryEntry kept = f.Note.History(HistoryFields.Text).Single();
+        Assert.Equal(("milk\r\neggs", "2026-11-21T09:00:00"), (kept.Text, kept.KeptAt));
         f.Now = f.Now.AddMinutes(2);
         TypeAtEnd(window, "\r\nbutter");
-        Assert.Equal("milk\r\neggs", f.Note.TextHistory.Previous1);
-        Assert.Equal("", f.Note.TextHistory.Previous2);
+        Assert.Equal(new[] { "milk\r\neggs" }, TextRows(f.Note));
       });
     }
 
-    // Before must never equal the text: typing a letter and deleting it again keeps no copy.
+    // A copy must never equal the text: typing a letter and deleting it again keeps no copy, also when the window closes.
     [Fact]
     public void Typing_a_letter_and_deleting_it_again_keeps_no_copy() {
       WithButtons(f => {
@@ -211,11 +230,10 @@ namespace MDSHO.Tests {
         TypeAtEnd(window, "x");
         DeleteLast(window);
         Assert.Equal("milk\r\neggs", Text(window).Text);
-        Assert.Equal(TextHistorySlots.Empty, f.Note.TextHistory);
-        Assert.Equal("", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious1);
+        Assert.Empty(TextRows(f.Note));
         window.Close();
         WpfAppHost.Pump();
-        Assert.Equal(TextHistorySlots.Empty, f.Note.TextHistory);
+        Assert.Empty(DataStore.History.GetAll());
       });
     }
 
@@ -226,74 +244,64 @@ namespace MDSHO.Tests {
         TypeAtEnd(window, "x");
         DeleteLast(window);
         TypeAtEnd(window, "\r\nbread");
-        Assert.Equal("milk\r\neggs", f.Note.TextHistory.Previous1);
-        Assert.Equal("milk\r\neggs", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious1);
-        Assert.NotEqual(Text(window).Text, f.Note.TextHistory.Previous1);
+        Assert.Equal(new[] { "milk\r\neggs" }, TextRows(f.Note));
       });
     }
 
     [Fact]
     public void Undoing_a_big_removal_takes_its_copy_back() {
       WithButtons(f => {
-        f.Note.SaveTextHistory(new TextHistorySlots("old", "2026-11-20T18:30:00", "", ""));
+        AddRow(f.Note, HistoryFields.Text, "old", "2026-11-20T18:30:00");
         TextEditWindow window = OpenNote(f.Note);
         TypeOverAll(window, "x");
-        Assert.Equal("milk\r\neggs", f.Note.TextHistory.Previous1);
+        Assert.Equal(new[] { "milk\r\neggs", "old" }, TextRows(f.Note));
         Text(window).Text = "milk\r\neggs";
         WpfAppHost.Pump();
-        Assert.Equal(new TextHistorySlots("old", "2026-11-20T18:30:00", "", ""), f.Note.TextHistory);
-        Assert.Equal("old", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious1);
+        Assert.Equal(new[] { "old" }, TextRows(f.Note));
       });
     }
 
-    // Undoing a big removal goes back to the history just before that removal, never to an older one: the text the
-    // window opened with stays in the history.
+    // Undoing a big removal goes back to the history just before that removal: the opening text stays.
     [Fact]
     public void Pasting_back_after_cut_all_keeps_the_opening_text_in_the_history() {
       WithButtons(f => {
-        f.Note.SaveTextHistory(new TextHistorySlots("h0", "2026-11-20T18:30:00", "", ""));
+        AddRow(f.Note, HistoryFields.Text, "h0", "2026-11-20T18:30:00");
         TextEditWindow window = OpenNote(f.Note);
         TypeAtEnd(window, "x");
         TypeAtEnd(window, "\r\nbread");
         string b = Text(window).Text;
-        TextHistorySlots afterFirst = f.Note.TextHistory;
-        Assert.Equal("milk\r\neggs", afterFirst.Previous1);
+        Assert.Equal(new[] { "milk\r\neggs", "h0" }, TextRows(f.Note));
         TypeOverAll(window, "");
-        Assert.Equal((b, "milk\r\neggs"), (f.Note.TextHistory.Previous1, f.Note.TextHistory.Previous2));
+        Assert.Equal(new[] { b, "milk\r\neggs", "h0" }, TextRows(f.Note));
         TypeOverAll(window, b);
-        Assert.Equal(afterFirst, f.Note.TextHistory);
-        Assert.Equal("milk\r\neggs", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious1);
-        Assert.Equal("h0", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious2);
+        Assert.Equal(new[] { "milk\r\neggs", "h0" }, TextRows(f.Note));
       });
     }
 
     [Fact]
-    public void Deleting_all_right_after_typing_and_pasting_it_back_keeps_the_opening_text_as_before() {
+    public void Deleting_all_right_after_typing_and_pasting_it_back_keeps_the_opening_text() {
       WithButtons(f => {
         TextEditWindow window = OpenNote(f.Note);
         TypeAtEnd(window, "x");
         TypeOverAll(window, "");
         TypeOverAll(window, "milk\r\neggsx");
-        Assert.Equal("milk\r\neggs", f.Note.TextHistory.Previous1);
-        Assert.Equal("", f.Note.TextHistory.Previous2);
-        Assert.Equal("milk\r\neggs", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious1);
+        Assert.Equal(new[] { "milk\r\neggs" }, TextRows(f.Note));
       });
     }
 
-    // After a copy was taken back, the next real change keeps it again and an undo of that goes back only one step.
     [Fact]
     public void Undo_after_a_taken_back_copy_goes_back_one_step_only() {
       WithButtons(f => {
-        f.Note.SaveTextHistory(new TextHistorySlots("h0", "2026-11-20T18:30:00", "", ""));
+        AddRow(f.Note, HistoryFields.Text, "h0", "2026-11-20T18:30:00");
         TextEditWindow window = OpenNote(f.Note);
         TypeAtEnd(window, "x");
         DeleteLast(window);
-        Assert.Equal("h0", f.Note.TextHistory.Previous1);
+        Assert.Equal(new[] { "h0" }, TextRows(f.Note));
         TypeAtEnd(window, "y");
-        Assert.Equal(("milk\r\neggs", "h0"), (f.Note.TextHistory.Previous1, f.Note.TextHistory.Previous2));
+        Assert.Equal(new[] { "milk\r\neggs", "h0" }, TextRows(f.Note));
         TypeOverAll(window, "");
         TypeOverAll(window, "milk\r\neggsy");
-        Assert.Equal(("milk\r\neggs", "h0"), (f.Note.TextHistory.Previous1, f.Note.TextHistory.Previous2));
+        Assert.Equal(new[] { "milk\r\neggs", "h0" }, TextRows(f.Note));
       });
     }
 
@@ -305,8 +313,7 @@ namespace MDSHO.Tests {
         Assert.True(window.SaveNoteNow());
         f.Now = f.Now.AddHours(8);
         TypeAtEnd(window, " 2");
-        Assert.Equal("milk\r\neggs", f.Note.TextHistory.Previous1);
-        Assert.Equal("", f.Note.TextHistory.Previous2);
+        Assert.Equal(new[] { "milk\r\neggs" }, TextRows(f.Note));
       });
     }
 
@@ -318,8 +325,7 @@ namespace MDSHO.Tests {
         window.Close();
         WpfAppHost.Pump();
         TypeAtEnd(OpenNote(f.Note), " 2");
-        Assert.Equal("milk\r\neggs 1", f.Note.TextHistory.Previous1);
-        Assert.Equal("milk\r\neggs", f.Note.TextHistory.Previous2);
+        Assert.Equal(new[] { "milk\r\neggs 1", "milk\r\neggs" }, TextRows(f.Note));
       });
     }
 
@@ -345,22 +351,19 @@ namespace MDSHO.Tests {
         TextEditWindow reopened = TextEditWindow.OpenNoteWindows.Single(w => w.Shortcut.ID == f.Note.ID);
         Assert.NotSame(window, reopened);
         TypeAtEnd(reopened, " 2");
-        Assert.Equal("milk\r\neggs 1", reopened.Shortcut.TextHistory.Previous1);
-        Assert.Equal("milk\r\neggs 1", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious1);
-        Assert.Equal("milk\r\neggs", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious2);
+        Assert.Equal(new[] { "milk\r\neggs 1", "milk\r\neggs" }, TextRows(reopened.Shortcut));
       });
     }
 
     [Fact]
-    public void Typing_over_all_the_text_keeps_a_copy_at_once_mid_burst() {
+    public void Typing_over_all_the_text_keeps_a_copy_at_once_mid_run() {
       WithButtons(f => {
         TextEditWindow window = Show(TextEditWindow.ForComment(f.Command));
         TypeAtEnd(window, " Then Ben.");
         f.Now = f.Now.AddSeconds(30);
         TypeOverAll(window, "x");
-        Assert.Equal("Call Anna first. Then Ben.", f.Command.CommentHistory.Previous1);
-        Assert.Equal("Call Anna first.", f.Command.CommentHistory.Previous2);
-        Assert.Equal(TextHistorySlots.Empty, f.Command.TextHistory);
+        Assert.Equal(new[] { "Call Anna first. Then Ben.", "Call Anna first." }, CommentRows(f.Command));
+        Assert.Empty(TextRows(f.Command));
       });
     }
 
@@ -369,57 +372,247 @@ namespace MDSHO.Tests {
       WithButtons(f => {
         TextEditWindow window = Show(TextEditWindow.ForSnippet(f.Snippet));
         TypeAtEnd(window, ", 1000 Sample Town");
-        Assert.Equal("Main Street 12", f.Snippet.TextHistory.Previous1);
+        Assert.Equal(new[] { "Main Street 12" }, TextRows(f.Snippet));
+      });
+    }
+
+    // ---- Keeping a copy when the window is left ----
+
+    // Each later run of edits keeps the text from before it when the window is left, never a copy of Now.
+    [Fact]
+    public void Leaving_after_a_later_run_of_edits_keeps_the_text_from_before_that_run() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        TypeAtEnd(window, " 1");
+        Deactivate(window);
+        Assert.Equal(new[] { "milk\r\neggs" }, TextRows(f.Note));
+        f.Now = f.Now.AddMinutes(5);
+        TypeAtEnd(window, " 2");
+        TypeAtEnd(window, " 3");
+        Assert.Equal(new[] { "milk\r\neggs" }, TextRows(f.Note));
+        Deactivate(window);
+        Assert.Equal(new[] { "milk\r\neggs 1", "milk\r\neggs" }, TextRows(f.Note));
+        Assert.Equal("2026-11-21T09:05:00", f.Note.History(HistoryFields.Text)[0].KeptAt);
+        Deactivate(window);
+        Assert.Equal(2, TextRows(f.Note).Length);
+      });
+    }
+
+    [Fact]
+    public void Leaving_without_a_change_keeps_nothing_and_the_first_change_still_keeps_at_once() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        Deactivate(window);
+        Assert.Empty(TextRows(f.Note));
+        TypeAtEnd(window, " 1");
+        Assert.Equal(new[] { "milk\r\neggs" }, TextRows(f.Note));
+      });
+    }
+
+    [Fact]
+    public void Leaving_after_edits_that_come_back_to_the_same_text_keeps_nothing() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        TypeAtEnd(window, " 1");
+        Deactivate(window);
+        TypeAtEnd(window, "x");
+        DeleteLast(window);
+        Deactivate(window);
+        Assert.Equal(new[] { "milk\r\neggs" }, TextRows(f.Note));
+      });
+    }
+
+    [Fact]
+    public void Minimising_closing_and_exit_also_count_as_leaving() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        TypeAtEnd(window, " 1");
+        Deactivate(window);
+        TypeAtEnd(window, " 2");
+        window.WindowState = WindowState.Minimized;
+        WpfAppHost.Pump();
+        Assert.Equal("milk\r\neggs 1", TextRows(f.Note)[0]);
+        window.WindowState = WindowState.Normal;
+        WpfAppHost.Pump();
+        TypeAtEnd(window, " 3");
+        window.Close();
+        WpfAppHost.Pump();
+        Assert.Equal("milk\r\neggs 1 2", TextRows(f.Note)[0]);
+        TextEditWindow again = OpenNote(f.Note);
+        TypeAtEnd(again, " 4");
+        Deactivate(again);
+        TypeAtEnd(again, " 5");
+        try {
+          Assert.Empty(TextEditWindow.SaveOpenNotesForExit());
+        } finally {
+          TextEditWindow.IsExiting = false;
+        }
+        Assert.Equal(new[] { "milk\r\neggs 1 2 3 4", "milk\r\neggs 1 2 3", "milk\r\neggs 1 2", "milk\r\neggs 1", "milk\r\neggs" }, TextRows(f.Note));
+      });
+    }
+
+    // A big removal in a later run keeps the text from before that run first, then the text before the removal.
+    [Fact]
+    public void A_big_removal_in_a_later_run_keeps_the_run_start_too_and_its_undo_takes_both_back() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        TypeAtEnd(window, " 1");
+        Deactivate(window);
+        TypeAtEnd(window, " 2");
+        TypeOverAll(window, "");
+        Assert.Equal(new[] { "milk\r\neggs 1 2", "milk\r\neggs 1", "milk\r\neggs" }, TextRows(f.Note));
+        TypeOverAll(window, "milk\r\neggs 1 2");
+        Assert.Equal(new[] { "milk\r\neggs" }, TextRows(f.Note));
+        Deactivate(window);
+        Assert.Equal(new[] { "milk\r\neggs 1", "milk\r\neggs" }, TextRows(f.Note));
+      });
+    }
+
+    [Fact]
+    public void With_keep_0_nothing_is_kept() {
+      WithButtons(f => {
+        TextHistorySetting.SetKeep(0);
+        TextEditWindow window = OpenNote(f.Note);
+        TypeAtEnd(window, " 1");
+        Deactivate(window);
+        TypeOverAll(window, "");
+        Assert.Empty(DataStore.History.GetAll());
+        List<MenuItem> items = Items(window.BuildHistoryMenu());
+        Assert.Equal(new[] { "Header", "Now", "Clear" }, items.Select(i => (string)i.Tag).ToArray());
+        Assert.False(items[2].IsEnabled);
       });
     }
 
     // ---- The menu ----
 
     [Fact]
-    public void The_menu_shows_a_header_now_before_and_earlier_with_times_and_first_lines() {
+    public void The_menu_shows_now_and_the_copies_newest_first_then_clear_history() {
       WithButtons(f => {
-        f.Note.SaveTextHistory(new TextHistorySlots("Old list\r\nmore", "2026-11-21T08:05:00", "", ""));
+        AddRow(f.Note, HistoryFields.Text, "x\r\nmore", "2026-11-19T16:44:00");
+        AddRow(f.Note, HistoryFields.Text, "  ", "2026-11-20T18:30:00");
+        AddRow(f.Note, HistoryFields.Text, "Old list\r\nmore", "2026-11-21T08:05:00");
+        AddRow(f.Note, HistoryFields.Comment, "a comment", "2026-11-21T08:06:00");
         f.Now = new DateTime(2026, 11, 21, 15, 0, 0);
         ContextMenu menu = OpenNote(f.Note).BuildHistoryMenu();
+        object[] all = menu.Items.Cast<object>().ToArray();
+        Assert.Equal(8, all.Length);
+        Assert.IsType<Separator>(all[2]);
+        Assert.IsType<Separator>(all[6]);
         List<MenuItem> items = Items(menu);
-        Assert.Equal(new[] { "Text history", "Now", "Before", "Earlier" }, items.Select(i => i.Tag as string ?? (string)i.Header).ToArray());
+        Assert.Equal(new[] { "Text history", "Now  ·  milk…", "Today 08:05  ·  Old list…", "Yesterday 18:30  ·  (empty)", "19 Nov 16:44  ·  x…", "Clear history..." },
+          items.Select(i => (string)i.Header).ToArray());
         Assert.False(items[0].IsEnabled);
-        Assert.Equal("Now  ·  milk", items[1].Header);
-        Assert.Equal("Before  ·  today 08:05  ·  Old list", items[2].Header);
-        Assert.Equal("Earlier", items[3].Header);
-        Assert.Equal(new[] { true, true, false }, items.Skip(1).Select(i => i.IsEnabled).ToArray());
-        Assert.Equal(new[] { true, false, false }, items.Skip(1).Select(i => i.IsChecked).ToArray());
+        Assert.True(items[1].IsChecked);
+        Assert.All(items.Skip(2), i => Assert.False(i.IsChecked));
+        Assert.All(items.Skip(1), i => Assert.True(i.IsEnabled));
+        Assert.Equal("Now", items[1].Tag);
+        Assert.Equal("Clear", items[5].Tag);
       });
     }
 
     [Fact]
-    public void Picking_before_puts_it_back_saves_it_and_can_be_undone() {
+    public void An_empty_history_shows_now_and_a_disabled_clear_history() {
       WithButtons(f => {
-        f.Note.SaveTextHistory(new TextHistorySlots("old list", "2026-11-20T18:30:00", "older list", "2026-11-19T10:00:00"));
+        List<MenuItem> items = Items(OpenNote(f.Note).BuildHistoryMenu());
+        Assert.Equal(new[] { "Header", "Now", "Clear" }, items.Select(i => (string)i.Tag).ToArray());
+        Assert.False(items[2].IsEnabled);
+      });
+    }
+
+    [Fact]
+    public void Picking_a_copy_puts_it_back_saves_it_and_can_be_undone() {
+      WithButtons(f => {
+        AddRow(f.Note, HistoryFields.Text, "older list", "2026-11-19T10:00:00");
+        AddRow(f.Note, HistoryFields.Text, "old list", "2026-11-20T18:30:00");
         TextEditWindow window = OpenNote(f.Note);
-        Click(Items(window.BuildHistoryMenu()).Single(i => (string)i.Tag == "Before"));
+        Click(Row(window.BuildHistoryMenu(), "old list"));
         Assert.Equal("old list", Text(window).Text);
         Assert.Equal("old list", DataStore.Shortcuts.Get(f.Note.ID).NoteText);
-        Assert.Equal(new TextHistorySlots("milk\r\neggs", "2026-11-21T09:00:00", "older list", "2026-11-19T10:00:00"), f.Note.TextHistory);
-        Assert.Equal(f.Note.TextHistory.Previous1, DataStore.Shortcuts.Get(f.Note.ID).TextPrevious1);
-        // The pick itself is not a new editing burst.
-        TypeAtEnd(window, "!");
-        Assert.Equal("milk\r\neggs", f.Note.TextHistory.Previous1);
-        Click(Items(window.BuildHistoryMenu()).Single(i => (string)i.Tag == "Before"));
+        Assert.Equal(new[] { "milk\r\neggs", "older list" }, TextRows(f.Note));
+        Assert.Equal("2026-11-21T09:00:00", f.Note.History(HistoryFields.Text)[0].KeptAt);
+        Click(Row(window.BuildHistoryMenu(), "milk\r\neggs"));
         Assert.Equal("milk\r\neggs", Text(window).Text);
+        Assert.Equal(new[] { "old list", "older list" }, TextRows(f.Note));
       });
     }
 
     [Fact]
-    public void Picking_earlier_in_a_comment_keeps_the_text_you_had_as_before() {
+    public void Picking_in_a_comment_keeps_the_text_you_had_first() {
       WithButtons(f => {
-        f.Command.SaveCommentHistory(new TextHistorySlots("b", "2026-11-20T18:30:00", "e", "2026-11-19T10:00:00"));
+        AddRow(f.Command, HistoryFields.Comment, "e", "2026-11-19T10:00:00");
+        AddRow(f.Command, HistoryFields.Comment, "b", "2026-11-20T18:30:00");
         TextEditWindow window = Show(TextEditWindow.ForComment(f.Command));
-        Click(Items(window.BuildHistoryMenu()).Single(i => (string)i.Tag == "Earlier"));
+        Click(Row(window.BuildHistoryMenu(), "e"));
         Assert.Equal("e", Text(window).Text);
         Assert.Equal("e", DataStore.Shortcuts.Get(f.Command.ID).Comment);
-        Assert.Equal(("Call Anna first.", "b"), (f.Command.CommentHistory.Previous1, f.Command.CommentHistory.Previous2));
+        Assert.Equal(new[] { "Call Anna first.", "b" }, CommentRows(f.Command));
       });
+    }
+
+    [Fact]
+    public void Clear_history_asks_first_and_clears_only_this_text() {
+      WithButtons(f => {
+        AddRow(f.Note, HistoryFields.Text, "old", "2026-11-20T18:30:00");
+        AddRow(f.Note, HistoryFields.Comment, "a comment", "2026-11-20T18:31:00");
+        TextEditWindow window = OpenNote(f.Note);
+        Func<string, string, bool> oldConfirm = Dialogs.Confirm;
+        List<string> asked = new List<string>();
+        try {
+          Dialogs.Confirm = (message, caption) => { asked.Add(caption + ": " + message); return false; };
+          Click(Items(window.BuildHistoryMenu()).Single(i => i.Tag as string == "Clear"));
+          Assert.Equal(new[] { "old" }, TextRows(f.Note));
+          Dialogs.Confirm = (message, caption) => { asked.Add(caption + ": " + message); return true; };
+          Click(Items(window.BuildHistoryMenu()).Single(i => i.Tag as string == "Clear"));
+          Assert.Empty(TextRows(f.Note));
+          Assert.Equal(new[] { "a comment" }, CommentRows(f.Note));
+          Assert.Equal(2, asked.Count);
+          Assert.Equal("Clear history: Clear the text history of this note? The earlier texts can't be brought back.", asked[0]);
+          Assert.False(Items(window.BuildHistoryMenu()).Single(i => i.Tag as string == "Clear").IsEnabled);
+        } finally {
+          Dialogs.Confirm = oldConfirm;
+        }
+      });
+    }
+
+    // 50 copies: the menu scrolls like a normal menu instead of running off the screen.
+    [Fact]
+    public void A_menu_of_50_copies_scrolls() {
+      WithButtons(f => {
+        TextHistorySetting.SetKeep(50);
+        for (int i = 0; i < 50; i++) {
+          AddRow(f.Note, HistoryFields.Text, "copy " + i, TextHistory.Stamp(f.Now.AddMinutes(-60 + i)));
+        }
+        TextEditWindow window = OpenNote(f.Note);
+        Button history = Named(window, "ButtonHistory");
+        history.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, history));
+        WpfAppHost.Pump();
+        ContextMenu menu = window.HistoryMenu;
+        try {
+          Assert.Equal(50, Items(menu).Count(i => i.Tag is HistoryEntry));
+          ScrollViewer scroll = FindChild<ScrollViewer>(menu);
+          Assert.NotNull(scroll);
+          Assert.NotEqual(ScrollBarVisibility.Disabled, scroll.VerticalScrollBarVisibility);
+          double screen = SystemParameters.VirtualScreenHeight;
+          Assert.True(menu.ActualHeight <= screen, "The menu is " + menu.ActualHeight + " high on a " + screen + " high screen.");
+        } finally {
+          menu.IsOpen = false;
+          WpfAppHost.Pump();
+        }
+      });
+    }
+
+    private static T FindChild<T>(DependencyObject parent) where T : DependencyObject {
+      for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++) {
+        DependencyObject child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+        if (child is T found) {
+          return found;
+        }
+        T deeper = FindChild<T>(child);
+        if (deeper != null) {
+          return deeper;
+        }
+      }
+      return null;
     }
   }
 }

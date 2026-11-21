@@ -24,7 +24,7 @@ namespace MDSHO.Tests {
     // The headings each page shows, in order.
     private static readonly Dictionary<string, string[]> PageHeadings = new Dictionary<string, string[]> {
       ["Appearance"] = new[] { "Icons appearance", "Window theme" },
-      ["General"] = new[] { "Other" },
+      ["General"] = new[] { "Other", "Text history" },
       ["Keyboard"] = new[] { "Keyboard shortcut" },
       ["Screens"] = new[] { "Screen setups" },
       ["Backups"] = new[] { "Backups" },

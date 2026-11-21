@@ -55,6 +55,29 @@ namespace MDSHO.Data {
       return values;
     }
 
+    // The History table came in version 24. Versions 22 and 23 kept two earlier copies on each shortcut: read them as
+    // rows, the older copy first, skipping empty ones. Older databases have no history.
+    public static List<HistoryEntry> History() {
+      if (TableExists("History")) {
+        return Filled(Many<HistoryEntry>("SELECT ID, ShortcutID, Field, Text, KeptAt FROM History ORDER BY ID ASC"));
+      }
+      List<HistoryEntry> rows = new List<HistoryEntry>();
+      if (!ColumnExists("Shortcuts", "TextPrevious1")) {
+        return rows;
+      }
+      foreach ((string field, string column) in new[] { ("Text", "TextPrevious2"), ("Text", "TextPrevious1"), ("Comment", "CommentPrevious2"), ("Comment", "CommentPrevious1") }) {
+        if (ColumnExists("Shortcuts", column) && ColumnExists("Shortcuts", column + "Time")) {
+          rows.AddRange(Many<HistoryEntry>("SELECT ID AS ShortcutID, '" + field + "' AS Field, " + column + " AS Text, " + column + "Time AS KeptAt "
+            + "FROM Shortcuts WHERE " + column + " <> '' ORDER BY ID ASC"));
+        }
+      }
+      return rows;
+    }
+
+    private static bool ColumnExists(string table, string column) {
+      return One<long>("SELECT count(*) FROM pragma_table_info(@table) WHERE name = @column COLLATE NOCASE", new { table, column }) > 0;
+    }
+
     private static bool TableExists(string table) {
       return One<long>("SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = @table", new { table }) > 0;
     }

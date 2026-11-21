@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 23**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 24**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -95,14 +95,6 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `TextFont` | TEXT | NOT NULL | `'Courier New'` | The font of a note's or snippet's text, by name (see the font menu); a name MDSHO doesn't know shows Courier New. Added in version 20. |
 | `CommentFont` | TEXT | NOT NULL | `'Courier New'` | The font of the button's comment, by name, like `TextFont`. Added in version 22. |
 | `CommentFontSize` | INTEGER | NOT NULL | `0` | The text size of the button's comment in whole points (8 to 72); `0` = 12 pt. Added in version 22. |
-| `TextPrevious1` | TEXT | NOT NULL | `''` | Text history of a note or snippet: its text before the last kept change ("Before" in the history menu). Added in version 22. |
-| `TextPrevious1Time` | TEXT | NOT NULL | `''` | When `TextPrevious1` was kept, `yyyy-MM-ddTHH:mm:ss` local time; empty when there is none. Added in version 22. |
-| `TextPrevious2` | TEXT | NOT NULL | `''` | The copy before that ("Earlier"). Added in version 22. |
-| `TextPrevious2Time` | TEXT | NOT NULL | `''` | When `TextPrevious2` was kept. Added in version 22. |
-| `CommentPrevious1` | TEXT | NOT NULL | `''` | Text history of the button's comment: the comment before the last kept change. Added in version 22. |
-| `CommentPrevious1Time` | TEXT | NOT NULL | `''` | When `CommentPrevious1` was kept. Added in version 22. |
-| `CommentPrevious2` | TEXT | NOT NULL | `''` | The comment copy before that. Added in version 22. |
-| `CommentPrevious2Time` | TEXT | NOT NULL | `''` | When `CommentPrevious2` was kept. Added in version 22. |
 | `TextFontSize` | INTEGER | NOT NULL | `0` | The text size of a snippet in whole points (8 to 72); `0` = 12 pt. A note keeps its size in `NoteWindows.FontSize`. Added in version 23. |
 
 ### NoteWindows
@@ -125,6 +117,20 @@ exports import with default note windows. Added in version 8.
 | `IsWrapText` | INTEGER | NOT NULL | `0` | `1` = the note's text wraps at the window's edge (the wrap text button in its title bar). Added in version 11. |
 | `FontSize` | INTEGER | NOT NULL | `0` | Size of the note's text in whole points, set with the Text size button or Ctrl + mouse wheel (Word's sizes, 8 to 72 pt); a saved size outside 8 to 72 loads as the nearest limit; `0` = 12 pt. Added in version 18 in DIPs; version 21 converts it to points. |
 
+### History
+
+The text history: earlier copies of each button's text and comment, newest first by `KeptAt`, at most the
+**Text history** setting per button and field (10 unless set). A copied or pasted button starts with none. Exports and
+backups carry them (still export format 3), linked to their button. Added in version 24.
+
+| Column | Type | Null | Default | Meaning |
+|---|---|---|---|---|
+| `ID` | INTEGER | NOT NULL | | Primary key. Not exported. |
+| `ShortcutID` | INTEGER | NOT NULL | | The button (`Shortcuts.ID`). |
+| `Field` | TEXT | NOT NULL | | `Text` = a note's or snippet's text, `Comment` = the button's comment. |
+| `Text` | TEXT | NOT NULL | | The text as it was (empty for an empty text). |
+| `KeptAt` | TEXT | NOT NULL | | When it was kept, local time `yyyy-MM-ddTHH:mm:ss`. |
+
 ### DefaultColors
 
 The default colours saved with **Set as default** in the Colours window: at most one row for panels and one for notes.
@@ -144,8 +150,8 @@ replaces the data sets them, Add as new keeps this PC's. Added in version 15.
 ### AppSettings
 
 Settings of the whole app on this PC, one row per setting. Without a row the setting has its default. From 1.16.0
-(export format 3) exports carry `WindowTheme`, `BringToFrontShortcut` and `RememberScreenSetupPlaces`, and an import
-that replaces the data sets those three (a shortcut another app holds on this PC is turned off). The other settings
+(export format 3) exports carry `WindowTheme`, `BringToFrontShortcut` and `RememberScreenSetupPlaces`, and from 1.22.0
+`TextHistoryKeep`; an import that replaces the data sets those (a shortcut another app holds on this PC is turned off). The other settings
 belong to this PC: they are not exported and every import keeps them. Added in version 16.
 
 | Column | Type | Null | Default | Meaning |
@@ -172,6 +178,7 @@ belong to this PC: they are not exported and every import keeps them. Added in v
 | `ReviewLastDay` | The last local day counted in `ReviewDaysUsed` (`yyyy-MM-dd`). Added in 1.13.0; the database version stays 17. |
 | `ReviewShown` | How many times the review prompt was shown: `1` or `2`. Without a row: never. Added in 1.13.0; the database version stays 17. |
 | `ReviewLastShown` | The local date (`yyyy-MM-dd`) the review prompt was last shown. Added in 1.13.0; the database version stays 17. |
+| `TextHistoryKeep` | **earlier texts to keep** under **Text history** (Settings > General): `0` to `50`; `0` keeps none. Without a row, or with a value that is not a number: `10`; a number outside 0 to 50 counts as the nearest. Added in version 24. |
 | `ReviewRated` | `Yes` after a rating in the Store dialog, or after Rate opened the Store page (the review prompt, the panel menu or About); the prompt then never shows. Added in 1.13.0; the database version stays 17. |
 
 ### ScreenSetups
@@ -217,6 +224,7 @@ Foreign keys are switched on for every connection, and all of them use `ON DELET
 - `Shortcuts.ParentMDSHOWindowID` → `MDSHOWindows.ID`: deleting a panel deletes its root buttons.
 - `Shortcuts.ParentShortcutID` → `Shortcuts.ID`: deleting a group deletes everything inside it.
 - `NoteWindows.ShortcutID` → `Shortcuts.ID`: deleting a note deletes its window place.
+- `History.ShortcutID` → `Shortcuts.ID`: deleting a button deletes its text history.
 - `ScreenSetupPlaces.SetupID` → `ScreenSetups.ID`: forgetting a screen setup deletes its places.
 
 The shortcut files in the shortcuts folder are not part of the database; the app deletes them itself.
@@ -225,6 +233,7 @@ The shortcut files in the shortcuts folder are not part of the database; the app
 
 | Index | Column |
 |---|---|
+| `IX_History_ShortcutID_Field_KeptAt` | `History(ShortcutID, Field, KeptAt)` |
 | `IX_MDSHOWindowClones_ParentMDSHOWindowID` | `MDSHOWindowClones(ParentMDSHOWindowID)` |
 | `IX_Shortcuts_ParentMDSHOWindowID` | `Shortcuts(ParentMDSHOWindowID)` |
 | `IX_Shortcuts_ParentShortcutID` | `Shortcuts(ParentShortcutID)` |
@@ -260,6 +269,7 @@ that worked.
 | 21 | 1.20.2 | `NoteWindows.FontSize` changes from DIPs to whole points: `0` stays `0` (the default, 12 pt), others become `round(DIPs × 0.75)` within 8 to 72 (12 → 9, 16 → 12, 22 → 17). Still export format 3: an import whose manifest has `schemaVersion` 20 or lower converts its sizes the same way. |
 | 22 | 1.21.0 | `Shortcuts.CommentFont` (`TEXT NOT NULL DEFAULT 'Courier New'`) and `Shortcuts.CommentFontSize` (`INTEGER NOT NULL DEFAULT 0`): each comment keeps its own font and text size. The text history: `TextPrevious1`, `TextPrevious2`, `CommentPrevious1` and `CommentPrevious2`, each with a `...Time` column (all `TEXT NOT NULL DEFAULT ''`). Copies, exports and backups carry them (still export format 3); older exports import with Courier New, 12 pt and no history. |
 | 23 | 1.21.1 | `Shortcuts.TextFontSize` (`INTEGER NOT NULL DEFAULT 0`): each snippet keeps its own text size. Copies, exports and backups carry it (still export format 3); older exports import with `0` (12 pt). |
+| 24 | 1.22.0 | `History` table and its index: the text history, up to the **Text history** setting per button and field. The step moves each non-empty `TextPrevious1/2` and `CommentPrevious1/2` (with its time, the older copy first) into `History`, then drops those eight `Shortcuts` columns (`ALTER TABLE ... DROP COLUMN`). Exports and backups carry the rows (still export format 3); older exports import their two earlier copies as rows. A copied button starts with no history. |
 
 ### Backup before an upgrade
 

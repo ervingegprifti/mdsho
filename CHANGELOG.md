@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.22.0]
+
+### Added
+
+- Text history keeps up to 10 earlier texts (set 0 to 50 in Settings, on the General page; 0 turns it off).
+- Clear history at the bottom of the text history menu.
+
+### Changed
+
+- The text history also keeps a copy when you leave a window after changing it.
+- The menu shows when each text was kept: Today, Yesterday or the date.
+- A copied button starts with no history.
+- Database version 24: the text history moves to its own table (backed up first). Older exports and backups import their two earlier texts. Export your data before installing if you may want to go back to an older version.
+
 ## [1.21.1]
 
 ### Fixed

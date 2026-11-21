@@ -98,6 +98,11 @@ namespace MDSHO {
         this.ComboBackupKeep.Items.Add(keep);
       }
       this.ComboBackupKeep.SelectedItem = backups.Keep;
+      // Text history: how many earlier texts each note, snippet and comment keeps; saved on Apply.
+      foreach (int keep in TextHistorySetting.Choices) {
+        this.ComboTextHistoryKeep.Items.Add(keep);
+      }
+      this.ComboTextHistoryKeep.SelectedItem = TextHistorySetting.Keep;
       ShowBackupState(backups);
       this.ButtonBackupFolderChange.Click += (s, e) => {
         string chosen = PickFolder(this.TextBackupFolder.Text);
@@ -159,6 +164,15 @@ namespace MDSHO {
           int keep = (int)this.ComboBackupKeep.SelectedItem;
           if (on != backups.IsOn || folder != backups.Folder || keep != backups.Keep) {
             backups.Save(on, folder, keep);
+          }
+        } catch (System.Exception ex) {
+          ErrorDialog.ShowDialog(ex);
+          return;
+        }
+        try {
+          int keep = (int)this.ComboTextHistoryKeep.SelectedItem;
+          if (keep != TextHistorySetting.Keep) {
+            TextHistorySetting.SetKeep(keep);
           }
         } catch (System.Exception ex) {
           ErrorDialog.ShowDialog(ex);

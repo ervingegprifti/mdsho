@@ -418,6 +418,12 @@ namespace MDSHO {
     /// </summary>
     public static IReadOnlyList<string> SaveOpenNotesForExit() {
       IsExiting = true;
+      // Exiting leaves every window: a run of edits keeps the text from before it.
+      foreach (TextEditWindow window in openTextWindows.Concat(openNoteWindows).ToList()) {
+        if (!window.discarded) {
+          window.KeepHistoryOnLeave();
+        }
+      }
       return SaveOpenNotes();
     }
 
@@ -785,14 +791,35 @@ namespace MDSHO {
     /// <summary>The history menu while it is open (or last open); null before the history button was clicked.</summary>
     public System.Windows.Controls.ContextMenu HistoryMenu { get; private set; }
 
-    private readonly TextHistoryTracker historyTracker = new TextHistoryTracker();
-    // The text before the latest change: the copy that is kept when a burst starts or a big removal happens.
+    // The text before the latest change.
     private string historyLastText = "";
     // True while a pick from the history puts its text in the window: that change keeps no copy.
     private bool pickingHistory;
+    // The current run of edits: the text before its first change (null when no run is going on), whether a copy for it
+    // was already kept, and whether it keeps its copy at once (only the first run after the window opens does).
+    private string runStart;
+    private bool runCovered;
+    private bool runAtOnce;
+    // True once any run started in this window.
+    private bool anyRun;
+    // The copies the latest keep added and the text they were kept from: going back to exactly that text (a letter typed
+    // and deleted, an undone big removal) takes them back and puts the run as it was.
+    private HistoryUndo historyUndo;
 
-    // Every kind keeps two earlier copies of its text: the text before the change is kept as "Before" at the first change
-    // after the window opens, and at once for an edit that removes a lot. Nothing is time-based.
+    private sealed class HistoryUndo {
+      public List<HistoryEntry> Rows;
+      public string Text;
+      public string RunStart;
+      public bool RunCovered;
+      public bool RunAtOnce;
+      public bool AnyRun;
+    }
+
+    // A comment keeps its own history; a note and a snippet keep theirs as the text history.
+    private string HistoryField => this.kind == TextKind.Comment ? HistoryFields.Comment : HistoryFields.Text;
+
+    // Every kind keeps earlier copies of its text, with no timers: at the first change after the window opens, when the
+    // window is left after a change (the text from before that run of edits), and at once for an edit that removes a lot.
     private void UseHistory() {
       this.historyLastText = this.TextComment.Text ?? "";
       this.ButtonHistory.Click += (s, e) => {
@@ -808,117 +835,138 @@ namespace MDSHO {
         if (this.pickingHistory || this.shortcut.ID == 0) {
           return;
         }
-        int removed = e.Changes.Sum(c => c.RemovedLength);
-        bool start = this.historyTracker.OnChange(removed, before.Length);
-        if (this.historyKeptFrom != null && text == this.historyKeptText) {
-          // Back to the very text that was kept (a letter typed and deleted, an undone removal): take the copy back,
-          // so Before is never the same as the text, and keep it again if the text changes once more.
-          TextHistorySlots undo = this.historyKeptFrom;
-          this.historyPending = this.historyKeptText;
-          this.historyKeptFrom = null;
-          RestoreHistory(undo);
-          return;
+        OnHistoryChange(before, text, e.Changes.Sum(c => c.RemovedLength));
+      };
+      // Leaving the window ends the run of edits: focus moves away, it is minimised or closed, or MDSHO exits.
+      this.Deactivated += (s, e) => KeepHistoryOnLeave();
+      this.StateChanged += (s, e) => {
+        if (this.WindowState == WindowState.Minimized) {
+          KeepHistoryOnLeave();
         }
-        if (start && TextHistory.IsBigRemoval(removed, before.Length)) {
-          // A big removal keeps the text from before it at once (and a copy still waiting, when it differs). Undoing it goes
-          // back to the history just before this removal's own copies, never to an older one.
-          TextHistorySlots undo = CurrentHistory;
-          if (this.historyPending != null && this.historyPending != before) {
-            KeepHistory(this.historyPending);
-          }
-          KeepHistory(Normalized(before));
-          this.historyKeptFrom = undo;
-          this.historyKeptText = before;
-          this.historyPending = null;
-        } else if (start && this.historyPending == null && this.historyKeptFrom == null) {
-          // The first change: remember the text, and keep it once the text really differs from it.
-          this.historyPending = before;
+      };
+      this.Closing += (s, e) => KeepHistoryOnLeave();
+    }
+
+    private void OnHistoryChange(string before, string text, int removed) {
+      if (this.historyUndo != null && text == this.historyUndo.Text) {
+        // Back to the very text that was kept: take its copies back, so no copy equals the text, and put the run back.
+        HistoryUndo undo = this.historyUndo;
+        this.historyUndo = null;
+        foreach (HistoryEntry row in undo.Rows) {
+          TryHistory(() => this.shortcut.DeleteHistory(row.ID));
         }
-        if (this.historyPending != null && text != this.historyPending) {
-          this.historyKeptFrom = CurrentHistory;
-          this.historyKeptText = this.historyPending;
-          KeepHistory(Normalized(this.historyPending));
-          this.historyPending = null;
+        this.runStart = undo.RunStart;
+        this.runCovered = undo.RunCovered;
+        this.runAtOnce = undo.RunAtOnce;
+        this.anyRun = undo.AnyRun;
+        return;
+      }
+      if (TextHistory.IsBigRemoval(removed, before.Length)) {
+        // A big removal keeps the text from before it at once, after the start of this run when no copy has it yet.
+        HistoryUndo undo = Snapshot(before);
+        if (this.runStart != null && !this.runCovered && this.runStart != before) {
+          AddKept(undo, this.runStart);
         }
+        AddKept(undo, before);
+        this.historyUndo = undo.Rows.Count > 0 ? undo : null;
+        if (this.runStart == null) {
+          this.runStart = before;
+          this.runAtOnce = false;
+        }
+        this.runCovered = true;
+        this.anyRun = true;
+        return;
+      }
+      if (this.runStart == null) {
+        this.runStart = before;
+        this.runCovered = false;
+        this.runAtOnce = !this.anyRun;
+        this.anyRun = true;
+      }
+      if (this.runAtOnce && !this.runCovered && text != this.runStart) {
+        // The first run after the window opens keeps its start as soon as the text really differs from it.
+        HistoryUndo undo = Snapshot(this.runStart);
+        AddKept(undo, this.runStart);
+        this.historyUndo = undo.Rows.Count > 0 ? undo : null;
+        this.runCovered = true;
+      }
+    }
+
+    private HistoryUndo Snapshot(string text) {
+      return new HistoryUndo {
+        Rows = new List<HistoryEntry>(), Text = text, RunStart = this.runStart, RunCovered = this.runCovered,
+        RunAtOnce = this.runAtOnce, AnyRun = this.anyRun
       };
     }
 
-    // The text the first change started from, while it waits to differ; null otherwise.
-    private string historyPending;
-    // After a copy was kept: the history before it and the text that was kept, so going back to that text takes it back.
-    private TextHistorySlots historyKeptFrom;
-    private string historyKeptText;
-
-    private static string Normalized(string text) => string.IsNullOrWhiteSpace(text) ? "" : text;
-
-    private void RestoreHistory(TextHistorySlots history) {
-      if (history == CurrentHistory) {
-        return;
-      }
-      try {
-        SaveHistory(history);
-      } catch (Exception ex) {
-        AppLog.Warning(null, "The text history could not be saved: {ErrorType}", ex.GetType().FullName);
+    private void AddKept(HistoryUndo undo, string text) {
+      HistoryEntry kept = KeepHistory(text);
+      if (kept != null) {
+        undo.Rows.Add(kept);
       }
     }
 
-    // A comment has its own history; a note and a snippet keep theirs in the text history.
-    private TextHistorySlots CurrentHistory => this.kind == TextKind.Comment ? this.shortcut.CommentHistory : this.shortcut.TextHistory;
-
-    private void SaveHistory(TextHistorySlots history) {
-      if (this.kind == TextKind.Comment) {
-        this.shortcut.SaveCommentHistory(history);
-      } else {
-        this.shortcut.SaveTextHistory(history);
+    /// <summary>
+    /// The window was left: when a run of edits has no copy yet, keeps the text from before that run (never a copy equal
+    /// to the text now or to the newest copy), and ends the run.
+    /// </summary>
+    public void KeepHistoryOnLeave() {
+      if (this.shortcut.ID != 0 && this.runStart != null && !this.runCovered && this.runStart != TextToSave()) {
+        KeepHistory(this.runStart);
       }
+      this.runStart = null;
+      this.runCovered = false;
+      this.runAtOnce = false;
+      this.historyUndo = null;
     }
 
-    private void KeepHistory(string text) {
-      TextHistorySlots now = CurrentHistory;
-      TextHistorySlots kept = TextHistory.Keep(text, now, Now());
-      if (ReferenceEquals(kept, now)) {
-        return;
-      }
+    private HistoryEntry KeepHistory(string text) {
+      HistoryEntry kept = null;
+      TryHistory(() => kept = this.shortcut.KeepHistory(HistoryField, text, Now()));
+      return kept;
+    }
+
+    // A copy that can't be kept or taken back must never break typing; the text itself still saves. Never the text in the log.
+    private static void TryHistory(Action action) {
       try {
-        SaveHistory(kept);
+        action();
       } catch (Exception ex) {
-        // A copy that can't be kept must never break typing; the text itself still saves. Never the text in the log.
         AppLog.Warning(null, "The text history could not be saved: {ErrorType}", ex.GetType().FullName);
       }
     }
 
     /// <summary>
-    /// The history menu: a small "Text history" label, then Now (ticked), Before and Earlier, each with the time it was
-    /// kept and its first line cut short. An empty copy is greyed out.
+    /// The history menu: a small "Text history" label, Now (ticked) with its first line, a separator, the copies newest
+    /// first ("Today 14:05  ·  first line"), then a separator and Clear history... (greyed out when there are none).
     /// </summary>
     public System.Windows.Controls.ContextMenu BuildHistoryMenu() {
       System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();
-      menu.Items.Add(new System.Windows.Controls.MenuItem { Header = "Text history", IsEnabled = false, FontSize = 11 });
+      menu.Items.Add(new System.Windows.Controls.MenuItem { Header = "Text history", Tag = "Header", IsEnabled = false, FontSize = 11 });
       DateTime now = Now();
       string first = TextHistory.FirstLine(TextToSave());
       menu.Items.Add(new System.Windows.Controls.MenuItem { Header = first.Length == 0 ? "Now" : "Now  ·  " + first, Tag = "Now", IsChecked = true });
-      TextHistorySlots history = CurrentHistory;
-      menu.Items.Add(HistoryItem("Before", history.Previous1, history.Previous1Time, 1, now));
-      menu.Items.Add(HistoryItem("Earlier", history.Previous2, history.Previous2Time, 2, now));
+      menu.Items.Add(new System.Windows.Controls.Separator());
+      IReadOnlyList<HistoryEntry> rows = new List<HistoryEntry>();
+      TryHistory(() => rows = this.shortcut.History(HistoryField));
+      foreach (HistoryEntry row in rows) {
+        System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem { Header = TextHistory.MenuLine(row.KeptAt, row.Text, now), Tag = row };
+        item.Click += (s, e) => PickHistory(row);
+        menu.Items.Add(item);
+      }
+      if (rows.Count > 0) {
+        menu.Items.Add(new System.Windows.Controls.Separator());
+      }
+      System.Windows.Controls.MenuItem clear = new System.Windows.Controls.MenuItem { Header = "Clear history...", Tag = "Clear", IsEnabled = rows.Count > 0 };
+      clear.Click += (s, e) => ClearHistory();
+      menu.Items.Add(clear);
       return menu;
     }
 
-    private System.Windows.Controls.MenuItem HistoryItem(string label, string text, string time, int slot, DateTime now) {
-      if (string.IsNullOrEmpty(text)) {
-        return new System.Windows.Controls.MenuItem { Header = label, Tag = label, IsEnabled = false };
-      }
-      string when = TextHistory.TimeLabel(time, now);
-      string header = label + (when.Length == 0 ? "" : "  ·  " + when) + "  ·  " + TextHistory.FirstLine(text);
-      System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem { Header = header, Tag = label };
-      item.Click += (s, e) => PickHistory(slot);
-      return item;
-    }
-
-    /// <summary>Puts copy 1 (Before) or 2 (Earlier) in the window and saves it; the text you had becomes Before.</summary>
-    public void PickHistory(int slot) {
-      (string text, TextHistorySlots after) = TextHistory.Pick(slot, TextToSave(), CurrentHistory, Now());
+    /// <summary>Puts a copy back in the window and saves it; the text you had is kept first, so the pick can be undone.</summary>
+    public void PickHistory(HistoryEntry entry) {
       try {
-        SaveHistory(after);
+        this.shortcut.KeepHistory(HistoryField, TextToSave(), Now());
+        this.shortcut.DeleteHistory(entry.ID);
       } catch (Exception ex) {
         AppLog.Warning(null, "The text history could not be saved: {ErrorType}", ex.GetType().FullName);
         ErrorDialog.ShowDialog("The text could not be put back.", ex);
@@ -926,16 +974,37 @@ namespace MDSHO {
       }
       this.pickingHistory = true;
       try {
-        this.TextComment.Text = text;
+        this.TextComment.Text = entry.Text;
         this.TextComment.CaretIndex = this.TextComment.Text.Length;
       } finally {
         this.pickingHistory = false;
       }
-      // The pick counts as part of an editing burst, so typing right after it keeps no copy of the picked text.
-      this.historyTracker.OnChange(0, 0);
-      this.historyPending = null;
-      this.historyKeptFrom = null;
+      // The pick ends the run: the next change starts a new one, kept when the window is left.
+      this.runStart = null;
+      this.runCovered = false;
+      this.runAtOnce = false;
+      this.anyRun = true;
+      this.historyUndo = null;
       SaveNoteNow();
+    }
+
+    // Asks first in the MDSHO dialog, then deletes every copy of this text.
+    private void ClearHistory() {
+      bool clear;
+      using (Dialogs.UseIcons(this.icons.SolidIcons)) {
+        clear = Dialogs.Confirm("Clear the text history of this " + KindWord + "? The earlier texts can't be brought back.", "Clear history");
+      }
+      if (!clear) {
+        return;
+      }
+      try {
+        this.shortcut.ClearHistory(HistoryField);
+      } catch (Exception ex) {
+        AppLog.Warning(null, "The text history could not be cleared: {ErrorType}", ex.GetType().FullName);
+        ErrorDialog.ShowDialog("The text history could not be cleared.", ex);
+        return;
+      }
+      this.historyUndo = null;
     }
 
     // ---- The font button and menu ----

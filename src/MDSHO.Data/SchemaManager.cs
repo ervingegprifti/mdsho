@@ -80,14 +80,6 @@ namespace MDSHO.Data {
           TextFont TEXT NOT NULL DEFAULT 'Courier New',
           CommentFont TEXT NOT NULL DEFAULT 'Courier New',
           CommentFontSize INTEGER NOT NULL DEFAULT 0,
-          TextPrevious1 TEXT NOT NULL DEFAULT '',
-          TextPrevious1Time TEXT NOT NULL DEFAULT '',
-          TextPrevious2 TEXT NOT NULL DEFAULT '',
-          TextPrevious2Time TEXT NOT NULL DEFAULT '',
-          CommentPrevious1 TEXT NOT NULL DEFAULT '',
-          CommentPrevious1Time TEXT NOT NULL DEFAULT '',
-          CommentPrevious2 TEXT NOT NULL DEFAULT '',
-          CommentPrevious2Time TEXT NOT NULL DEFAULT '',
           TextFontSize INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(ParentShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE,
           FOREIGN KEY(ParentMDSHOWindowID) REFERENCES MDSHOWindows(ID) ON DELETE CASCADE);
@@ -109,6 +101,14 @@ namespace MDSHO.Data {
           IsWrapText INTEGER NOT NULL DEFAULT 0,
           FontSize INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(ShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE);
+        CREATE TABLE IF NOT EXISTS History (
+          ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+          ShortcutID INTEGER NOT NULL,
+          Field TEXT NOT NULL,
+          Text TEXT NOT NULL,
+          KeptAt TEXT NOT NULL,
+          FOREIGN KEY(ShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE);
+        CREATE INDEX IF NOT EXISTS IX_History_ShortcutID_Field_KeptAt ON History(ShortcutID, Field, KeptAt);
         CREATE TABLE IF NOT EXISTS DefaultColors (
           Kind TEXT NOT NULL PRIMARY KEY,
           BorderColor TEXT NOT NULL,
@@ -381,8 +381,34 @@ namespace MDSHO.Data {
         if (!ColumnExists(conn, "Shortcuts", "TextFontSize")) {
           Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN TextFontSize INTEGER NOT NULL DEFAULT 0;");
         }
+      }),
+      new DbMigration(24, "Text history table: History rows from Shortcuts.TextPrevious1/2 and CommentPrevious1/2, then those columns dropped", conn => {
+        Execute(conn, @"CREATE TABLE IF NOT EXISTS History (
+          ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+          ShortcutID INTEGER NOT NULL,
+          Field TEXT NOT NULL,
+          Text TEXT NOT NULL,
+          KeptAt TEXT NOT NULL,
+          FOREIGN KEY(ShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE);");
+        Execute(conn, "CREATE INDEX IF NOT EXISTS IX_History_ShortcutID_Field_KeptAt ON History(ShortcutID, Field, KeptAt);");
+        // The older copy first, so it gets the lower ID; empty copies are skipped.
+        foreach ((string field, string column) in new[] { ("Text", "TextPrevious2"), ("Text", "TextPrevious1"), ("Comment", "CommentPrevious2"), ("Comment", "CommentPrevious1") }) {
+          if (ColumnExists(conn, "Shortcuts", column) && ColumnExists(conn, "Shortcuts", column + "Time")) {
+            Execute(conn, "INSERT INTO History (ShortcutID, Field, Text, KeptAt) SELECT ID, '" + field + "', " + column + ", " + column + "Time "
+              + "FROM Shortcuts WHERE " + column + " <> '' ORDER BY ID;");
+          }
+        }
+        foreach (string column in OldHistoryColumns) {
+          if (ColumnExists(conn, "Shortcuts", column)) {
+            Execute(conn, "ALTER TABLE Shortcuts DROP COLUMN " + column + ";");
+          }
+        }
       })
     };
+
+    /// <summary>The two earlier copies of database versions 22 and 23, moved into History by version 24.</summary>
+    internal static readonly string[] OldHistoryColumns = { "TextPrevious1", "TextPrevious1Time", "TextPrevious2", "TextPrevious2Time",
+      "CommentPrevious1", "CommentPrevious1Time", "CommentPrevious2", "CommentPrevious2Time" };
 
     /// <summary>Adds ScreenSetups.LastUsed if missing. The 1.7.0 test build made version 17 without it.</summary>
     private static void AddScreenSetupsLastUsed(SqliteConnection conn) {

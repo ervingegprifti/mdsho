@@ -632,7 +632,7 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0, TextHistorySlots textHistory = null, TextHistorySlots commentHistory = null, long textFontSize = 0) {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0, long textFontSize = 0) {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -660,8 +660,6 @@ namespace MDSHO.ViewModels {
       this.commentFont = commentFont ?? NoteFonts.Default;
       this.commentFontSize = commentFontSize;
       this.textFontSize = textFontSize;
-      this.textHistory = textHistory ?? TextHistorySlots.Empty;
-      this.commentHistory = commentHistory ?? TextHistorySlots.Empty;
       this.NoteColors = noteColors ?? new NoteColors();
       UpdateTargetKind(false);
       // Events.
@@ -857,29 +855,42 @@ namespace MDSHO.ViewModels {
         OnPropertyChanged(nameof(TextFontSize));
       }
     }
-    private TextHistorySlots textHistory = TextHistorySlots.Empty;
-    /// <summary>The two earlier copies of the note's or snippet's text (the history menu).</summary>
-    public TextHistorySlots TextHistory => this.textHistory;
-    /// <summary>Saves the text history: the database first, then memory.</summary>
-    public void SaveTextHistory(TextHistorySlots history) {
-      history ??= TextHistorySlots.Empty;
-      DataStore.Shortcuts.UpdateTextHistory(this.ID, history);
-      if (history != this.textHistory) {
-        this.textHistory = history;
-        OnPropertyChanged(nameof(TextHistory));
-      }
+    /// <summary>The earlier copies of the text (<see cref="HistoryFields.Text"/>) or comment, newest first.</summary>
+    public IReadOnlyList<HistoryEntry> History(string field) {
+      return DataStore.History.Get(this.ID, field);
     }
-    private TextHistorySlots commentHistory = TextHistorySlots.Empty;
-    /// <summary>The two earlier copies of the comment (the history menu).</summary>
-    public TextHistorySlots CommentHistory => this.commentHistory;
-    /// <summary>Saves the comment history: the database first, then memory.</summary>
-    public void SaveCommentHistory(TextHistorySlots history) {
-      history ??= TextHistorySlots.Empty;
-      DataStore.Shortcuts.UpdateCommentHistory(this.ID, history);
-      if (history != this.commentHistory) {
-        this.commentHistory = history;
-        OnPropertyChanged(nameof(CommentHistory));
+
+    /// <summary>
+    /// Keeps a copy of the text (blank text counts as empty) with the time, unless the history is off (keep 0) or the
+    /// newest copy is the same text; then drops the oldest copies beyond the setting. Returns the new copy, or null.
+    /// </summary>
+    public HistoryEntry KeepHistory(string field, string text, DateTime now) {
+      int keep = TextHistorySetting.Keep;
+      if (keep == 0) {
+        return null;
       }
+      text = string.IsNullOrWhiteSpace(text) ? "" : text;
+      HistoryEntry newest = DataStore.History.Get(this.ID, field).FirstOrDefault();
+      if (newest != null && newest.Text == text) {
+        return null;
+      }
+      HistoryEntry entry = new HistoryEntry { ShortcutID = this.ID, Field = field, Text = text, KeptAt = TextHistory.Stamp(now) };
+      using (ITransactionScope tx = DataStore.BeginTransaction()) {
+        DataStore.History.Add(entry);
+        DataStore.History.Trim(this.ID, field, keep);
+        tx.Commit();
+      }
+      return entry;
+    }
+
+    /// <summary>Deletes one copy.</summary>
+    public void DeleteHistory(long id) {
+      DataStore.History.Delete(id);
+    }
+
+    /// <summary>Deletes every copy of the text or the comment.</summary>
+    public void ClearHistory(string field) {
+      DataStore.History.Clear(this.ID, field);
     }
     // True while SaveSnippetText sets the text it already wrote to the database.
     private bool savingSnippetText;

@@ -196,6 +196,13 @@ namespace MDSHO.Data {
         DataStore.Shortcuts.Add(s);
         shortcutIds[oldId] = s.ID;
       }
+      // Each history row goes with its button's new ID, oldest first; then every button keeps at most the setting.
+      foreach (HistoryEntry row in data.History) {
+        row.ID = 0;
+        row.ShortcutID = shortcutIds[row.ShortcutID];
+        DataStore.History.Add(row);
+      }
+      DataStore.History.TrimAll(TextHistorySetting.Keep);
       // Each note window place goes with its note's new ID; a place of a note not in the file is skipped.
       foreach (NoteWindowPlace place in data.NoteWindows) {
         if (shortcutIds.TryGetValue(place.ShortcutID, out long noteId)) {
@@ -407,6 +414,8 @@ namespace MDSHO.Data {
         }
         // Format 1 files have no note window places: the notes get default windows.
         d.NoteWindows = d.NoteWindows ?? new List<NoteWindowPlace>();
+        // Files from before database version 24 have no History rows: their shortcuts' earlier copies become rows.
+        d.History = d.History ?? d.Shortcuts.Where(s => s != null).SelectMany(PortabilityJson.LegacyHistoryOf).ToList();
         // Data from database version 20 or older has its text sizes in DIPs: convert them like the database upgrade.
         if (Manifest.SchemaVersion < NoteWindowPlace.FontSizeInPointsFromVersion) {
           foreach (NoteWindowPlace place in d.NoteWindows.Where(p => p != null)) {
@@ -417,7 +426,7 @@ namespace MDSHO.Data {
       }
 
       private void Validate() {
-        foreach (object row in Data.Windows.Cast<object>().Concat(Data.Clones).Concat(Data.Shortcuts).Concat(Data.NoteWindows)) {
+        foreach (object row in Data.Windows.Cast<object>().Concat(Data.Clones).Concat(Data.Shortcuts).Concat(Data.NoteWindows).Concat(Data.History)) {
           if (row == null) {
             throw new DataPortabilityException("data.json is not valid: it contains an empty record.");
           }
@@ -453,6 +462,14 @@ namespace MDSHO.Data {
           }
           if (!SafeExt.IsMatch(s.Ext)) {
             throw new DataPortabilityException("Shortcut " + s.ID + " has the file type \"" + s.Ext + "\". MDSHO imports only .lnk and .url files, so this file was not imported.");
+          }
+        }
+        foreach (HistoryEntry h in Data.History) {
+          if (!HistoryFields.IsKnown(h.Field)) {
+            throw new DataPortabilityException("data.json is not valid: a text history row has the field \"" + h.Field + "\" (it must be Text or Comment).");
+          }
+          if (!shortcuts.ContainsKey(h.ShortcutID)) {
+            throw new DataPortabilityException("A text history row belongs to shortcut " + h.ShortcutID + ", which is not in the file.");
           }
         }
         if (Data.DefaultColors != null) {

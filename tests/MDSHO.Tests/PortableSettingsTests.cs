@@ -15,8 +15,8 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// Export format 3 also carries the default colours and three settings: Window theme, the Bring panels to front
-  /// shortcut and Remember places for each screen setup. Only Replace applies them, and Replace also clears the
+  /// Export format 3 also carries the default colours and the portable settings: Window theme, the Bring panels to front
+  /// shortcut, Remember places for each screen setup and (from 1.22.0) how many earlier texts the text history keeps. Only Replace applies them, and Replace also clears the
   /// remembered screen setup places. Formats 1 and 2 have none of them, so the settings on this PC stay as they are.
   /// </summary>
   public class PortableSettingsTests : IDisposable {
@@ -134,11 +134,11 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void The_portable_setting_keys_are_the_ones_the_app_uses() {
-      Assert.Equal(new[] { Theme, Shortcut, Remember }, PortableSettings.Keys);
+      Assert.Equal(new[] { Theme, Shortcut, Remember, TextHistorySetting.SettingKey }, PortableSettings.Keys);
     }
 
     [Fact]
-    public void Export_writes_the_default_colours_and_the_three_settings_and_nothing_tied_to_this_pc() {
+    public void Export_writes_the_default_colours_and_the_portable_settings_and_nothing_tied_to_this_pc() {
       SeedSettings();
       DataStore.AppSettings.Set(Remember, "On");
       foreach (string key in PcOnlyKeys) { DataStore.AppSettings.Set(key, "x"); }
@@ -152,7 +152,7 @@ namespace MDSHO.Tests {
       Assert.True(colors.ContainsKey("Note"));
       Assert.Null(colors["Note"]); // never set: none
       JsonObject settings = data["settings"].AsObject();
-      Assert.Equal(new[] { Shortcut, Remember, Theme }, settings.Select(kv => kv.Key).OrderBy(k => k, StringComparer.Ordinal).ToArray());
+      Assert.Equal(new[] { Shortcut, Remember, TextHistorySetting.SettingKey, Theme }, settings.Select(kv => kv.Key).OrderBy(k => k, StringComparer.Ordinal).ToArray());
       Assert.Equal("Dark", (string)settings[Theme]);
       Assert.Equal("Ctrl+Alt+K", (string)settings[Shortcut]);
       Assert.Equal("On", (string)settings[Remember]);
