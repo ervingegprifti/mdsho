@@ -76,7 +76,7 @@
     /// <summary>Border colour of a new window.</summary>
     public const string DefaultWindowBorderColor = "#FF000000";
     /// <summary>Background colour of a new window.</summary>
-    public const string DefaultWindowBackgroundColor = "#99000000";
+    public const string DefaultWindowBackgroundColor = "#80000000";
     /// <summary>Text colour of a new window.</summary>
     public const string DefaultWindowTextColor = "#FFFFFFFF";
     /// <summary>Title bar background colour of a new window.</summary>
