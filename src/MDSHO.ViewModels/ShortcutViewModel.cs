@@ -632,7 +632,7 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0, TextHistorySlots textHistory = null, TextHistorySlots commentHistory = null) {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0, TextHistorySlots textHistory = null, TextHistorySlots commentHistory = null, long textFontSize = 0) {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -659,6 +659,7 @@ namespace MDSHO.ViewModels {
       this.textFont = textFont ?? NoteFonts.Default;
       this.commentFont = commentFont ?? NoteFonts.Default;
       this.commentFontSize = commentFontSize;
+      this.textFontSize = textFontSize;
       this.textHistory = textHistory ?? TextHistorySlots.Empty;
       this.commentHistory = commentHistory ?? TextHistorySlots.Empty;
       this.NoteColors = noteColors ?? new NoteColors();
@@ -843,6 +844,17 @@ namespace MDSHO.ViewModels {
       if (points != this.commentFontSize) {
         this.commentFontSize = points;
         OnPropertyChanged(nameof(CommentFontSize));
+      }
+    }
+    private long textFontSize;
+    /// <summary>The snippet's text size in whole points; 0 = <see cref="NoteWindowPlace.DefaultFontSize"/>.</summary>
+    public long TextFontSize => this.textFontSize;
+    /// <summary>Saves the snippet's text size in whole points: the database first, then memory.</summary>
+    public void SaveTextFontSize(long points) {
+      DataStore.Shortcuts.UpdateTextFontSize(this.ID, points);
+      if (points != this.textFontSize) {
+        this.textFontSize = points;
+        OnPropertyChanged(nameof(TextFontSize));
       }
     }
     private TextHistorySlots textHistory = TextHistorySlots.Empty;

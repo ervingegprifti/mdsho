@@ -20,8 +20,8 @@ double-click.
 
 To change the font of the text, click **Font** in the title bar and pick one. The snippet keeps its font. Snippets
 start in Courier New. The **Text size** button left of **Font** shows the size
-in points: click it to pick a size, or hold Ctrl and turn the mouse wheel to step through the same sizes. The size is
-only for editing; the editor starts at 12 pt each time.
+in points: click it to pick a size, or hold Ctrl and turn the mouse wheel to step through the same sizes. Each snippet
+keeps its own size.
 
 The snippet editor keeps two earlier versions of the text, like a note: click the clock (**Text history**) in its title bar and
 pick **Before** or **Earlier** to put one back.

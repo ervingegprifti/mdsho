@@ -570,6 +570,34 @@ namespace MDSHO.Tests {
       });
     }
 
+    // Each snippet keeps its own text size (1.21.1): it saves at once, from the menu or Ctrl+wheel.
+    [Fact]
+    public void The_snippet_editor_saves_the_size_at_once() {
+      WithButtons(f => {
+        TextEditWindow window = TextEditWindow.ForSnippet(f.Snippet);
+        Shown(window, () => {
+          Click(SizeItem(window.BuildSizeMenu(), "16 pt"));
+          Assert.Equal(16L, f.Snippet.TextFontSize);
+          Assert.Equal(16L, DataStore.Shortcuts.Get(f.Snippet.ID).TextFontSize);
+          Wheel(window, 120);
+          Assert.Equal(18L, DataStore.Shortcuts.Get(f.Snippet.ID).TextFontSize);
+          Assert.Equal(0L, DataStore.Shortcuts.Get(f.Snippet.ID).CommentFontSize);
+        });
+      });
+    }
+
+    [Fact]
+    public void The_snippet_editor_opens_at_the_saved_size() {
+      WithButtons(f => {
+        f.Snippet.SaveTextFontSize(18);
+        TextEditWindow window = TextEditWindow.ForSnippet(f.Snippet);
+        Shown(window, () => {
+          Assert.Equal("18 pt", Named<Button>(window, "ButtonSize").Content);
+          Assert.Equal(24, Text(window).FontSize, 6);
+        });
+      });
+    }
+
     [Fact]
     public void The_size_button_follows_the_note_title_text_colour() {
       WithButtons(f => {

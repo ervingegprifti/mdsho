@@ -88,6 +88,7 @@ namespace MDSHO.Data {
           CommentPrevious1Time TEXT NOT NULL DEFAULT '',
           CommentPrevious2 TEXT NOT NULL DEFAULT '',
           CommentPrevious2Time TEXT NOT NULL DEFAULT '',
+          TextFontSize INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(ParentShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE,
           FOREIGN KEY(ParentMDSHOWindowID) REFERENCES MDSHOWindows(ID) ON DELETE CASCADE);
 
@@ -374,6 +375,11 @@ namespace MDSHO.Data {
           if (!ColumnExists(conn, "Shortcuts", column)) {
             Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN " + column + " TEXT NOT NULL DEFAULT '';");
           }
+        }
+      }),
+      new DbMigration(23, "Snippet text sizes: Shortcuts.TextFontSize", conn => {
+        if (!ColumnExists(conn, "Shortcuts", "TextFontSize")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN TextFontSize INTEGER NOT NULL DEFAULT 0;");
         }
       })
     };

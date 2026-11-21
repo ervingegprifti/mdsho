@@ -73,6 +73,8 @@ namespace MDSHO.Core {
     public string CommentFont { get; set; } = NoteFonts.Default;
     /// <summary>The size of the comment's text in whole points; 0 = 12 pt.</summary>
     public long CommentFontSize { get; set; }
+    /// <summary>The size of a snippet's text in whole points; 0 = 12 pt (a note keeps its size with its window).</summary>
+    public long TextFontSize { get; set; }
     /// <summary>The note's or snippet's text before the last kept change ("Before" in the history menu).</summary>
     public string TextPrevious1 { get; set; } = "";
     /// <summary>When <see cref="TextPrevious1"/> was kept ("yyyy-MM-ddTHH:mm:ss" local time, or empty).</summary>

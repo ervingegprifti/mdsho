@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 22**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 23**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -103,6 +103,7 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `CommentPrevious1Time` | TEXT | NOT NULL | `''` | When `CommentPrevious1` was kept. Added in version 22. |
 | `CommentPrevious2` | TEXT | NOT NULL | `''` | The comment copy before that. Added in version 22. |
 | `CommentPrevious2Time` | TEXT | NOT NULL | `''` | When `CommentPrevious2` was kept. Added in version 22. |
+| `TextFontSize` | INTEGER | NOT NULL | `0` | The text size of a snippet in whole points (8 to 72); `0` = 12 pt. A note keeps its size in `NoteWindows.FontSize`. Added in version 23. |
 
 ### NoteWindows
 
@@ -258,6 +259,7 @@ that worked.
 | 20 | 1.20.0 | `Shortcuts.TextFont` (`TEXT NOT NULL DEFAULT 'Courier New'`): the font of each note and snippet, so existing ones switch to Courier New. Copies, exports and backups carry it (still export format 3); older exports import with Courier New. |
 | 21 | 1.20.2 | `NoteWindows.FontSize` changes from DIPs to whole points: `0` stays `0` (the default, 12 pt), others become `round(DIPs × 0.75)` within 8 to 72 (12 → 9, 16 → 12, 22 → 17). Still export format 3: an import whose manifest has `schemaVersion` 20 or lower converts its sizes the same way. |
 | 22 | 1.21.0 | `Shortcuts.CommentFont` (`TEXT NOT NULL DEFAULT 'Courier New'`) and `Shortcuts.CommentFontSize` (`INTEGER NOT NULL DEFAULT 0`): each comment keeps its own font and text size. The text history: `TextPrevious1`, `TextPrevious2`, `CommentPrevious1` and `CommentPrevious2`, each with a `...Time` column (all `TEXT NOT NULL DEFAULT ''`). Copies, exports and backups carry them (still export format 3); older exports import with Courier New, 12 pt and no history. |
+| 23 | 1.21.1 | `Shortcuts.TextFontSize` (`INTEGER NOT NULL DEFAULT 0`): each snippet keeps its own text size. Copies, exports and backups carry it (still export format 3); older exports import with `0` (12 pt). |
 
 ### Backup before an upgrade
 

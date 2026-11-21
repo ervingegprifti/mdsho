@@ -64,6 +64,8 @@ namespace MDSHO.Core {
     void UpdateCommentFont(long id, string font);
     /// <summary>Saves the text size of a button's comment in whole points (0 = 12 pt).</summary>
     void UpdateCommentFontSize(long id, long points);
+    /// <summary>Saves the text size of a snippet in whole points (0 = 12 pt).</summary>
+    void UpdateTextFontSize(long id, long points);
     /// <summary>Saves the two earlier copies of a note's or snippet's text and their times.</summary>
     void UpdateTextHistory(long id, TextHistorySlots history);
     /// <summary>Saves the two earlier copies of a comment and their times.</summary>

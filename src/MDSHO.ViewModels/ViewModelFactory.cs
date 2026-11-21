@@ -115,7 +115,8 @@ namespace MDSHO.ViewModels {
         textHistory: new TextHistorySlots(shortcutRecord.TextPrevious1 ?? "", shortcutRecord.TextPrevious1Time ?? "",
           shortcutRecord.TextPrevious2 ?? "", shortcutRecord.TextPrevious2Time ?? ""),
         commentHistory: new TextHistorySlots(shortcutRecord.CommentPrevious1 ?? "", shortcutRecord.CommentPrevious1Time ?? "",
-          shortcutRecord.CommentPrevious2 ?? "", shortcutRecord.CommentPrevious2Time ?? ""));
+          shortcutRecord.CommentPrevious2 ?? "", shortcutRecord.CommentPrevious2Time ?? ""),
+        textFontSize: shortcutRecord.TextFontSize);
       foreach (Shortcut childRecord in shortcutRecord.Shortcuts) {
         ShortcutViewModel child = ShortcutToViewModel(appViewModel: appViewModel, parentShortcut: shortcut, shortcutRecord: childRecord);
         shortcut.Children.Add(child);
@@ -254,6 +255,7 @@ namespace MDSHO.ViewModels {
       template.TextFont = shortcut.TextFont;
       template.CommentFont = shortcut.CommentFont;
       template.CommentFontSize = shortcut.CommentFontSize;
+      template.TextFontSize = shortcut.TextFontSize;
       template.TextPrevious1 = shortcut.TextHistory.Previous1;
       template.TextPrevious1Time = shortcut.TextHistory.Previous1Time;
       template.TextPrevious2 = shortcut.TextHistory.Previous2;

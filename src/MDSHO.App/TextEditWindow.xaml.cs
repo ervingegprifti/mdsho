@@ -156,9 +156,9 @@ namespace MDSHO {
           shortcut.OwningWindow.Appearance.CommentWrapText = this.IsWrapText;
         }
       };
-      // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a comment with its button, and the
-      // snippet editor starts at 12 pt each time.
-      SetTextSize(kind == TextKind.Comment ? NoteWindowPlace.FontSizeOrDefault(shortcut.CommentFontSize) : NoteWindowPlace.DefaultFontSize);
+      // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a comment and a snippet with their button.
+      SetTextSize(kind == TextKind.Comment ? NoteWindowPlace.FontSizeOrDefault(shortcut.CommentFontSize)
+        : kind == TextKind.Snippet ? NoteWindowPlace.FontSizeOrDefault(shortcut.TextFontSize) : NoteWindowPlace.DefaultFontSize);
       this.TextComment.PreviewMouseWheel += TextComment_PreviewMouseWheel;
       this.PreviewKeyDown += Window_PreviewKeyDown;
       this.TextComment.PreviewMouseLeftButtonDown += TextComment_PreviewMouseLeftButtonDown;
@@ -698,7 +698,7 @@ namespace MDSHO {
       SaveTextSize();
     }
 
-    // A note saves its size with its window, a comment with its button; the snippet editor's size is only for editing.
+    // A note saves its size with its window, a comment and a snippet with their button.
     private void SaveTextSize() {
       if (this.kind == TextKind.Note) {
         SaveNotePlace();
@@ -708,6 +708,12 @@ namespace MDSHO {
         } catch (Exception ex) {
           // A size that can't be saved must never break the window.
           AppLog.Warning(ex, "Could not save the text size of a comment");
+        }
+      } else if (this.kind == TextKind.Snippet && this.shortcut.ID != 0) {
+        try {
+          this.shortcut.SaveTextFontSize(this.textPoints);
+        } catch (Exception ex) {
+          AppLog.Warning(ex, "Could not save the text size of a snippet");
         }
       }
     }
