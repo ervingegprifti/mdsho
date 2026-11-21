@@ -50,7 +50,7 @@ A note keeps two earlier versions of its text. When you start changing it after 
 removes a lot (half the text or more), the text you had becomes **Before**, and **Before** becomes
 **Earlier**.
 
-1. Click **H** (Text history) in the note's title bar.
+1. Click the clock (**Text history**) in the note's title bar.
 2. Each version shows when it was kept and its first line. Pick **Before** or **Earlier**.
 
 The note shows that text and saves it. The text you had becomes **Before**, so you can pick it back.

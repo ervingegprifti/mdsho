@@ -11,7 +11,7 @@ namespace MDSHO.ViewModels {
       nameof(DockRight), nameof(Shortcuts), nameof(Shortcut), nameof(Plus), nameof(Delete), nameof(Cut), nameof(Copy),
       nameof(Paste), nameof(Send), nameof(Database), nameof(Command), nameof(Bookmark), nameof(Share), nameof(Star),
       nameof(Folder), nameof(Globe), nameof(Warning), nameof(Run), nameof(Wizard), nameof(Info), nameof(Desktop), nameof(Brush),
-      nameof(Comment), nameof(Note), nameof(PinOff), nameof(PinOn), nameof(Ok), nameof(WrapText), nameof(Heart), nameof(Snippet), nameof(Font))]
+      nameof(Comment), nameof(Note), nameof(PinOff), nameof(PinOn), nameof(Ok), nameof(WrapText), nameof(Heart), nameof(Snippet), nameof(Font), nameof(Time))]
     private bool solidIcons;
 
     /// <summary>Icon font character of the MDSHO logo.</summary>
@@ -97,6 +97,9 @@ namespace MDSHO.ViewModels {
 
     /// <summary>The font icon: the font button in the title bar of notes and the snippet editor (added in font v1.21).</summary>
     public string Font { get { return this.SolidIcons ? UnicodeText.FromHex("e95c") : UnicodeText.FromHex("e95d"); } }
+
+    /// <summary>The time icon: the text history button in the title bar of notes, comments and snippets (added in font v1.22).</summary>
+    public string Time { get { return this.SolidIcons ? UnicodeText.FromHex("e95e") : UnicodeText.FromHex("e95f"); } }
 
     /// <summary>Icon font character for Info, used for the About window and the About menu items.</summary>
     public string Info { get { return this.SolidIcons ? UnicodeText.FromHex("e92a") : UnicodeText.FromHex("e92b"); } }

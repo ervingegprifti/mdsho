@@ -11,7 +11,7 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 ### Added
 
 - Comments have the Text size and Font buttons, like notes. Each comment keeps its own font and size.
-- Text history: the H button in notes, comments and snippets lists the two earlier versions of the text, with when each was kept. Pick one to put it back; the text you had becomes Before, so you can undo it.
+- Text history: the clock button in notes, comments and snippets lists the two earlier versions of the text, with when each was kept. Pick one to put it back; the text you had becomes Before, so you can undo it.
 
 ### Changed
 

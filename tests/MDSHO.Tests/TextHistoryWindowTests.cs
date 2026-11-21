@@ -12,7 +12,7 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// The History button ("H" for now) in the title bar of notes, comments and snippets: the window keeps a copy of the
+  /// The History button (the time icon) in the title bar of notes, comments and snippets: the window keeps a copy of the
   /// saved text when an editing burst starts, the menu lists Now, Before and Earlier, and a pick puts a copy back.
   /// </summary>
   public class TextHistoryWindowTests {
@@ -136,7 +136,8 @@ namespace MDSHO.Tests {
         TextEditWindow note = OpenNote(f.Note);
         Button history = Named(note, "ButtonHistory");
         Assert.Equal(Visibility.Visible, history.Visibility);
-        Assert.Equal("H", history.Content);
+        Assert.Equal(f.Win.Appearance.Icons.Time, history.Content);
+        Assert.Contains("MDSHOFont", history.FontFamily.Source);
         Assert.Equal("Text history", history.ToolTip);
         Assert.Equal("Text history", System.Windows.Automation.AutomationProperties.GetName(history));
         Assert.True(System.Windows.Shell.WindowChrome.GetIsHitTestVisibleInChrome(history));
@@ -147,6 +148,23 @@ namespace MDSHO.Tests {
           Assert.Equal(Visibility.Visible, h.Visibility);
           Assert.True(ColumnOf(h) < ColumnOf(Named(other, "ButtonClose")));
           Assert.True(ColumnOf(Named(other, "ButtonWrap")) < ColumnOf(h));
+        }
+      });
+    }
+
+    [Fact]
+    public void The_history_button_shows_the_time_icon_and_follows_the_icon_set() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        Button history = Named(window, "ButtonHistory");
+        f.Win.Appearance.Icons.SolidIcons = true;
+        WpfAppHost.Pump();
+        Assert.Equal("\uE95E", history.Content);
+        f.Win.Appearance.Icons.SolidIcons = false;
+        WpfAppHost.Pump();
+        Assert.Equal("\uE95F", history.Content);
+        foreach (TextEditWindow other in new[] { Show(TextEditWindow.ForComment(f.Command)), Show(TextEditWindow.ForSnippet(f.Snippet)) }) {
+          Assert.Equal("\uE95F", Named(other, "ButtonHistory").Content);
         }
       });
     }

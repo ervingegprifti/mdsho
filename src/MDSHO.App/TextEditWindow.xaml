@@ -108,8 +108,8 @@
                 <Button x:Name="ButtonColors" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Note colours" AutomationProperties.Name="Note colours" Visibility="Collapsed"/>
                 <Button x:Name="ButtonWrap" Grid.Column="4" Style="{StaticResource StyleTitleBarButton}" FontSize="14" ToolTip="Wrap text" AutomationProperties.Name="Wrap text"/>
-                <!--The history button opens the text history menu ("H" until it has its own icon).-->
-                <Button x:Name="ButtonHistory" Grid.Column="5" Style="{StaticResource StyleTitleBarButton}" FontFamily="Segoe UI" FontSize="14" Content="H"
+                <!--The history button (the time icon) opens the text history menu.-->
+                <Button x:Name="ButtonHistory" Grid.Column="5" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Text history" AutomationProperties.Name="Text history"/>
                 <Button x:Name="ButtonPin" Grid.Column="6" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Keep on top" AutomationProperties.Name="Keep on top" Visibility="Collapsed"/>

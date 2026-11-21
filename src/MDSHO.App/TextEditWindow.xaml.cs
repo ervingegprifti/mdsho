@@ -1119,6 +1119,7 @@ namespace MDSHO {
       this.ButtonColors.Content = icons.Brush;
       this.ButtonFont.Content = icons.Font;
       this.ButtonWrap.Content = icons.WrapText;
+      this.ButtonHistory.Content = icons.Time;
       this.ButtonPin.Content = this.Topmost ? icons.PinOn : icons.PinOff;
       this.Icon = GlyphIcon.Create(glyph);
     }

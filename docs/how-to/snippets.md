@@ -23,7 +23,7 @@ start in Courier New. The **Text size** button left of **Font** shows the size
 in points: click it to pick a size, or hold Ctrl and turn the mouse wheel to step through the same sizes. The size is
 only for editing; the editor starts at 12 pt each time.
 
-The snippet editor keeps two earlier versions of the text, like a note: click **H** (Text history) in its title bar and
+The snippet editor keeps two earlier versions of the text, like a note: click the clock (**Text history**) in its title bar and
 pick **Before** or **Earlier** to put one back.
 
 Hover over the snippet to see its name and its text. To name it after its text, right-click it and choose
