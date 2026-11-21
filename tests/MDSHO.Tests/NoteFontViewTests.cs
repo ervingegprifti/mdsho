@@ -401,6 +401,17 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
+    public void The_snippet_editor_has_the_comment_window_s_smallest_width() {
+      WithButtons(f => {
+        TextEditWindow window = TextEditWindow.ForSnippet(f.Snippet);
+        Shown(window, () => {
+          Assert.Equal(TextEditWindow.TextMinWidth, window.MinWidth);
+          Assert.True(window.ActualWidth >= TextEditWindow.TextMinWidth);
+        });
+      });
+    }
+
+    [Fact]
     public void A_comment_window_has_no_text_size_button() {
       WithButtons(f => {
         TextEditWindow window = TextEditWindow.ForComment(f.Command);

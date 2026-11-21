@@ -78,6 +78,11 @@ namespace MDSHO {
       return new TextEditWindow(shortcut, TextKind.Note);
     }
 
+    /// <summary>The smallest width of a Note window.</summary>
+    public const double NoteMinWidth = 460;
+    /// <summary>The smallest width of the Comment window and the snippet editor.</summary>
+    public const double TextMinWidth = 420;
+
     private TextEditWindow(ShortcutViewModel shortcut, TextKind kind) {
       InitializeComponent();
       this.shortcut = shortcut ?? throw new ArgumentNullException(nameof(shortcut));
@@ -97,8 +102,12 @@ namespace MDSHO {
         // A note is the main content, so its window is bigger; a comment keeps the smaller size.
         this.Width = 640;
         this.Height = 520;
-        this.MinWidth = 380;
+        this.MinWidth = NoteMinWidth;
         this.MinHeight = 300;
+      } else {
+        // The Comment window and the snippet editor share one smallest width, wide enough for their title bar buttons.
+        this.Width = TextMinWidth;
+        this.MinWidth = TextMinWidth;
       }
       // The editor has the window's colour (a note then follows its own colours).
       this.TextComment.Background = this.Background;

@@ -712,7 +712,8 @@ namespace MDSHO.Tests {
           Assert.Equal(640, window.Width);
           Assert.Equal(520, window.Height);
           // A note keeps its own smallest size.
-          Assert.Equal(380, window.MinWidth);
+          Assert.Equal(460, TextEditWindow.NoteMinWidth);
+          Assert.Equal(460, window.MinWidth);
           Assert.Equal(300, window.MinHeight);
           text.Text = "new text";
           PumpUntil(() => note.NoteText == "new text");
@@ -971,10 +972,11 @@ namespace MDSHO.Tests {
           Assert.Equal(TextWrapping.NoWrap, editor.TextWrapping);
           Assert.Equal(ScrollBarVisibility.Auto, editor.HorizontalScrollBarVisibility);
           Assert.Equal(ScrollBarVisibility.Auto, editor.VerticalScrollBarVisibility);
-          // A comment is short: its window is small (300 x 150), and may be made that small again by hand.
-          Assert.Equal(300, window.Width);
+          // A comment is short: its window is small (420 x 150, the same smallest width as the snippet editor).
+          Assert.Equal(420, TextEditWindow.TextMinWidth);
+          Assert.Equal(420, window.Width);
           Assert.Equal(150, window.Height);
-          Assert.Equal(300, window.MinWidth);
+          Assert.Equal(420, window.MinWidth);
           Assert.Equal(150, window.MinHeight);
         });
       });
