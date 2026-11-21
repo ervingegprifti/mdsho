@@ -288,10 +288,10 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_Halloween_picture_shows_its_60_percent_black_body_over_the_window_background() {
+    public void The_Halloween_picture_shows_its_50_percent_black_body_over_the_window_background() {
       WithPanel((window, w) => {
         Button halloween = Presets(window)[11];
-        Assert.Equal(Color.FromArgb(0x99, 0, 0, 0), ColorOf(Part<Border>(halloween, "PresetFrame").Background));
+        Assert.Equal(Color.FromArgb(0x80, 0, 0, 0), ColorOf(Part<Border>(halloween, "PresetFrame").Background));
         Assert.Equal(Colors.Black, ColorOf(Part<Border>(halloween, "PresetTitle").Background));
         // Nothing painted behind the frame: the window background shows through the body.
         foreach (Border border in WpfAppHost.VisualDescendants<Border>(halloween).Where(x => x.Name != "PresetFrame" && x.Name != "PresetTitle")) {
