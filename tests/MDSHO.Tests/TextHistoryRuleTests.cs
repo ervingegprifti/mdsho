@@ -1,14 +1,15 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using MDSHO.Core;
 using Xunit;
 
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// The text history rule (1.21.0): two earlier copies of a note's, snippet's or comment's text. The saved text moves
-  /// down at most once per editing burst; a burst starts with the first change after the window opens or after 10
-  /// minutes without a change, and a single edit that removes a lot moves it at once.
+  /// The text history rule (1.21.0): two earlier copies of a note's, snippet's or comment's text. The text moves down
+  /// with the first change after the window opens, and at once for a single edit that removes a lot. Nothing is
+  /// time-based: a window kept open keeps no more copies however long it waits.
   /// </summary>
   public class TextHistoryRuleTests {
     private static readonly DateTime T0 = new DateTime(2026, 11, 21, 9, 0, 0);
@@ -18,31 +19,31 @@ namespace MDSHO.Tests {
     [Fact]
     public void The_first_change_after_the_window_opens_keeps_a_copy() {
       TextHistoryTracker tracker = new TextHistoryTracker();
-      Assert.True(tracker.OnChange(T0, removedLength: 0, lengthBefore: 10));
+      Assert.True(tracker.OnChange(removedLength: 0, lengthBefore: 10));
     }
 
     [Fact]
-    public void More_typing_in_the_same_burst_keeps_no_more_copies() {
+    public void More_typing_keeps_no_more_copies() {
       TextHistoryTracker tracker = new TextHistoryTracker();
-      tracker.OnChange(T0, 0, 10);
+      tracker.OnChange(0, 10);
       for (int i = 1; i < 50; i++) {
-        Assert.False(tracker.OnChange(T0.AddSeconds(i * 20), 1, 10 + i));
+        Assert.False(tracker.OnChange(1, 10 + i));
       }
     }
 
     [Fact]
-    public void A_window_kept_open_all_day_keeps_a_copy_after_each_10_minute_pause() {
-      TextHistoryTracker tracker = new TextHistoryTracker();
-      Assert.True(tracker.OnChange(T0, 0, 10));
-      // Typing every 9 minutes is one long burst.
-      Assert.False(tracker.OnChange(T0.AddMinutes(9), 0, 11));
-      Assert.False(tracker.OnChange(T0.AddMinutes(18), 0, 12));
-      // A 10 minute pause starts a new burst.
-      Assert.True(tracker.OnChange(T0.AddMinutes(28), 0, 13));
-      Assert.False(tracker.OnChange(T0.AddMinutes(29), 0, 14));
-      // Hours later, the same.
-      Assert.True(tracker.OnChange(T0.AddHours(6), 0, 15));
-      Assert.Equal(TimeSpan.FromMinutes(10), TextHistory.BurstPause);
+    public void Nothing_is_time_based() {
+      // The tracker has no clock: only what an edit does decides.
+      Assert.DoesNotContain(typeof(TextHistoryTracker).GetMethods().SelectMany(m => m.GetParameters()), p => p.ParameterType == typeof(DateTime) || p.ParameterType == typeof(TimeSpan));
+      Assert.DoesNotContain(typeof(TextHistory).GetFields(), f => f.FieldType == typeof(TimeSpan));
+    }
+
+    [Fact]
+    public void A_new_tracker_for_a_reopened_window_keeps_a_copy_again() {
+      TextHistoryTracker first = new TextHistoryTracker();
+      first.OnChange(0, 10);
+      Assert.False(first.OnChange(0, 11));
+      Assert.True(new TextHistoryTracker().OnChange(0, 11));
     }
 
     [Theory]
@@ -52,26 +53,26 @@ namespace MDSHO.Tests {
     [InlineData(1, 1)]
     public void A_single_edit_that_removes_a_lot_keeps_a_copy_at_once_mid_burst(int lengthBefore, int removed) {
       TextHistoryTracker tracker = new TextHistoryTracker();
-      tracker.OnChange(T0, 0, lengthBefore);
-      Assert.True(tracker.OnChange(T0.AddSeconds(5), removed, lengthBefore));
+      tracker.OnChange(0, lengthBefore);
+      Assert.True(tracker.OnChange(removed, lengthBefore));
     }
 
     [Theory]
     [InlineData(100, 49)]
     [InlineData(1000, 199)]
     [InlineData(0, 0)]
-    public void A_smaller_removal_is_part_of_the_burst(int lengthBefore, int removed) {
+    public void A_smaller_removal_keeps_no_copy(int lengthBefore, int removed) {
       TextHistoryTracker tracker = new TextHistoryTracker();
-      tracker.OnChange(T0, 0, lengthBefore);
-      Assert.False(tracker.OnChange(T0.AddSeconds(5), removed, lengthBefore));
+      tracker.OnChange(0, lengthBefore);
+      Assert.False(tracker.OnChange(removed, lengthBefore));
     }
 
     [Fact]
-    public void A_big_removal_does_not_end_the_burst_for_the_next_small_change() {
+    public void A_big_removal_does_not_make_the_next_small_change_keep_a_copy() {
       TextHistoryTracker tracker = new TextHistoryTracker();
-      tracker.OnChange(T0, 0, 100);
-      Assert.True(tracker.OnChange(T0.AddSeconds(5), 100, 100));
-      Assert.False(tracker.OnChange(T0.AddSeconds(6), 0, 0));
+      tracker.OnChange(0, 100);
+      Assert.True(tracker.OnChange(100, 100));
+      Assert.False(tracker.OnChange(0, 0));
     }
 
     // ---- Moving the copies down ----

@@ -10,13 +10,11 @@ namespace MDSHO.Core {
   }
 
   /// <summary>
-  /// The text history of notes, snippets and comments: the saved text moves to "Before" (and "Before" to "Earlier") when
-  /// an editing burst starts or a big removal happens (see <see cref="TextHistoryTracker"/>), and a copy can be picked
-  /// back, which keeps the text you had so the pick can be undone.
+  /// The text history of notes, snippets and comments: the text moves to "Before" (and "Before" to "Earlier") at the first
+  /// change after the window opens or for a big removal (see <see cref="TextHistoryTracker"/>), and a copy can be picked
+  /// back, which keeps the text you had so the pick can be undone. Nothing is time-based; the times are only labels.
   /// </summary>
   public static class TextHistory {
-    /// <summary>A change after this long without one starts a new editing burst.</summary>
-    public static readonly TimeSpan BurstPause = TimeSpan.FromMinutes(10);
     /// <summary>A single edit that removes at least this many characters keeps a copy at once.</summary>
     public const int BigRemovalLength = 200;
     /// <summary>How many characters of the first line the menu shows.</summary>
@@ -86,18 +84,17 @@ namespace MDSHO.Core {
   }
 
   /// <summary>
-  /// Decides, for one open window, when a change keeps a copy: the first change after the window opens, the first change
-  /// after <see cref="TextHistory.BurstPause"/> without one (so a window kept open all day still keeps copies), and at
-  /// once for a single edit that removes a lot.
+  /// Decides, for one open window, when a change keeps a copy: the first change after the window opens (each window,
+  /// also one MDSHO reopens at start, gets a new tracker), and at once for a single edit that removes a lot. No timers.
   /// </summary>
   public sealed class TextHistoryTracker {
-    private DateTime? lastChange;
+    private bool changed;
 
-    /// <summary>Called for each change of the text; true when the saved text should be kept now.</summary>
-    public bool OnChange(DateTime now, int removedLength, int lengthBefore) {
-      bool newBurst = this.lastChange == null || now - this.lastChange.Value >= TextHistory.BurstPause;
-      this.lastChange = now;
-      return newBurst || TextHistory.IsBigRemoval(removedLength, lengthBefore);
+    /// <summary>Called for each change of the text; true when the text before it should be kept now.</summary>
+    public bool OnChange(int removedLength, int lengthBefore) {
+      bool first = !this.changed;
+      this.changed = true;
+      return first || TextHistory.IsBigRemoval(removedLength, lengthBefore);
     }
   }
 }

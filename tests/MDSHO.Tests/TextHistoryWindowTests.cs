@@ -178,15 +178,56 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void A_window_kept_open_keeps_another_copy_after_a_10_minute_pause() {
+    public void A_window_kept_open_keeps_no_more_copies_however_long_it_waits() {
       WithButtons(f => {
         TextEditWindow window = OpenNote(f.Note);
         TypeAtEnd(window, " 1");
         Assert.True(window.SaveNoteNow());
-        f.Now = f.Now.AddMinutes(10);
+        f.Now = f.Now.AddHours(8);
         TypeAtEnd(window, " 2");
+        Assert.Equal("milk\r\neggs", f.Note.TextHistory.Previous1);
+        Assert.Equal("", f.Note.TextHistory.Previous2);
+      });
+    }
+
+    [Fact]
+    public void Closing_and_opening_the_note_again_keeps_a_copy_at_the_first_change() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        TypeAtEnd(window, " 1");
+        window.Close();
+        WpfAppHost.Pump();
+        TypeAtEnd(OpenNote(f.Note), " 2");
         Assert.Equal("milk\r\neggs 1", f.Note.TextHistory.Previous1);
         Assert.Equal("milk\r\neggs", f.Note.TextHistory.Previous2);
+      });
+    }
+
+    // A note window MDSHO opens by itself at start (after MDSHO or Windows restarted) counts as opened.
+    [Fact]
+    public void A_note_reopened_at_start_keeps_a_copy_at_its_first_change() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        TypeAtEnd(window, " 1");
+        Assert.Empty(TextEditWindow.SaveOpenNotesForExit());
+        TextEditWindow.IsExiting = true;
+        try {
+          window.Close();
+          WpfAppHost.Pump();
+        } finally {
+          TextEditWindow.IsExiting = false;
+        }
+        Assert.True(DataStore.NoteWindows.Get(f.Note.ID).IsOpen);
+        // The next start: everything is loaded from the database, as the app does, and the note window opens again.
+        AppViewModel next = ViewModelFactory.CreateAppViewModel(System.IO.Path.GetTempPath());
+        TextEditWindow.ReopenOpenNotes(next);
+        WpfAppHost.Pump();
+        TextEditWindow reopened = TextEditWindow.OpenNoteWindows.Single(w => w.Shortcut.ID == f.Note.ID);
+        Assert.NotSame(window, reopened);
+        TypeAtEnd(reopened, " 2");
+        Assert.Equal("milk\r\neggs 1", reopened.Shortcut.TextHistory.Previous1);
+        Assert.Equal("milk\r\neggs 1", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious1);
+        Assert.Equal("milk\r\neggs", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious2);
       });
     }
 

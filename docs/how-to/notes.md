@@ -46,8 +46,8 @@ with them.
 
 ## Go back to earlier text
 
-A note keeps two earlier versions of its text. When you start changing it (after opening the note, or after 10 minutes
-without a change), or when one change removes a lot, the text you had becomes **Before**, and **Before** becomes
+A note keeps two earlier versions of its text. When you start changing it after opening the note, or when one change
+removes a lot (half the text or more), the text you had becomes **Before**, and **Before** becomes
 **Earlier**.
 
 1. Click **H** (Text history) in the note's title bar.

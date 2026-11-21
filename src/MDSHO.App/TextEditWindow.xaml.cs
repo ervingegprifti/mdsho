@@ -773,7 +773,7 @@ namespace MDSHO {
 
     // ---- The text history ----
 
-    /// <summary>The clock of the text history. Tests replace it.</summary>
+    /// <summary>The clock for the times the text history shows (labels only). Tests replace it.</summary>
     public static Func<DateTime> Now = () => DateTime.Now;
 
     /// <summary>The history menu while it is open (or last open); null before the history button was clicked.</summary>
@@ -786,7 +786,7 @@ namespace MDSHO {
     private bool pickingHistory;
 
     // Every kind keeps two earlier copies of its text: the text before the change is kept as "Before" at the first change
-    // after the window opens, after 10 minutes without a change, and at once for an edit that removes a lot.
+    // after the window opens, and at once for an edit that removes a lot. Nothing is time-based.
     private void UseHistory() {
       this.historyLastText = this.TextComment.Text ?? "";
       this.ButtonHistory.Click += (s, e) => {
@@ -802,7 +802,7 @@ namespace MDSHO {
           return;
         }
         int removed = e.Changes.Sum(c => c.RemovedLength);
-        if (this.historyTracker.OnChange(Now(), removed, before.Length)) {
+        if (this.historyTracker.OnChange(removed, before.Length)) {
           KeepHistory(string.IsNullOrWhiteSpace(before) ? "" : before);
         }
       };
@@ -878,7 +878,7 @@ namespace MDSHO {
         this.pickingHistory = false;
       }
       // The pick counts as part of an editing burst, so typing right after it keeps no copy of the picked text.
-      this.historyTracker.OnChange(Now(), 0, 0);
+      this.historyTracker.OnChange(0, 0);
       SaveNoteNow();
     }
 
