@@ -334,6 +334,45 @@ namespace MDSHO.Tests {
       }));
     }
 
+    // Edit snippet... opens next to the panel the same way Comment... does: one shared placement.
+    [Theory]
+    [InlineData("comment")]
+    [InlineData("snippet")]
+    public void Comment_and_edit_snippet_open_beside_the_panel_level_with_the_button(string kind) {
+      WithButtons(f => WithView(f, (view, button) => {
+        ScreenInfo screen = new ScreenInfo("D1", new ScreenRect(0, 0, 1920, 1080), new ScreenRect(0, 0, 1920, 1040), 1.0, true);
+        CommentPlacementTests.WithFakes(screen, fake => {
+          fake.Rects[view] = new Rect(0, 0, 320, 1040);
+          fake.Rects[button] = new Rect(10, 300, 300, 24);
+          Func<TextEditWindow, bool?> oldShow = TextEditWindow.ShowTextDialog;
+          TextEditWindow shown = null;
+          TextEditWindow.ShowTextDialog = w => {
+            shown = w;
+            fake.Rects[w] = new Rect(0, 0, 420, 150);
+            w.ShowActivated = false;
+            w.Show();
+            WpfAppHost.Pump();
+            return null;
+          };
+          try {
+            view.Activate();
+            if (kind == "comment") {
+              TextEditWindow.ShowCommentFor(f.Command);
+            } else {
+              TextEditWindow.ShowSnippetFor(f.Command);
+            }
+            Assert.NotNull(shown);
+            Assert.Equal(kind == "snippet", shown.IsSnippetWindow);
+            Assert.Equal(new Point(320 + 20, 312 - 17), fake.Rects[shown].TopLeft);
+            Assert.Same(view, shown.Owner);
+          } finally {
+            TextEditWindow.ShowTextDialog = oldShow;
+            shown?.Close();
+          }
+        });
+      }));
+    }
+
     [Fact]
     public void The_marker_shows_only_on_buttons_with_a_comment() {
       WithButtons(f => WithView(f, (view, button) => {

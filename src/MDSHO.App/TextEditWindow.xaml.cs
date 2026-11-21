@@ -51,6 +51,9 @@ namespace MDSHO {
       return new TextEditWindow(shortcut, TextKind.Snippet);
     }
 
+    /// <summary>Shows a Comment window or snippet editor as a dialog. Tests replace it so no modal window blocks them.</summary>
+    public static Func<TextEditWindow, bool?> ShowTextDialog = w => w.ShowDialog();
+
     /// <summary>True for an Edit snippet window.</summary>
     public bool IsSnippetWindow => this.kind == TextKind.Snippet;
 
@@ -59,15 +62,21 @@ namespace MDSHO {
 
     /// <summary>Opens the Edit snippet window as a dialog beside the MDSHO window the button belongs to, like the Comment window.</summary>
     public static void ShowSnippetFor(ShortcutViewModel shortcut) {
+      ShowBesidePanel(shortcut, ForSnippet);
+    }
+
+    // Comment... and Edit snippet... open the same way: a dialog beside the panel, level with the button
+    // (see PlaceComment), or centred on the screen when the panel can't be found.
+    private static void ShowBesidePanel(ShortcutViewModel shortcut, Func<ShortcutViewModel, TextEditWindow> create) {
       try {
-        TextEditWindow window = ForSnippet(shortcut);
+        TextEditWindow window = create(shortcut);
         Window owner = RunCommandWindow.FindOwner(shortcut);
         if (owner != null) {
           PlaceComment(window, owner);
         } else {
           window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
         }
-        window.ShowDialog();
+        ShowTextDialog(window);
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
       }
@@ -217,18 +226,7 @@ namespace MDSHO {
 
     /// <summary>Opens the comment window as a dialog beside the MDSHO window the button belongs to, level with the button (see <see cref="PlaceComment"/>).</summary>
     public static void ShowCommentFor(ShortcutViewModel shortcut) {
-      try {
-        TextEditWindow window = ForComment(shortcut);
-        Window owner = RunCommandWindow.FindOwner(shortcut);
-        if (owner != null) {
-          PlaceComment(window, owner);
-        } else {
-          window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        }
-        window.ShowDialog();
-      } catch (Exception ex) {
-        ErrorDialog.ShowDialog(ex);
-      }
+      ShowBesidePanel(shortcut, ForComment);
     }
 
     /// <summary>
