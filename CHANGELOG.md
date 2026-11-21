@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.21.0]
+
+### Added
+
+- Comments have the Text size and Font buttons, like notes. Each comment keeps its own font and size.
+- Text history: the H button in notes, comments and snippets lists the two earlier versions of the text, with when each was kept. Pick one to put it back; the text you had becomes Before, so you can undo it.
+
+### Changed
+
+- Comments and snippets save by themselves while you type and when you close them, like notes. They have no OK button any more; Ctrl+Enter closes.
+- Comments start in Courier New at 12 pt.
+- The size label in the middle of the title bar is gone; the Text size button shows the size.
+- Edit snippet opens next to the panel, like Comment.
+- In the Run command Examples, each group is a "+" header and starts closed. Click it, or press Enter or Space, to open it.
+- Note windows are at least 460 wide; Comment windows and the snippet editor at least 420.
+- Autumn: Halloween has a 50% see-through body (it was 60%). Panels keep the colours they have.
+- Database version 22: comment fonts and sizes and the text history (backed up first). Older exports and backups import with the defaults. Export your data before installing if you may want to go back to an older version.
+
 ## [1.20.2]
 
 ### Changed
