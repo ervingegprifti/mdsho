@@ -797,15 +797,62 @@ namespace MDSHO {
       };
       this.TextComment.TextChanged += (s, e) => {
         string before = this.historyLastText;
-        this.historyLastText = this.TextComment.Text ?? "";
+        string text = this.TextComment.Text ?? "";
+        this.historyLastText = text;
         if (this.pickingHistory || this.shortcut.ID == 0) {
           return;
         }
         int removed = e.Changes.Sum(c => c.RemovedLength);
-        if (this.historyTracker.OnChange(removed, before.Length)) {
-          KeepHistory(string.IsNullOrWhiteSpace(before) ? "" : before);
+        bool start = this.historyTracker.OnChange(removed, before.Length);
+        if (this.historyKeptFrom != null && text == this.historyKeptText) {
+          // Back to the very text that was kept (a letter typed and deleted, an undone removal): take the copy back,
+          // so Before is never the same as the text, and keep it again if the text changes once more.
+          TextHistorySlots undo = this.historyKeptFrom;
+          this.historyPending = this.historyKeptText;
+          this.historyKeptFrom = null;
+          RestoreHistory(undo);
+          return;
+        }
+        if (start && TextHistory.IsBigRemoval(removed, before.Length)) {
+          // A big removal keeps the text from before it at once (and a copy still waiting, when it differs).
+          TextHistorySlots undo = this.historyKeptFrom ?? CurrentHistory;
+          if (this.historyPending != null && this.historyPending != before) {
+            KeepHistory(this.historyPending);
+          }
+          KeepHistory(Normalized(before));
+          this.historyKeptFrom = undo;
+          this.historyKeptText = before;
+          this.historyPending = null;
+        } else if (start && this.historyPending == null && this.historyKeptFrom == null) {
+          // The first change: remember the text, and keep it once the text really differs from it.
+          this.historyPending = before;
+        }
+        if (this.historyPending != null && text != this.historyPending) {
+          this.historyKeptFrom = CurrentHistory;
+          this.historyKeptText = this.historyPending;
+          KeepHistory(Normalized(this.historyPending));
+          this.historyPending = null;
         }
       };
+    }
+
+    // The text the first change started from, while it waits to differ; null otherwise.
+    private string historyPending;
+    // After a copy was kept: the history before it and the text that was kept, so going back to that text takes it back.
+    private TextHistorySlots historyKeptFrom;
+    private string historyKeptText;
+
+    private static string Normalized(string text) => string.IsNullOrWhiteSpace(text) ? "" : text;
+
+    private void RestoreHistory(TextHistorySlots history) {
+      if (history == CurrentHistory) {
+        return;
+      }
+      try {
+        SaveHistory(history);
+      } catch (Exception ex) {
+        AppLog.Warning(null, "The text history could not be saved: {ErrorType}", ex.GetType().FullName);
+      }
     }
 
     // A comment has its own history; a note and a snippet keep theirs in the text history.
@@ -879,6 +926,8 @@ namespace MDSHO {
       }
       // The pick counts as part of an editing burst, so typing right after it keeps no copy of the picked text.
       this.historyTracker.OnChange(0, 0);
+      this.historyPending = null;
+      this.historyKeptFrom = null;
       SaveNoteNow();
     }
 
@@ -1032,7 +1081,7 @@ namespace MDSHO {
         return null;
       } catch (Exception ex) {
         if (this.kind == TextKind.Snippet) {
-          // Never the value: it can be a password.
+          // A snippet's text never goes into the log.
           AppLog.Warning(null, "A snippet could not be saved: {ErrorType}", ex.GetType().FullName);
         } else {
           AppLog.Warning(ex, "A " + KindWord + " could not be saved");

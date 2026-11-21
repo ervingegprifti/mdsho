@@ -105,6 +105,14 @@ namespace MDSHO.Tests {
       WpfAppHost.Pump();
     }
 
+    // Deletes the last character, like Backspace.
+    private static void DeleteLast(TextEditWindow window) {
+      TextBox box = Text(window);
+      box.Select(box.Text.Length - 1, 1);
+      box.SelectedText = "";
+      WpfAppHost.Pump();
+    }
+
     // Selects all and types over it (a big removal).
     private static void TypeOverAll(TextEditWindow window, string text) {
       TextBox box = Text(window);
@@ -174,6 +182,49 @@ namespace MDSHO.Tests {
         TypeAtEnd(window, "\r\nbutter");
         Assert.Equal("milk\r\neggs", f.Note.TextHistory.Previous1);
         Assert.Equal("", f.Note.TextHistory.Previous2);
+      });
+    }
+
+    // Before must never equal the text: typing a letter and deleting it again keeps no copy.
+    [Fact]
+    public void Typing_a_letter_and_deleting_it_again_keeps_no_copy() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        TypeAtEnd(window, "x");
+        DeleteLast(window);
+        Assert.Equal("milk\r\neggs", Text(window).Text);
+        Assert.Equal(TextHistorySlots.Empty, f.Note.TextHistory);
+        Assert.Equal("", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious1);
+        window.Close();
+        WpfAppHost.Pump();
+        Assert.Equal(TextHistorySlots.Empty, f.Note.TextHistory);
+      });
+    }
+
+    [Fact]
+    public void After_an_undone_change_a_real_change_keeps_the_copy() {
+      WithButtons(f => {
+        TextEditWindow window = OpenNote(f.Note);
+        TypeAtEnd(window, "x");
+        DeleteLast(window);
+        TypeAtEnd(window, "\r\nbread");
+        Assert.Equal("milk\r\neggs", f.Note.TextHistory.Previous1);
+        Assert.Equal("milk\r\neggs", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious1);
+        Assert.NotEqual(Text(window).Text, f.Note.TextHistory.Previous1);
+      });
+    }
+
+    [Fact]
+    public void Undoing_a_big_removal_takes_its_copy_back() {
+      WithButtons(f => {
+        f.Note.SaveTextHistory(new TextHistorySlots("old", "2026-11-20T18:30:00", "", ""));
+        TextEditWindow window = OpenNote(f.Note);
+        TypeOverAll(window, "x");
+        Assert.Equal("milk\r\neggs", f.Note.TextHistory.Previous1);
+        Text(window).Text = "milk\r\neggs";
+        WpfAppHost.Pump();
+        Assert.Equal(new TextHistorySlots("old", "2026-11-20T18:30:00", "", ""), f.Note.TextHistory);
+        Assert.Equal("old", DataStore.Shortcuts.Get(f.Note.ID).TextPrevious1);
       });
     }
 
