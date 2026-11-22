@@ -27,8 +27,8 @@ namespace MDSHO.Core {
     }
 
     /// <summary>
-    /// "Today 14:05", "Yesterday 18:30", "19 Nov 16:44", or with the year when it is not this year; empty for no or a bad
-    /// time.
+    /// "Today 14:05:09", "Yesterday 14:05:09", "19 Nov 14:05:09", or "19 Nov 2025 14:05:09" when it is not this year;
+    /// empty for no or a bad time.
     /// </summary>
     public static string TimeLabel(string stamp, DateTime now) {
       if (!DateTime.TryParseExact(stamp, StampFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime time)) {
@@ -36,12 +36,12 @@ namespace MDSHO.Core {
       }
       CultureInfo en = CultureInfo.InvariantCulture;
       if (time.Date == now.Date) {
-        return "Today " + time.ToString("HH:mm", en);
+        return "Today " + time.ToString("HH:mm:ss", en);
       }
       if (time.Date == now.Date.AddDays(-1)) {
-        return "Yesterday " + time.ToString("HH:mm", en);
+        return "Yesterday " + time.ToString("HH:mm:ss", en);
       }
-      return time.Year == now.Year ? time.ToString("d MMM HH:mm", en) : time.ToString("d MMM yyyy HH:mm", en);
+      return time.Year == now.Year ? time.ToString("d MMM HH:mm:ss", en) : time.ToString("d MMM yyyy HH:mm:ss", en);
     }
 
     /// <summary>A copy in the menu: its time and its first line, "(empty)" for an empty text.</summary>
@@ -54,22 +54,26 @@ namespace MDSHO.Core {
       return when.Length == 0 ? first : when + "  ·  " + first;
     }
 
+    /// <summary>"↵" (U+21B5) after the first line when more lines follow.</summary>
+    public const string MoreLines = "\u21B5";
+
     /// <summary>
-    /// The first line that isn't blank, trimmed and cut to <see cref="FirstLineLength"/> characters. It ends in "…"
-    /// whenever the text goes on past what is shown: a longer line, or more text on a later line.
+    /// The first line that isn't blank, trimmed: a short line as it is; a longer line cut to its first
+    /// <see cref="FirstLineLength"/> characters (spaces at the cut trimmed) then "…", so "…" only ever means the line was
+    /// cut; when more lines follow, a space and "↵" after that. Empty for no text.
     /// </summary>
     public static string FirstLine(string text) {
       string[] lines = (text ?? "").Split('\n');
       for (int i = 0; i < lines.Length; i++) {
-        string trimmed = lines[i].Trim();
-        if (trimmed.Length == 0) {
+        string line = lines[i].Trim();
+        if (line.Length == 0) {
           continue;
         }
-        if (trimmed.Length > FirstLineLength) {
-          return trimmed.Substring(0, FirstLineLength - 1) + "…";
+        if (line.Length > FirstLineLength) {
+          line = line.Substring(0, FirstLineLength).TrimEnd() + "…";
         }
         bool more = lines.Skip(i + 1).Any(l => !string.IsNullOrWhiteSpace(l));
-        return more ? trimmed + "…" : trimmed;
+        return more ? line + " " + MoreLines : line;
       }
       return "";
     }

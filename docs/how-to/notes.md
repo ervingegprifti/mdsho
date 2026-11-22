@@ -51,8 +51,8 @@ it, when you leave the window after changing it (you click elsewhere, minimise o
 one change removes a lot (half the text or more).
 
 1. Click the clock (**Text history**) in the note's title bar.
-2. The newest version is at the top. Each shows when it was kept (**Today 14:05**, **Yesterday 18:30**, **19 Nov
-   16:44**) and its first line. Pick one.
+2. The newest version is at the top. Each shows when it was kept (**Today 14:05:09**, **Yesterday 18:30:00**,
+   **19 Nov 16:44:00**) and its first line, with **…** when the line goes on and **↵** when more lines follow. Pick one.
 
 The note shows that text and saves it. The text you had is kept first, so you can pick it back. Picking never drops
 an earlier version: you can step through them all one by one, and each keeps its time and place in the list (only the

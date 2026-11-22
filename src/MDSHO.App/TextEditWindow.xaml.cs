@@ -944,7 +944,7 @@ namespace MDSHO {
 
     /// <summary>
     /// The history menu: a small "Text history" label, Now (ticked) with its first line, a separator, the copies newest
-    /// first ("Today 14:05  ·  first line"), then a separator and Clear history... (greyed out when there are none).
+    /// first ("Today 14:05:09  ·  first line"), then a separator and Clear history... (greyed out when there are none).
     /// </summary>
     public System.Windows.Controls.ContextMenu BuildHistoryMenu() {
       System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();

@@ -499,7 +499,7 @@ namespace MDSHO.Tests {
         Assert.IsType<Separator>(all[2]);
         Assert.IsType<Separator>(all[6]);
         List<MenuItem> items = Items(menu);
-        Assert.Equal(new[] { "Text history", "Now  ·  milk…", "Today 08:05  ·  Old list…", "Yesterday 18:30  ·  (empty)", "19 Nov 16:44  ·  x…", "Clear history..." },
+        Assert.Equal(new[] { "Text history", "Now  ·  milk ↵", "Today 08:05:00  ·  Old list ↵", "Yesterday 18:30:00  ·  (empty)", "19 Nov 16:44:00  ·  x ↵", "Clear history..." },
           items.Select(i => (string)i.Header).ToArray());
         Assert.False(items[0].IsEnabled);
         Assert.True(items[1].IsChecked);

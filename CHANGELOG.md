@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.22.2]
+
+### Changed
+
+- The text history menu shows the time to the second and up to 40 characters of the first line: "…" when the line is cut, "↵" when more lines follow.
+
 ## [1.22.1]
 
 ### Fixed
