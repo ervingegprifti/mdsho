@@ -212,10 +212,10 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_tooltip_shows_the_name_the_text_and_double_click_to_paste() {
+    public void The_tooltip_shows_double_click_to_paste_then_the_text_and_never_the_name() {
       ShortcutViewModel clip = NewSnippet();
       string nl = Environment.NewLine;
-      Assert.Equal("Home address" + nl + "Main Street 12" + nl + "1000 Sample Town" + nl + nl + "Double-click to paste", clip.ToolTipText);
+      Assert.Equal("Double-click to paste:" + nl + "Main Street 12" + nl + "1000 Sample Town", clip.ToolTipText);
       Assert.True(clip.HasToolTip);
     }
 
@@ -225,10 +225,10 @@ namespace MDSHO.Tests {
       List<string> changed = new List<string>();
       clip.PropertyChanged += (s, e) => changed.Add(e.PropertyName);
       win.Appearance.SingleClickToOpen = true;
-      Assert.EndsWith(Environment.NewLine + "Click to paste", clip.ToolTipText);
+      Assert.StartsWith("Click to paste:" + Environment.NewLine, clip.ToolTipText);
       Assert.Contains(nameof(ShortcutViewModel.ToolTipText), changed);
       win.Appearance.SingleClickToOpen = false;
-      Assert.EndsWith(Environment.NewLine + "Double-click to paste", clip.ToolTipText);
+      Assert.StartsWith("Double-click to paste:" + Environment.NewLine, clip.ToolTipText);
     }
 
     [Fact]
@@ -240,7 +240,7 @@ namespace MDSHO.Tests {
       List<string> changed = new List<string>();
       clip.PropertyChanged += (s, e) => changed.Add(e.PropertyName);
       win.Appearance.SingleClickToOpen = true;
-      Assert.EndsWith("Click to paste", clip.ToolTipText);
+      Assert.StartsWith("Click to paste:", clip.ToolTipText);
       Assert.Contains(nameof(ShortcutViewModel.ToolTipText), changed);
     }
 
@@ -254,10 +254,11 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void An_empty_snippet_shows_the_name_and_the_hint() {
+    public void An_empty_snippet_shows_the_hint_and_a_grey_empty() {
       ShortcutViewModel clip = NewSnippet(value: "");
       string nl = Environment.NewLine;
-      Assert.Equal("Home address" + nl + nl + "Double-click to paste", clip.ToolTipText);
+      Assert.Equal("Double-click to paste:" + nl + "(empty)", clip.ToolTipText);
+      Assert.True(Assert.Single(clip.ToolTipLines).IsGrey);
     }
 
     [Fact]

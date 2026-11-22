@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.23.0]
+
+### Changed
+
+- A new button tooltip: grey labels ("Opens:", "Runs:", "Double-click to paste:"), no button name, note and snippet lines cut to one row, "… N more lines" past 10 lines, and the comment last after a grey "Comment:".
+
+## [1.22.2]
+
+### Changed
+
+- The text history menu shows the time to the second and up to 40 characters of the first line: "…" when the line is cut, "↵" when more lines follow.
+
+## [1.22.1]
+
+### Fixed
+
+- Picking an earlier text no longer drops the oldest one or moves the others: you can step through them all.
+
+## [1.22.0]
+
+### Added
+
+- Text history keeps up to 10 earlier texts (set 0 to 50 in Settings, on the General page; 0 turns it off).
+- Clear history at the bottom of the text history menu.
+
+### Changed
+
+- The text history also keeps a copy when you leave a window after changing it.
+- The menu shows when each text was kept: Today, Yesterday or the date.
+- A copied button starts with no history.
+- Database version 24: the text history moves to its own table (backed up first). Older exports and backups import their two earlier texts. Export your data before installing if you may want to go back to an older version.
+
 ## [1.21.1]
 
 ### Fixed

@@ -18,6 +18,8 @@
     IAppSettingsRepository AppSettings { get; }
     /// <summary>Screen setups and window places on this PC.</summary>
     IScreenSetupRepository ScreenSetups { get; }
+    /// <summary>The History table.</summary>
+    IHistoryRepository History { get; }
     /// <summary>Begin a transaction scope (joins the current one on this thread, if any).</summary>
     ITransactionScope BeginTransaction();
     /// <summary>Create the database if missing and apply every pending schema migration (with a backup first).

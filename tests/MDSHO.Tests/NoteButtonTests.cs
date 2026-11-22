@@ -575,7 +575,7 @@ namespace MDSHO.Tests {
     // ---- Tooltip ----
 
     [Fact]
-    public void The_tooltip_shows_the_first_ten_lines_of_the_note_and_the_comment_below() {
+    public void The_tooltip_shows_the_first_ten_lines_of_the_note_and_never_a_comment() {
       WithGroup(f => {
         ShortcutViewModel note = NewNoteInGroup(f);
         Assert.Null(note.ToolTipText);
@@ -584,7 +584,8 @@ namespace MDSHO.Tests {
         string[] lines = note.ToolTipText.Split(Environment.NewLine);
         Assert.Equal(11, lines.Length);
         Assert.Equal("step 10", lines[9]);
-        Assert.Equal("…", lines[10]);
+        Assert.Equal("… 2 more lines", lines[10]);
+        Assert.True(note.ToolTipLines[10].IsGrey);
         Assert.True(note.HasToolTip);
         // Notes have no comments: even a stored comment never shows.
         note.Comment = "Reviewed in May";

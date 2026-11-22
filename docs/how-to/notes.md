@@ -21,7 +21,7 @@ This page helps you keep short notes on a panel and open them in their own windo
 2. Open the button again to close the note.
 3. You can also right-click the button and choose **Edit note...**.
 
-Hover over a note's button to see its first lines.
+Hover over a note's button to see its first lines: up to 10, each cut to one row, then how many more lines there are.
 
 ## Name a note
 
@@ -46,14 +46,20 @@ with them.
 
 ## Go back to earlier text
 
-A note keeps two earlier versions of its text. When you start changing it after opening the note, or when one change
-removes a lot (half the text or more), the text you had becomes **Before**, and **Before** becomes
-**Earlier**.
+A note keeps up to 10 earlier versions of its text. A version is kept when you start changing the note after opening
+it, when you leave the window after changing it (you click elsewhere, minimise or close it, or MDSHO exits), and when
+one change removes a lot (half the text or more).
 
 1. Click the clock (**Text history**) in the note's title bar.
-2. Each version shows when it was kept and its first line. Pick **Before** or **Earlier**.
+2. The newest version is at the top. Each shows when it was kept (**Today 14:05:09**, **Yesterday 18:30:00**,
+   **19 Nov 16:44:00**) and its first line, with **…** when the line goes on and **↵** when more lines follow. Pick one.
 
-The note shows that text and saves it. The text you had becomes **Before**, so you can pick it back.
+The note shows that text and saves it. The text you had is kept first, so you can pick it back. Picking never drops
+an earlier version: you can step through them all one by one, and each keeps its time and place in the list (only the
+one shown is left out). **Clear history...** at the bottom deletes the earlier versions of this note after asking.
+
+To keep more or fewer, open a panel's **Settings**, choose **General** and set **earlier texts to keep** under
+**Text history** (0 to 50; 0 turns it off). A copied note starts with no history.
 
 ## Pick a font
 

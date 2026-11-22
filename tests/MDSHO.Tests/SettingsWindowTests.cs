@@ -50,7 +50,7 @@ namespace MDSHO.Tests {
     public void Settings_has_its_sections_and_no_colours() {
       WithSettings((window, w) => {
         List<string> headings = WpfAppHost.VisualDescendants<Label>(window).Select(l => l.Content as string).ToList();
-        Assert.Equal(new[] { "Icons appearance", "Window theme", "Other", "Keyboard shortcut", "Screen setups", "Backups" }, headings);
+        Assert.Equal(new[] { "Icons appearance", "Window theme", "Other", "Text history", "Keyboard shortcut", "Screen setups", "Backups" }, headings);
         Assert.Null(window.FindName("ListColorTargets"));
         Assert.Null(window.FindName("PickerColor"));
         Assert.Null(window.FindName("ButtonDefaultColours"));

@@ -225,10 +225,11 @@ namespace MDSHO.Tests {
               + Environment.NewLine + "documented" + Environment.NewLine + "  " + string.Join(Environment.NewLine + "  ", documented));
           }
         }
-        // Indexes as "name | table(column)".
+        // Indexes as "name | table(column, column)", the columns in index order.
         List<string> realIndexes = new List<string>();
         using (SqliteCommand cmd = new SqliteCommand(
-          "SELECT m.name, m.tbl_name, i.name FROM sqlite_master m, pragma_index_info(m.name) i WHERE m.type = 'index' AND m.name NOT LIKE 'sqlite_%' ORDER BY m.name", conn))
+          "SELECT m.name, m.tbl_name, (SELECT group_concat(name, ', ') FROM (SELECT name FROM pragma_index_info(m.name) ORDER BY seqno)) "
+          + "FROM sqlite_master m WHERE m.type = 'index' AND m.name NOT LIKE 'sqlite_%' ORDER BY m.name", conn))
         using (SqliteDataReader r = cmd.ExecuteReader()) {
           while (r.Read()) {
             realIndexes.Add(r.GetString(0) + " | " + r.GetString(1) + "(" + r.GetString(2) + ")");

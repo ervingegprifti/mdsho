@@ -122,6 +122,7 @@ namespace MDSHO.Data {
           data.NoteWindows = OldSchemaReader.NoteWindows();
           data.DefaultColors = OldSchemaReader.DefaultColors();
           data.Settings = OldSchemaReader.Settings();
+          data.History = OldSchemaReader.History();
         } else {
           data.Windows = DataStore.Windows.GetAll();
           data.Clones = DataStore.Clones.GetAll();
@@ -129,6 +130,7 @@ namespace MDSHO.Data {
           data.NoteWindows = DataStore.NoteWindows.GetAll();
           data.DefaultColors = PortableSettings.ReadDefaultColors();
           data.Settings = PortableSettings.Read();
+          data.History = DataStore.History.GetAll();
         }
         tx.Commit();
       }

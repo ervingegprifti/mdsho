@@ -93,38 +93,91 @@ namespace MDSHO.ViewModels {
     private bool isSelected;
     /// <summary>The comment on the shortcut, edited in the Comment window and shown in the tooltip.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasComment), nameof(CommentPreview), nameof(HasToolTip), nameof(ShowCommentDivider))]
+    [NotifyPropertyChangedFor(nameof(HasComment), nameof(CommentPreview), nameof(CommentMoreLines), nameof(HasToolTip), nameof(ShowCommentDivider))]
     private string comment;
     /// <summary>True when the comment has more than spaces and new lines; the view then shows the comment marker.</summary>
     public bool HasComment => !this.isNote && !string.IsNullOrWhiteSpace(this.comment);
     /// <summary>True when the button can have a comment: every button and group except notes (a note is text already).</summary>
     public bool ShowComment => !this.isNote;
-    /// <summary>How many comment lines the tooltip shows; more are cut and marked with "…".</summary>
+    /// <summary>How many lines of a note, snippet or comment the tooltip shows; past that, a grey "… N more lines".</summary>
     public const int CommentPreviewLines = 10;
-    /// <summary>The comment for the tooltip: at most <see cref="CommentPreviewLines"/> lines, then "…"; null without a comment.</summary>
+    /// <summary>The comment for the tooltip: at most <see cref="CommentPreviewLines"/> lines; null without a comment.</summary>
     public string CommentPreview {
       get {
         if (!this.HasComment) {
           return null;
         }
-        return Preview(this.comment);
+        return string.Join(Environment.NewLine, PreviewLines(this.comment).Take(CommentPreviewLines));
       }
     }
-    /// <summary>At most <see cref="CommentPreviewLines"/> lines of a text, then "…"; null for a text of only spaces.</summary>
-    private static string Preview(string text) {
+    /// <summary>"… N more lines" ("… 1 more line") when the comment has more than <see cref="CommentPreviewLines"/>; else null.</summary>
+    public string CommentMoreLines => this.HasComment ? MoreLines(PreviewLines(this.comment).Length) : null;
+    // The lines of a text with the blank lines at its start and end left out; none for a text of only spaces.
+    private static string[] PreviewLines(string text) {
       if (string.IsNullOrWhiteSpace(text)) {
-        return null;
+        return Array.Empty<string>();
       }
-      string[] lines = text.Trim().Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
-      if (lines.Length <= CommentPreviewLines) {
-        return string.Join(Environment.NewLine, lines);
-      }
-      return string.Join(Environment.NewLine, lines.Take(CommentPreviewLines)) + Environment.NewLine + "…";
+      return text.Trim().Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
     }
-    /// <summary>True when the tooltip has something to show: the target or command line, or the comment.</summary>
+    // "… N more lines" for the lines past CommentPreviewLines, or null.
+    private static string MoreLines(int count) {
+      int more = count - CommentPreviewLines;
+      return more <= 0 ? null : "… " + more + (more == 1 ? " more line" : " more lines");
+    }
+    // At most CommentPreviewLines lines, then a grey "… N more lines".
+    private static List<ToolTipLine> TipLines(string text) {
+      string[] lines = PreviewLines(text);
+      List<ToolTipLine> tip = lines.Take(CommentPreviewLines).Select(l => new ToolTipLine(l)).ToList();
+      string more = MoreLines(lines.Length);
+      if (more != null) {
+        tip.Add(new ToolTipLine(more, true));
+      }
+      return tip;
+    }
+    /// <summary>The grey label before the target or command line: "Opens:" for a link, file or folder, "Runs:" for a run command; else null.</summary>
+    public string ToolTipLabel {
+      get {
+        if (this.isGroup || this.isNote || this.isSnippet || string.IsNullOrEmpty(this.ToolTipValue)) {
+          return null;
+        }
+        return this.isProcessCommand ? "Runs:" : "Opens:";
+      }
+    }
+    /// <summary>The target or command line after <see cref="ToolTipLabel"/>; null for notes, snippets and groups.</summary>
+    public string ToolTipValue {
+      get {
+        if (this.isGroup || this.isNote || this.isSnippet) {
+          return null;
+        }
+        string value = this.isProcessCommand ? this.CommandLineText : this.Target;
+        return string.IsNullOrEmpty(value) ? null : value;
+      }
+    }
+    /// <summary>True when the tooltip starts with "Opens:" or "Runs:" and the target or command line.</summary>
+    public bool ShowToolTipTarget => this.ToolTipLabel != null;
+    /// <summary>A snippet's grey "Double-click to paste:" ("Click to paste:" when one click opens); else null.</summary>
+    public string ToolTipHint => this.isSnippet && !this.isGroup ? this.PasteHint + ":" : null;
+    /// <summary>
+    /// A note's or snippet's lines for the tooltip (each cut to one row by the view): at most
+    /// <see cref="CommentPreviewLines"/>, then a grey "… N more lines"; a grey "(empty)" for an empty snippet. Empty for
+    /// other buttons.
+    /// </summary>
+    public IReadOnlyList<ToolTipLine> ToolTipLines {
+      get {
+        if (this.isNote) {
+          return TipLines(this.noteText);
+        }
+        if (this.isSnippet && !this.isGroup) {
+          List<ToolTipLine> lines = TipLines(this.snippetText);
+          return lines.Count > 0 ? lines : new List<ToolTipLine> { new ToolTipLine("(empty)", true) };
+        }
+        return Array.Empty<ToolTipLine>();
+      }
+    }
+    /// <summary>True when the tooltip has something to show: the part before the comment, the run command error, or the comment.</summary>
     public bool HasToolTip => !string.IsNullOrEmpty(this.ToolTipText) || this.HasComment || this.HasRunCommandError;
-    /// <summary>True when the tooltip shows both the target or command line and the comment, with a divider between them.</summary>
-    public bool ShowCommentDivider => !string.IsNullOrEmpty(this.ToolTipText) && this.HasComment;
+    /// <summary>True when something comes before the comment in the tooltip, so a separator goes above it.</summary>
+    public bool ShowCommentDivider => (!string.IsNullOrEmpty(this.ToolTipText) || this.HasRunCommandError) && this.HasComment;
     /// <summary>True when the shortcut carries a colour mark.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowMark))]
@@ -449,28 +502,25 @@ namespace MDSHO.ViewModels {
       }
     }
     /// <summary>
-    /// The tooltip: for a run command the command line that will run (program, quoted when it contains a space, then the
-    /// resolved arguments); for a note the first lines of the note; for anything else the target.
+    /// The part of the tooltip before the comment as plain text, without the "Opens:" or "Runs:" label: for a run command
+    /// the command line that will run (program, quoted when it contains a space, then the resolved arguments); for a note
+    /// its lines; for a snippet how to paste, then its lines; for anything else the target. The view shows it from
+    /// <see cref="ToolTipLabel"/>, <see cref="ToolTipValue"/>, <see cref="ToolTipHint"/> and <see cref="ToolTipLines"/>.
     /// </summary>
     public string ToolTipText {
       get {
         if (this.isNote) {
-          return Preview(this.noteText);
+          IReadOnlyList<ToolTipLine> lines = this.ToolTipLines;
+          return lines.Count == 0 ? null : string.Join(Environment.NewLine, lines.Select(l => l.Text));
         }
         if (this.isSnippet && !this.isGroup) {
-          return SnippetToolTip();
+          return this.ToolTipHint + Environment.NewLine + string.Join(Environment.NewLine, this.ToolTipLines.Select(l => l.Text));
         }
         if (!this.isProcessCommand || this.isGroup) {
           return this.Target;
         }
         return this.CommandLineText;
       }
-    }
-    // The name, the snippet text (cut after 10 lines), then how to paste.
-    private string SnippetToolTip() {
-      string value = Preview(this.snippetText);
-      string nl = Environment.NewLine;
-      return (this.Name ?? "") + nl + (value == null ? "" : value + nl) + nl + this.PasteHint;
     }
     /// <summary>
     /// A run command's command line as its tooltip shows it and "Copy command to memory" copies it: the program (quoted
@@ -632,7 +682,7 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0, TextHistorySlots textHistory = null, TextHistorySlots commentHistory = null, long textFontSize = 0) {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0, long textFontSize = 0) {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -660,8 +710,6 @@ namespace MDSHO.ViewModels {
       this.commentFont = commentFont ?? NoteFonts.Default;
       this.commentFontSize = commentFontSize;
       this.textFontSize = textFontSize;
-      this.textHistory = textHistory ?? TextHistorySlots.Empty;
-      this.commentHistory = commentHistory ?? TextHistorySlots.Empty;
       this.NoteColors = noteColors ?? new NoteColors();
       UpdateTargetKind(false);
       // Events.
@@ -736,6 +784,14 @@ namespace MDSHO.ViewModels {
       } else if (e.PropertyName == nameof(this.ToolTipText) || e.PropertyName == nameof(this.HasRunCommandError)) {
         OnPropertyChanged(nameof(this.HasToolTip));
         OnPropertyChanged(nameof(this.ShowCommentDivider));
+        if (e.PropertyName == nameof(this.ToolTipText)) {
+          // The parts the tooltip shows are worked out from the same values.
+          OnPropertyChanged(nameof(this.ToolTipLabel));
+          OnPropertyChanged(nameof(this.ToolTipValue));
+          OnPropertyChanged(nameof(this.ShowToolTipTarget));
+          OnPropertyChanged(nameof(this.ToolTipHint));
+          OnPropertyChanged(nameof(this.ToolTipLines));
+        }
       }
     }
     #endregion EVENTS
@@ -857,29 +913,69 @@ namespace MDSHO.ViewModels {
         OnPropertyChanged(nameof(TextFontSize));
       }
     }
-    private TextHistorySlots textHistory = TextHistorySlots.Empty;
-    /// <summary>The two earlier copies of the note's or snippet's text (the history menu).</summary>
-    public TextHistorySlots TextHistory => this.textHistory;
-    /// <summary>Saves the text history: the database first, then memory.</summary>
-    public void SaveTextHistory(TextHistorySlots history) {
-      history ??= TextHistorySlots.Empty;
-      DataStore.Shortcuts.UpdateTextHistory(this.ID, history);
-      if (history != this.textHistory) {
-        this.textHistory = history;
-        OnPropertyChanged(nameof(TextHistory));
-      }
+    /// <summary>The earlier copies of the text (<see cref="HistoryFields.Text"/>) or comment, newest first.</summary>
+    public IReadOnlyList<HistoryEntry> History(string field) {
+      return DataStore.History.Get(this.ID, field);
     }
-    private TextHistorySlots commentHistory = TextHistorySlots.Empty;
-    /// <summary>The two earlier copies of the comment (the history menu).</summary>
-    public TextHistorySlots CommentHistory => this.commentHistory;
-    /// <summary>Saves the comment history: the database first, then memory.</summary>
-    public void SaveCommentHistory(TextHistorySlots history) {
-      history ??= TextHistorySlots.Empty;
-      DataStore.Shortcuts.UpdateCommentHistory(this.ID, history);
-      if (history != this.commentHistory) {
-        this.commentHistory = history;
-        OnPropertyChanged(nameof(CommentHistory));
+
+    /// <summary>
+    /// Keeps a copy of the text (blank text counts as empty) with the time, unless the history is off (keep 0) or the
+    /// newest copy is the same text; then drops the oldest copies beyond the setting. Returns the new copy, or null.
+    /// </summary>
+    public HistoryEntry KeepHistory(string field, string text, DateTime now) {
+      int keep = TextHistorySetting.Keep;
+      if (keep == 0) {
+        return null;
       }
+      text = string.IsNullOrWhiteSpace(text) ? "" : text;
+      HistoryEntry newest = DataStore.History.Get(this.ID, field).FirstOrDefault();
+      if (newest != null && newest.Text == text) {
+        return null;
+      }
+      HistoryEntry entry = new HistoryEntry { ShortcutID = this.ID, Field = field, Text = text, KeptAt = TextHistory.Stamp(now) };
+      using (ITransactionScope tx = DataStore.BeginTransaction()) {
+        DataStore.History.Add(entry);
+        DataStore.History.Trim(this.ID, field, keep);
+        tx.Commit();
+      }
+      return entry;
+    }
+
+    /// <summary>
+    /// A pick from the history, in one transaction and never trimming, so no copy is lost or moved: puts
+    /// <paramref name="restore"/> (the last picked copy, when the text is still that pick) back with its own time, or
+    /// else keeps <paramref name="current"/> by the same rules as <see cref="KeepHistory"/>; then deletes the picked copy.
+    /// Returns the copy added, or null.
+    /// </summary>
+    public HistoryEntry SwapHistory(string field, string current, HistoryEntry restore, long pickedID, DateTime now) {
+      HistoryEntry added = null;
+      if (restore != null) {
+        added = new HistoryEntry { ShortcutID = this.ID, Field = field, Text = restore.Text ?? "", KeptAt = restore.KeptAt };
+      } else if (TextHistorySetting.Keep > 0) {
+        string text = string.IsNullOrWhiteSpace(current) ? "" : current;
+        HistoryEntry newest = DataStore.History.Get(this.ID, field).FirstOrDefault();
+        if (newest == null || newest.Text != text) {
+          added = new HistoryEntry { ShortcutID = this.ID, Field = field, Text = text, KeptAt = TextHistory.Stamp(now) };
+        }
+      }
+      using (ITransactionScope tx = DataStore.BeginTransaction()) {
+        if (added != null) {
+          DataStore.History.Add(added);
+        }
+        DataStore.History.Delete(pickedID);
+        tx.Commit();
+      }
+      return added;
+    }
+
+    /// <summary>Deletes one copy.</summary>
+    public void DeleteHistory(long id) {
+      DataStore.History.Delete(id);
+    }
+
+    /// <summary>Deletes every copy of the text or the comment.</summary>
+    public void ClearHistory(string field) {
+      DataStore.History.Clear(this.ID, field);
     }
     // True while SaveSnippetText sets the text it already wrote to the database.
     private bool savingSnippetText;

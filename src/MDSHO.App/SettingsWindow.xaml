@@ -190,6 +190,15 @@
                                       ToolTip="Shows the MDSHO version after this window's title, for example MDSHO v1.5.1"
                                       IsChecked="{Binding Appearance.ShowVersionInTitle}" />
                         </StackPanel>
+
+                        <!--App-wide (exports carry it). Set in code; saved on Apply, which trims every history at once.-->
+                        <Label Content="Text history" Margin="0,16,0,10" Style="{StaticResource StyleSettingsCategory}"/>
+                        <StackPanel x:Name="PanelTextHistoryKeep" Orientation="Horizontal">
+                            <ComboBox x:Name="ComboTextHistoryKeep" MinWidth="56" VerticalAlignment="Center"
+                                      AutomationProperties.Name="Earlier texts to keep"/>
+                            <TextBlock x:Name="TextTextHistoryKeep" Text="earlier texts to keep" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TextTextHistoryHint" Style="{StaticResource StyleSettingsHint}" Text="For notes, snippets and comments. 0 turns it off."/>
                     </StackPanel>
                     <StackPanel x:Name="PageKeyboard" Style="{StaticResource StyleSettingsPage}" Tag="{Binding ElementName=PageItemKeyboard}">
                         <!--App-wide. DataContext is a ShortcutRecorder, set in code.-->

@@ -97,15 +97,15 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_preview_keeps_up_to_ten_lines_and_marks_the_cut() {
+    public void The_preview_keeps_up_to_ten_lines_and_counts_the_rest() {
       WithButtons(f => {
         f.Command.Comment = "one\r\ntwo";
         Assert.Equal("one" + Environment.NewLine + "two", f.Command.CommentPreview);
         f.Command.Comment = string.Join("\r\n", Enumerable.Range(1, 12).Select(i => "line " + i));
         string[] lines = f.Command.CommentPreview.Split(Environment.NewLine);
-        Assert.Equal(11, lines.Length);
+        Assert.Equal(10, lines.Length);
         Assert.Equal("line 10", lines[9]);
-        Assert.Equal("…", lines[10]);
+        Assert.Equal("… 2 more lines", f.Command.CommentMoreLines);
       });
     }
 
@@ -394,18 +394,21 @@ namespace MDSHO.Tests {
         f.Command.Comment = "Call Anna first.";
         WpfAppHost.Pump();
         ToolTip tip = Assert.IsType<ToolTip>(button.ToolTip);
-        tip.DataContext = f.Command;
-        tip.ApplyTemplate();
+        tip.PlacementTarget = button;
+        tip.IsOpen = true;
+        WpfAppHost.Pump();
         StackPanel panel = Assert.IsType<StackPanel>(tip.Content);
-        panel.DataContext = f.Command;
-        panel.Measure(new Size(1000, 1000));
         List<TextBlock> texts = panel.Children.OfType<TextBlock>().ToList();
-        Assert.Equal("cmd.exe /K ping SRV01", texts[0].Text);
+        string Shown(TextBlock t) => string.Concat(t.Inlines.OfType<System.Windows.Documents.Run>().Select(r => r.Text));
+        Assert.Equal("Runs: cmd.exe /K ping SRV01", Shown(texts[0]));
         Assert.Contains(panel.Children.OfType<Separator>(), s => s.Visibility == Visibility.Visible);
-        // texts[1] is the group-value error line, hidden without an error.
+        // texts[1] is the group-value error line, hidden without an error; texts[2] the snippet paste hint.
         Assert.NotEqual(Visibility.Visible, texts[1].Visibility);
-        Assert.Equal("Call Anna first.", texts[2].Text);
+        Assert.NotEqual(Visibility.Visible, texts[2].Visibility);
+        Assert.Equal("Comment: Call Anna first.", Shown(texts[3]));
         Assert.True(ToolTipService.GetIsEnabled(button));
+        tip.IsOpen = false;
+        WpfAppHost.Pump();
       }));
     }
   }

@@ -110,15 +110,21 @@ namespace MDSHO.Data {
     public Dictionary<string, ColorSet> DefaultColors { get; set; }
     /// <summary>The PortableSettings values, null for one never set (format 3); null in older files.</summary>
     public Dictionary<string, string> Settings { get; set; }
+    /// <summary>
+    /// The text history rows (database version 24); null in older files, whose shortcuts carry their two earlier copies
+    /// as textPrevious1/2 and commentPrevious1/2 instead (see <see cref="PortabilityJson.LegacyHistory"/>).
+    /// </summary>
+    public List<HistoryEntry> History { get; set; }
   }
 
   /// <summary>
-  /// The settings an export carries and a Replace import applies: Window theme, the Bring panels to front shortcut and
-  /// Remember places for each screen setup. Settings tied to this PC (backups, review prompt, last Settings page) stay out.
+  /// The settings an export carries and a Replace import applies: Window theme, the Bring panels to front shortcut,
+  /// Remember places for each screen setup and how many earlier texts the text history keeps. Settings tied to this PC
+  /// (backups, review prompt, last Settings page) stay out.
   /// </summary>
   public static class PortableSettings {
     /// <summary>Their AppSettings keys (the same as the SettingKey constants of the view models).</summary>
-    public static readonly string[] Keys = { "WindowTheme", "BringToFrontShortcut", "RememberScreenSetupPlaces" };
+    public static readonly string[] Keys = { "WindowTheme", "BringToFrontShortcut", "RememberScreenSetupPlaces", TextHistorySetting.SettingKey };
 
     /// <summary>The current value of each key; null when never saved.</summary>
     internal static Dictionary<string, string> Read() {
@@ -175,6 +181,29 @@ namespace MDSHO.Data {
 
     public static readonly JsonSerializerOptions Options = Create();
 
+    /// <summary>The JSON names of the two earlier copies files from database versions 22 and 23 carry on each shortcut.</summary>
+    internal static readonly string[] LegacyHistoryNames = { "textPrevious1", "textPrevious1Time", "textPrevious2", "textPrevious2Time",
+      "commentPrevious1", "commentPrevious1Time", "commentPrevious2", "commentPrevious2Time" };
+
+    /// <summary>
+    /// The earlier copies read from such a file, per shortcut, in the order of <see cref="LegacyHistoryNames"/> (never
+    /// written). The importer turns them into History rows.
+    /// </summary>
+    internal static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Shortcut, string[]> LegacyHistory =
+      new System.Runtime.CompilerServices.ConditionalWeakTable<Shortcut, string[]>();
+
+    /// <summary>The History rows for one shortcut of an older file: the older copy first; empty copies are skipped.</summary>
+    internal static IEnumerable<HistoryEntry> LegacyHistoryOf(Shortcut shortcut) {
+      if (!LegacyHistory.TryGetValue(shortcut, out string[] v)) {
+        yield break;
+      }
+      foreach ((string field, int i) in new[] { (HistoryFields.Text, 2), (HistoryFields.Text, 0), (HistoryFields.Comment, 6), (HistoryFields.Comment, 4) }) {
+        if (!string.IsNullOrEmpty(v[i])) {
+          yield return new HistoryEntry { ShortcutID = shortcut.ID, Field = field, Text = v[i], KeptAt = v[i + 1] ?? "" };
+        }
+      }
+    }
+
     private static JsonSerializerOptions Create() {
       DefaultJsonTypeInfoResolver resolver = new DefaultJsonTypeInfoResolver();
       // The children lists are not columns: the tree is rebuilt from the parent ids.
@@ -190,6 +219,21 @@ namespace MDSHO.Data {
             }
           };
           info.Properties.Add(legacyNotes);
+          // Database versions 22 and 23 kept two earlier copies on the shortcut: read them aside, never write them.
+          for (int i = 0; i < LegacyHistoryNames.Length; i++) {
+            int index = i;
+            JsonPropertyInfo legacy = info.CreateJsonPropertyInfo(typeof(string), LegacyHistoryNames[i]);
+            legacy.Set = (obj, value) => LegacyHistory.GetValue((Shortcut)obj, s => new string[LegacyHistoryNames.Length])[index] = (string)value;
+            info.Properties.Add(legacy);
+          }
+        }
+        // A history row is linked by its shortcut's ID; its own row ID is not written.
+        if (info.Type == typeof(HistoryEntry)) {
+          for (int i = info.Properties.Count - 1; i >= 0; i--) {
+            if (string.Equals(info.Properties[i].Name, "id", StringComparison.OrdinalIgnoreCase)) {
+              info.Properties.RemoveAt(i);
+            }
+          }
         }
         // A note window place is linked by its note's ID; its own row ID is not written.
         if (info.Type == typeof(NoteWindowPlace)) {

@@ -1,18 +1,12 @@
 using System;
 using System.Globalization;
+using System.Linq;
 
 namespace MDSHO.Core {
 
-  /// <summary>The two earlier copies of a text and when each was kept ("yyyy-MM-ddTHH:mm:ss" local time, or empty).</summary>
-  public sealed record TextHistorySlots(string Previous1, string Previous1Time, string Previous2, string Previous2Time) {
-    /// <summary>No copies yet.</summary>
-    public static readonly TextHistorySlots Empty = new TextHistorySlots("", "", "", "");
-  }
-
   /// <summary>
-  /// The text history of notes, snippets and comments: the text moves to "Before" (and "Before" to "Earlier") at the first
-  /// change after the window opens or for a big removal (see <see cref="TextHistoryTracker"/>), and a copy can be picked
-  /// back, which keeps the text you had so the pick can be undone. Nothing is time-based; the times are only labels.
+  /// The text history of notes, snippets and comments (the History table): what a big removal is, how a copy is stamped
+  /// and how the menu shows it. Nothing is time-based; the times are only labels.
   /// </summary>
   public static class TextHistory {
     /// <summary>A single edit that removes at least this many characters keeps a copy at once.</summary>
@@ -33,68 +27,55 @@ namespace MDSHO.Core {
     }
 
     /// <summary>
-    /// Keeps the saved text as "Before" and moves "Before" to "Earlier". Returns the same slots when the saved text is
-    /// empty or equals "Before" (nothing worth keeping).
+    /// "Today 14:05:09", "Yesterday 14:05:09", "19 Nov 14:05:09", or "19 Nov 2025 14:05:09" when it is not this year;
+    /// empty for no or a bad time.
     /// </summary>
-    public static TextHistorySlots Keep(string saved, TextHistorySlots slots, DateTime now) {
-      saved ??= "";
-      if (saved.Length == 0 || saved == slots.Previous1) {
-        return slots;
-      }
-      return new TextHistorySlots(saved, Stamp(now), slots.Previous1, slots.Previous1Time);
-    }
-
-    /// <summary>
-    /// Picks copy 1 ("Before") or 2 ("Earlier"): returns its text, to become the text now, and the slots after. The text
-    /// you had becomes "Before"; picking "Before" again undoes the pick.
-    /// </summary>
-    public static (string Text, TextHistorySlots Slots) Pick(int slot, string current, TextHistorySlots slots, DateTime now) {
-      current ??= "";
-      if (slot == 1) {
-        return (slots.Previous1, new TextHistorySlots(current, Stamp(now), slots.Previous2, slots.Previous2Time));
-      }
-      if (slot == 2) {
-        return (slots.Previous2, new TextHistorySlots(current, Stamp(now), slots.Previous1, slots.Previous1Time));
-      }
-      throw new ArgumentOutOfRangeException(nameof(slot));
-    }
-
-    /// <summary>"today 14:05", "20 Nov 18:30", or with the year when it is not this year; empty for no or a bad time.</summary>
     public static string TimeLabel(string stamp, DateTime now) {
       if (!DateTime.TryParseExact(stamp, StampFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime time)) {
         return "";
       }
       CultureInfo en = CultureInfo.InvariantCulture;
       if (time.Date == now.Date) {
-        return "today " + time.ToString("HH:mm", en);
+        return "Today " + time.ToString("HH:mm:ss", en);
       }
-      return time.Year == now.Year ? time.ToString("d MMM HH:mm", en) : time.ToString("d MMM yyyy HH:mm", en);
+      if (time.Date == now.Date.AddDays(-1)) {
+        return "Yesterday " + time.ToString("HH:mm:ss", en);
+      }
+      return time.Year == now.Year ? time.ToString("d MMM HH:mm:ss", en) : time.ToString("d MMM yyyy HH:mm:ss", en);
     }
 
-    /// <summary>The first line that isn't blank, trimmed and cut to <see cref="FirstLineLength"/> characters with "…".</summary>
+    /// <summary>A copy in the menu: its time and its first line, "(empty)" for an empty text.</summary>
+    public static string MenuLine(string keptAt, string text, DateTime now) {
+      string first = FirstLine(text);
+      if (first.Length == 0) {
+        first = "(empty)";
+      }
+      string when = TimeLabel(keptAt, now);
+      return when.Length == 0 ? first : when + "  ·  " + first;
+    }
+
+    /// <summary>"↵" (U+21B5) after the first line when more lines follow.</summary>
+    public const string MoreLines = "\u21B5";
+
+    /// <summary>
+    /// The first line that isn't blank, trimmed: a short line as it is; a longer line cut to its first
+    /// <see cref="FirstLineLength"/> characters (spaces at the cut trimmed) then "…", so "…" only ever means the line was
+    /// cut; when more lines follow, a space and "↵" after that. Empty for no text.
+    /// </summary>
     public static string FirstLine(string text) {
-      foreach (string line in (text ?? "").Split('\n')) {
-        string trimmed = line.Trim();
-        if (trimmed.Length > 0) {
-          return trimmed.Length <= FirstLineLength ? trimmed : trimmed.Substring(0, FirstLineLength - 1) + "…";
+      string[] lines = (text ?? "").Split('\n');
+      for (int i = 0; i < lines.Length; i++) {
+        string line = lines[i].Trim();
+        if (line.Length == 0) {
+          continue;
         }
+        if (line.Length > FirstLineLength) {
+          line = line.Substring(0, FirstLineLength).TrimEnd() + "…";
+        }
+        bool more = lines.Skip(i + 1).Any(l => !string.IsNullOrWhiteSpace(l));
+        return more ? line + " " + MoreLines : line;
       }
       return "";
-    }
-  }
-
-  /// <summary>
-  /// Decides, for one open window, when a change keeps a copy: the first change after the window opens (each window,
-  /// also one MDSHO reopens at start, gets a new tracker), and at once for a single edit that removes a lot. No timers.
-  /// </summary>
-  public sealed class TextHistoryTracker {
-    private bool changed;
-
-    /// <summary>Called for each change of the text; true when the text before it should be kept now.</summary>
-    public bool OnChange(int removedLength, int lengthBefore) {
-      bool first = !this.changed;
-      this.changed = true;
-      return first || TextHistory.IsBigRemoval(removedLength, lengthBefore);
     }
   }
 }
