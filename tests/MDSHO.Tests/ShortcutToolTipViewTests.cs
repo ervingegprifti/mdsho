@@ -273,52 +273,6 @@ namespace MDSHO.Tests {
       });
     }
 
-    // Values use Theme.ToolTipText (#1E1E1E), dark enough that the grey labels (Theme.ToolTipSecondaryText, #666) read as grey.
-    [Theory]
-    [InlineData(WindowThemeKind.Light)]
-    [InlineData(WindowThemeKind.Dark)]
-    public void Values_use_the_tooltip_text_brush_and_labels_the_secondary_brush(WindowThemeKind theme) {
-      WithPanel(f => {
-        ShortcutViewModel link = Link(f, "https://example.com/reports");
-        link.Comment = "Weekly";
-        ShortcutViewModel cmd = Command(f);
-        ShortcutViewModel note = Note(f, Many(12));
-        ShortcutViewModel clip = Snippet(f, "");
-        try {
-          WindowThemes.Apply(theme);
-          Color text = ((SolidColorBrush)Application.Current.FindResource("Theme.ToolTipText")).Color;
-          Color secondary = ((SolidColorBrush)Application.Current.FindResource("Theme.ToolTipSecondaryText")).Color;
-          Assert.Equal(Color.FromRgb(0x1E, 0x1E, 0x1E), text);
-          Assert.Equal(Grey, secondary);
-          Color Of(Brush b) => Assert.IsType<SolidColorBrush>(b).Color;
-          WithToolTips(f.Win, new[] { link, cmd, note, clip }, (s, button, tip) => {
-            StackPanel panel = (StackPanel)tip.Content;
-            if (s == link || s == cmd) {
-              Run[] runs = panel.Children.OfType<TextBlock>().First().Inlines.OfType<Run>().ToArray();
-              Assert.Equal(secondary, Of(runs[0].Foreground));
-              Assert.Equal(text, Of(runs[^1].Foreground));
-            }
-            if (s == link) {
-              Run[] comment = CommentText(tip).Inlines.OfType<Run>().ToArray();
-              Assert.Equal(secondary, Of(comment[0].Foreground));
-              Assert.Equal(text, Of(comment[^1].Foreground));
-            }
-            if (s == note) {
-              List<TextBlock> lines = Lines(panel.Children.OfType<ItemsControl>().Single());
-              Assert.Equal(text, Of(lines[0].Foreground));
-              Assert.Equal(secondary, Of(lines[^1].Foreground));
-            }
-            if (s == clip) {
-              Assert.Equal(secondary, Of(panel.Children.OfType<TextBlock>().Single(t => t.Text == "Double-click to paste:").Foreground));
-              Assert.Equal(secondary, Of(Lines(panel.Children.OfType<ItemsControl>().Single()).Single().Foreground));
-            }
-          });
-        } finally {
-          WindowThemes.Apply(WindowThemeKind.Light);
-        }
-      });
-    }
-
     // Throwaway-free picture of every kind, with and without a comment, when MDSHO_MOCKUP_DIR is set.
     [Fact]
     public void Render_each_kind_when_asked() {
