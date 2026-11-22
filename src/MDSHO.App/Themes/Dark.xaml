@@ -31,6 +31,8 @@
     <SolidColorBrush x:Key="Theme.Link" Color="#FF6CB6FF"/>
     <!-- Tooltips keep the Windows look in both themes, so this stays the light colour -->
     <SolidColorBrush x:Key="Theme.ToolTipSecondaryText" Color="#FF666666"/>
+    <!--The values in the button tooltip, dark against its light background so the grey labels read as grey-->
+    <SolidColorBrush x:Key="Theme.ToolTipText" Color="#FF1E1E1E"/>
 
     <!-- Inputs and lists -->
     <SolidColorBrush x:Key="Theme.InputBackground" Color="#FF2C2C2C"/>

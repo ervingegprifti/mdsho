@@ -113,9 +113,10 @@
                     <!--The button tooltip: grey labels, the values in the normal colour, never the button name. In order: "Opens:" or
                     "Runs:" and the target or command line (wraps), a run command's error in red, a snippet's grey paste hint, a note's
                     or snippet's lines (each cut to one row, at most 10, then a grey "… N more lines"), then the comment last below a
-                    separator when anything comes before it: a grey "Comment:" and the comment, wrapping under it.-->
+                    separator when anything comes before it: a grey "Comment:" and the comment, wrapping under it. The values use
+                    Theme.ToolTipText and the grey parts Theme.ToolTipSecondaryText.-->
                     <ToolTip x:Key="ShortcutToolTip" x:Shared="False">
-                        <StackPanel MaxWidth="420">
+                        <StackPanel MaxWidth="420" TextElement.Foreground="{DynamicResource Theme.ToolTipText}">
                             <TextBlock TextWrapping="Wrap" Visibility="{Binding ShowToolTipTarget, Converter={StaticResource BoolToVisibility}}"><Run Text="{Binding ToolTipLabel, Mode=OneWay}" Foreground="{DynamicResource Theme.ToolTipSecondaryText}"/><Run Text=" "/><Run Text="{Binding ToolTipValue, Mode=OneWay}" Style="{StaticResource StyleToolTipValue}"/></TextBlock>
                             <!--A run command's group-value syntax error, in red below the command line-->
                             <TextBlock Text="{Binding RunCommandError}" TextWrapping="Wrap" Margin="0,2,0,0" Foreground="{StaticResource ErrorBrush}"
