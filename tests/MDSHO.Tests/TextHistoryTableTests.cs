@@ -161,6 +161,59 @@ namespace MDSHO.Tests {
       Assert.Equal(new[] { "2" }, Texts(a, HistoryFields.Text));
     }
 
+    // ---- Picking a copy (1.22.1): SwapHistory never trims and never moves a copy ----
+
+    // A full list of 10 copies, "copy 1" newest (day 10) to "copy 10" oldest (day 1).
+    private static List<HistoryEntry> FullList(ShortcutViewModel s, string field) {
+      List<HistoryEntry> rows = new List<HistoryEntry>();
+      for (int i = 10; i >= 1; i--) {
+        HistoryEntry row = new HistoryEntry { ShortcutID = s.ID, Field = field, Text = "copy " + (11 - i), KeptAt = $"2026-11-{i:00}T10:00:00" };
+        DataStore.History.Add(row);
+        rows.Add(row);
+      }
+      return rows;
+    }
+
+    private static string[] Rows(ShortcutViewModel s, string field) => s.History(field).Select(h => h.Text + " @ " + h.KeptAt).ToArray();
+
+    [Fact]
+    public void A_swap_on_a_full_list_keeps_the_text_and_drops_only_the_picked_copy() {
+      ShortcutViewModel note = NewNote();
+      List<HistoryEntry> rows = FullList(note, HistoryFields.Text);
+      HistoryEntry kept = note.SwapHistory(HistoryFields.Text, "milk", null, rows[2].ID, now);
+      Assert.Equal(("milk", "2026-11-21T09:00:00"), (kept.Text, kept.KeptAt));
+      string[] expected = new[] { "milk @ 2026-11-21T09:00:00" }
+        .Concat(rows.Where((r, i) => i != 2).Select(r => r.Text + " @ " + r.KeptAt)).ToArray();
+      Assert.Equal(expected, Rows(note, HistoryFields.Text));
+      Assert.Contains("copy 10 @ 2026-11-01T10:00:00", Rows(note, HistoryFields.Text));
+    }
+
+    [Fact]
+    public void A_swap_puts_the_last_picked_copy_back_with_its_own_time() {
+      ShortcutViewModel note = NewNote();
+      List<HistoryEntry> rows = FullList(note, HistoryFields.Comment);
+      note.DeleteHistory(rows[4].ID);
+      HistoryEntry back = note.SwapHistory(HistoryFields.Comment, "copy 5", rows[4], rows[7].ID, now);
+      Assert.Equal(("copy 5", "2026-11-06T10:00:00"), (back.Text, back.KeptAt));
+      Assert.Equal(rows.Where((r, i) => i != 7).Select(r => r.Text + " @ " + r.KeptAt).ToArray(), Rows(note, HistoryFields.Comment));
+    }
+
+    [Fact]
+    public void A_swap_keeps_nothing_with_keep_0_or_when_the_text_equals_the_newest_copy() {
+      ShortcutViewModel note = NewNote();
+      List<HistoryEntry> rows = FullList(note, HistoryFields.Text);
+      Assert.Null(note.SwapHistory(HistoryFields.Text, "copy 1", null, rows[3].ID, now));
+      Assert.Equal(9, note.History(HistoryFields.Text).Count);
+      Assert.DoesNotContain(note.History(HistoryFields.Text), h => h.Text == "copy 4");
+      note.SwapHistory(HistoryFields.Text, "  \r\n", null, rows[5].ID, now);
+      Assert.Equal("", note.History(HistoryFields.Text)[0].Text);
+      TextHistorySetting.SetKeep(0);
+      HistoryEntry row = new HistoryEntry { ShortcutID = note.ID, Field = HistoryFields.Text, Text = "x", KeptAt = "2026-11-01T10:00:00" };
+      DataStore.History.Add(row);
+      Assert.Null(note.SwapHistory(HistoryFields.Text, "milk", null, row.ID, now));
+      Assert.Empty(DataStore.History.GetAll());
+    }
+
     [Fact]
     public void Deleting_the_button_deletes_its_history() {
       ShortcutViewModel a = NewNote();

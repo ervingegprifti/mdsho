@@ -883,6 +883,33 @@ namespace MDSHO.ViewModels {
       return entry;
     }
 
+    /// <summary>
+    /// A pick from the history, in one transaction and never trimming, so no copy is lost or moved: puts
+    /// <paramref name="restore"/> (the last picked copy, when the text is still that pick) back with its own time, or
+    /// else keeps <paramref name="current"/> by the same rules as <see cref="KeepHistory"/>; then deletes the picked copy.
+    /// Returns the copy added, or null.
+    /// </summary>
+    public HistoryEntry SwapHistory(string field, string current, HistoryEntry restore, long pickedID, DateTime now) {
+      HistoryEntry added = null;
+      if (restore != null) {
+        added = new HistoryEntry { ShortcutID = this.ID, Field = field, Text = restore.Text ?? "", KeptAt = restore.KeptAt };
+      } else if (TextHistorySetting.Keep > 0) {
+        string text = string.IsNullOrWhiteSpace(current) ? "" : current;
+        HistoryEntry newest = DataStore.History.Get(this.ID, field).FirstOrDefault();
+        if (newest == null || newest.Text != text) {
+          added = new HistoryEntry { ShortcutID = this.ID, Field = field, Text = text, KeptAt = TextHistory.Stamp(now) };
+        }
+      }
+      using (ITransactionScope tx = DataStore.BeginTransaction()) {
+        if (added != null) {
+          DataStore.History.Add(added);
+        }
+        DataStore.History.Delete(pickedID);
+        tx.Commit();
+      }
+      return added;
+    }
+
     /// <summary>Deletes one copy.</summary>
     public void DeleteHistory(long id) {
       DataStore.History.Delete(id);

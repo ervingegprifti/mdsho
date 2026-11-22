@@ -574,6 +574,108 @@ namespace MDSHO.Tests {
       });
     }
 
+    // ---- Picking on a full list (1.22.1): a pick never loses or moves a copy ----
+
+    // A full list of 10 copies, "copy 1" newest (day 10) to "copy 10" oldest (day 1), as "text @ time" newest first.
+    private static string[] FullList(ShortcutViewModel s, string field) {
+      for (int i = 1; i <= 10; i++) {
+        AddRow(s, field, "copy " + (11 - i), $"2026-11-{i:00}T10:00:00");
+      }
+      return Listed(s, field);
+    }
+
+    private static string[] Listed(ShortcutViewModel s, string field) => s.History(field).Select(h => h.Text + " @ " + h.KeptAt).ToArray();
+
+    // Picks each copy in turn without typing: every other copy stays with its own time, and your text stays on top.
+    private static void StepThroughAll(TextEditWindow window, ShortcutViewModel s, string field, string yours) {
+      string[] original = FullList(s, field);
+      string top = yours + " @ 2026-11-21T09:00:00";
+      for (int i = 0; i < 10; i++) {
+        Click(Row(window.BuildHistoryMenu(), "copy " + (i + 1)));
+        Assert.Equal("copy " + (i + 1), Text(window).Text);
+        Assert.Equal(new[] { top }.Concat(original.Where((r, j) => j != i)).ToArray(), Listed(s, field));
+      }
+      Assert.Equal("copy 10", Text(window).Text);
+    }
+
+    [Fact]
+    public void Picking_the_3rd_of_a_full_list_loses_no_copy() {
+      WithButtons(f => {
+        string[] original = FullList(f.Note, HistoryFields.Text);
+        TextEditWindow window = OpenNote(f.Note);
+        Click(Row(window.BuildHistoryMenu(), "copy 3"));
+        string[] now = Listed(f.Note, HistoryFields.Text);
+        Assert.Equal(10, now.Length);
+        Assert.Equal("milk\r\neggs @ 2026-11-21T09:00:00", now[0]);
+        Assert.Equal(original.Where((r, i) => i != 2), now.Skip(1));
+        Assert.Contains("copy 10 @ 2026-11-01T10:00:00", now);
+      });
+    }
+
+    [Fact]
+    public void Stepping_through_a_full_list_keeps_every_copy_in_its_place() {
+      WithButtons(f => StepThroughAll(OpenNote(f.Note), f.Note, HistoryFields.Text, "milk\r\neggs"));
+    }
+
+    [Fact]
+    public void Stepping_through_works_for_comments_and_snippets_too() {
+      WithButtons(f => {
+        StepThroughAll(Show(TextEditWindow.ForComment(f.Command)), f.Command, HistoryFields.Comment, "Call Anna first.");
+        StepThroughAll(Show(TextEditWindow.ForSnippet(f.Snippet)), f.Snippet, HistoryFields.Text, "Main Street 12");
+      });
+    }
+
+    [Fact]
+    public void Pick_type_pick_keeps_the_typed_text_and_not_the_earlier_pick() {
+      WithButtons(f => {
+        string[] original = FullList(f.Note, HistoryFields.Text);
+        TextEditWindow window = OpenNote(f.Note);
+        Click(Row(window.BuildHistoryMenu(), "copy 2"));
+        TypeAtEnd(window, " x");
+        f.Now = f.Now.AddMinutes(5);
+        Click(Row(window.BuildHistoryMenu(), "copy 4"));
+        Assert.Equal("copy 4", Text(window).Text);
+        string[] now = Listed(f.Note, HistoryFields.Text);
+        Assert.Equal(new[] { "copy 2 x @ 2026-11-21T09:05:00", "milk\r\neggs @ 2026-11-21T09:00:00" }
+          .Concat(original.Where((r, i) => i != 1 && i != 3)).ToArray(), now);
+      });
+    }
+
+    [Fact]
+    public void Closing_the_window_forgets_the_last_pick() {
+      WithButtons(f => {
+        FullList(f.Note, HistoryFields.Text);
+        TextEditWindow window = OpenNote(f.Note);
+        Click(Row(window.BuildHistoryMenu(), "copy 2"));
+        window.Close();
+        WpfAppHost.Pump();
+        f.Now = f.Now.AddMinutes(5);
+        window = OpenNote(f.Note);
+        Click(Row(window.BuildHistoryMenu(), "copy 4"));
+        Assert.Equal("copy 2 @ 2026-11-21T09:05:00", Listed(f.Note, HistoryFields.Text)[0]);
+      });
+    }
+
+    [Fact]
+    public void Clear_history_forgets_the_last_pick() {
+      WithButtons(f => {
+        FullList(f.Note, HistoryFields.Text);
+        TextEditWindow window = OpenNote(f.Note);
+        Click(Row(window.BuildHistoryMenu(), "copy 2"));
+        Func<string, string, bool> oldConfirm = Dialogs.Confirm;
+        try {
+          Dialogs.Confirm = (message, caption) => true;
+          Click(Items(window.BuildHistoryMenu()).Single(i => i.Tag as string == "Clear"));
+        } finally {
+          Dialogs.Confirm = oldConfirm;
+        }
+        AddRow(f.Note, HistoryFields.Text, "later", "2026-11-21T08:00:00");
+        f.Now = f.Now.AddMinutes(5);
+        Click(Row(window.BuildHistoryMenu(), "later"));
+        Assert.Equal(new[] { "copy 2 @ 2026-11-21T09:05:00" }, Listed(f.Note, HistoryFields.Text));
+      });
+    }
+
     // 50 copies: the menu scrolls like a normal menu instead of running off the screen.
     [Fact]
     public void A_menu_of_50_copies_scrolls() {

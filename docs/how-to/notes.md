@@ -54,8 +54,9 @@ one change removes a lot (half the text or more).
 2. The newest version is at the top. Each shows when it was kept (**Today 14:05**, **Yesterday 18:30**, **19 Nov
    16:44**) and its first line. Pick one.
 
-The note shows that text and saves it. The text you had is kept first, so you can pick it back. **Clear history...** at
-the bottom deletes the earlier versions of this note after asking.
+The note shows that text and saves it. The text you had is kept first, so you can pick it back. Picking never drops
+an earlier version: you can step through them all one by one, and each keeps its time and place in the list (only the
+one shown is left out). **Clear history...** at the bottom deletes the earlier versions of this note after asking.
 
 To keep more or fewer, open a panel's **Settings**, choose **General** and set **earlier texts to keep** under
 **Text history** (0 to 50; 0 turns it off). A copied note starts with no history.

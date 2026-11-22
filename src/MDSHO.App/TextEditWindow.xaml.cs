@@ -805,6 +805,9 @@ namespace MDSHO {
     // The copies the latest keep added and the text they were kept from: going back to exactly that text (a letter typed
     // and deleted, an undone big removal) takes them back and puts the run as it was.
     private HistoryUndo historyUndo;
+    // The copy the last pick put in the window (its text and its own time), until the text changes, the history is
+    // cleared or the window closes: picking again then puts it back in its place instead of keeping it as a new copy.
+    private HistoryEntry lastPick;
 
     private sealed class HistoryUndo {
       public List<HistoryEntry> Rows;
@@ -835,6 +838,7 @@ namespace MDSHO {
         if (this.pickingHistory || this.shortcut.ID == 0) {
           return;
         }
+        this.lastPick = null;
         OnHistoryChange(before, text, e.Changes.Sum(c => c.RemovedLength));
       };
       // Leaving the window ends the run of edits: focus moves away, it is minimised or closed, or MDSHO exits.
@@ -844,7 +848,10 @@ namespace MDSHO {
           KeepHistoryOnLeave();
         }
       };
-      this.Closing += (s, e) => KeepHistoryOnLeave();
+      this.Closing += (s, e) => {
+        KeepHistoryOnLeave();
+        this.lastPick = null;
+      };
     }
 
     private void OnHistoryChange(string before, string text, int removed) {
@@ -962,11 +969,15 @@ namespace MDSHO {
       return menu;
     }
 
-    /// <summary>Puts a copy back in the window and saves it; the text you had is kept first, so the pick can be undone.</summary>
+    /// <summary>
+    /// Puts a copy back in the window and saves it. The text you had is kept first, so the pick can be undone; when the
+    /// text is still the last pick (nothing typed since), that copy goes back with its own time instead, so stepping
+    /// through the list never loses or moves a copy.
+    /// </summary>
     public void PickHistory(HistoryEntry entry) {
+      HistoryEntry restore = this.lastPick != null && TextToSave() == this.lastPick.Text ? this.lastPick : null;
       try {
-        this.shortcut.KeepHistory(HistoryField, TextToSave(), Now());
-        this.shortcut.DeleteHistory(entry.ID);
+        this.shortcut.SwapHistory(HistoryField, TextToSave(), restore, entry.ID, Now());
       } catch (Exception ex) {
         AppLog.Warning(null, "The text history could not be saved: {ErrorType}", ex.GetType().FullName);
         ErrorDialog.ShowDialog("The text could not be put back.", ex);
@@ -985,6 +996,7 @@ namespace MDSHO {
       this.runAtOnce = false;
       this.anyRun = true;
       this.historyUndo = null;
+      this.lastPick = entry;
       SaveNoteNow();
     }
 
@@ -1005,6 +1017,7 @@ namespace MDSHO {
         return;
       }
       this.historyUndo = null;
+      this.lastPick = null;
     }
 
     // ---- The font button and menu ----
