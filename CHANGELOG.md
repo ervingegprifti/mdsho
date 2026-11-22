@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.23.0]
+
+### Changed
+
+- A new button tooltip: grey labels ("Opens:", "Runs:", "Double-click to paste:"), no button name, note and snippet lines cut to one row, "… N more lines" past 10 lines, and the comment last after a grey "Comment:".
+
 ## [1.22.2]
 
 ### Changed

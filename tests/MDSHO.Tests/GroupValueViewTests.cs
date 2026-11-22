@@ -38,11 +38,14 @@ namespace MDSHO.Tests {
               TreeViewItem item = WpfAppHost.VisualDescendants<TreeViewItem>(tree)
                 .Single(i => i.DataContext is ShortcutViewModel s && s.Name == name);
               Button button = WpfAppHost.VisualDescendants<Button>(item).First(b => b.DataContext == item.DataContext);
-              // The tooltip is a panel: its first line is the command line (the comment, if any, follows below a divider).
+              // The tooltip is a panel: its first line is "Runs:" and the command line (the comment, if any, follows below a divider).
               ToolTip tip = Assert.IsType<ToolTip>(button.ToolTip);
               StackPanel panel = Assert.IsType<StackPanel>(tip.Content);
               panel.DataContext = button.DataContext;
-              return panel.Children.OfType<TextBlock>().First().Text;
+              WpfAppHost.Pump();
+              System.Windows.Documents.Run[] runs = panel.Children.OfType<TextBlock>().First().Inlines.OfType<System.Windows.Documents.Run>().ToArray();
+              Assert.Equal("Runs:", runs[0].Text);
+              return runs[^1].Text;
             };
             // The visible red error line of the tooltip, or null.
             System.Func<string, TextBlock> errorOf = name => {

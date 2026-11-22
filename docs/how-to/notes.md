@@ -21,7 +21,7 @@ This page helps you keep short notes on a panel and open them in their own windo
 2. Open the button again to close the note.
 3. You can also right-click the button and choose **Edit note...**.
 
-Hover over a note's button to see its first lines.
+Hover over a note's button to see its first lines: up to 10, each cut to one row, then how many more lines there are.
 
 ## Name a note
 

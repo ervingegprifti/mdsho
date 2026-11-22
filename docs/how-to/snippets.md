@@ -26,7 +26,8 @@ keeps its own size.
 The snippet editor keeps earlier versions of the text, like a note: click the clock (**Text history**) in its title bar
 and pick one to put it back.
 
-Hover over the snippet to see its name and its text. To name it after its text, right-click it and choose
+Hover over the snippet to see how to paste it (**Double-click to paste:**, or **Click to paste:** when one click opens
+buttons) and its text, up to 10 lines. To name it after its text, right-click it and choose
 **Set name the same as value**.
 
 ## Paste a snippet
