@@ -86,7 +86,7 @@ namespace MDSHO.ViewModels {
     /// <summary>The brush icon (the colours button of a Note window and the Note colours window).</summary>
     public string Brush { get { return this.SolidIcons ? UnicodeText.FromHex("e932") : UnicodeText.FromHex("e933"); } }
 
-    /// <summary>The desktop icon (Find MDSHO lost windows and Find other lost windows in the tray menu).</summary>
+    /// <summary>The desktop icon (Bring MDSHO windows and Bring other windows to this screen, in the tray and panel title menus).</summary>
     public string Desktop { get { return this.SolidIcons ? UnicodeText.FromHex("e92e") : UnicodeText.FromHex("e92f"); } }
 
     /// <summary>The heart icon: Support MDSHO in About and the panel title menu (added in font v1.18).</summary>

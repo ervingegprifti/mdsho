@@ -57,10 +57,10 @@ namespace MDSHO.ViewModels {
       return desktopWindow;
     }
     /// <summary>
-    /// Find MDSHO lost windows: gathers every window and clone to the middle of <paramref name="screen"/> (the primary screen) at the
+    /// Bring MDSHO windows to this screen: gathers every window and clone to the middle of <paramref name="screen"/> at the
     /// initial size, each one slightly offset from the previous, so none is lost off screen.
     /// </summary>
-    public void FindWindows(MDSHO.Common.ScreenInfo screen) {
+    public void BringWindows(MDSHO.Common.ScreenInfo screen) {
       // Bounds in DIPs (screen bounds are physical pixels).
       MDSHO.Common.ScreenRect bounds = screen.BoundsDip;
       int offset = 0;

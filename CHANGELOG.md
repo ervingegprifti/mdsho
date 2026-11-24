@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.24.0]
+
+### Changed
+
+- "Find MDSHO lost windows" is now "Bring MDSHO windows to this screen".
+- "Find other lost windows" is now "Bring other windows to this screen" and moves every window of other apps, not only lost ones.
+- Both are also in each panel's title menu, where "this screen" is the panel's screen. From the tray it is the main screen.
+
 ## [1.23.0]
 
 ### Changed

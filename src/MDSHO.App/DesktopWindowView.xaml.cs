@@ -93,6 +93,8 @@ namespace MDSHO {
       this.MenuItemHeaderNewWindow.Click += MenuItemHeaderNewWindow_Click;
 			this.MenuItemHeaderDockWindowLeft.Click += MenuItemHeaderDockWindowLeft_Click;
       this.MenuItemHeaderDockWindowRight.Click += MenuItemHeaderDockWindowRight_Click;
+      this.MenuItemHeaderBringMdshoWindows.Click += MenuItemHeaderBringMdshoWindows_Click;
+      this.MenuItemHeaderBringOtherWindows.Click += MenuItemHeaderBringOtherWindows_Click;
 			this.MenuItemHeaderExportData.Click += MenuItemHeaderExportData_Click;
 			this.MenuItemHeaderImportData.Click += MenuItemHeaderImportData_Click;
 			this.MenuItemHeaderBrowseAppData.Click += MenuItemHeaderBrowseAppData_Click;
@@ -163,6 +165,13 @@ namespace MDSHO {
 			} catch (Exception ex) {
 				ErrorDialog.ShowDialog(ex);
 			}
+		}
+		// "This screen" is the screen this panel is on.
+		private void MenuItemHeaderBringMdshoWindows_Click(object sender, RoutedEventArgs e) {
+			App.BringMdshoWindows((this.DataContext as DesktopWindowViewModel)?.AppViewModel, WindowLookup.GetScreenFromWindow(this));
+		}
+		private void MenuItemHeaderBringOtherWindows_Click(object sender, RoutedEventArgs e) {
+			App.BringOtherWindows(WindowLookup.GetScreenFromWindow(this));
 		}
 		private void MenuItemHeaderDeleteWindow_Click(object sender, RoutedEventArgs e) {
       try {

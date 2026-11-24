@@ -31,7 +31,7 @@ namespace MDSHO.Helpers {
     public IShellLinkWriter LinkWriter { get; set; }
     /// <summary>Rate / Share MDSHO.</summary>
     public StoreActions StoreActions { get; set; }
-    /// <summary>The windows of other apps, for "Find other lost windows".</summary>
+    /// <summary>The windows of other apps, for "Bring other windows to this screen".</summary>
     public IOtherWindowsService OtherWindows { get; set; } = new OtherWindowsService();
     /// <summary>The global hotkey service.</summary>
     public IGlobalHotkeyService HotkeyService { get; set; } = new GlobalHotkeyService();
