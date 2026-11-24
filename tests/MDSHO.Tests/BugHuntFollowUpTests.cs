@@ -11,7 +11,7 @@ using Xunit;
 
 namespace MDSHO.Tests {
 
-  /// <summary>The open issues found by the 1.1.1 bug hunt: Alt+F4, Find MDSHO lost windows, a run command without a program.</summary>
+  /// <summary>The open issues found by the 1.1.1 bug hunt: Alt+F4, Bring MDSHO windows to this screen, a run command without a program.</summary>
   public class BugHuntFollowUpTests : IDisposable {
     private readonly TempDb db = new TempDb();
     private readonly AppViewModel app = new AppViewModel();
@@ -105,19 +105,19 @@ namespace MDSHO.Tests {
       });
     }
 
-    // ---- 2. Find MDSHO lost windows ----
+    // ---- 2. Bring MDSHO windows to this screen ----
 
     [Fact]
-    public void Find_windows_saves_the_new_positions_of_windows_and_clones() {
+    public void Bring_windows_saves_the_new_positions_of_windows_and_clones() {
       DesktopWindowViewModel second = app.AddWindow("GONE", 9000, 9000);
       win.CloneWindow("GONE2", 7000, 7000);
       DesktopWindowViewModel clone = win.Clones.Single();
       MDSHO.Common.ScreenRect bounds = new MDSHO.Common.ScreenRect(0, 0, 1920, 1080);
       MDSHO.Common.ScreenInfo primary = new MDSHO.Common.ScreenInfo("PRIMARY", bounds, bounds, 1.0, true);
 
-      app.FindWindows(primary);
+      app.BringWindows(primary);
 
-      // What a restart loads is where Find MDSHO lost windows put them.
+      // What a restart loads is where Bring MDSHO windows to this screen put them.
       foreach (DesktopWindowViewModel w in new[] { win, second }) {
         MDSHO.Core.DesktopWindow row = MDSHO.Data.DataStore.Windows.Get(w.ID);
         Assert.Equal((w.Left, w.Top, w.Width, w.Height, "PRIMARY"), (row.Left, row.Top, row.Width, row.Height, row.ScreenDeviceName));

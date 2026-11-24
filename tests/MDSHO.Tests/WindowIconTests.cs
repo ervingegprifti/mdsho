@@ -227,8 +227,8 @@ namespace MDSHO.Tests {
         using (System.Windows.Forms.ContextMenuStrip menu = App.CreateTrayMenu(null, () => icons)) {
           System.Collections.Generic.Dictionary<string, Func<IconGlyphs, string>> expected = new System.Collections.Generic.Dictionary<string, Func<IconGlyphs, string>> {
             ["New window"] = g => g.Plus,
-            ["Find MDSHO lost windows"] = g => g.Desktop,
-            ["Find other lost windows"] = g => g.Desktop,
+            ["Bring MDSHO windows to this screen"] = g => g.Desktop,
+            ["Bring other windows to this screen"] = g => g.Desktop,
             ["Export data..."] = g => g.Send,
             ["Import data..."] = g => g.Database,
             ["Browse app data"] = g => g.Folder,

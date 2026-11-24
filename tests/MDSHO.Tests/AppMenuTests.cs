@@ -63,39 +63,99 @@ namespace MDSHO.Tests {
     public void Tray_menu_has_no_rate_share_and_no_product_name() {
       // The separator after "Screen setups" has no text.
       Assert.Equal(new[] {
-        "Bring panels to front", "Screen setups", "", "New window", "Find MDSHO lost windows", "Find other lost windows", "Start with Windows", "Export data...", "Import data...", "Browse app data", "About", "Exit application"
+        "Bring panels to front", "Screen setups", "", "New window", "Bring MDSHO windows to this screen", "Bring other windows to this screen", "Start with Windows", "Export data...", "Import data...", "Browse app data", "About", "Exit application"
       }, TrayTexts());
     }
 
-    private sealed class FakeOtherWindows : IOtherWindowsService {
-      public List<OtherWindow> Windows { get; } = new List<OtherWindow>();
-      public List<IntPtr> Moved { get; } = new List<IntPtr>();
-      public IList<OtherWindow> List() { return Windows; }
-      public bool MoveTo(OtherWindow window, ScreenRect bounds) { Moved.Add(window.Handle); return true; }
+    /// <summary>Two screens: the primary one, and another where the mouse pointer and every window are.</summary>
+    private sealed class TwoScreens : IScreenService {
+      public static readonly ScreenRect PrimaryWork = new ScreenRect(0, 0, 1920, 1040);
+      public static readonly ScreenRect OtherWork = new ScreenRect(-2560, 0, 2560, 1400);
+      public readonly ScreenInfo Primary = new ScreenInfo("PRIMARY", new ScreenRect(0, 0, 1920, 1080), PrimaryWork, 1.0, true);
+      public readonly ScreenInfo Other = new ScreenInfo("OTHER", new ScreenRect(-2560, 0, 2560, 1440), OtherWork, 1.0, false);
+      public IList<ScreenInfo> AllScreens() { return new[] { Primary, Other }; }
+      public ScreenInfo PrimaryScreen() { return Primary; }
+      public ScreenInfo ScreenFromHandle(IntPtr windowHandle) { return Other; }
+      public ScreenInfo ScreenAtCursor() { return Other; }
     }
 
-    [Fact]
-    public void Tray_find_other_lost_windows_moves_the_lost_windows_and_says_how_many() {
+    /// <summary>
+    /// Runs <paramref name="click"/> with fake other windows and screens; gives what moved and the messages shown. The click
+    /// gets an action that puts the fake message box in place: call it right before clicking, since creating the App or a
+    /// temp database sets its own. An error window is recorded as a message instead of opening.
+    /// </summary>
+    private static (List<(IntPtr Handle, ScreenRect Bounds)> Moves, List<string> Shown) BringOtherWindows(Action<Action> click) {
       Action<string, string> oldShow = MDSHO.ViewModels.Dialogs.ShowMessage;
+      Action<ErrorWindow> oldError = ErrorDialog.ShowWindow;
       List<string> shown = new List<string>();
       try {
         using (FakeAppServices services = new FakeAppServices()) {
-          FakeOtherWindows windows = new FakeOtherWindows();
-          windows.Windows.Add(new OtherWindow((IntPtr)11, "Lost", new ScreenRect(-32000, -32000, 800, 600), false));
-          windows.Windows.Add(new OtherWindow((IntPtr)12, "Also lost", new ScreenRect(-32000, -32000, 640, 480), false));
+          BringWindowsTests.FakeOtherWindows windows = new BringWindowsTests.FakeOtherWindows();
+          windows.Windows.Add(new OtherWindow((IntPtr)11, "On a screen", new ScreenRect(100, 100, 800, 600), false));
+          windows.Windows.Add(new OtherWindow((IntPtr)12, "Lost", new ScreenRect(-32000, -32000, 640, 480), false));
           services.Services.OtherWindows = windows;
-          MDSHO.ViewModels.Dialogs.ShowMessage = (message, caption) => shown.Add(caption + "|" + message);
-          OnStaThread(() => {
-            using (System.Windows.Forms.ContextMenuStrip menu = App.CreateTrayMenu(null)) {
-              menu.Items.Cast<System.Windows.Forms.ToolStripItem>().Single(i => i.Text == "Find other lost windows").PerformClick();
-            }
-          });
-          Assert.Equal(new[] { (IntPtr)11, (IntPtr)12 }, windows.Moved);
+          services.Services.Screens = new TwoScreens();
+          ErrorDialog.ShowWindow = window => shown.Add("Error|" + window.Title);
+          click(() => MDSHO.ViewModels.Dialogs.ShowMessage = (message, caption) => shown.Add(caption + "|" + message));
+          return (windows.Moves, shown);
         }
       } finally {
         MDSHO.ViewModels.Dialogs.ShowMessage = oldShow;
+        ErrorDialog.ShowWindow = oldError;
       }
-      Assert.Equal(new[] { "Find other lost windows|Moved 2 windows to this screen." }, shown);
+    }
+
+    [Fact]
+    public void Tray_bring_other_windows_moves_every_window_to_the_primary_screen_and_says_how_many() {
+      var (moves, shown) = BringOtherWindows(fakeMessages => OnStaThread(() => {
+        using (System.Windows.Forms.ContextMenuStrip menu = App.CreateTrayMenu(null)) {
+          fakeMessages();
+          menu.Items.Cast<System.Windows.Forms.ToolStripItem>().Single(i => i.Text == "Bring other windows to this screen").PerformClick();
+        }
+      }));
+      // The tray only shows on the main taskbar, so "this screen" is the primary one, not the one with the mouse pointer.
+      Assert.Equal(new[] { (IntPtr)11, (IntPtr)12 }, moves.Select(m => m.Handle));
+      Assert.All(moves, m => Assert.True(TwoScreens.PrimaryWork.Contains(m.Bounds), m.Bounds + " is not on the primary screen"));
+      Assert.Equal(new[] { "Bring other windows to this screen|Moved 2 windows to this screen." }, shown);
+    }
+
+    [Fact]
+    public void Title_menu_bring_other_windows_moves_every_window_to_the_panel_screen() {
+      var (moves, shown) = BringOtherWindows(fakeMessages => WithTitleMenu((menu, view) => {
+        fakeMessages();
+        Item(menu, "MenuItemHeaderBringOtherWindows").RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+      }));
+      Assert.Equal(new[] { (IntPtr)11, (IntPtr)12 }, moves.Select(m => m.Handle));
+      Assert.All(moves, m => Assert.True(TwoScreens.OtherWork.Contains(m.Bounds), m.Bounds + " is not on the panel's screen"));
+      Assert.Equal(new[] { "Bring other windows to this screen|Moved 2 windows to this screen." }, shown);
+    }
+
+    [Fact]
+    public void Title_menu_bring_mdsho_windows_gathers_the_panels_on_the_panel_screen() {
+      using (FakeAppServices services = new FakeAppServices()) {
+        TwoScreens screens = new TwoScreens();
+        services.Services.Screens = screens;
+        WithTitleMenu((menu, view) => {
+          DesktopWindowViewModel windowVm = (DesktopWindowViewModel)view.DataContext;
+          DesktopWindowViewModel second = windowVm.AppViewModel.AddWindow("GONE", 9000, 9000);
+          Item(menu, "MenuItemHeaderBringMdshoWindows").RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+          WpfAppHost.Pump();
+          foreach (DesktopWindowViewModel w in new[] { windowVm, second }) {
+            Assert.Equal("OTHER", w.ScreenDeviceName);
+            Assert.True(screens.Other.BoundsDip.Contains(new ScreenPoint(w.Left, w.Top)), "panel " + w.ID + " is not on the panel's screen");
+          }
+        });
+      }
+    }
+
+    [Fact]
+    public void Title_menu_has_the_bring_windows_group_between_dock_and_close_or_delete() {
+      WithTitleMenu((menu, view) => {
+        List<string> items = menu.Items.Cast<object>().Select(Describe).ToList();
+        int dockRight = items.IndexOf("Dock window right");
+        Assert.Equal(new[] { "Dock window right", "-", "Bring MDSHO windows to this screen", "Bring other windows to this screen", "-", "Close this clone", "Delete window" },
+          items.Skip(dockRight).Take(7).ToArray());
+      });
     }
 
     [Fact]
@@ -158,8 +218,8 @@ namespace MDSHO.Tests {
         Assert.True(export > 0, "Export data... missing: " + string.Join(" | ", items));
         Assert.Equal(new[] { "-", "Export data...", "Import data...", "Browse app data", "-", "Rate...", "Share...", "Support MDSHO...", "About", "Exit application" },
           items.Skip(export - 1).ToArray());
-        // Only Support names the product (no "Rate MDSHO" / "Share MDSHO").
-        Assert.Equal(new[] { "Support MDSHO..." }, items.Where(text => text.Contains("MDSHO")).ToArray());
+        // Only Support, and Bring MDSHO windows (to tell them from other apps' windows), name the product (no "Rate MDSHO" / "Share MDSHO").
+        Assert.Equal(new[] { "Bring MDSHO windows to this screen", "Support MDSHO..." }, items.Where(text => text.Contains("MDSHO")).ToArray());
       });
     }
 
@@ -200,6 +260,8 @@ namespace MDSHO.Tests {
     }
 
     [Theory]
+    [InlineData("MenuItemHeaderBringMdshoWindows", "Appearance.Icons.Desktop")]
+    [InlineData("MenuItemHeaderBringOtherWindows", "Appearance.Icons.Desktop")]
     [InlineData("MenuItemHeaderBrowseAppData", "Appearance.Icons.Folder")]
     [InlineData("MenuItemHeaderRate", "Appearance.Icons.Star")]
     [InlineData("MenuItemHeaderShare", "Appearance.Icons.Share")]

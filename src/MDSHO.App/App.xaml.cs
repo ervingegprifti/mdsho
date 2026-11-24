@@ -474,8 +474,8 @@ namespace MDSHO
     /// <summary>The font icon of each tray menu item, by its text. Start with Windows has none: Windows draws its check mark in the icon spot.</summary>
     private static readonly (string Text, Func<IconGlyphs, string> Glyph)[] TrayIcons = {
       ("New window", g => g.Plus),
-      ("Find MDSHO lost windows", g => g.Desktop),
-      ("Find other lost windows", g => g.Desktop),
+      ("Bring MDSHO windows to this screen", g => g.Desktop),
+      ("Bring other windows to this screen", g => g.Desktop),
       ("Export data...", g => g.Send),
       ("Import data...", g => g.Database),
       ("Browse app data", g => g.Folder),
@@ -536,8 +536,9 @@ namespace MDSHO
       menu.Items.Add(CreateScreenSetupsMenu());
       menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
       menu.Items.Add("New window").Click += (s, e) => app.NewWindow(null);
-      menu.Items.Add("Find MDSHO lost windows").Click += (s, e) => app.FindWindows();
-      menu.Items.Add("Find other lost windows").Click += (s, e) => FindOtherLostWindows();
+      // The tray only shows on the main taskbar, so "this screen" is the primary screen.
+      menu.Items.Add("Bring MDSHO windows to this screen").Click += (s, e) => BringMdshoWindows(app?.DataContext, AppServices.Current.Screens.PrimaryScreen());
+      menu.Items.Add("Bring other windows to this screen").Click += (s, e) => BringOtherWindows(AppServices.Current.Screens.PrimaryScreen());
       Common.AutoStartController autoStartController = new Common.AutoStartController(AppServices.Current.AutoStart, AppMessages.AutoStart);
       System.Windows.Forms.ToolStripMenuItem autoStartMenuItem = new System.Windows.Forms.ToolStripMenuItem("Start with Windows") { CheckOnClick = false };
       autoStartMenuItem.Click += (s, e) => autoStartController.Toggle();
@@ -609,17 +610,19 @@ namespace MDSHO
         ErrorDialog.ShowDialog(ex);
       }
     }
-    /// <summary>Gathers every window and clone to the middle of the primary screen, slightly offset from each other, so none is lost off screen.</summary>
-    public void FindWindows() {
+    /// <summary>Gathers every window and clone of <paramref name="appViewModel"/> to the middle of <paramref name="screen"/>, slightly offset from each other.</summary>
+    public static void BringMdshoWindows(AppViewModel appViewModel, Common.ScreenInfo screen) {
       try {
-        AppViewModel appViewModel = ((App)Application.Current).DataContext;
+        if (appViewModel == null || screen == null) {
+          return;
+        }
         foreach (DesktopWindowViewModel desktopWindow in appViewModel.Windows) {
           RestoreWindowState(desktopWindow);
           foreach (DesktopWindowViewModel cloneWindow in desktopWindow.Clones) {
             RestoreWindowState(cloneWindow);
           }
         }
-        appViewModel.FindWindows(AppServices.Current.Screens.PrimaryScreen());
+        appViewModel.BringWindows(screen);
         foreach (DesktopWindowViewModel desktopWindow in appViewModel.Windows) {
           RememberPlace(desktopWindow);
           foreach (DesktopWindowViewModel cloneWindow in desktopWindow.Clones) {
@@ -631,20 +634,23 @@ namespace MDSHO
       }
     }
     /// <summary>
-    /// Find other lost windows: moves every window of another app whose title bar can't be grabbed on any screen to the
-    /// screen with the mouse pointer, then says how many moved and how many Windows refused.
+    /// Moves every normal window of another app, lost or not, to <paramref name="screen"/>, then says how many moved and
+    /// how many Windows refused.
     /// </summary>
-    public static void FindOtherLostWindows() {
+    public static void BringOtherWindows(Common.ScreenInfo screen) {
       try {
+        if (screen == null) {
+          return;
+        }
         AppServices services = AppServices.Current;
-        Common.LostWindowsResult result = Common.LostWindows.Rescue(services.OtherWindows, services.Screens.AllScreens(), services.Screens.ScreenAtCursor());
-        Common.AppLog.Information("Find other lost windows moved {Moved} windows and skipped {Skipped}", result.Moved, result.Skipped);
-        Dialogs.ShowMessage(result.Message, "Find other lost windows");
+        Common.BringWindowsResult result = Common.BringWindows.Bring(services.OtherWindows, screen);
+        Common.AppLog.Information("Bring other windows moved {Moved} windows and skipped {Skipped}", result.Moved, result.Skipped);
+        Dialogs.ShowMessage(result.Message, "Bring other windows to this screen");
       } catch (Exception ex) {
         ErrorDialog.ShowDialog(ex);
       }
     }
-    /// <summary>A minimized or maximized window goes back to normal, so the position Find MDSHO lost windows gives it shows.</summary>
+    /// <summary>A minimized or maximized window goes back to normal, so the position Bring MDSHO windows gives it shows.</summary>
     private static void RestoreWindowState(DesktopWindowViewModel desktopWindow) {
       Window window = WindowLookup.GetViewFromViewModel(desktopWindow);
       if (window != null) {

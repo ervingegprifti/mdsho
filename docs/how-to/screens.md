@@ -36,14 +36,17 @@ again, and they go back where they were with those screens.
 To turn this off, open a panel's **Settings**, choose **Screens** and clear **Remember places for each screen setup**,
 then click **Apply**.
 
-## Find a lost panel
+## Bring windows to a screen
 
 If a panel is off screen or hidden:
 
 1. Right-click the MDSHO icon in the taskbar's notification area.
-2. Choose **Find MDSHO lost windows**. Every panel and clone moves to the middle of the main screen.
+2. Choose **Bring MDSHO windows to this screen**. Every panel and clone moves to the middle of the main screen.
+
+To gather them on another screen, right-click the title of a panel on that screen and choose the same item there.
+
+**Bring other windows to this screen** does the same for other apps: every open window of another app (not the
+minimized ones) moves to the middle of the screen, one slightly below the other. From the tray that is the main screen,
+from a panel's title menu it is the panel's screen. Windows of apps running as administrator can't be moved.
 
 Double-click a panel's title to move it to the middle of its own screen.
-
-> **Find other lost windows** in the same menu helps with other apps: it moves their windows whose title bar is off
-> screen to the screen with the mouse pointer.

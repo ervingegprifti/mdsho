@@ -230,6 +230,17 @@
                                     <TextBlock Text="{Binding Appearance.Icons.DockRight}" Style="{StaticResource StyleMenuItemFontIcon}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
+                            <Separator/>
+                            <MenuItem x:Name="MenuItemHeaderBringMdshoWindows" Header="Bring MDSHO windows to this screen">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.Desktop}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem x:Name="MenuItemHeaderBringOtherWindows" Header="Bring other windows to this screen">
+                                <MenuItem.Icon>
+                                    <TextBlock Text="{Binding Appearance.Icons.Desktop}" Style="{StaticResource StyleMenuItemFontIcon}"/>
+                                </MenuItem.Icon>
+                            </MenuItem>
                             <Separator x:Name="SeparatorHeaderCloseDelete"/>
                             <MenuItem x:Name="MenuItemHeaderCloseWindow" Header="Close this clone" Command="{Binding CloseWindowCommand}" Visibility="{Binding ShowCloseWindow, Converter={StaticResource BoolToVisibility}}">
                                 <MenuItem.Icon>

@@ -304,7 +304,7 @@ Settings). The parts:
   as one.
 - `src/MDSHO.ViewModels/ScreenSetupTracker.cs`: the tracker, created by `AppServices` and started after the windows and
   notes open. It saves places (`Remember`) for the current setup; panels and clones call it where their own place is
-  saved (end of a move or resize, dock, centre, Find MDSHO lost windows, a new panel or clone), note windows when their
+  saved (end of a move or resize, dock, centre, Bring MDSHO windows to this screen, a new panel or clone), note windows when their
   place is saved. On a display change it waits, then identifies the setup: a known one moves every item to its saved
   place, a new one only pulls items that are off screen back; then it saves every item's place for that setup. With
   the setting off it still tracks the setup and saves places, but moves nothing. It never saves while a change is
