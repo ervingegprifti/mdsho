@@ -1388,17 +1388,30 @@ namespace MDSHO {
       }
     }
 
+    /// <summary>The Windows double-click time in milliseconds.</summary>
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern uint GetDoubleClickTime();
+
+    // The run of quick clicks in the editor, counted here (see TextComment_PreviewMouseLeftButtonDown).
+    private readonly ClickRun clickRun = new ClickRun();
+
     // A double click selects the word without the space after it, a triple click the whole paragraph, a fourth click all text.
+    // WPF measures its double-click time from the first click of a run, so a 4th click at a normal pace comes too late and
+    // WPF counts it as a new single click. The editor counts the run itself: each click within the double-click time and
+    // spot of the click before.
     private void TextComment_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
-      if (e.ClickCount < 2) {
+      Point at = e.GetPosition(this.TextComment);
+      int clicks = this.clickRun.Next(e.ClickCount, e.Timestamp, at.X, at.Y, (int)GetDoubleClickTime(),
+        SystemParameters.MinimumHorizontalDragDistance, SystemParameters.MinimumVerticalDragDistance);
+      if (clicks < 2) {
         return;
       }
       int index = CharacterIndexAt(this.TextComment, e);
-      if (index < 0 && e.ClickCount < 4) {
+      if (index < 0 && clicks < 4) {
         return;
       }
       string text = this.TextComment.Text ?? "";
-      (int start, int length) = TextClickSelection.ForClicks(text, index, e.ClickCount).Value;
+      (int start, int length) = TextClickSelection.ForClicks(text, index, clicks).Value;
       this.TextComment.Focus();
       this.TextComment.Select(start, length);
       e.Handled = true;

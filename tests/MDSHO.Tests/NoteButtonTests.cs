@@ -448,9 +448,9 @@ namespace MDSHO.Tests {
 
     // ---- Double, triple and four clicks in the editor ----
 
-    private static void ClickEditor(TextEditWindow window, int clicks, out bool handled) {
+    private static void ClickEditor(TextEditWindow window, int clicks, out bool handled, int timestamp = 0) {
       TextBox editor = Named<TextBox>(window, "TextComment");
-      System.Windows.Input.MouseButtonEventArgs args = new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0, System.Windows.Input.MouseButton.Left) {
+      System.Windows.Input.MouseButtonEventArgs args = new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, timestamp, System.Windows.Input.MouseButton.Left) {
         RoutedEvent = UIElement.PreviewMouseLeftButtonDownEvent
       };
       typeof(System.Windows.Input.MouseButtonEventArgs).GetProperty("ClickCount").SetValue(args, clicks);
@@ -482,9 +482,9 @@ namespace MDSHO.Tests {
             ClickEditor(window, 4, out handled);
             Assert.True(handled);
             Assert.Equal(editor.Text, editor.SelectedText);
-            // A single click is left to the text box.
+            // A single click a while later is left to the text box.
             editor.Select(0, 0);
-            ClickEditor(window, 1, out handled);
+            ClickEditor(window, 1, out handled, timestamp: 100000);
             Assert.False(handled);
             Assert.Equal("", editor.SelectedText);
           });
