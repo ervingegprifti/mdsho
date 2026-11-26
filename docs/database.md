@@ -271,7 +271,7 @@ that worked.
 | 22 | 1.21.0 | `Shortcuts.CommentFont` (`TEXT NOT NULL DEFAULT 'Courier New'`) and `Shortcuts.CommentFontSize` (`INTEGER NOT NULL DEFAULT 0`): each comment keeps its own font and text size. The text history: `TextPrevious1`, `TextPrevious2`, `CommentPrevious1` and `CommentPrevious2`, each with a `...Time` column (all `TEXT NOT NULL DEFAULT ''`). Copies, exports and backups carry them (still export format 3); older exports import with Courier New, 12 pt and no history. |
 | 23 | 1.21.1 | `Shortcuts.TextFontSize` (`INTEGER NOT NULL DEFAULT 0`): each snippet keeps its own text size. Copies, exports and backups carry it (still export format 3); older exports import with `0` (12 pt). |
 | 24 | 1.22.0 | `History` table and its index: the text history, up to the **Text history** setting per button and field. The step moves each non-empty `TextPrevious1/2` and `CommentPrevious1/2` (with its time, the older copy first) into `History`, then drops those eight `Shortcuts` columns (`ALTER TABLE ... DROP COLUMN`). Exports and backups carry the rows (still export format 3); older exports import their two earlier copies as rows. A copied button starts with no history. |
-| 25 | 1.26.0 | `Shortcuts.NoteHighlights` (`TEXT NOT NULL DEFAULT ''`): the saved colour highlights of each note, as terms rather than places, so they survive edits. Copies, exports and backups carry it (still export format 3); older exports import with none. |
+| 25 | 1.26.1 | `Shortcuts.NoteHighlights` (`TEXT NOT NULL DEFAULT ''`): the saved colour highlights of each note, as terms rather than places, so they survive edits. Copies, exports and backups carry it (still export format 3); older exports import with none. |
 
 ### Backup before an upgrade
 
