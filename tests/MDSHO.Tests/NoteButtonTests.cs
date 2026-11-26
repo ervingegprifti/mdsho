@@ -332,7 +332,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_comment_window_has_wrap_text_just_left_of_close() {
+    public void The_comment_window_has_wrap_text_then_more_left_of_close() {
       WithGroup(f => {
         TextEditWindow window = TextEditWindow.ForComment(f.Group);
         Shown(window, () => {
@@ -341,7 +341,9 @@ namespace MDSHO.Tests {
           Assert.Equal(Visibility.Visible, wrap.Visibility);
           Assert.Equal(f.Win.Appearance.Icons.WrapText, wrap.Content);
           FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
-          Assert.Equal(BoundsIn(Named<Button>(window, "ButtonClose"), bar).Left, BoundsIn(wrap, bar).Right, 1);
+          Rect rMore = BoundsIn(Named<Button>(window, "ButtonMore"), bar);
+          Assert.Equal(rMore.Left, BoundsIn(wrap, bar).Right, 1);
+          Assert.Equal(BoundsIn(Named<Button>(window, "ButtonClose"), bar).Left, rMore.Right, 1);
           AssertWraps(window, false);
         });
       });
@@ -840,9 +842,9 @@ namespace MDSHO.Tests {
           Button close = Named<Button>(window, "ButtonClose");
           Assert.Equal("Close (Esc)", close.ToolTip);
           Assert.Equal("Close", System.Windows.Automation.AutomationProperties.GetName(close));
-          // Wrap text sits just left of X (Text history is in the title menu).
+          // More options (the title menu) sits just left of X.
           FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
-          Assert.Equal(BoundsIn(close, bar).Left, BoundsIn(Named<Button>(window, "ButtonWrap"), bar).Right, 1);
+          Assert.Equal(BoundsIn(close, bar).Left, BoundsIn(Named<Button>(window, "ButtonMore"), bar).Right, 1);
           // The text reaches the bottom of the window.
           FrameworkElement client = (FrameworkElement)window.Content;
           Assert.Equal(client.ActualHeight, BoundsIn(Named<TextBox>(window, "TextComment"), client).Bottom, 1);

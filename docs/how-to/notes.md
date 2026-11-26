@@ -52,12 +52,13 @@ Highlight the same word again to change its colour; the current one has a tick.
 
 To take a colour off, right-click the coloured word and choose **Remove highlight**. The note's text itself stays
 plain: copying it, exports of the text and the button's tooltip don't change. Exports and backups keep the colours.
-To take all the colours off at once, right-click the title bar and choose **Clear all highlights**.
+To take all the colours off at once, click **More options** (⋯) and choose **Clear all highlights**.
 
-## The title bar menu
+## More options
 
-Right-click the note's title bar for its menu: **Text history**, **Wrap text**, **Keep on top**, **Font**,
-**Note colours...**, **Clear all highlights** and **Close**. **Wrap text** and **Keep on top** have a tick while on.
+Click **More options** (⋯, just left of the close button) for the note's menu: **Text history**, **Wrap text**,
+**Keep on top**, **Font**, **Note colours...**, **Clear all highlights** and **Close**. A right-click on the title bar
+or Alt+F opens the same menu. **Wrap text** and **Keep on top** have a tick while on.
 Comments and snippets have the same menu with only **Text history**, **Wrap text**, **Font** and **Close**.
 
 ## Keep a note on top
@@ -80,7 +81,7 @@ A note keeps up to 10 earlier versions of its text. A version is kept when you s
 it, when you leave the window after changing it (you click elsewhere, minimise or close it, or MDSHO exits), and when
 one change removes a lot (half the text or more).
 
-1. Right-click the note's title bar and point to **Text history**.
+1. Click **More options** (⋯) in the note's title bar and point to **Text history**.
 2. The newest version is at the top. Each shows when it was kept (**Today 14:05:09**, **Yesterday 18:30:00**,
    **19 Nov 16:44:00**) and its first line, with **…** when the line goes on and **↵** when more lines follow. Pick one.
 

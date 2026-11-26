@@ -75,3 +75,5 @@ In **Settings**, **Colours** and **About**:
 
 - In a note, Esc closes the note. It is already saved.
 - In a comment or the snippet editor, Esc or Ctrl+Enter closes the window. What you typed is already saved.
+- Alt+F opens the **More options** menu (Text history, Wrap text, Font and more) of a note, comment or snippet.
+  Shift+F10 or the Menu key opens the menu of the text (Cut, Copy, Paste and, in a note, Highlight).

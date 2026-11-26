@@ -161,6 +161,49 @@ namespace MDSHO {
 
     // ---- The title bar menu ----
 
+    /// <summary>True for a character of the icon font (the private use area); other text shows in Segoe UI.</summary>
+    public static bool IsIconFontGlyph(string glyph) {
+      return !string.IsNullOrEmpty(glyph) && glyph[0] >= '' && glyph[0] <= '';
+    }
+
+    // The More options button shows IconGlyphs.More: in the icon font once it is a glyph, else as text (three dots) in
+    // Segoe UI, smaller so it looks as big as the other icons.
+    private void ShowMoreIcon(string glyph) {
+      this.ButtonMore.Content = glyph;
+      if (IsIconFontGlyph(glyph)) {
+        this.ButtonMore.SetResourceReference(FontFamilyProperty, "IconFont");
+        this.ButtonMore.FontSize = 14;
+      } else {
+        this.ButtonMore.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
+        this.ButtonMore.FontSize = 11;
+      }
+    }
+
+    /// <summary>Opens the title menu below More options, right edges lined up, with the button pressed while it is open (the button and Alt+F).</summary>
+    public void OpenMoreMenu() {
+      System.Windows.Controls.ContextMenu menu = BuildTitleMenu();
+      menu.PlacementTarget = this.ButtonMore;
+      menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Custom;
+      menu.CustomPopupPlacementCallback = (popup, target, offset) => new[] {
+        // Below the button, right edges lined up; above it when there is no room below.
+        new System.Windows.Controls.Primitives.CustomPopupPlacement(new Point(target.Width - popup.Width, target.Height), System.Windows.Controls.Primitives.PopupPrimaryAxis.Horizontal),
+        new System.Windows.Controls.Primitives.CustomPopupPlacement(new Point(target.Width - popup.Width, -popup.Height), System.Windows.Controls.Primitives.PopupPrimaryAxis.Horizontal)
+      };
+      this.ButtonMore.SetResourceReference(BackgroundProperty, "Theme.TitleButtonPressed");
+      // Not pressed once the menu closes, however it closes (Closed only comes from a popup that really showed).
+      DependencyPropertyDescriptor isOpen = DependencyPropertyDescriptor.FromProperty(System.Windows.Controls.ContextMenu.IsOpenProperty, typeof(System.Windows.Controls.ContextMenu));
+      EventHandler closed = null;
+      closed = (s, e) => {
+        if (!menu.IsOpen) {
+          isOpen.RemoveValueChanged(menu, closed);
+          this.ButtonMore.ClearValue(BackgroundProperty);
+        }
+      };
+      isOpen.AddValueChanged(menu, closed);
+      this.TitleMenu = menu;
+      menu.IsOpen = true;
+    }
+
     /// <summary>The title bar's menu while it is open (or last open); null before it was opened.</summary>
     public System.Windows.Controls.ContextMenu TitleMenu { get; private set; }
 
@@ -170,6 +213,7 @@ namespace MDSHO {
     // A right-click on the title bar opens the title menu. The title text takes the mouse itself (for renaming), so it gets
     // the menu the normal way; the rest of the title bar is the window's caption, where Windows would show its own menu.
     private void UseTitleMenu() {
+      this.ButtonMore.Click += (s, e) => OpenMoreMenu();
       this.TitleBar.ContextMenu = new System.Windows.Controls.ContextMenu();
       this.TitleBar.ContextMenuOpening += (s, e) => {
         this.TitleMenu = BuildTitleMenu();
@@ -830,7 +874,7 @@ namespace MDSHO {
       this.TitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "Theme.BarBackground");
       this.TextTitle.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
       this.TextTitleIcon.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonMore, this.ButtonClose }) {
         button.SetResourceReference(ForegroundProperty, "Theme.TextStrong");
       }
       this.Body.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "Theme.WindowBackground");
@@ -851,7 +895,7 @@ namespace MDSHO {
       this.TitleBar.SetBinding(System.Windows.Controls.Border.BackgroundProperty, Bind(nameof(NoteColors.TitleBackgroundColor)));
       this.TextTitle.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       this.TextTitleIcon.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonColors, this.ButtonWrap, this.ButtonPin, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonColors, this.ButtonWrap, this.ButtonPin, this.ButtonMore, this.ButtonClose }) {
         button.SetBinding(ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       }
       SetBinding(BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
@@ -1445,6 +1489,7 @@ namespace MDSHO {
       this.ButtonColors.Content = icons.Brush;
       this.ButtonFont.Content = icons.Font;
       this.ButtonWrap.Content = icons.WrapText;
+      ShowMoreIcon(icons.More);
       this.ButtonPin.Content = this.Topmost ? icons.PinOn : icons.PinOff;
       this.Icon = GlyphIcon.Create(glyph);
     }
@@ -1463,6 +1508,10 @@ namespace MDSHO {
         // A comment or snippet closes (closing saves it).
         e.Handled = true;
         Close();
+      } else if (e.Key == Key.System && e.SystemKey == Key.F && KeyboardModifiers() == ModifierKeys.Alt) {
+        // Alt+F opens the title menu, like the ⋯ menu of Edge. Shift+F10 and the Menu key keep the text menu.
+        e.Handled = true;
+        OpenMoreMenu();
       }
     }
   }

@@ -23,8 +23,8 @@ start in Courier New. The **Text size** button left of **Font** shows the size
 in points: click it to pick a size, or hold Ctrl and turn the mouse wheel to step through the same sizes. Each snippet
 keeps its own size.
 
-The snippet editor keeps earlier versions of the text, like a note: right-click its title bar, point to **Text history**
-and pick one to put it back.
+The snippet editor keeps earlier versions of the text, like a note: click **More options** (⋯) in its title bar, point to
+**Text history** and pick one to put it back.
 
 Hover over the snippet to see how to paste it (**Double-click to paste:**, or **Click to paste:** when one click opens
 buttons) and its text, up to 10 lines. To name it after its text, right-click it and choose
