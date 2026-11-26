@@ -134,6 +134,7 @@ namespace MDSHO {
       UseFontButton();
       UseAutoSave();
       UseHistory();
+      UseTitleMenu();
 
       // The title icon, the title bar buttons and the window icon follow the window's solid or outline setting while open.
       IconGlyphs icons = this.icons;
@@ -143,20 +144,9 @@ namespace MDSHO {
       this.Closed += (s, e) => icons.PropertyChanged -= iconsChanged;
 
       this.ButtonClose.Click += (s, e) => Close();
-      this.ButtonPin.Click += (s, e) => {
-        SetPinned(!this.Topmost);
-        SaveNotePlace();
-      };
-      // Wrap text: a note remembers it with its window, the Comment windows of a panel share it.
+      this.ButtonPin.Click += (s, e) => TogglePinned();
       SetWrapText(kind != TextKind.Note && (shortcut.OwningWindow?.Appearance?.CommentWrapText ?? false));
-      this.ButtonWrap.Click += (s, e) => {
-        SetWrapText(!this.IsWrapText);
-        if (this.kind == TextKind.Note) {
-          SaveNotePlace();
-        } else if (shortcut.OwningWindow?.Appearance != null) {
-          shortcut.OwningWindow.Appearance.CommentWrapText = this.IsWrapText;
-        }
-      };
+      this.ButtonWrap.Click += (s, e) => ToggleWrapText();
       // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a comment and a snippet with their button.
       SetTextSize(kind == TextKind.Comment ? NoteWindowPlace.FontSizeOrDefault(shortcut.CommentFontSize)
         : kind == TextKind.Snippet ? NoteWindowPlace.FontSizeOrDefault(shortcut.TextFontSize) : NoteWindowPlace.DefaultFontSize);
@@ -167,6 +157,139 @@ namespace MDSHO {
         this.TextComment.Focus();
         this.TextComment.CaretIndex = this.TextComment.Text.Length;
       };
+    }
+
+    // ---- The title bar menu ----
+
+    /// <summary>The title bar's menu while it is open (or last open); null before it was opened.</summary>
+    public System.Windows.Controls.ContextMenu TitleMenu { get; private set; }
+
+    private const int WM_NCRBUTTONUP = 0x00A5;
+    private const int HTCAPTION = 2;
+
+    // A right-click on the title bar opens the title menu. The title text takes the mouse itself (for renaming), so it gets
+    // the menu the normal way; the rest of the title bar is the window's caption, where Windows would show its own menu.
+    private void UseTitleMenu() {
+      this.TitleBar.ContextMenu = new System.Windows.Controls.ContextMenu();
+      this.TitleBar.ContextMenuOpening += (s, e) => {
+        this.TitleMenu = BuildTitleMenu();
+        this.TitleBar.ContextMenu = this.TitleMenu;
+      };
+      this.SourceInitialized += (s, e) => {
+        // Added after WindowChrome's own hook, so it is asked first.
+        (PresentationSource.FromVisual(this) as System.Windows.Interop.HwndSource)?.AddHook(TitleWndProc);
+      };
+    }
+
+    private IntPtr TitleWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) {
+      if (HandleTitleMessage(msg, wParam)) {
+        handled = true;
+      }
+      return IntPtr.Zero;
+    }
+
+    /// <summary>A right-click released on the caption opens the title menu instead of the Windows menu; true when handled.</summary>
+    public bool HandleTitleMessage(int msg, IntPtr wParam) {
+      if (msg != WM_NCRBUTTONUP || wParam.ToInt64() != HTCAPTION) {
+        return false;
+      }
+      OpenTitleMenu();
+      return true;
+    }
+
+    /// <summary>Opens the title menu at the mouse.</summary>
+    public void OpenTitleMenu() {
+      this.TitleMenu = BuildTitleMenu();
+      this.TitleMenu.PlacementTarget = this.TitleBar;
+      this.TitleMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
+      this.TitleMenu.IsOpen = true;
+    }
+
+    /// <summary>
+    /// The title menu, only the items that apply: Text history (the history list), Wrap text, Keep on top (a note), Font
+    /// (the font list), Note colours... (a note), Clear all highlights (a note; greyed out without any) and Close. Wrap text
+    /// and Keep on top have a tick while on.
+    /// </summary>
+    public System.Windows.Controls.ContextMenu BuildTitleMenu() {
+      bool note = this.kind == TextKind.Note;
+      System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();
+      System.Windows.Controls.MenuItem history = TitleItem("Text history", "History", this.icons.Time, null);
+      MoveItems(BuildHistoryMenu(), history, skipTag: "Header");
+      menu.Items.Add(history);
+      menu.Items.Add(new System.Windows.Controls.Separator());
+      menu.Items.Add(TitleToggle("Wrap text", "Wrap", this.icons.WrapText, this.IsWrapText, ToggleWrapText));
+      if (note) {
+        menu.Items.Add(TitleToggle("Keep on top", "Pin", this.Topmost ? this.icons.PinOn : this.icons.PinOff, this.Topmost, TogglePinned));
+      }
+      System.Windows.Controls.MenuItem font = TitleItem("Font", "Font", this.icons.Font, null);
+      MoveItems(BuildFontMenu(), font, skipTag: null);
+      menu.Items.Add(font);
+      if (note) {
+        menu.Items.Add(TitleItem("Note colours...", "Colours", this.icons.Brush, ShowNoteColours));
+        menu.Items.Add(new System.Windows.Controls.Separator());
+        System.Windows.Controls.MenuItem clear = TitleItem("Clear all highlights", "ClearHighlights", this.icons.Delete, ClearHighlights);
+        clear.IsEnabled = NoteHighlights.Parse(this.shortcut.NoteHighlights).Count > 0;
+        menu.Items.Add(clear);
+      }
+      menu.Items.Add(new System.Windows.Controls.Separator());
+      menu.Items.Add(TitleItem("Close", "Close", this.icons.Times, Close));
+      return menu;
+    }
+
+    private System.Windows.Controls.MenuItem TitleItem(string header, string tag, string glyph, Action click) {
+      System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem {
+        Header = header, Tag = tag,
+        Icon = new System.Windows.Controls.TextBlock { Text = glyph, Style = TryFindResource("StyleMenuItemFontIcon") as Style }
+      };
+      if (click != null) {
+        item.Click += (s, e) => click();
+      }
+      return item;
+    }
+
+    // An item that is on or off: a tick while on (in place of its icon, like the Windows menus).
+    private System.Windows.Controls.MenuItem TitleToggle(string header, string tag, string glyph, bool on, Action click) {
+      System.Windows.Controls.MenuItem item = TitleItem(header, tag, glyph, click);
+      item.IsChecked = on;
+      if (on) {
+        item.Icon = null;
+      }
+      return item;
+    }
+
+    // Moves the items of a menu built for a title bar button into a submenu of the title menu.
+    private static void MoveItems(System.Windows.Controls.ContextMenu from, System.Windows.Controls.MenuItem into, string skipTag) {
+      List<object> items = from.Items.Cast<object>().ToList();
+      from.Items.Clear();
+      foreach (object item in items) {
+        if (skipTag != null && item is System.Windows.Controls.MenuItem m && m.Tag as string == skipTag) {
+          continue;
+        }
+        into.Items.Add(item);
+      }
+    }
+
+    /// <summary>Removes every saved colour highlight of this note.</summary>
+    public void ClearHighlights() {
+      if (this.kind == TextKind.Note && this.shortcut.NoteHighlights.Length > 0) {
+        SaveHighlights("");
+      }
+    }
+
+    // Keep on top (the pin button and the title menu); a note remembers it with its window.
+    private void TogglePinned() {
+      SetPinned(!this.Topmost);
+      SaveNotePlace();
+    }
+
+    // Wrap text (the button and the title menu): a note remembers it with its window, the Comment windows of a panel share it.
+    private void ToggleWrapText() {
+      SetWrapText(!this.IsWrapText);
+      if (this.kind == TextKind.Note) {
+        SaveNotePlace();
+      } else if (this.shortcut.OwningWindow?.Appearance != null) {
+        this.shortcut.OwningWindow.Appearance.CommentWrapText = this.IsWrapText;
+      }
     }
 
     private void ShowTitle() {
@@ -707,7 +830,7 @@ namespace MDSHO {
       this.TitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "Theme.BarBackground");
       this.TextTitle.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
       this.TextTitleIcon.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonHistory, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonClose }) {
         button.SetResourceReference(ForegroundProperty, "Theme.TextStrong");
       }
       this.Body.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "Theme.WindowBackground");
@@ -728,7 +851,7 @@ namespace MDSHO {
       this.TitleBar.SetBinding(System.Windows.Controls.Border.BackgroundProperty, Bind(nameof(NoteColors.TitleBackgroundColor)));
       this.TextTitle.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       this.TextTitleIcon.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonColors, this.ButtonWrap, this.ButtonHistory, this.ButtonPin, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonColors, this.ButtonWrap, this.ButtonPin, this.ButtonClose }) {
         button.SetBinding(ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       }
       SetBinding(BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
@@ -910,9 +1033,6 @@ namespace MDSHO {
     /// <summary>The clock for the times the text history shows (labels only). Tests replace it.</summary>
     public static Func<DateTime> Now = () => DateTime.Now;
 
-    /// <summary>The history menu while it is open (or last open); null before the history button was clicked.</summary>
-    public System.Windows.Controls.ContextMenu HistoryMenu { get; private set; }
-
     // The text before the latest change.
     private string historyLastText = "";
     // True while a pick from the history puts its text in the window: that change keeps no copy.
@@ -947,12 +1067,6 @@ namespace MDSHO {
     // window is left after a change (the text from before that run of edits), and at once for an edit that removes a lot.
     private void UseHistory() {
       this.historyLastText = this.TextComment.Text ?? "";
-      this.ButtonHistory.Click += (s, e) => {
-        this.HistoryMenu = BuildHistoryMenu();
-        this.HistoryMenu.PlacementTarget = this.ButtonHistory;
-        this.HistoryMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
-        this.HistoryMenu.IsOpen = true;
-      };
       this.TextComment.TextChanged += (s, e) => {
         string before = this.historyLastText;
         string text = this.TextComment.Text ?? "";
@@ -1331,7 +1445,6 @@ namespace MDSHO {
       this.ButtonColors.Content = icons.Brush;
       this.ButtonFont.Content = icons.Font;
       this.ButtonWrap.Content = icons.WrapText;
-      this.ButtonHistory.Content = icons.Time;
       this.ButtonPin.Content = this.Topmost ? icons.PinOn : icons.PinOff;
       this.Icon = GlyphIcon.Create(glyph);
     }

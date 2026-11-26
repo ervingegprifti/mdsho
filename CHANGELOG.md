@@ -18,6 +18,13 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   place with that word gets the colour, also after you change the text. **Remove highlight** takes it off. The note's
   text stays plain, so copying, snippets and exports of the text don't change. Database version 25; exports and
   backups carry the highlights, and older exports import with none.
+- Right-click the title bar of a note for a menu: Text history, Wrap text, Keep on top, Font, Note colours, Clear all
+  highlights and Close. Comments and snippets get the items that apply to them.
+
+### Changed
+
+- The Text history button left the title bar of notes, comments and snippets; Text history is now in the title bar's
+  right-click menu.
 
 ## [1.25.0]
 
