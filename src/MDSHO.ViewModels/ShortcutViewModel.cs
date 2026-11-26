@@ -682,7 +682,7 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0, long textFontSize = 0) {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0, long textFontSize = 0, string noteHighlights = "") {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -710,6 +710,7 @@ namespace MDSHO.ViewModels {
       this.commentFont = commentFont ?? NoteFonts.Default;
       this.commentFontSize = commentFontSize;
       this.textFontSize = textFontSize;
+      this.noteHighlights = noteHighlights ?? "";
       this.NoteColors = noteColors ?? new NoteColors();
       UpdateTargetKind(false);
       // Events.
@@ -911,6 +912,18 @@ namespace MDSHO.ViewModels {
       if (points != this.textFontSize) {
         this.textFontSize = points;
         OnPropertyChanged(nameof(TextFontSize));
+      }
+    }
+    private string noteHighlights = "";
+    /// <summary>A note's saved colour highlights (see <see cref="MDSHO.Common.NoteHighlights"/>); "" for none.</summary>
+    public string NoteHighlights => this.noteHighlights;
+    /// <summary>Saves a note's colour highlights, apart from its text: the database first, then memory.</summary>
+    public void SaveNoteHighlights(string stored) {
+      stored ??= "";
+      DataStore.Shortcuts.UpdateNoteHighlights(this.ID, stored);
+      if (stored != this.noteHighlights) {
+        this.noteHighlights = stored;
+        OnPropertyChanged(nameof(NoteHighlights));
       }
     }
     /// <summary>The earlier copies of the text (<see cref="HistoryFields.Text"/>) or comment, newest first.</summary>

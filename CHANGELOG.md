@@ -14,6 +14,10 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 - Select some text and every other place with the same text gets a soft grey highlight, also inside other words, so you
   can see if you already wrote it. Case doesn't matter, and it needs at least 2 letters. The title bar shows how many
   there are.
+- Notes can keep words in colour: select a word, right-click and choose **Highlight** and one of five colours. Every
+  place with that word gets the colour, also after you change the text. **Remove highlight** takes it off. The note's
+  text stays plain, so copying, snippets and exports of the text don't change. Database version 25; exports and
+  backups carry the highlights, and older exports import with none.
 
 ## [1.25.0]
 

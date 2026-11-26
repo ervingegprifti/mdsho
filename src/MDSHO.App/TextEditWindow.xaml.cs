@@ -181,6 +181,108 @@ namespace MDSHO {
     /// <summary>The other places with the selected text, softly highlighted (not the selection itself).</summary>
     public IReadOnlyList<(int Start, int Length)> LiveMatches => this.highlighter.LiveMatches;
 
+    /// <summary>Every match of the note's saved terms with its colour, term by term (none for a comment or snippet).</summary>
+    public IReadOnlyList<(int Start, int Length, string Color)> SavedMatches => this.highlighter.SavedMatches;
+
+    // A note's saved colour highlights: they follow its saved terms, and its text menu can add and remove them.
+    // Comments and snippets keep the plain text menu of Windows.
+    private void UseSavedHighlights() {
+      if (this.kind != TextKind.Note) {
+        return;
+      }
+      this.highlighter.SavedTerms = this.shortcut.NoteHighlights;
+      PropertyChangedEventHandler changed = (s, e) => {
+        if (e.PropertyName == nameof(ShortcutViewModel.NoteHighlights)) {
+          this.highlighter.SavedTerms = this.shortcut.NoteHighlights;
+        }
+      };
+      this.shortcut.PropertyChanged += changed;
+      this.Closed += (s, e) => this.shortcut.PropertyChanged -= changed;
+      this.TextComment.ContextMenu = BuildTextMenu();
+      // Built again each time, so it shows the selection's colour and what can be removed.
+      this.TextComment.ContextMenuOpening += (s, e) => this.TextComment.ContextMenu = BuildTextMenu();
+    }
+
+    /// <summary>
+    /// A note's text menu: Cut, Copy, Paste, then Highlight (the five colours, a tick on the selection's colour; needs a
+    /// selection of at least 2 letters) and Remove highlight (the saved term selected or around the caret). Null for a
+    /// comment or snippet.
+    /// </summary>
+    public System.Windows.Controls.ContextMenu BuildTextMenu() {
+      if (this.kind != TextKind.Note) {
+        return null;
+      }
+      System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();
+      menu.Items.Add(CommandItem("Cut", ApplicationCommands.Cut, this.icons.Cut));
+      menu.Items.Add(CommandItem("Copy", ApplicationCommands.Copy, this.icons.Copy));
+      menu.Items.Add(CommandItem("Paste", ApplicationCommands.Paste, this.icons.Paste));
+      menu.Items.Add(new System.Windows.Controls.Separator());
+      string selected = this.TextComment.SelectedText;
+      SavedHighlight current = TextMatches.IsSearchable(selected) ? NoteHighlights.Find(this.shortcut.NoteHighlights, selected) : null;
+      System.Windows.Controls.MenuItem highlight = new System.Windows.Controls.MenuItem {
+        Header = "Highlight", Tag = "Highlight", IsEnabled = TextMatches.IsSearchable(selected), Icon = Swatch(current?.Color ?? HighlightColors.All[0])
+      };
+      foreach (string color in HighlightColors.All) {
+        System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem {
+          Header = color, Tag = color, IsChecked = current?.Color == color, Icon = Swatch(color)
+        };
+        string picked = color;
+        item.Click += (s, e) => PickHighlight(picked);
+        highlight.Items.Add(item);
+      }
+      menu.Items.Add(highlight);
+      System.Windows.Controls.MenuItem remove = new System.Windows.Controls.MenuItem {
+        Header = "Remove highlight", Tag = "RemoveHighlight", Icon = Swatch(null),
+        IsEnabled = NoteHighlights.TermAt(this.TextComment.Text, this.shortcut.NoteHighlights, this.TextComment.SelectionStart, this.TextComment.SelectionLength) != null
+      };
+      remove.Click += (s, e) => RemoveHighlight();
+      menu.Items.Add(remove);
+      return menu;
+    }
+
+    private System.Windows.Controls.MenuItem CommandItem(string header, RoutedUICommand command, string glyph) {
+      return new System.Windows.Controls.MenuItem {
+        Header = header, Tag = header, Command = command, CommandTarget = this.TextComment,
+        Icon = new System.Windows.Controls.TextBlock { Text = glyph, Style = TryFindResource("StyleMenuItemFontIcon") as Style }
+      };
+    }
+
+    // A small square of a highlight colour for the menu; an empty one (just the edge) for null.
+    private static System.Windows.Controls.Border Swatch(string color) {
+      return new System.Windows.Controls.Border {
+        Width = 14, Height = 14, CornerRadius = new CornerRadius(2), BorderThickness = new Thickness(1),
+        BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x59, 0, 0, 0)),
+        Background = color == null ? System.Windows.Media.Brushes.Transparent : new System.Windows.Media.SolidColorBrush(TextHighlighter.SwatchColor(color))
+      };
+    }
+
+    /// <summary>Saves the selected text as a highlight in this colour (a saved term changes colour); it colours every match.</summary>
+    public void PickHighlight(string color) {
+      string selected = this.TextComment.SelectedText;
+      if (this.kind != TextKind.Note || !TextMatches.IsSearchable(selected)) {
+        return;
+      }
+      SaveHighlights(NoteHighlights.With(this.shortcut.NoteHighlights, selected, color));
+    }
+
+    /// <summary>Removes the saved highlight whose term is selected, or whose match is around the caret.</summary>
+    public void RemoveHighlight() {
+      SavedHighlight term = NoteHighlights.TermAt(this.TextComment.Text, this.shortcut.NoteHighlights, this.TextComment.SelectionStart, this.TextComment.SelectionLength);
+      if (this.kind == TextKind.Note && term != null) {
+        SaveHighlights(NoteHighlights.Without(this.shortcut.NoteHighlights, term.Term));
+      }
+    }
+
+    // Saves the highlights at once, apart from the text. Never the terms in the log: they are the note's own words.
+    private void SaveHighlights(string stored) {
+      try {
+        this.shortcut.SaveNoteHighlights(stored);
+      } catch (Exception ex) {
+        AppLog.Warning(null, "The highlights of a note could not be saved: {ErrorType}", ex.GetType().FullName);
+        ErrorDialog.ShowDialog("The highlights could not be saved.", ex);
+      }
+    }
+
     // While text is selected, every other place with the same text is highlighted and the title bar shows the count.
     private void UseHighlights() {
       this.highlighter = new TextHighlighter(this.TextComment, this.HighlightLayer);
@@ -189,6 +291,7 @@ namespace MDSHO {
         this.TextMatchCount.Text = label;
         this.TextMatchCount.Visibility = label.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
       };
+      UseSavedHighlights();
     }
 
     // ---- Renaming a note from its title ----

@@ -112,7 +112,8 @@ namespace MDSHO.ViewModels {
         textFont: shortcutRecord.TextFont,
         commentFont: shortcutRecord.CommentFont,
         commentFontSize: shortcutRecord.CommentFontSize,
-        textFontSize: shortcutRecord.TextFontSize);
+        textFontSize: shortcutRecord.TextFontSize,
+        noteHighlights: shortcutRecord.NoteHighlights);
       foreach (Shortcut childRecord in shortcutRecord.Shortcuts) {
         ShortcutViewModel child = ShortcutToViewModel(appViewModel: appViewModel, parentShortcut: shortcut, shortcutRecord: childRecord);
         shortcut.Children.Add(child);
@@ -252,6 +253,7 @@ namespace MDSHO.ViewModels {
       template.CommentFont = shortcut.CommentFont;
       template.CommentFontSize = shortcut.CommentFontSize;
       template.TextFontSize = shortcut.TextFontSize;
+      template.NoteHighlights = shortcut.NoteHighlights;
       // A copied button starts with no text history.
       Shortcut savedRecord = DataStore.Shortcuts.Append(template);
       // Copy the physical file after the insert, so a failed insert (rollback) never leaves an orphan file behind.

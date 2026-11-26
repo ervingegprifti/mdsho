@@ -75,6 +75,8 @@ namespace MDSHO.Core {
     public long CommentFontSize { get; set; }
     /// <summary>The size of a snippet's text in whole points; 0 = 12 pt (a note keeps its size with its window).</summary>
     public long TextFontSize { get; set; }
+    /// <summary>A note's saved colour highlights: terms and colours as JSON, "" for none (see NoteHighlights in MDSHO.Common).</summary>
+    public string NoteHighlights { get; set; } = "";
     /// <summary>
     /// Children shortcuts.
     /// </summary>

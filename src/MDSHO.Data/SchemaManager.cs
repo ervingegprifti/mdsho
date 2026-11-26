@@ -81,6 +81,7 @@ namespace MDSHO.Data {
           CommentFont TEXT NOT NULL DEFAULT 'Courier New',
           CommentFontSize INTEGER NOT NULL DEFAULT 0,
           TextFontSize INTEGER NOT NULL DEFAULT 0,
+          NoteHighlights TEXT NOT NULL DEFAULT '',
           FOREIGN KEY(ParentShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE,
           FOREIGN KEY(ParentMDSHOWindowID) REFERENCES MDSHOWindows(ID) ON DELETE CASCADE);
 
@@ -402,6 +403,11 @@ namespace MDSHO.Data {
           if (ColumnExists(conn, "Shortcuts", column)) {
             Execute(conn, "ALTER TABLE Shortcuts DROP COLUMN " + column + ";");
           }
+        }
+      }),
+      new DbMigration(25, "Saved colour highlights of notes: Shortcuts.NoteHighlights", conn => {
+        if (!ColumnExists(conn, "Shortcuts", "NoteHighlights")) {
+          Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN NoteHighlights TEXT NOT NULL DEFAULT '';");
         }
       })
     };

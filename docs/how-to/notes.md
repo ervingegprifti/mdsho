@@ -41,6 +41,18 @@ also inside other words: selecting **art** highlights the **art** in **start**. 
 appears more than once, the title bar shows how many times, for example **3 matches**. The highlights follow your
 selection and go away when nothing is selected. This works in comments and snippets too.
 
+## Keep words in colour
+
+1. Select a word (or any text of at least 2 letters) in the note.
+2. Right-click it, choose **Highlight** and pick **Yellow**, **Green**, **Blue**, **Pink** or **Orange**.
+
+Every place in the note with that text gets the colour, like the live highlights: case doesn't matter, and it also
+colours it inside other words. The note keeps the word, not its place, so the colour follows when you change the text.
+Highlight the same word again to change its colour; the current one has a tick.
+
+To take a colour off, right-click the coloured word and choose **Remove highlight**. The note's text itself stays
+plain: copying it, exports of the text and the button's tooltip don't change. Exports and backups keep the colours.
+
 ## Keep a note on top
 
 1. Click **Keep on top** in the note's title bar. The note stays above your other windows.

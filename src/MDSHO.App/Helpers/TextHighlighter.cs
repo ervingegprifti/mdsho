@@ -13,20 +13,45 @@ namespace MDSHO.Helpers {
 
   /// <summary>
   /// Draws highlights over a text box, which can't colour parts of its own text. While text is selected, every other
-  /// place with the same text gets a soft grey highlight (see <see cref="TextMatches"/>). Only the lines on screen are
-  /// drawn, so long notes stay fast; the shapes are redrawn after each change, scroll or resize.
+  /// place with the same text gets a soft grey highlight (see <see cref="TextMatches"/>); a note's saved terms colour
+  /// every match in their colour (see <see cref="NoteHighlights"/>). Only the lines on screen are drawn, so long notes
+  /// stay fast; the shapes are redrawn after each change, scroll or resize.
   /// </summary>
   public sealed class TextHighlighter {
     /// <summary>The Tag of a live highlight shape.</summary>
     public const string LiveTag = "Live";
+    /// <summary>The Tag of a saved colour highlight shape.</summary>
+    public const string SavedTag = "Saved";
     /// <summary>The most shapes drawn at once.</summary>
     public const int MaxShapes = 500;
 
+    /// <summary>The fill of a saved colour: see-through, so the text stays readable on light and dark notes.</summary>
+    public static Color SavedColor(string name) {
+      switch (name) {
+        case "Yellow": return Color.FromArgb(0x80, 0xFF, 0xD8, 0x00);
+        case "Green": return Color.FromArgb(0x70, 0x4C, 0xC9, 0x4C);
+        case "Blue": return Color.FromArgb(0x70, 0x4D, 0xA6, 0xFF);
+        case "Pink": return Color.FromArgb(0x70, 0xFF, 0x6E, 0xB4);
+        case "Orange": return Color.FromArgb(0x78, 0xFF, 0x99, 0x33);
+        default: return Colors.Transparent;
+      }
+    }
+
+    /// <summary>The menu swatch of a saved colour (solid).</summary>
+    public static Color SwatchColor(string name) {
+      Color c = SavedColor(name);
+      return Color.FromRgb(c.R, c.G, c.B);
+    }
+
     private static readonly IReadOnlyList<(int Start, int Length)> None = Array.Empty<(int Start, int Length)>();
+    private static readonly IReadOnlyList<(int Start, int Length, string Color)> NoSaved = Array.Empty<(int Start, int Length, string Color)>();
 
     private readonly TextBox box;
     private readonly Canvas layer;
     private bool drawQueued;
+    private string savedTerms = "";
+    // The matches of the saved terms, found again when the text or the terms change (null = not found yet).
+    private IReadOnlyList<(int Start, int Length, string Color)> savedMatches;
 
     /// <summary>The other places with the selected text (not the selection itself), in order.</summary>
     public IReadOnlyList<(int Start, int Length)> LiveMatches { get; private set; } = None;
@@ -37,11 +62,34 @@ namespace MDSHO.Helpers {
     /// <summary>Raised after <see cref="LiveMatches"/> and <see cref="MatchCount"/> change.</summary>
     public event Action Changed;
 
+    /// <summary>The saved terms and colours (the stored value of <see cref="NoteHighlights"/>); "" for none.</summary>
+    public string SavedTerms {
+      get => this.savedTerms;
+      set {
+        this.savedTerms = value ?? "";
+        this.savedMatches = null;
+        QueueDraw();
+      }
+    }
+
+    /// <summary>Every match of the saved terms with its colour, term by term.</summary>
+    public IReadOnlyList<(int Start, int Length, string Color)> SavedMatches {
+      get {
+        if (this.savedMatches == null) {
+          this.savedMatches = this.savedTerms.Length == 0 ? NoSaved : NoteHighlights.Matches(this.box.Text, this.savedTerms).ToList();
+        }
+        return this.savedMatches;
+      }
+    }
+
     public TextHighlighter(TextBox box, Canvas layer) {
       this.box = box;
       this.layer = layer;
       box.SelectionChanged += (s, e) => Update();
-      box.TextChanged += (s, e) => Update();
+      box.TextChanged += (s, e) => {
+        this.savedMatches = null;
+        Update();
+      };
       box.AddHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler((s, e) => QueueDraw()));
       box.SizeChanged += (s, e) => QueueDraw();
       // The highlight is made from the text colour, so it follows the note's colours and the window theme.
@@ -81,7 +129,7 @@ namespace MDSHO.Helpers {
     private void Draw() {
       this.drawQueued = false;
       this.layer.Children.Clear();
-      if (this.LiveMatches.Count == 0 || !this.box.IsLoaded) {
+      if ((this.LiveMatches.Count == 0 && this.SavedMatches.Count == 0) || !this.box.IsLoaded) {
         return;
       }
       (int first, int end) = VisibleRange();
@@ -90,26 +138,42 @@ namespace MDSHO.Helpers {
       }
       this.layer.Clip = new RectangleGeometry(Viewport());
       Point offset = this.box.TranslatePoint(new Point(0, 0), this.layer);
+      // The saved colours first, so a live highlight shows on top of them.
+      Dictionary<string, Brush> fills = new Dictionary<string, Brush>();
+      foreach ((int start, int length, string color) in this.SavedMatches) {
+        if (!fills.TryGetValue(color, out Brush brush)) {
+          brush = fills[color] = Frozen(SavedColor(color));
+        }
+        AddShapes(start, length, first, end, offset, brush, null, SavedTag);
+      }
       Color text = (this.box.Foreground as SolidColorBrush)?.Color ?? Colors.Black;
       // The text colour, faint: a grey wash on light and dark notes alike, which no saved colour looks like.
       Brush fill = Frozen(Color.FromArgb(0x30, text.R, text.G, text.B));
       Brush stroke = Frozen(Color.FromArgb(0x80, text.R, text.G, text.B));
       foreach ((int start, int length) in this.LiveMatches) {
-        if (start + length <= first) {
-          continue;
-        }
-        if (start >= end || this.layer.Children.Count >= MaxShapes) {
+        if (start >= end) {
           break;
         }
-        foreach (Rect rect in RectsOf(start, length)) {
-          Rectangle shape = new Rectangle {
-            Width = rect.Width, Height = rect.Height, Fill = fill, Stroke = stroke, StrokeThickness = 1,
-            RadiusX = 2, RadiusY = 2, Tag = LiveTag, SnapsToDevicePixels = true
-          };
-          Canvas.SetLeft(shape, rect.X + offset.X);
-          Canvas.SetTop(shape, rect.Y + offset.Y);
-          this.layer.Children.Add(shape);
+        AddShapes(start, length, first, end, offset, fill, stroke, LiveTag);
+      }
+    }
+
+    // The shapes of one match, when it is on screen.
+    private void AddShapes(int start, int length, int first, int end, Point offset, Brush fill, Brush stroke, string tag) {
+      if (start + length <= first || start >= end) {
+        return;
+      }
+      foreach (Rect rect in RectsOf(start, length)) {
+        if (this.layer.Children.Count >= MaxShapes) {
+          return;
         }
+        Rectangle shape = new Rectangle {
+          Width = rect.Width, Height = rect.Height, Fill = fill, Stroke = stroke, StrokeThickness = stroke == null ? 0 : 1,
+          RadiusX = 2, RadiusY = 2, Tag = tag, SnapsToDevicePixels = true
+        };
+        Canvas.SetLeft(shape, rect.X + offset.X);
+        Canvas.SetTop(shape, rect.Y + offset.Y);
+        this.layer.Children.Add(shape);
       }
     }
 
