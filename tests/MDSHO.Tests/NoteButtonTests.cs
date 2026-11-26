@@ -85,7 +85,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_note_window_has_wrap_text_just_right_of_the_brush() {
+    public void The_note_window_has_wrap_text_just_right_of_the_font_button() {
       WithGroup(f => {
         ShortcutViewModel note = NewNoteInGroup(f);
         TextEditWindow window = TextEditWindow.ForNote(note);
@@ -95,12 +95,12 @@ namespace MDSHO.Tests {
           Assert.Equal(Visibility.Visible, wrap.Visibility);
           Assert.Equal(note.OwningWindow.Appearance.Icons.WrapText, wrap.Content);
           FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
-          Rect rColors = BoundsIn(Named<Button>(window, "ButtonColors"), bar), rWrap = BoundsIn(wrap, bar), rPin = BoundsIn(Named<Button>(window, "ButtonPin"), bar);
-          Rect rHistory = BoundsIn(Named<Button>(window, "ButtonHistory"), bar);
-          Assert.Equal(rColors.Right, rWrap.Left, 1);
-          // Text history sits between wrap text and the pin.
-          Assert.Equal(rWrap.Right, rHistory.Left, 1);
-          Assert.Equal(rHistory.Right, rPin.Left, 1);
+          // Note colours moved to the More options menu.
+          Assert.Null(window.FindName("ButtonColors"));
+          Rect rFont = BoundsIn(Named<Button>(window, "ButtonFont"), bar), rWrap = BoundsIn(wrap, bar), rPin = BoundsIn(Named<Button>(window, "ButtonPin"), bar);
+          Assert.Equal(rFont.Right, rWrap.Left, 1);
+          // The pin follows at once: Text history moved to the title menu.
+          Assert.Equal(rWrap.Right, rPin.Left, 1);
           AssertWraps(window, false);
         });
       });
@@ -334,7 +334,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_comment_window_has_wrap_text_then_history_left_of_close() {
+    public void The_comment_window_has_wrap_text_then_more_left_of_close() {
       WithGroup(f => {
         TextEditWindow window = TextEditWindow.ForComment(f.Group);
         Shown(window, () => {
@@ -343,9 +343,9 @@ namespace MDSHO.Tests {
           Assert.Equal(Visibility.Visible, wrap.Visibility);
           Assert.Equal(f.Win.Appearance.Icons.WrapText, wrap.Content);
           FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
-          Rect rHistory = BoundsIn(Named<Button>(window, "ButtonHistory"), bar);
-          Assert.Equal(rHistory.Left, BoundsIn(wrap, bar).Right, 1);
-          Assert.Equal(BoundsIn(Named<Button>(window, "ButtonClose"), bar).Left, rHistory.Right, 1);
+          Rect rMore = BoundsIn(Named<Button>(window, "ButtonMore"), bar);
+          Assert.Equal(rMore.Left, BoundsIn(wrap, bar).Right, 1);
+          Assert.Equal(BoundsIn(Named<Button>(window, "ButtonClose"), bar).Left, rMore.Right, 1);
           AssertWraps(window, false);
         });
       });
@@ -448,11 +448,11 @@ namespace MDSHO.Tests {
       });
     }
 
-    // ---- Double and triple click in the editor ----
+    // ---- Double, triple and four clicks in the editor ----
 
-    private static void ClickEditor(TextEditWindow window, int clicks, out bool handled) {
+    private static void ClickEditor(TextEditWindow window, int clicks, out bool handled, int timestamp = 0) {
       TextBox editor = Named<TextBox>(window, "TextComment");
-      System.Windows.Input.MouseButtonEventArgs args = new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0, System.Windows.Input.MouseButton.Left) {
+      System.Windows.Input.MouseButtonEventArgs args = new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, timestamp, System.Windows.Input.MouseButton.Left) {
         RoutedEvent = UIElement.PreviewMouseLeftButtonDownEvent
       };
       typeof(System.Windows.Input.MouseButtonEventArgs).GetProperty("ClickCount").SetValue(args, clicks);
@@ -463,7 +463,7 @@ namespace MDSHO.Tests {
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void Double_click_selects_the_word_and_triple_click_the_paragraph(bool isNote) {
+    public void Double_click_selects_the_word_triple_click_the_paragraph_and_four_clicks_all(bool isNote) {
       WithGroup(f => {
         ShortcutViewModel button = isNote ? NewNoteInGroup(f) : f.Group;
         TextEditWindow window = isNote ? TextEditWindow.ForNote(button) : TextEditWindow.ForComment(button);
@@ -480,9 +480,13 @@ namespace MDSHO.Tests {
             ClickEditor(window, 3, out handled);
             Assert.True(handled);
             Assert.Equal("Restart the server now.", editor.SelectedText);
-            // A single click is left to the text box.
+            // A fourth click selects the whole text.
+            ClickEditor(window, 4, out handled);
+            Assert.True(handled);
+            Assert.Equal(editor.Text, editor.SelectedText);
+            // A single click a while later is left to the text box.
             editor.Select(0, 0);
-            ClickEditor(window, 1, out handled);
+            ClickEditor(window, 1, out handled, timestamp: 100000);
             Assert.False(handled);
             Assert.Equal("", editor.SelectedText);
           });
@@ -835,14 +839,14 @@ namespace MDSHO.Tests {
             Assert.Null(window.FindName(gone));
           }
           Assert.Equal(Visibility.Collapsed, Named<Button>(window, "ButtonPin").Visibility);
-          Assert.Equal(Visibility.Collapsed, Named<Button>(window, "ButtonColors").Visibility);
+          Assert.Null(window.FindName("ButtonColors"));
           Assert.Null(window.FindName("ButtonOk"));
           Button close = Named<Button>(window, "ButtonClose");
           Assert.Equal("Close (Esc)", close.ToolTip);
           Assert.Equal("Close", System.Windows.Automation.AutomationProperties.GetName(close));
-          // Text history sits just left of X.
+          // More options (the title menu) sits just left of X.
           FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
-          Assert.Equal(BoundsIn(close, bar).Left, BoundsIn(Named<Button>(window, "ButtonHistory"), bar).Right, 1);
+          Assert.Equal(BoundsIn(close, bar).Left, BoundsIn(Named<Button>(window, "ButtonMore"), bar).Right, 1);
           // The text reaches the bottom of the window.
           FrameworkElement client = (FrameworkElement)window.Content;
           Assert.Equal(client.ActualHeight, BoundsIn(Named<TextBox>(window, "TextComment"), client).Bottom, 1);

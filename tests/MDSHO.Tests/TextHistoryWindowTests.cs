@@ -148,62 +148,47 @@ namespace MDSHO.Tests {
 
     private static MenuItem Row(ContextMenu menu, string text) => Items(menu).Single(i => i.Tag is HistoryEntry h && h.Text == text);
 
-    // ---- The button ----
+
+    // ---- In the title menu (the button is gone) ----
+
+    private static MenuItem HistoryItem(ContextMenu titleMenu) => Items(titleMenu).Single(i => i.Tag as string == "History");
 
     [Fact]
-    public void Notes_comments_and_snippets_have_the_history_button_left_of_pin_and_close() {
+    public void Notes_comments_and_snippets_have_text_history_first_in_the_title_menu() {
       WithButtons(f => {
-        TextEditWindow note = OpenNote(f.Note);
-        Button history = Named(note, "ButtonHistory");
-        Assert.Equal(Visibility.Visible, history.Visibility);
-        Assert.Equal(f.Win.Appearance.Icons.Time, history.Content);
-        Assert.Contains("MDSHOFont", history.FontFamily.Source);
-        Assert.Equal("Text history", history.ToolTip);
-        Assert.Equal("Text history", System.Windows.Automation.AutomationProperties.GetName(history));
-        Assert.True(System.Windows.Shell.WindowChrome.GetIsHitTestVisibleInChrome(history));
-        Assert.Equal(ColumnOf(Named(note, "ButtonPin")) - 1, ColumnOf(history));
-        Assert.True(ColumnOf(Named(note, "ButtonWrap")) < ColumnOf(history));
-        foreach (TextEditWindow other in new[] { Show(TextEditWindow.ForComment(f.Command)), Show(TextEditWindow.ForSnippet(f.Snippet)) }) {
-          Button h = Named(other, "ButtonHistory");
-          Assert.Equal(Visibility.Visible, h.Visibility);
-          Assert.True(ColumnOf(h) < ColumnOf(Named(other, "ButtonClose")));
-          Assert.True(ColumnOf(Named(other, "ButtonWrap")) < ColumnOf(h));
+        foreach (TextEditWindow window in new[] { OpenNote(f.Note), Show(TextEditWindow.ForComment(f.Command)), Show(TextEditWindow.ForSnippet(f.Snippet)) }) {
+          Assert.Null(window.FindName("ButtonHistory"));
+          MenuItem history = Items(window.BuildTitleMenu()).First();
+          Assert.Equal("Text history", history.Header);
+          Assert.Equal("History", history.Tag);
         }
       });
     }
 
     [Fact]
-    public void The_history_button_shows_the_time_icon_and_follows_the_icon_set() {
+    public void Text_history_in_the_title_menu_shows_the_time_icon_and_follows_the_icon_set() {
       WithButtons(f => {
         TextEditWindow window = OpenNote(f.Note);
-        Button history = Named(window, "ButtonHistory");
+        string solid = UnicodeText.FromHex("e95e"), outline = UnicodeText.FromHex("e95f");
         f.Win.Appearance.Icons.SolidIcons = true;
         WpfAppHost.Pump();
-        Assert.Equal("", history.Content);
+        Assert.Equal(solid, ((TextBlock)HistoryItem(window.BuildTitleMenu()).Icon).Text);
         f.Win.Appearance.Icons.SolidIcons = false;
         WpfAppHost.Pump();
-        Assert.Equal("", history.Content);
-        foreach (TextEditWindow other in new[] { Show(TextEditWindow.ForComment(f.Command)), Show(TextEditWindow.ForSnippet(f.Snippet)) }) {
-          Assert.Equal("", Named(other, "ButtonHistory").Content);
-        }
+        Assert.Equal(outline, ((TextBlock)HistoryItem(window.BuildTitleMenu()).Icon).Text);
+        TextEditWindow comment = Show(TextEditWindow.ForComment(f.Command));
+        Assert.Equal(outline, ((TextBlock)HistoryItem(comment.BuildTitleMenu()).Icon).Text);
       });
     }
 
     [Fact]
-    public void The_history_button_opens_the_menu_below_it() {
+    public void Picking_a_copy_from_the_title_menu_puts_it_back() {
       WithButtons(f => {
+        AddRow(f.Note, HistoryFields.Text, "old list", TextHistory.Stamp(f.Now.AddMinutes(-5)));
         TextEditWindow window = OpenNote(f.Note);
-        Button history = Named(window, "ButtonHistory");
-        history.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, history));
-        WpfAppHost.Pump();
-        try {
-          Assert.True(window.HistoryMenu.IsOpen);
-          Assert.Same(history, window.HistoryMenu.PlacementTarget);
-          Assert.Equal(System.Windows.Controls.Primitives.PlacementMode.Bottom, window.HistoryMenu.Placement);
-        } finally {
-          window.HistoryMenu.IsOpen = false;
-          WpfAppHost.Pump();
-        }
+        MenuItem history = HistoryItem(window.BuildTitleMenu());
+        Click(history.Items.OfType<MenuItem>().Single(i => i.Tag is HistoryEntry h && h.Text == "old list"));
+        Assert.Equal("old list", Text(window).Text);
       });
     }
 
@@ -676,7 +661,7 @@ namespace MDSHO.Tests {
       });
     }
 
-    // 50 copies: the menu scrolls like a normal menu instead of running off the screen.
+    // 50 copies: the Text history list of the title menu scrolls like a normal menu instead of running off the screen.
     [Fact]
     public void A_menu_of_50_copies_scrolls() {
       WithButtons(f => {
@@ -685,18 +670,23 @@ namespace MDSHO.Tests {
           AddRow(f.Note, HistoryFields.Text, "copy " + i, TextHistory.Stamp(f.Now.AddMinutes(-60 + i)));
         }
         TextEditWindow window = OpenNote(f.Note);
-        Button history = Named(window, "ButtonHistory");
-        history.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, history));
+        window.OpenTitleMenu();
         WpfAppHost.Pump();
-        ContextMenu menu = window.HistoryMenu;
+        ContextMenu menu = window.TitleMenu;
+        MenuItem history = HistoryItem(menu);
         try {
-          Assert.Equal(50, Items(menu).Count(i => i.Tag is HistoryEntry));
-          ScrollViewer scroll = FindChild<ScrollViewer>(menu);
+          history.IsSubmenuOpen = true;
+          WpfAppHost.Pump();
+          Assert.Equal(50, history.Items.OfType<MenuItem>().Count(i => i.Tag is HistoryEntry));
+          System.Windows.Controls.Primitives.Popup popup = (System.Windows.Controls.Primitives.Popup)history.Template.FindName("PART_Popup", history);
+          ScrollViewer scroll = FindChild<ScrollViewer>(popup.Child);
           Assert.NotNull(scroll);
           Assert.NotEqual(ScrollBarVisibility.Disabled, scroll.VerticalScrollBarVisibility);
           double screen = SystemParameters.VirtualScreenHeight;
-          Assert.True(menu.ActualHeight <= screen, "The menu is " + menu.ActualHeight + " high on a " + screen + " high screen.");
+          double height = ((FrameworkElement)popup.Child).ActualHeight;
+          Assert.True(height <= screen, "The list is " + height + " high on a " + screen + " high screen.");
         } finally {
+          history.IsSubmenuOpen = false;
           menu.IsOpen = false;
           WpfAppHost.Pump();
         }

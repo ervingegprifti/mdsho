@@ -119,12 +119,12 @@ namespace MDSHO.Data {
 
   /// <summary>
   /// The settings an export carries and a Replace import applies: Window theme, the Bring panels to front shortcut,
-  /// Remember places for each screen setup and how many earlier texts the text history keeps. Settings tied to this PC
+  /// Remember places for each screen setup, how many earlier texts the text history keeps and Highlight current line. Settings tied to this PC
   /// (backups, review prompt, last Settings page) stay out.
   /// </summary>
   public static class PortableSettings {
     /// <summary>Their AppSettings keys (the same as the SettingKey constants of the view models).</summary>
-    public static readonly string[] Keys = { "WindowTheme", "BringToFrontShortcut", "RememberScreenSetupPlaces", TextHistorySetting.SettingKey };
+    public static readonly string[] Keys = { "WindowTheme", "BringToFrontShortcut", "RememberScreenSetupPlaces", TextHistorySetting.SettingKey, CurrentLineSetting.SettingKey };
 
     /// <summary>The current value of each key; null when never saved.</summary>
     internal static Dictionary<string, string> Read() {

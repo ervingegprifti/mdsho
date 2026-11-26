@@ -120,6 +120,7 @@ namespace MDSHO {
       }
       // The editor has the window's colour (a note then follows its own colours).
       this.TextComment.Background = this.Background;
+      UseHighlights();
       if (kind == TextKind.Note) {
         UseNoteTitleBar();
         UseRenamableTitle(RenameTitleToolTip);
@@ -133,6 +134,7 @@ namespace MDSHO {
       UseFontButton();
       UseAutoSave();
       UseHistory();
+      UseTitleMenu();
 
       // The title icon, the title bar buttons and the window icon follow the window's solid or outline setting while open.
       IconGlyphs icons = this.icons;
@@ -142,20 +144,9 @@ namespace MDSHO {
       this.Closed += (s, e) => icons.PropertyChanged -= iconsChanged;
 
       this.ButtonClose.Click += (s, e) => Close();
-      this.ButtonPin.Click += (s, e) => {
-        SetPinned(!this.Topmost);
-        SaveNotePlace();
-      };
-      // Wrap text: a note remembers it with its window, the Comment windows of a panel share it.
+      this.ButtonPin.Click += (s, e) => TogglePinned();
       SetWrapText(kind != TextKind.Note && (shortcut.OwningWindow?.Appearance?.CommentWrapText ?? false));
-      this.ButtonWrap.Click += (s, e) => {
-        SetWrapText(!this.IsWrapText);
-        if (this.kind == TextKind.Note) {
-          SaveNotePlace();
-        } else if (shortcut.OwningWindow?.Appearance != null) {
-          shortcut.OwningWindow.Appearance.CommentWrapText = this.IsWrapText;
-        }
-      };
+      this.ButtonWrap.Click += (s, e) => ToggleWrapText();
       // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a comment and a snippet with their button.
       SetTextSize(kind == TextKind.Comment ? NoteWindowPlace.FontSizeOrDefault(shortcut.CommentFontSize)
         : kind == TextKind.Snippet ? NoteWindowPlace.FontSizeOrDefault(shortcut.TextFontSize) : NoteWindowPlace.DefaultFontSize);
@@ -168,9 +159,329 @@ namespace MDSHO {
       };
     }
 
+    // ---- The title bar menu ----
+
+    /// <summary>True for a character of the icon font (the private use area); other text shows in Segoe UI.</summary>
+    public static bool IsIconFontGlyph(string glyph) {
+      return !string.IsNullOrEmpty(glyph) && glyph[0] >= '' && glyph[0] <= '';
+    }
+
+    // The More options button shows IconGlyphs.More: in the icon font once it is a glyph, else as text (three dots) in
+    // Segoe UI, smaller so it looks as big as the other icons.
+    private void ShowMoreIcon(string glyph) {
+      this.ButtonMore.Content = glyph;
+      if (IsIconFontGlyph(glyph)) {
+        this.ButtonMore.SetResourceReference(FontFamilyProperty, "IconFont");
+        this.ButtonMore.FontSize = 14;
+      } else {
+        this.ButtonMore.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
+        this.ButtonMore.FontSize = 11;
+      }
+    }
+
+    /// <summary>Opens the title menu below More options, right edges lined up, with the button pressed while it is open (the button and Alt+F).</summary>
+    public void OpenMoreMenu() {
+      System.Windows.Controls.ContextMenu menu = BuildTitleMenu();
+      menu.PlacementTarget = this.ButtonMore;
+      menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Custom;
+      menu.CustomPopupPlacementCallback = (popup, target, offset) => new[] {
+        // Below the button, right edges lined up; above it when there is no room below.
+        new System.Windows.Controls.Primitives.CustomPopupPlacement(new Point(target.Width - popup.Width, target.Height), System.Windows.Controls.Primitives.PopupPrimaryAxis.Horizontal),
+        new System.Windows.Controls.Primitives.CustomPopupPlacement(new Point(target.Width - popup.Width, -popup.Height), System.Windows.Controls.Primitives.PopupPrimaryAxis.Horizontal)
+      };
+      this.ButtonMore.SetResourceReference(BackgroundProperty, "Theme.TitleButtonPressed");
+      // Not pressed once the menu closes, however it closes (Closed only comes from a popup that really showed).
+      DependencyPropertyDescriptor isOpen = DependencyPropertyDescriptor.FromProperty(System.Windows.Controls.ContextMenu.IsOpenProperty, typeof(System.Windows.Controls.ContextMenu));
+      EventHandler closed = null;
+      closed = (s, e) => {
+        if (!menu.IsOpen) {
+          isOpen.RemoveValueChanged(menu, closed);
+          this.ButtonMore.ClearValue(BackgroundProperty);
+        }
+      };
+      isOpen.AddValueChanged(menu, closed);
+      this.TitleMenu = menu;
+      menu.IsOpen = true;
+    }
+
+    /// <summary>The title bar's menu while it is open (or last open); null before it was opened.</summary>
+    public System.Windows.Controls.ContextMenu TitleMenu { get; private set; }
+
+    private const int WM_NCRBUTTONUP = 0x00A5;
+    private const int HTCAPTION = 2;
+
+    // A right-click on the title bar opens the title menu. The title text takes the mouse itself (for renaming), so it gets
+    // the menu the normal way; the rest of the title bar is the window's caption, where Windows would show its own menu.
+    private void UseTitleMenu() {
+      this.ButtonMore.Click += (s, e) => OpenMoreMenu();
+      this.TitleBar.ContextMenu = new System.Windows.Controls.ContextMenu();
+      this.TitleBar.ContextMenuOpening += (s, e) => {
+        this.TitleMenu = BuildTitleMenu();
+        this.TitleBar.ContextMenu = this.TitleMenu;
+      };
+      this.SourceInitialized += (s, e) => {
+        // Added after WindowChrome's own hook, so it is asked first.
+        (PresentationSource.FromVisual(this) as System.Windows.Interop.HwndSource)?.AddHook(TitleWndProc);
+      };
+    }
+
+    private IntPtr TitleWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled) {
+      if (HandleTitleMessage(msg, wParam)) {
+        handled = true;
+      }
+      return IntPtr.Zero;
+    }
+
+    /// <summary>A right-click released on the caption opens the title menu instead of the Windows menu; true when handled.</summary>
+    public bool HandleTitleMessage(int msg, IntPtr wParam) {
+      if (msg != WM_NCRBUTTONUP || wParam.ToInt64() != HTCAPTION) {
+        return false;
+      }
+      OpenTitleMenu();
+      return true;
+    }
+
+    /// <summary>Opens the title menu at the mouse.</summary>
+    public void OpenTitleMenu() {
+      this.TitleMenu = BuildTitleMenu();
+      this.TitleMenu.PlacementTarget = this.TitleBar;
+      this.TitleMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
+      this.TitleMenu.IsOpen = true;
+    }
+
+    /// <summary>
+    /// The title menu (More options), only the items that apply: every command of the title bar buttons and the ones used less
+    /// often. Text history (the history list), Wrap text, Keep on top (a note), Text size (the sizes), Font (the font list),
+    /// Note colours... (a note), Clear all highlights (a note; greyed out without any) and Close. Wrap text and Keep on top
+    /// have a tick while on.
+    /// </summary>
+    public System.Windows.Controls.ContextMenu BuildTitleMenu() {
+      bool note = this.kind == TextKind.Note;
+      System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();
+      System.Windows.Controls.MenuItem history = TitleItem("Text history", "History", this.icons.Time, null);
+      MoveItems(BuildHistoryMenu(), history, skipTag: "Header");
+      menu.Items.Add(history);
+      menu.Items.Add(new System.Windows.Controls.Separator());
+      menu.Items.Add(TitleToggle("Wrap text", "Wrap", this.icons.WrapText, this.IsWrapText, ToggleWrapText));
+      menu.Items.Add(TitleToggle("Highlight current line", "CurrentLine", "", this.highlighter.CurrentLine, ToggleCurrentLine));
+      if (note) {
+        menu.Items.Add(TitleToggle("Keep on top", "Pin", this.Topmost ? this.icons.PinOn : this.icons.PinOff, this.Topmost, TogglePinned));
+      }
+      // Text size: the size button's sizes with a tick on the current one, then Default (12 pt); Ctrl + wheel also sizes.
+      System.Windows.Controls.MenuItem size = new System.Windows.Controls.MenuItem { Header = "Text size", Tag = "Size" };
+      MoveItems(BuildSizeMenu(), size, skipTag: "Header");
+      menu.Items.Add(size);
+      System.Windows.Controls.MenuItem font = TitleItem("Font", "Font", this.icons.Font, null);
+      MoveItems(BuildFontMenu(), font, skipTag: null);
+      menu.Items.Add(font);
+      if (note) {
+        menu.Items.Add(TitleItem("Note colours...", "Colours", this.icons.Brush, ShowNoteColours));
+        menu.Items.Add(new System.Windows.Controls.Separator());
+        System.Windows.Controls.MenuItem clear = TitleItem("Clear all highlights", "ClearHighlights", this.icons.Delete, ClearHighlights);
+        clear.IsEnabled = NoteHighlights.Parse(this.shortcut.NoteHighlights).Count > 0;
+        menu.Items.Add(clear);
+      }
+      menu.Items.Add(new System.Windows.Controls.Separator());
+      menu.Items.Add(TitleItem("Close", "Close", this.icons.Times, Close));
+      return menu;
+    }
+
+    private System.Windows.Controls.MenuItem TitleItem(string header, string tag, string glyph, Action click) {
+      System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem {
+        Header = header, Tag = tag,
+        Icon = new System.Windows.Controls.TextBlock { Text = glyph, Style = TryFindResource("StyleMenuItemFontIcon") as Style }
+      };
+      if (click != null) {
+        item.Click += (s, e) => click();
+      }
+      return item;
+    }
+
+    // An item that is on or off: a tick while on (in place of its icon, like the Windows menus).
+    private System.Windows.Controls.MenuItem TitleToggle(string header, string tag, string glyph, bool on, Action click) {
+      System.Windows.Controls.MenuItem item = TitleItem(header, tag, glyph, click);
+      item.IsChecked = on;
+      if (on) {
+        item.Icon = null;
+      }
+      return item;
+    }
+
+    // Moves the items of a menu built for a title bar button into a submenu of the title menu.
+    private static void MoveItems(System.Windows.Controls.ContextMenu from, System.Windows.Controls.MenuItem into, string skipTag) {
+      List<object> items = from.Items.Cast<object>().ToList();
+      from.Items.Clear();
+      foreach (object item in items) {
+        if (skipTag != null && item is System.Windows.Controls.MenuItem m && m.Tag as string == skipTag) {
+          continue;
+        }
+        into.Items.Add(item);
+      }
+    }
+
+    /// <summary>Removes every saved colour highlight of this note.</summary>
+    public void ClearHighlights() {
+      if (this.kind == TextKind.Note && this.shortcut.NoteHighlights.Length > 0) {
+        SaveHighlights("");
+      }
+    }
+
+    // Highlight current line (the title menu): saved for every window, which all follow it.
+    private void ToggleCurrentLine() {
+      bool on = !this.highlighter.CurrentLine;
+      try {
+        CurrentLineSetting.SetOn(on);
+      } catch (Exception ex) {
+        // A setting that can't be saved still applies to this window.
+        AppLog.Warning(ex, "The current line setting could not be saved");
+        this.highlighter.CurrentLine = on;
+      }
+    }
+
+    // Keep on top (the pin button and the title menu); a note remembers it with its window.
+    private void TogglePinned() {
+      SetPinned(!this.Topmost);
+      SaveNotePlace();
+    }
+
+    // Wrap text (the button and the title menu): a note remembers it with its window, the Comment windows of a panel share it.
+    private void ToggleWrapText() {
+      SetWrapText(!this.IsWrapText);
+      if (this.kind == TextKind.Note) {
+        SaveNotePlace();
+      } else if (this.shortcut.OwningWindow?.Appearance != null) {
+        this.shortcut.OwningWindow.Appearance.CommentWrapText = this.IsWrapText;
+      }
+    }
+
     private void ShowTitle() {
       this.Title = this.shortcut.Name;
       this.TextTitle.Text = this.Title;
+    }
+
+    // ---- Highlights ----
+
+    private TextHighlighter highlighter;
+
+    /// <summary>The other places with the selected text, softly highlighted (not the selection itself).</summary>
+    public IReadOnlyList<(int Start, int Length)> LiveMatches => this.highlighter.LiveMatches;
+
+    /// <summary>Every match of the note's saved terms with its colour, term by term (none for a comment or snippet).</summary>
+    public IReadOnlyList<(int Start, int Length, string Color)> SavedMatches => this.highlighter.SavedMatches;
+
+    // A note's saved colour highlights: they follow its saved terms, and its text menu can add and remove them.
+    // Comments and snippets keep the plain text menu of Windows.
+    private void UseSavedHighlights() {
+      if (this.kind != TextKind.Note) {
+        return;
+      }
+      this.highlighter.SavedTerms = this.shortcut.NoteHighlights;
+      PropertyChangedEventHandler changed = (s, e) => {
+        if (e.PropertyName == nameof(ShortcutViewModel.NoteHighlights)) {
+          this.highlighter.SavedTerms = this.shortcut.NoteHighlights;
+        }
+      };
+      this.shortcut.PropertyChanged += changed;
+      this.Closed += (s, e) => this.shortcut.PropertyChanged -= changed;
+      this.TextComment.ContextMenu = BuildTextMenu();
+      // Built again each time, so it shows the selection's colour and what can be removed.
+      this.TextComment.ContextMenuOpening += (s, e) => this.TextComment.ContextMenu = BuildTextMenu();
+    }
+
+    /// <summary>
+    /// A note's text menu: Cut, Copy, Paste, then Highlight (the five colours, a tick on the selection's colour; needs a
+    /// selection of at least 2 letters) and Remove highlight (the saved term selected or around the caret). Null for a
+    /// comment or snippet.
+    /// </summary>
+    public System.Windows.Controls.ContextMenu BuildTextMenu() {
+      if (this.kind != TextKind.Note) {
+        return null;
+      }
+      System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();
+      menu.Items.Add(CommandItem("Cut", ApplicationCommands.Cut, this.icons.Cut));
+      menu.Items.Add(CommandItem("Copy", ApplicationCommands.Copy, this.icons.Copy));
+      menu.Items.Add(CommandItem("Paste", ApplicationCommands.Paste, this.icons.Paste));
+      menu.Items.Add(new System.Windows.Controls.Separator());
+      string selected = this.TextComment.SelectedText;
+      SavedHighlight current = TextMatches.IsSearchable(selected) ? NoteHighlights.Find(this.shortcut.NoteHighlights, selected) : null;
+      System.Windows.Controls.MenuItem highlight = new System.Windows.Controls.MenuItem {
+        Header = "Highlight", Tag = "Highlight", IsEnabled = TextMatches.IsSearchable(selected), Icon = Swatch(current?.Color ?? HighlightColors.All[0])
+      };
+      foreach (string color in HighlightColors.All) {
+        System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem {
+          Header = color, Tag = color, IsChecked = current?.Color == color, Icon = Swatch(color)
+        };
+        string picked = color;
+        item.Click += (s, e) => PickHighlight(picked);
+        highlight.Items.Add(item);
+      }
+      menu.Items.Add(highlight);
+      System.Windows.Controls.MenuItem remove = new System.Windows.Controls.MenuItem {
+        Header = "Remove highlight", Tag = "RemoveHighlight", Icon = Swatch(null),
+        IsEnabled = NoteHighlights.TermAt(this.TextComment.Text, this.shortcut.NoteHighlights, this.TextComment.SelectionStart, this.TextComment.SelectionLength) != null
+      };
+      remove.Click += (s, e) => RemoveHighlight();
+      menu.Items.Add(remove);
+      return menu;
+    }
+
+    private System.Windows.Controls.MenuItem CommandItem(string header, RoutedUICommand command, string glyph) {
+      return new System.Windows.Controls.MenuItem {
+        Header = header, Tag = header, Command = command, CommandTarget = this.TextComment,
+        Icon = new System.Windows.Controls.TextBlock { Text = glyph, Style = TryFindResource("StyleMenuItemFontIcon") as Style }
+      };
+    }
+
+    // A small square of a highlight colour for the menu; an empty one (just the edge) for null.
+    private static System.Windows.Controls.Border Swatch(string color) {
+      return new System.Windows.Controls.Border {
+        Width = 14, Height = 14, CornerRadius = new CornerRadius(2), BorderThickness = new Thickness(1),
+        BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x59, 0, 0, 0)),
+        Background = color == null ? System.Windows.Media.Brushes.Transparent : new System.Windows.Media.SolidColorBrush(TextHighlighter.SwatchColor(color))
+      };
+    }
+
+    /// <summary>Saves the selected text as a highlight in this colour (a saved term changes colour); it colours every match.</summary>
+    public void PickHighlight(string color) {
+      string selected = this.TextComment.SelectedText;
+      if (this.kind != TextKind.Note || !TextMatches.IsSearchable(selected)) {
+        return;
+      }
+      SaveHighlights(NoteHighlights.With(this.shortcut.NoteHighlights, selected, color));
+    }
+
+    /// <summary>Removes the saved highlight whose term is selected, or whose match is around the caret.</summary>
+    public void RemoveHighlight() {
+      SavedHighlight term = NoteHighlights.TermAt(this.TextComment.Text, this.shortcut.NoteHighlights, this.TextComment.SelectionStart, this.TextComment.SelectionLength);
+      if (this.kind == TextKind.Note && term != null) {
+        SaveHighlights(NoteHighlights.Without(this.shortcut.NoteHighlights, term.Term));
+      }
+    }
+
+    // Saves the highlights at once, apart from the text. Never the terms in the log: they are the note's own words.
+    private void SaveHighlights(string stored) {
+      try {
+        this.shortcut.SaveNoteHighlights(stored);
+      } catch (Exception ex) {
+        AppLog.Warning(null, "The highlights of a note could not be saved: {ErrorType}", ex.GetType().FullName);
+        ErrorDialog.ShowDialog("The highlights could not be saved.", ex);
+      }
+    }
+
+    // While text is selected, every other place with the same text is highlighted and the title bar shows the count.
+    private void UseHighlights() {
+      this.highlighter = new TextHighlighter(this.TextComment, this.HighlightLayer, this.LineLayer);
+      // Highlight current line is one choice for every window: they all follow it when it changes.
+      this.highlighter.CurrentLine = CurrentLineSetting.IsOn;
+      Action currentLineChanged = () => this.highlighter.CurrentLine = CurrentLineSetting.IsOn;
+      CurrentLineSetting.Changed += currentLineChanged;
+      this.Closed += (s, e) => CurrentLineSetting.Changed -= currentLineChanged;
+      this.highlighter.Changed += () => {
+        string label = TextMatches.CountLabel(this.highlighter.MatchCount);
+        this.TextMatchCount.Text = label;
+        this.TextMatchCount.Visibility = label.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+      };
+      UseSavedHighlights();
     }
 
     // ---- Renaming a note from its title ----
@@ -565,11 +876,10 @@ namespace MDSHO {
     private readonly DispatcherTimer noteSaveTimer = new DispatcherTimer { Interval = NoteAutoSaveDelay };
 
     /// <summary>
-    /// A note has colours, pin (keep on top) and close in its title bar and no bottom bar, so the text gets the whole window.
+    /// A note has pin (keep on top) and close in its title bar and no bottom bar, so the text gets the whole window. Its
+    /// colours are in the More options menu, since they aren't changed every day.
     /// </summary>
     private void UseNoteTitleBar() {
-      this.ButtonColors.Visibility = Visibility.Visible;
-      this.ButtonColors.Click += (s, e) => ShowNoteColours();
       this.ButtonPin.Visibility = Visibility.Visible;
       this.ButtonClose.ToolTip = "Close (Esc)";
       SetPinned(false);
@@ -586,7 +896,7 @@ namespace MDSHO {
       this.TitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "Theme.BarBackground");
       this.TextTitle.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
       this.TextTitleIcon.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "Theme.TextStrong");
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonHistory, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonMore, this.ButtonClose }) {
         button.SetResourceReference(ForegroundProperty, "Theme.TextStrong");
       }
       this.Body.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "Theme.WindowBackground");
@@ -607,7 +917,7 @@ namespace MDSHO {
       this.TitleBar.SetBinding(System.Windows.Controls.Border.BackgroundProperty, Bind(nameof(NoteColors.TitleBackgroundColor)));
       this.TextTitle.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       this.TextTitleIcon.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonColors, this.ButtonWrap, this.ButtonHistory, this.ButtonPin, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonPin, this.ButtonMore, this.ButtonClose }) {
         button.SetBinding(ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       }
       SetBinding(BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
@@ -734,6 +1044,7 @@ namespace MDSHO {
       this.textPoints = points;
       this.TextComment.FontSize = NoteWindowPlace.ToDips(points);
       this.ButtonSize.Content = NoteWindowPlace.SizeLabel(points);
+      this.highlighter?.QueueDraw();
     }
 
     // ---- The text size button and menu ----
@@ -761,7 +1072,7 @@ namespace MDSHO {
     /// </summary>
     public System.Windows.Controls.ContextMenu BuildSizeMenu() {
       System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();
-      menu.Items.Add(new System.Windows.Controls.MenuItem { Header = "Text size", IsEnabled = false, FontSize = 11 });
+      menu.Items.Add(new System.Windows.Controls.MenuItem { Header = "Text size", Tag = "Header", IsEnabled = false, FontSize = 11 });
       long current = TextSize;
       foreach (long size in NoteWindowPlace.SizePresets) {
         menu.Items.Add(SizeItem(NoteWindowPlace.SizeLabel(size), size, size == current));
@@ -787,9 +1098,6 @@ namespace MDSHO {
 
     /// <summary>The clock for the times the text history shows (labels only). Tests replace it.</summary>
     public static Func<DateTime> Now = () => DateTime.Now;
-
-    /// <summary>The history menu while it is open (or last open); null before the history button was clicked.</summary>
-    public System.Windows.Controls.ContextMenu HistoryMenu { get; private set; }
 
     // The text before the latest change.
     private string historyLastText = "";
@@ -825,12 +1133,6 @@ namespace MDSHO {
     // window is left after a change (the text from before that run of edits), and at once for an edit that removes a lot.
     private void UseHistory() {
       this.historyLastText = this.TextComment.Text ?? "";
-      this.ButtonHistory.Click += (s, e) => {
-        this.HistoryMenu = BuildHistoryMenu();
-        this.HistoryMenu.PlacementTarget = this.ButtonHistory;
-        this.HistoryMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
-        this.HistoryMenu.IsOpen = true;
-      };
       this.TextComment.TextChanged += (s, e) => {
         string before = this.historyLastText;
         string text = this.TextComment.Text ?? "";
@@ -1042,6 +1344,7 @@ namespace MDSHO {
 
     private void ApplyFont() {
       this.TextComment.FontFamily = NoteFontFamilies.Resolve(CurrentFont);
+      this.highlighter?.QueueDraw();
     }
 
     /// <summary>
@@ -1095,6 +1398,7 @@ namespace MDSHO {
     private void SetWrapText(bool wrap) {
       this.TextComment.TextWrapping = wrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
       this.TextComment.HorizontalScrollBarVisibility = wrap ? System.Windows.Controls.ScrollBarVisibility.Disabled : System.Windows.Controls.ScrollBarVisibility.Auto;
+      this.highlighter?.QueueDraw();
       string tip = wrap ? "Stop wrapping text" : "Wrap text";
       this.ButtonWrap.ToolTip = tip;
       System.Windows.Automation.AutomationProperties.SetName(this.ButtonWrap, tip);
@@ -1106,17 +1410,30 @@ namespace MDSHO {
       }
     }
 
-    // A double click selects the word without the space after it, a triple click the whole paragraph.
+    /// <summary>The Windows double-click time in milliseconds.</summary>
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern uint GetDoubleClickTime();
+
+    // The run of quick clicks in the editor, counted here (see TextComment_PreviewMouseLeftButtonDown).
+    private readonly ClickRun clickRun = new ClickRun();
+
+    // A double click selects the word without the space after it, a triple click the whole paragraph, a fourth click all text.
+    // WPF measures its double-click time from the first click of a run, so a 4th click at a normal pace comes too late and
+    // WPF counts it as a new single click. The editor counts the run itself: each click within the double-click time and
+    // spot of the click before.
     private void TextComment_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
-      if (e.ClickCount != 2 && e.ClickCount != 3) {
+      Point at = e.GetPosition(this.TextComment);
+      int clicks = this.clickRun.Next(e.ClickCount, e.Timestamp, at.X, at.Y, (int)GetDoubleClickTime(),
+        SystemParameters.MinimumHorizontalDragDistance, SystemParameters.MinimumVerticalDragDistance);
+      if (clicks < 2) {
         return;
       }
       int index = CharacterIndexAt(this.TextComment, e);
-      if (index < 0) {
+      if (index < 0 && clicks < 4) {
         return;
       }
       string text = this.TextComment.Text ?? "";
-      (int start, int length) = e.ClickCount == 2 ? TextClickSelection.WordAt(text, index) : TextClickSelection.ParagraphAt(text, index);
+      (int start, int length) = TextClickSelection.ForClicks(text, index, clicks).Value;
       this.TextComment.Focus();
       this.TextComment.Select(start, length);
       e.Handled = true;
@@ -1204,10 +1521,9 @@ namespace MDSHO {
       string glyph = this.kind == TextKind.Note ? icons.Note : this.kind == TextKind.Snippet ? icons.Snippet : icons.Comment;
       this.TextTitleIcon.Text = glyph;
       this.ButtonClose.Content = icons.Times;
-      this.ButtonColors.Content = icons.Brush;
       this.ButtonFont.Content = icons.Font;
       this.ButtonWrap.Content = icons.WrapText;
-      this.ButtonHistory.Content = icons.Time;
+      ShowMoreIcon(icons.More);
       this.ButtonPin.Content = this.Topmost ? icons.PinOn : icons.PinOff;
       this.Icon = GlyphIcon.Create(glyph);
     }
@@ -1226,6 +1542,10 @@ namespace MDSHO {
         // A comment or snippet closes (closing saves it).
         e.Handled = true;
         Close();
+      } else if (e.Key == Key.System && e.SystemKey == Key.F && KeyboardModifiers() == ModifierKeys.Alt) {
+        // Alt+F opens the title menu, like the ⋯ menu of Edge. Shift+F10 and the Menu key keep the text menu.
+        e.Handled = true;
+        OpenMoreMenu();
       }
     }
   }

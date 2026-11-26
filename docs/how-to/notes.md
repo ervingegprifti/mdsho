@@ -30,6 +30,45 @@ Hover over a note's button to see its first lines: up to 10, each cut to one row
 
 You can also select the button and press F2.
 
+## Select text
+
+Double-click to select a word, click three times to select the line, and click four times to select all the text.
+
+## See where the same text appears
+
+Select some text, at least 2 letters. Every other place in the note with the same text gets a soft grey highlight,
+also inside other words: selecting **art** highlights the **art** in **start**. Case doesn't matter. When the text
+appears more than once, the title bar shows how many times, for example **3 matches**. The highlights follow your
+selection and go away when nothing is selected. This works in comments and snippets too.
+
+## Keep words in colour
+
+1. Select a word (or any text of at least 2 letters) in the note.
+2. Right-click it, choose **Highlight** and pick **Yellow**, **Green**, **Blue**, **Pink** or **Orange**.
+
+Every place in the note with that text gets the colour, like the live highlights: case doesn't matter, and it also
+colours it inside other words. The note keeps the word, not its place, so the colour follows when you change the text.
+Highlight the same word again to change its colour; the current one has a tick.
+
+To take a colour off, right-click the coloured word and choose **Remove highlight**. The note's text itself stays
+plain: copying it, exports of the text and the button's tooltip don't change. Exports and backups keep the colours.
+To take all the colours off at once, click **More options** (⋯) and choose **Clear all highlights**.
+
+## More options
+
+Click **More options** (⋯, just left of the close button) for the note's menu. It has every command of the title bar
+and the ones you need less often: **Text history**, **Wrap text**, **Highlight current line**, **Keep on top**,
+**Text size**, **Font**,
+**Note colours...**, **Clear all highlights** and **Close**. A right-click on the title bar or Alt+F opens the same
+menu. **Wrap text** and **Keep on top** have a tick while on.
+Comments and snippets have the same menu with only **Text history**, **Wrap text**, **Text size**, **Font** and **Close**.
+
+## See the line you are on
+
+The line with the caret has a faint shade, a little darker on a light note and a little lighter on a dark one. With
+**Wrap text** on, only the row with the caret is shaded. It stays while you work in another window. To turn it off
+or on for every note, comment and snippet, click **More options** (⋯) and choose **Highlight current line**.
+
 ## Keep a note on top
 
 1. Click **Keep on top** in the note's title bar. The note stays above your other windows.
@@ -40,7 +79,8 @@ Click **Wrap text** to fit long lines to the window's width.
 ## Change the text size
 
 The **Text size** button left of **Font** shows the note's size in points. Click it and pick a size from 8 to 72 pt
-(the same sizes as in Word), or **Default (12 pt)**; the current one has a tick. You can also hold Ctrl and turn the
+(the same sizes as in Word), or **Default (12 pt)**; the current one has a tick. **More options** (⋯) has the same
+sizes under **Text size**. You can also hold Ctrl and turn the
 mouse wheel to step through the same sizes, and the button follows. The note keeps its size. New notes start at 12 pt; other notes keep the size saved
 with them.
 
@@ -50,7 +90,7 @@ A note keeps up to 10 earlier versions of its text. A version is kept when you s
 it, when you leave the window after changing it (you click elsewhere, minimise or close it, or MDSHO exits), and when
 one change removes a lot (half the text or more).
 
-1. Click the clock (**Text history**) in the note's title bar.
+1. Click **More options** (⋯) in the note's title bar and point to **Text history**.
 2. The newest version is at the top. Each shows when it was kept (**Today 14:05:09**, **Yesterday 18:30:00**,
    **19 Nov 16:44:00**) and its first line, with **…** when the line goes on and **↵** when more lines follow. Pick one.
 
@@ -72,7 +112,7 @@ plain text, without the font.
 
 ## Colour a note
 
-1. Click **Note colours** in the note's title bar.
+1. Click **More options** (⋯) in the note's title bar and choose **Note colours...**.
 2. Pick a part on the left: **Border**, **Title background**, **Title text**, **Background** or **Text**.
 3. Choose a colour in the palette. The note changes as you pick.
 4. Click **Apply**. Closing the window without Apply puts the old colours back.

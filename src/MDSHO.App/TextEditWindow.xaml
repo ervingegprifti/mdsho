@@ -69,14 +69,14 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!--Title bar: icon and the button's name, then for a note text size, font, colours, wrap text, history and pin (keep on top), for a
-            snippet or a comment text size, font, wrap text and history, then close. Every kind saves itself while you type and when it closes, so there is no OK.
-            The pin is a thumbtack pointing left, or down while the note is on top.-->
+        <!--Title bar: icon and the button's name, then for a note text size, font, wrap text and pin (keep on top), for a
+            snippet or a comment text size, font and wrap text, then More options and close. Every kind saves itself while you type and when it closes, so there is no OK.
+            The pin is a thumbtack pointing left, or down while the note is on top. More options (and a right-click) opens the title menu, which has every
+            command of the title bar and the ones used less often: Note colours, Text history and Clear all highlights.-->
         <Border x:Name="TitleBar" Grid.Row="0" Background="#FFDFDACB">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -89,6 +89,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="TextTitleIcon" Grid.Column="0" FontFamily="{StaticResource IconFont}" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
@@ -97,6 +98,9 @@
                         <TextBox x:Name="TextTitleEdit" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="14" MinWidth="160" Padding="1,0"
                                  Visibility="Collapsed" WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="Note title"/>
                     </StackPanel>
+                    <!--How many times the selected text appears ("3 matches"), only while it appears more than once.-->
+                    <TextBlock x:Name="TextMatchCount" Grid.Column="2" Margin="8,0,6,0" VerticalAlignment="Center" FontSize="12" Opacity="0.8"
+                               Foreground="{Binding Foreground, ElementName=TextTitle}" Visibility="Collapsed"/>
                 </Grid>
                 <!--The text size button shows the size in points and opens the size menu. Wide enough for "72 pt", so the other buttons
                     don't move when the size changes.-->
@@ -105,15 +109,13 @@
                 <!--The font button opens the font menu.-->
                 <Button x:Name="ButtonFont" Grid.Column="2" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Font" AutomationProperties.Name="Font" Visibility="Collapsed"/>
-                <Button x:Name="ButtonColors" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
-                        ToolTip="Note colours" AutomationProperties.Name="Note colours" Visibility="Collapsed"/>
-                <Button x:Name="ButtonWrap" Grid.Column="4" Style="{StaticResource StyleTitleBarButton}" FontSize="14" ToolTip="Wrap text" AutomationProperties.Name="Wrap text"/>
-                <!--The history button (the time icon) opens the text history menu.-->
-                <Button x:Name="ButtonHistory" Grid.Column="5" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
-                        ToolTip="Text history" AutomationProperties.Name="Text history"/>
-                <Button x:Name="ButtonPin" Grid.Column="6" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
+                <Button x:Name="ButtonWrap" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" FontSize="14" ToolTip="Wrap text" AutomationProperties.Name="Wrap text"/>
+                <Button x:Name="ButtonPin" Grid.Column="4" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Keep on top" AutomationProperties.Name="Keep on top" Visibility="Collapsed"/>
-                <Button x:Name="ButtonClose" Grid.Column="7" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"/>
+                <!--More options opens the title menu (Alt+F too). Its icon and font come from IconGlyphs.More (see ShowIcons).-->
+                <Button x:Name="ButtonMore" Grid.Column="5" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
+                        ToolTip="More options" AutomationProperties.Name="More options"/>
+                <Button x:Name="ButtonClose" Grid.Column="6" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"/>
             </Grid>
         </Border>
 
@@ -129,6 +131,11 @@
                      HorizontalScrollBarVisibility="Auto"
                      VerticalScrollBarVisibility="Auto"
                      AutomationProperties.Name="Comment"/>
+            <!--Highlights over the text (a text box can't colour parts of its text): drawn in code for the lines on screen,
+                faint enough to read the text through, and never in the way of the mouse.-->
+            <!--The current line: a faint shade on the caret's row, edge to edge, under the highlights (see TextHighlighter).-->
+            <Canvas x:Name="LineLayer" IsHitTestVisible="False" ClipToBounds="True"/>
+            <Canvas x:Name="HighlightLayer" IsHitTestVisible="False" ClipToBounds="True"/>
         </Grid>
     </Grid>
 </Window>

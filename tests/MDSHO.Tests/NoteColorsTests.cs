@@ -219,17 +219,14 @@ namespace MDSHO.Tests {
     // ---- Note window ----
 
     [Fact]
-    public void The_note_window_has_a_colours_button_before_the_pin() {
+    public void Note_colours_is_in_the_more_options_menu_not_the_title_bar() {
       WithNote(f => {
         TextEditWindow window = TextEditWindow.ForNote(f.Note);
         Shown(window, () => {
-          Button colours = Named<Button>(window, "ButtonColors");
-          Button pin = Named<Button>(window, "ButtonPin");
-          Assert.Equal(Visibility.Visible, colours.Visibility);
-          Assert.Equal("Note colours", colours.ToolTip);
-          Assert.Equal(f.Note.OwningWindow.Appearance.Icons.Brush, colours.Content);
-          FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
-          Assert.True(colours.TranslatePoint(new Point(0, 0), bar).X < pin.TranslatePoint(new Point(0, 0), bar).X);
+          Assert.Null(window.FindName("ButtonColors"));
+          MenuItem colours = window.BuildTitleMenu().Items.OfType<MenuItem>().Single(i => i.Tag as string == "Colours");
+          Assert.Equal("Note colours...", colours.Header);
+          Assert.Equal(f.Note.OwningWindow.Appearance.Icons.Brush, ((TextBlock)colours.Icon).Text);
         });
       });
     }
@@ -239,7 +236,8 @@ namespace MDSHO.Tests {
       WithNote(f => {
         TextEditWindow window = TextEditWindow.ForComment(f.Win.RootShortcuts.First(s => !s.IsNote || true));
         Shown(window, () => {
-          Assert.Equal(Visibility.Collapsed, Named<Button>(window, "ButtonColors").Visibility);
+          Assert.Null(window.FindName("ButtonColors"));
+          Assert.DoesNotContain(window.BuildTitleMenu().Items.OfType<MenuItem>(), i => i.Tag as string == "Colours");
         });
       });
     }

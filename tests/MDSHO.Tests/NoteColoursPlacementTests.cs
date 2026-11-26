@@ -149,8 +149,9 @@ namespace MDSHO.Tests {
                   w.Close();
                   return false;
                 };
-                System.Windows.Controls.Button colours = (System.Windows.Controls.Button)window.FindName("ButtonColors");
-                colours.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, colours));
+                // Note colours... in the More options menu.
+                System.Windows.Controls.MenuItem colours = System.Linq.Enumerable.Single(System.Linq.Enumerable.OfType<System.Windows.Controls.MenuItem>(window.BuildTitleMenu().Items), i => i.Tag as string == "Colours");
+                colours.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.MenuItem.ClickEvent, colours));
                 WpfAppHost.Pump();
               } finally {
                 window.Close();

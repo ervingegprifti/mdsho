@@ -790,7 +790,7 @@ namespace MDSHO.Tests {
           Assert.Equal(Visibility.Visible, Named<Button>(window, "ButtonWrap").Visibility);
           Assert.Equal(Visibility.Visible, Named<Button>(window, "ButtonClose").Visibility);
           Assert.NotEqual(Visibility.Visible, Named<Button>(window, "ButtonPin").Visibility);
-          Assert.NotEqual(Visibility.Visible, Named<Button>(window, "ButtonColors").Visibility);
+          Assert.Null(window.FindName("ButtonColors"));
           Assert.Equal(TextEditWindow.RenameSnippetTitleToolTip, Named<TextBlock>(window, "TextTitle").ToolTip);
         });
       });

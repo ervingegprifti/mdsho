@@ -49,8 +49,8 @@ The button is named after the page or link title when the browser gives one, oth
   target** gives it the name of what it opens.
 - **Move** a button: drag it, or use **Cut** and **Paste** from its right-click menu.
 - **Comment** on a button: right-click it and choose **Comment...**. The comment shows last in its tooltip, after **Comment:**. It saves itself
-  while you type and when you close the window. The title bar has **Text size**, **Font** and the clock (**Text history**: the
-  earlier versions of the comment, to put one back), like a note.
+  while you type and when you close the window. The title bar has **Text size**, **Font**, **Wrap text** and **More options** (⋯), whose menu has
+  **Text history** (the earlier versions of the comment, to put one back), like a note.
 - **Delete** a button: right-click it and choose **Delete**. The file it opens is not deleted.
 
 ## Add another panel

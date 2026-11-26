@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.26.2]
+
+### Added
+
+- In notes, comments and snippets, four clicks select all the text (two select a word, three a line).
+- Select some text and every other place with the same text gets a soft grey highlight, also inside other words, so you
+  can see if you already wrote it. Case doesn't matter, and it needs at least 2 letters. The title bar shows how many
+  there are.
+- Notes can keep words in colour: select a word, right-click and choose **Highlight** and one of five colours. Every
+  place with that word gets the colour, also after you change the text. **Remove highlight** takes it off. The note's
+  text stays plain, so copying, snippets and exports of the text don't change. Database version 25; exports and
+  backups carry the highlights, and older exports import with none.
+- A **More options** button (⋯) just left of Close opens a menu with every command of the title bar and the ones used
+  less often: Text history, Wrap text, Highlight current line, Keep on top, Text size, Font, Note colours, Clear all
+  highlights and Close. A
+  right-click on the title bar or Alt+F opens it too. Comments and snippets get the items that apply to them.
+- The line with the caret gets a faint shade (3% darker on a light background, 3% lighter on a dark one), also while
+  the window isn't in use. **Highlight current line** in **More options** turns it off for every note, comment and
+  snippet; exports carry the choice.
+
+### Changed
+
+- The Text history button of notes, comments and snippets made room for **More options** (⋯); Text history is now in
+  its menu. Note colours moved there too, which leaves more room for the note's title.
+
 ## [1.25.0]
 
 ### Changed

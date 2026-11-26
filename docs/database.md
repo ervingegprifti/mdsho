@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 24**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 25**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -96,6 +96,7 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `CommentFont` | TEXT | NOT NULL | `'Courier New'` | The font of the button's comment, by name, like `TextFont`. Added in version 22. |
 | `CommentFontSize` | INTEGER | NOT NULL | `0` | The text size of the button's comment in whole points (8 to 72); `0` = 12 pt. Added in version 22. |
 | `TextFontSize` | INTEGER | NOT NULL | `0` | The text size of a snippet in whole points (8 to 72); `0` = 12 pt. A note keeps its size in `NoteWindows.FontSize`. Added in version 23. |
+| `NoteHighlights` | TEXT | NOT NULL | `''` | A note's saved colour highlights, apart from its text: a JSON list of terms and colours, for example `[{"term":"pay","color":"Yellow"}]` (colours `Yellow`, `Green`, `Blue`, `Pink`, `Orange`); empty = none. Each term colours every match in the text, ignoring case, also inside other words. Added in version 25. |
 
 ### NoteWindows
 
@@ -178,6 +179,7 @@ belong to this PC: they are not exported and every import keeps them. Added in v
 | `ReviewLastDay` | The last local day counted in `ReviewDaysUsed` (`yyyy-MM-dd`). Added in 1.13.0; the database version stays 17. |
 | `ReviewShown` | How many times the review prompt was shown: `1` or `2`. Without a row: never. Added in 1.13.0; the database version stays 17. |
 | `ReviewLastShown` | The local date (`yyyy-MM-dd`) the review prompt was last shown. Added in 1.13.0; the database version stays 17. |
+| `HighlightCurrentLine` | **Highlight current line** in the More options menu of notes, comments and snippets: `On` or `Off`. Without a row, or with any other value: on. Exports carry it. Added in 1.26.2; the database version stays 25. |
 | `TextHistoryKeep` | **earlier texts to keep** under **Text history** (Settings > General): `0` to `50`; `0` keeps none. Without a row, or with a value that is not a number: `10`; a number outside 0 to 50 counts as the nearest. Added in version 24. |
 | `ReviewRated` | `Yes` after a rating in the Store dialog, or after Rate opened the Store page (the review prompt, the panel menu or About); the prompt then never shows. Added in 1.13.0; the database version stays 17. |
 
@@ -270,6 +272,7 @@ that worked.
 | 22 | 1.21.0 | `Shortcuts.CommentFont` (`TEXT NOT NULL DEFAULT 'Courier New'`) and `Shortcuts.CommentFontSize` (`INTEGER NOT NULL DEFAULT 0`): each comment keeps its own font and text size. The text history: `TextPrevious1`, `TextPrevious2`, `CommentPrevious1` and `CommentPrevious2`, each with a `...Time` column (all `TEXT NOT NULL DEFAULT ''`). Copies, exports and backups carry them (still export format 3); older exports import with Courier New, 12 pt and no history. |
 | 23 | 1.21.1 | `Shortcuts.TextFontSize` (`INTEGER NOT NULL DEFAULT 0`): each snippet keeps its own text size. Copies, exports and backups carry it (still export format 3); older exports import with `0` (12 pt). |
 | 24 | 1.22.0 | `History` table and its index: the text history, up to the **Text history** setting per button and field. The step moves each non-empty `TextPrevious1/2` and `CommentPrevious1/2` (with its time, the older copy first) into `History`, then drops those eight `Shortcuts` columns (`ALTER TABLE ... DROP COLUMN`). Exports and backups carry the rows (still export format 3); older exports import their two earlier copies as rows. A copied button starts with no history. |
+| 25 | 1.26.2 | `Shortcuts.NoteHighlights` (`TEXT NOT NULL DEFAULT ''`): the saved colour highlights of each note, as terms rather than places, so they survive edits. Copies, exports and backups carry it (still export format 3); older exports import with none. |
 
 ### Backup before an upgrade
 

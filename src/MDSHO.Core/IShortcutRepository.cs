@@ -66,6 +66,8 @@ namespace MDSHO.Core {
     void UpdateCommentFontSize(long id, long points);
     /// <summary>Saves the text size of a snippet in whole points (0 = 12 pt).</summary>
     void UpdateTextFontSize(long id, long points);
+    /// <summary>Saves a note's colour highlights, kept apart from its text (null = none).</summary>
+    void UpdateNoteHighlights(long id, string highlights);
     /// <summary>Saves the five colours of a note's window (empty = the default colour).</summary>
     void UpdateNoteColors(long id, string border, string titleBackground, string titleText, string background, string text);
     /// <summary>Saves the order among the siblings.</summary>
