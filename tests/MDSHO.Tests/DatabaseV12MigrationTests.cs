@@ -57,7 +57,8 @@ namespace MDSHO.Tests {
       DataStore.Upgrade();
       Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(0, Columns("MDSHOWindows", "ReserveDockedSpace"));
-      Assert.True(DataStore.Windows.GetAll().Single().CommentWrapText);
+      // Version 26 moves comment wrap from the panel to each button.
+      Assert.Equal(0, Columns("MDSHOWindows", "CommentWrapText"));
       Assert.Contains(Directory.GetFiles(db.Folder, "test.sqlite3.bak-v*"), p => p.Contains("bak-v11-"));
     }
   }

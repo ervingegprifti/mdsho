@@ -255,8 +255,6 @@ namespace MDSHO.ViewModels {
         foreach (ShortcutViewModel shortcut in this.RootShortcuts) {
           shortcut.RaisePasteHintChanged();
         }
-      } else if (e.PropertyName == nameof(this.Appearance.CommentWrapText)) {
-        DataStore.Windows.UpdateCommentWrapText(windowID, this.Appearance.CommentWrapText);
       } else if (e.PropertyName == nameof(this.Appearance.ShowVersionInTitle)) {
         DataStore.Windows.UpdateShowVersionInTitle(windowID, this.Appearance.ShowVersionInTitle);
       }

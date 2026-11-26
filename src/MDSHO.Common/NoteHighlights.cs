@@ -79,9 +79,9 @@ namespace MDSHO.Common {
     }
 
     /// <summary>Every match of every saved term with its colour: term by term, each in order.</summary>
-    public static IEnumerable<(int Start, int Length, string Color)> Matches(string text, string stored) {
+    public static IEnumerable<(int Start, int Length, string Color)> Matches(string text, string stored, MatchOptions options = default) {
       foreach (SavedHighlight h in Parse(stored)) {
-        foreach ((int start, int length) in TextMatches.Find(text, h.Term)) {
+        foreach ((int start, int length) in TextMatches.Find(text, h.Term, options)) {
           yield return (start, length, h.Color);
         }
       }
@@ -89,9 +89,9 @@ namespace MDSHO.Common {
 
     /// <summary>
     /// The saved highlight a menu acts on: the one whose term is the selected text, else the one with a match around the
-    /// caret (the start of the selection); null when there is none.
+    /// caret (the start of the selection) with these match options; null when there is none.
     /// </summary>
-    public static SavedHighlight TermAt(string text, string stored, int selectionStart, int selectionLength) {
+    public static SavedHighlight TermAt(string text, string stored, int selectionStart, int selectionLength, MatchOptions options = default) {
       IReadOnlyList<SavedHighlight> all = Parse(stored);
       if (selectionLength > 0 && text != null && selectionStart >= 0 && selectionStart + selectionLength <= text.Length) {
         string selected = text.Substring(selectionStart, selectionLength);
@@ -103,7 +103,7 @@ namespace MDSHO.Common {
           return null;
         }
       }
-      return all.FirstOrDefault(h => TextMatches.Find(text, h.Term).Any(m => m.Start <= selectionStart && selectionStart < m.Start + m.Length));
+      return all.FirstOrDefault(h => TextMatches.Find(text, h.Term, options).Any(m => m.Start <= selectionStart && selectionStart < m.Start + m.Length));
     }
 
     private static bool Same(string a, string b) {

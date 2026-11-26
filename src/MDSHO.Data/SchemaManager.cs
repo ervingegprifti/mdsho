@@ -36,7 +36,6 @@ namespace MDSHO.Data {
           Notes TEXT NOT NULL,
           SolidIcons INTEGER NOT NULL,
           SingleClickToOpen INTEGER NOT NULL,
-          CommentWrapText INTEGER NOT NULL DEFAULT 0,
           ShowVersionInTitle INTEGER NOT NULL DEFAULT 1);
 
         CREATE TABLE MDSHOWindowClones (
@@ -82,6 +81,14 @@ namespace MDSHO.Data {
           CommentFontSize INTEGER NOT NULL DEFAULT 0,
           TextFontSize INTEGER NOT NULL DEFAULT 0,
           NoteHighlights TEXT NOT NULL DEFAULT '',
+          TextCurrentLine INTEGER NOT NULL DEFAULT 1,
+          TextWholeWords INTEGER NOT NULL DEFAULT 0,
+          TextMatchCase INTEGER NOT NULL DEFAULT 0,
+          TextWrapText INTEGER NOT NULL DEFAULT 0,
+          CommentCurrentLine INTEGER NOT NULL DEFAULT 1,
+          CommentWholeWords INTEGER NOT NULL DEFAULT 0,
+          CommentMatchCase INTEGER NOT NULL DEFAULT 0,
+          CommentWrapText INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(ParentShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE,
           FOREIGN KEY(ParentMDSHOWindowID) REFERENCES MDSHOWindows(ID) ON DELETE CASCADE);
 
@@ -409,8 +416,37 @@ namespace MDSHO.Data {
         if (!ColumnExists(conn, "Shortcuts", "NoteHighlights")) {
           Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN NoteHighlights TEXT NOT NULL DEFAULT '';");
         }
+      }),
+      new DbMigration(26, "More options settings per button: Shortcuts.Text* and Comment* CurrentLine, WholeWords, MatchCase and WrapText", conn => {
+        foreach ((string column, int value) in ViewOptionColumns) {
+          if (!ColumnExists(conn, "Shortcuts", column)) {
+            Execute(conn, "ALTER TABLE Shortcuts ADD COLUMN " + column + " INTEGER NOT NULL DEFAULT " + value + ";");
+          }
+        }
+        // Highlight current line was one app setting: off for everything when it was off.
+        if (TableExists(conn, "AppSettings")) {
+          Execute(conn, "UPDATE Shortcuts SET TextCurrentLine = 0, CommentCurrentLine = 0 "
+            + "WHERE EXISTS (SELECT 1 FROM AppSettings WHERE Key = 'HighlightCurrentLine' AND Value = 'Off');");
+          Execute(conn, "DELETE FROM AppSettings WHERE Key = 'HighlightCurrentLine';");
+        }
+        // Comments and snippets wrapped like their panel: each button gets its panel's value (found through its groups).
+        if (ColumnExists(conn, "MDSHOWindows", "CommentWrapText")) {
+          Execute(conn, @"WITH RECURSIVE Owner(ID, WindowID) AS (
+              SELECT ID, ParentMDSHOWindowID FROM Shortcuts WHERE ParentMDSHOWindowID IS NOT NULL
+              UNION SELECT s.ID, o.WindowID FROM Shortcuts s JOIN Owner o ON s.ParentShortcutID = o.ID)
+            UPDATE Shortcuts SET
+              CommentWrapText = (SELECT w.CommentWrapText FROM Owner o JOIN MDSHOWindows w ON w.ID = o.WindowID WHERE o.ID = Shortcuts.ID),
+              TextWrapText = CASE WHEN IsSnippet = 1 THEN (SELECT w.CommentWrapText FROM Owner o JOIN MDSHOWindows w ON w.ID = o.WindowID WHERE o.ID = Shortcuts.ID) ELSE 0 END
+            WHERE ID IN (SELECT ID FROM Owner);");
+          Execute(conn, "ALTER TABLE MDSHOWindows DROP COLUMN CommentWrapText;");
+        }
       })
     };
+
+    /// <summary>The columns version 26 adds, with their defaults: current line on, the rest off.</summary>
+    internal static readonly (string Column, int Default)[] ViewOptionColumns = {
+      ("TextCurrentLine", 1), ("TextWholeWords", 0), ("TextMatchCase", 0), ("TextWrapText", 0),
+      ("CommentCurrentLine", 1), ("CommentWholeWords", 0), ("CommentMatchCase", 0), ("CommentWrapText", 0) };
 
     /// <summary>The two earlier copies of database versions 22 and 23, moved into History by version 24.</summary>
     internal static readonly string[] OldHistoryColumns = { "TextPrevious1", "TextPrevious1Time", "TextPrevious2", "TextPrevious2Time",

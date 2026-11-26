@@ -145,7 +145,8 @@ namespace MDSHO {
 
       this.ButtonClose.Click += (s, e) => Close();
       this.ButtonPin.Click += (s, e) => TogglePinned();
-      SetWrapText(kind != TextKind.Note && (shortcut.OwningWindow?.Appearance?.CommentWrapText ?? false));
+      // A comment and a snippet keep their wrap with their button; a note with its window place.
+      SetWrapText(kind != TextKind.Note && ViewOptions.WrapText);
       this.ButtonWrap.Click += (s, e) => ToggleWrapText();
       // Ctrl + mouse wheel sizes the text; a note remembers the size with its window, a comment and a snippet with their button.
       SetTextSize(kind == TextKind.Comment ? NoteWindowPlace.FontSizeOrDefault(shortcut.CommentFontSize)
@@ -251,9 +252,9 @@ namespace MDSHO {
 
     /// <summary>
     /// The title menu (More options), only the items that apply: every command of the title bar buttons and the ones used less
-    /// often. Text history (the history list), Wrap text, Keep on top (a note), Text size (the sizes), Font (the font list),
-    /// Note colours... (a note), Clear all highlights (a note; greyed out without any) and Close. Wrap text and Keep on top
-    /// have a tick while on.
+    /// often. Text history (the history list), Wrap text, Highlight current line, Keep on top (a note), Text size (the sizes),
+    /// Font (the font list), Note colours... (a note), Highlight whole words only, Highlight matching case only, Clear all
+    /// highlights (a note; greyed out without any) and Close. The on/off items have a tick while on.
     /// </summary>
     public System.Windows.Controls.ContextMenu BuildTitleMenu() {
       bool note = this.kind == TextKind.Note;
@@ -276,7 +277,15 @@ namespace MDSHO {
       menu.Items.Add(font);
       if (note) {
         menu.Items.Add(TitleItem("Note colours...", "Colours", this.icons.Brush, ShowNoteColours));
-        menu.Items.Add(new System.Windows.Controls.Separator());
+      }
+      menu.Items.Add(new System.Windows.Controls.Separator());
+      System.Windows.Controls.MenuItem wholeWords = TitleToggle("Highlight whole words only", "WholeWords", "", this.highlighter.Options.WholeWords, ToggleWholeWords);
+      wholeWords.ToolTip = WholeWordsToolTip;
+      menu.Items.Add(wholeWords);
+      System.Windows.Controls.MenuItem matchCase = TitleToggle("Highlight matching case only", "MatchCase", "", this.highlighter.Options.MatchCase, ToggleMatchCase);
+      matchCase.ToolTip = MatchCaseToolTip;
+      menu.Items.Add(matchCase);
+      if (note) {
         System.Windows.Controls.MenuItem clear = TitleItem("Clear all highlights", "ClearHighlights", this.icons.Delete, ClearHighlights);
         clear.IsEnabled = NoteHighlights.Parse(this.shortcut.NoteHighlights).Count > 0;
         menu.Items.Add(clear);
@@ -326,15 +335,40 @@ namespace MDSHO {
       }
     }
 
-    // Highlight current line (the title menu): saved for every window, which all follow it.
-    private void ToggleCurrentLine() {
-      bool on = !this.highlighter.CurrentLine;
+    /// <summary>The tooltip of Highlight whole words only.</summary>
+    public const string WholeWordsToolTip = "When on, selecting “art” won't light up “start”.";
+    /// <summary>The tooltip of Highlight matching case only.</summary>
+    public const string MatchCaseToolTip = "When on, selecting “art” won't light up “Art”.";
+
+    // The saved More options settings of this window: the comment's, or the note's or snippet's text.
+    private TextViewOptions ViewOptions => this.kind == TextKind.Comment ? this.shortcut.CommentViewOptions : this.shortcut.TextViewOptions;
+
+    // What this window shows now (a note's wrap is kept with its window place, so the saved one stays).
+    private TextViewOptions ShownViewOptions => new TextViewOptions(this.highlighter.CurrentLine, this.highlighter.Options.WholeWords,
+      this.highlighter.Options.MatchCase, this.kind == TextKind.Note ? ViewOptions.WrapText : this.IsWrapText);
+
+    private void ToggleCurrentLine() => SaveViewOptions(ShownViewOptions with { CurrentLine = !this.highlighter.CurrentLine });
+
+    private void ToggleWholeWords() => SaveViewOptions(ShownViewOptions with { WholeWords = !this.highlighter.Options.WholeWords });
+
+    private void ToggleMatchCase() => SaveViewOptions(ShownViewOptions with { MatchCase = !this.highlighter.Options.MatchCase });
+
+    // Shows the settings, then saves them with the button (one that can't be saved still applies to this window).
+    private void SaveViewOptions(TextViewOptions options) {
+      ShowViewOptions(options);
       try {
-        CurrentLineSetting.SetOn(on);
+        this.shortcut.SaveViewOptions(this.kind == TextKind.Comment, options);
       } catch (Exception ex) {
-        // A setting that can't be saved still applies to this window.
-        AppLog.Warning(ex, "The current line setting could not be saved");
-        this.highlighter.CurrentLine = on;
+        AppLog.Warning(ex, "The More options settings could not be saved");
+      }
+    }
+
+    // Current line and the match options redraw the highlights at once; a comment or snippet also wraps.
+    private void ShowViewOptions(TextViewOptions options) {
+      this.highlighter.CurrentLine = options.CurrentLine;
+      this.highlighter.Options = new MatchOptions(options.WholeWords, options.MatchCase);
+      if (this.kind != TextKind.Note && this.IsWrapText != options.WrapText) {
+        SetWrapText(options.WrapText);
       }
     }
 
@@ -344,13 +378,13 @@ namespace MDSHO {
       SaveNotePlace();
     }
 
-    // Wrap text (the button and the title menu): a note remembers it with its window, the Comment windows of a panel share it.
+    // Wrap text (the button and the title menu): a note remembers it with its window, a comment or snippet with its button.
     private void ToggleWrapText() {
-      SetWrapText(!this.IsWrapText);
       if (this.kind == TextKind.Note) {
+        SetWrapText(!this.IsWrapText);
         SaveNotePlace();
-      } else if (this.shortcut.OwningWindow?.Appearance != null) {
-        this.shortcut.OwningWindow.Appearance.CommentWrapText = this.IsWrapText;
+      } else {
+        SaveViewOptions(ShownViewOptions with { WrapText = !this.IsWrapText });
       }
     }
 
@@ -418,7 +452,7 @@ namespace MDSHO {
       menu.Items.Add(highlight);
       System.Windows.Controls.MenuItem remove = new System.Windows.Controls.MenuItem {
         Header = "Remove highlight", Tag = "RemoveHighlight", Icon = Swatch(null),
-        IsEnabled = NoteHighlights.TermAt(this.TextComment.Text, this.shortcut.NoteHighlights, this.TextComment.SelectionStart, this.TextComment.SelectionLength) != null
+        IsEnabled = NoteHighlights.TermAt(this.TextComment.Text, this.shortcut.NoteHighlights, this.TextComment.SelectionStart, this.TextComment.SelectionLength, this.highlighter.Options) != null
       };
       remove.Click += (s, e) => RemoveHighlight();
       menu.Items.Add(remove);
@@ -452,7 +486,7 @@ namespace MDSHO {
 
     /// <summary>Removes the saved highlight whose term is selected, or whose match is around the caret.</summary>
     public void RemoveHighlight() {
-      SavedHighlight term = NoteHighlights.TermAt(this.TextComment.Text, this.shortcut.NoteHighlights, this.TextComment.SelectionStart, this.TextComment.SelectionLength);
+      SavedHighlight term = NoteHighlights.TermAt(this.TextComment.Text, this.shortcut.NoteHighlights, this.TextComment.SelectionStart, this.TextComment.SelectionLength, this.highlighter.Options);
       if (this.kind == TextKind.Note && term != null) {
         SaveHighlights(NoteHighlights.Without(this.shortcut.NoteHighlights, term.Term));
       }
@@ -471,11 +505,16 @@ namespace MDSHO {
     // While text is selected, every other place with the same text is highlighted and the title bar shows the count.
     private void UseHighlights() {
       this.highlighter = new TextHighlighter(this.TextComment, this.HighlightLayer, this.LineLayer);
-      // Highlight current line is one choice for every window: they all follow it when it changes.
-      this.highlighter.CurrentLine = CurrentLineSetting.IsOn;
-      Action currentLineChanged = () => this.highlighter.CurrentLine = CurrentLineSetting.IsOn;
-      CurrentLineSetting.Changed += currentLineChanged;
-      this.Closed += (s, e) => CurrentLineSetting.Changed -= currentLineChanged;
+      // Highlight current line and the match options are saved with the button (the comment apart from the text).
+      ShowViewOptions(ViewOptions);
+      string optionsName = this.kind == TextKind.Comment ? nameof(ShortcutViewModel.CommentViewOptions) : nameof(ShortcutViewModel.TextViewOptions);
+      PropertyChangedEventHandler optionsChanged = (s, e) => {
+        if (e.PropertyName == optionsName) {
+          ShowViewOptions(ViewOptions);
+        }
+      };
+      this.shortcut.PropertyChanged += optionsChanged;
+      this.Closed += (s, e) => this.shortcut.PropertyChanged -= optionsChanged;
       this.highlighter.Changed += () => {
         string label = TextMatches.CountLabel(this.highlighter.MatchCount);
         this.TextMatchCount.Text = label;

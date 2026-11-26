@@ -77,6 +77,22 @@ namespace MDSHO.Core {
     public long TextFontSize { get; set; }
     /// <summary>A note's saved colour highlights: terms and colours as JSON, "" for none (see NoteHighlights in MDSHO.Common).</summary>
     public string NoteHighlights { get; set; } = "";
+    /// <summary>1 when the note's or snippet's window shades the caret's line (on for new items and older export files).</summary>
+    public long TextCurrentLine { get; set; } = 1;
+    /// <summary>1 when the note's or snippet's highlights match whole words only.</summary>
+    public long TextWholeWords { get; set; }
+    /// <summary>1 when the note's or snippet's highlights match the case.</summary>
+    public long TextMatchCase { get; set; }
+    /// <summary>1 when the snippet's text wraps (a note keeps its wrap with its window place).</summary>
+    public long TextWrapText { get; set; }
+    /// <summary>1 when the Comment window shades the caret's line (on for new items and older export files).</summary>
+    public long CommentCurrentLine { get; set; } = 1;
+    /// <summary>1 when the comment's highlights match whole words only.</summary>
+    public long CommentWholeWords { get; set; }
+    /// <summary>1 when the comment's highlights match the case.</summary>
+    public long CommentMatchCase { get; set; }
+    /// <summary>1 when the comment's text wraps.</summary>
+    public long CommentWrapText { get; set; }
     /// <summary>
     /// Children shortcuts.
     /// </summary>

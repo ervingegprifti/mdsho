@@ -49,7 +49,8 @@ namespace MDSHO.Tests {
       DesktopWindow window = DataStore.Windows.GetAll().Single();
       Assert.True(window.ShowVersionInTitle);
       Assert.True(window.SingleClickToOpen);
-      Assert.True(window.CommentWrapText);
+      // Version 26 moves comment wrap from the panel to each button.
+      Assert.Equal(0, Columns("MDSHOWindows", "CommentWrapText"));
       Assert.Contains(Directory.GetFiles(db.Folder, "test.sqlite3.bak-v*"), p => p.Contains("bak-v12-"));
     }
 

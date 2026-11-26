@@ -44,7 +44,6 @@ namespace MDSHO.ViewModels {
         notes: windowRecord.Notes,
         solidIcons: windowRecord.SolidIcons,
         singleClickToOpen: windowRecord.SingleClickToOpen);
-      appearance.CommentWrapText = windowRecord.CommentWrapText;
       appearance.ShowVersionInTitle = windowRecord.ShowVersionInTitle;
 
       DesktopWindowViewModel desktopWindow = new DesktopWindowViewModel(
@@ -113,7 +112,9 @@ namespace MDSHO.ViewModels {
         commentFont: shortcutRecord.CommentFont,
         commentFontSize: shortcutRecord.CommentFontSize,
         textFontSize: shortcutRecord.TextFontSize,
-        noteHighlights: shortcutRecord.NoteHighlights);
+        noteHighlights: shortcutRecord.NoteHighlights,
+        textViewOptions: new TextViewOptions(shortcutRecord.TextCurrentLine == 1, shortcutRecord.TextWholeWords == 1, shortcutRecord.TextMatchCase == 1, shortcutRecord.TextWrapText == 1),
+        commentViewOptions: new TextViewOptions(shortcutRecord.CommentCurrentLine == 1, shortcutRecord.CommentWholeWords == 1, shortcutRecord.CommentMatchCase == 1, shortcutRecord.CommentWrapText == 1));
       foreach (Shortcut childRecord in shortcutRecord.Shortcuts) {
         ShortcutViewModel child = ShortcutToViewModel(appViewModel: appViewModel, parentShortcut: shortcut, shortcutRecord: childRecord);
         shortcut.Children.Add(child);
@@ -254,6 +255,14 @@ namespace MDSHO.ViewModels {
       template.CommentFontSize = shortcut.CommentFontSize;
       template.TextFontSize = shortcut.TextFontSize;
       template.NoteHighlights = shortcut.NoteHighlights;
+      template.TextCurrentLine = shortcut.TextViewOptions.CurrentLine ? 1 : 0;
+      template.TextWholeWords = shortcut.TextViewOptions.WholeWords ? 1 : 0;
+      template.TextMatchCase = shortcut.TextViewOptions.MatchCase ? 1 : 0;
+      template.TextWrapText = shortcut.TextViewOptions.WrapText ? 1 : 0;
+      template.CommentCurrentLine = shortcut.CommentViewOptions.CurrentLine ? 1 : 0;
+      template.CommentWholeWords = shortcut.CommentViewOptions.WholeWords ? 1 : 0;
+      template.CommentMatchCase = shortcut.CommentViewOptions.MatchCase ? 1 : 0;
+      template.CommentWrapText = shortcut.CommentViewOptions.WrapText ? 1 : 0;
       // A copied button starts with no text history.
       Shortcut savedRecord = DataStore.Shortcuts.Append(template);
       // Copy the physical file after the insert, so a failed insert (rollback) never leaves an orphan file behind.

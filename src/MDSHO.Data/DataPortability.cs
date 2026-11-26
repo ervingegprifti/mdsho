@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using MDSHO.Core;
@@ -119,12 +120,12 @@ namespace MDSHO.Data {
 
   /// <summary>
   /// The settings an export carries and a Replace import applies: Window theme, the Bring panels to front shortcut,
-  /// Remember places for each screen setup, how many earlier texts the text history keeps and Highlight current line. Settings tied to this PC
+  /// Remember places for each screen setup and how many earlier texts the text history keeps. Settings tied to this PC
   /// (backups, review prompt, last Settings page) stay out.
   /// </summary>
   public static class PortableSettings {
     /// <summary>Their AppSettings keys (the same as the SettingKey constants of the view models).</summary>
-    public static readonly string[] Keys = { "WindowTheme", "BringToFrontShortcut", "RememberScreenSetupPlaces", TextHistorySetting.SettingKey, CurrentLineSetting.SettingKey };
+    public static readonly string[] Keys = { "WindowTheme", "BringToFrontShortcut", "RememberScreenSetupPlaces", TextHistorySetting.SettingKey };
 
     /// <summary>The current value of each key; null when never saved.</summary>
     internal static Dictionary<string, string> Read() {
@@ -192,6 +193,44 @@ namespace MDSHO.Data {
     internal static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Shortcut, string[]> LegacyHistory =
       new System.Runtime.CompilerServices.ConditionalWeakTable<Shortcut, string[]>();
 
+    /// <summary>
+    /// The panel's comment wrap read from a file of database version 25 or older (never written); the importer gives it to
+    /// the panel's buttons (see <see cref="LegacyViewOptions"/>).
+    /// </summary>
+    internal static readonly System.Runtime.CompilerServices.ConditionalWeakTable<DesktopWindow, object> LegacyCommentWrap =
+      new System.Runtime.CompilerServices.ConditionalWeakTable<DesktopWindow, object>();
+
+    /// <summary>The app setting of database version 25 and older for Highlight current line; "Off" turned it off everywhere.</summary>
+    internal const string LegacyCurrentLineKey = "HighlightCurrentLine";
+
+    /// <summary>
+    /// A file of database version 25 or older kept Highlight current line as one setting and wrapped comments and snippets
+    /// like their panel: each button gets those values, as the database upgrade does.
+    /// </summary>
+    internal static void LegacyViewOptions(DataFile data) {
+      bool currentLineOff = data.Settings != null && data.Settings.TryGetValue(LegacyCurrentLineKey, out string line) && line == "Off";
+      HashSet<long> wrapping = new HashSet<long>(data.Windows.Where(w => w != null && LegacyCommentWrap.TryGetValue(w, out object v) && (bool)v).Select(w => w.ID));
+      Dictionary<long, Shortcut> byId = new Dictionary<long, Shortcut>();
+      foreach (Shortcut s in data.Shortcuts.Where(s => s != null)) {
+        byId[s.ID] = s;
+      }
+      foreach (Shortcut s in byId.Values) {
+        if (currentLineOff) {
+          s.TextCurrentLine = 0;
+          s.CommentCurrentLine = 0;
+        }
+        // The panel through the groups; a broken parent chain (checked later) counts as no wrap.
+        Shortcut cur = s;
+        for (int depth = 0; cur != null && cur.ParentWindowID == null && depth <= byId.Count; depth++) {
+          cur = cur.ParentShortcutID != null && byId.TryGetValue(cur.ParentShortcutID.Value, out Shortcut parent) ? parent : null;
+        }
+        if (cur?.ParentWindowID != null && wrapping.Contains(cur.ParentWindowID.Value)) {
+          s.CommentWrapText = 1;
+          s.TextWrapText = s.IsSnippet == 1 ? 1 : 0;
+        }
+      }
+    }
+
     /// <summary>The History rows for one shortcut of an older file: the older copy first; empty copies are skipped.</summary>
     internal static IEnumerable<HistoryEntry> LegacyHistoryOf(Shortcut shortcut) {
       if (!LegacyHistory.TryGetValue(shortcut, out string[] v)) {
@@ -226,6 +265,12 @@ namespace MDSHO.Data {
             legacy.Set = (obj, value) => LegacyHistory.GetValue((Shortcut)obj, s => new string[LegacyHistoryNames.Length])[index] = (string)value;
             info.Properties.Add(legacy);
           }
+        }
+        // Database version 25 and older kept comment wrap with the panel: read it aside, never write it.
+        if (info.Type == typeof(DesktopWindow)) {
+          JsonPropertyInfo legacyWrap = info.CreateJsonPropertyInfo(typeof(bool), "commentWrapText");
+          legacyWrap.Set = (obj, value) => LegacyCommentWrap.AddOrUpdate((DesktopWindow)obj, (bool)value);
+          info.Properties.Add(legacyWrap);
         }
         // A history row is linked by its shortcut's ID; its own row ID is not written.
         if (info.Type == typeof(HistoryEntry)) {

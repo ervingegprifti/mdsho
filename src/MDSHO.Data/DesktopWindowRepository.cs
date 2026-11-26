@@ -9,17 +9,17 @@ namespace MDSHO.Data {
     private const string InsertSql = @"
       INSERT INTO MDSHOWindows (
         ID, Title, ScreenDeviceName, Left, Top, Width, Height, BorderColor, BackgroundColor, TextColor,
-        TitleBackgroundColor, TitleTextColor, Notes, SolidIcons, SingleClickToOpen, CommentWrapText, ShowVersionInTitle)
+        TitleBackgroundColor, TitleTextColor, Notes, SolidIcons, SingleClickToOpen, ShowVersionInTitle)
       VALUES (
         NULLIF(@ID, 0), @Title, @ScreenDeviceName, @Left, @Top, @Width, @Height, @BorderColor, @BackgroundColor, @TextColor,
-        @TitleBackgroundColor, @TitleTextColor, @Notes, @SolidIcons, @SingleClickToOpen, @CommentWrapText, @ShowVersionInTitle)";
+        @TitleBackgroundColor, @TitleTextColor, @Notes, @SolidIcons, @SingleClickToOpen, @ShowVersionInTitle)";
 
     private const string UpdateSql = @"
       UPDATE MDSHOWindows SET
         Title = @Title, ScreenDeviceName = @ScreenDeviceName, Left = @Left, Top = @Top, Width = @Width, Height = @Height,
         BorderColor = @BorderColor, BackgroundColor = @BackgroundColor, TextColor = @TextColor,
         TitleBackgroundColor = @TitleBackgroundColor, TitleTextColor = @TitleTextColor, Notes = @Notes,
-        SolidIcons = @SolidIcons, SingleClickToOpen = @SingleClickToOpen, CommentWrapText = @CommentWrapText,
+        SolidIcons = @SolidIcons, SingleClickToOpen = @SingleClickToOpen,
         ShowVersionInTitle = @ShowVersionInTitle
       WHERE ID = @ID";
 
@@ -152,9 +152,6 @@ namespace MDSHO.Data {
     }
     public void UpdateShowVersionInTitle(long id, bool showVersionInTitle) {
       Run("UPDATE MDSHOWindows SET ShowVersionInTitle = @showVersionInTitle WHERE ID = @id;", new { id, showVersionInTitle });
-    }
-    public void UpdateCommentWrapText(long id, bool commentWrapText) {
-      Run("UPDATE MDSHOWindows SET CommentWrapText = @commentWrapText WHERE ID = @id;", new { id, commentWrapText });
     }
     public void UpdateLeftTopHeight(long id, long left, long top, long height) {
       Run("UPDATE MDSHOWindows SET Left = @left, Top = @top, Height = @height WHERE ID = @id;", new { id, left, top, height });

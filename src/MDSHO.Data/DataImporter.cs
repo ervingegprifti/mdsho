@@ -18,6 +18,8 @@ namespace MDSHO.Data {
   /// place just before the commit, in a way that is undone when the import fails.
   /// </summary>
   public static class DataImporter {
+    /// <summary>The first database version that keeps current line and wrap with each button.</summary>
+    internal const int PerButtonViewOptionsFromVersion = 26;
     /// <summary>The largest accepted total uncompressed size of the file's entries (and of any single entry).</summary>
     public static long MaxTotalBytes { get; set; } = 200L * 1024 * 1024;
 
@@ -416,6 +418,10 @@ namespace MDSHO.Data {
         d.NoteWindows = d.NoteWindows ?? new List<NoteWindowPlace>();
         // Files from before database version 24 have no History rows: their shortcuts' earlier copies become rows.
         d.History = d.History ?? d.Shortcuts.Where(s => s != null).SelectMany(PortabilityJson.LegacyHistoryOf).ToList();
+        // Data from database version 25 or older kept current line and comment wrap app-wide and per panel.
+        if (Manifest.SchemaVersion < PerButtonViewOptionsFromVersion) {
+          PortabilityJson.LegacyViewOptions(d);
+        }
         // Data from database version 20 or older has its text sizes in DIPs: convert them like the database upgrade.
         if (Manifest.SchemaVersion < NoteWindowPlace.FontSizeInPointsFromVersion) {
           foreach (NoteWindowPlace place in d.NoteWindows.Where(p => p != null)) {

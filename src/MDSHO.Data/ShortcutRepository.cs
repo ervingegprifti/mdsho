@@ -9,19 +9,22 @@ namespace MDSHO.Data {
     internal const string SelectColumns = @"ID, ParentShortcutID, ParentMDSHOWindowID AS ParentWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded,
       Comment, IsMarked, MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText,
       NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor, IsSnippet, SnippetText, TextFont,
-      CommentFont, CommentFontSize, TextFontSize, NoteHighlights";
+      CommentFont, CommentFontSize, TextFontSize, NoteHighlights,
+      TextCurrentLine, TextWholeWords, TextMatchCase, TextWrapText, CommentCurrentLine, CommentWholeWords, CommentMatchCase, CommentWrapText";
 
     private const string InsertSql = @"
       INSERT INTO Shortcuts (
         ID, ParentShortcutID, ParentMDSHOWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded, Comment, IsMarked,
         MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText,
         NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor, IsSnippet, SnippetText, TextFont,
-        CommentFont, CommentFontSize, TextFontSize, NoteHighlights)
+        CommentFont, CommentFontSize, TextFontSize, NoteHighlights,
+        TextCurrentLine, TextWholeWords, TextMatchCase, TextWrapText, CommentCurrentLine, CommentWholeWords, CommentMatchCase, CommentWrapText)
       VALUES (
         NULLIF(@ID, 0), @ParentShortcutID, @ParentWindowID, @Name, @Target, @Ext, @Guid, @IsGroup, @IsGroupExpanded, @Comment, @IsMarked,
         @MarkColor, @Position, @IsProcessCommand, @ProcessFileName, @ProcessArguments, @ProcessRunAsAdmin, COALESCE(@ProcessWorkingFolder, ''), @IsNote, COALESCE(@NoteText, ''),
         COALESCE(@NoteBorderColor, ''), COALESCE(@NoteTitleBackgroundColor, ''), COALESCE(@NoteTitleTextColor, ''), COALESCE(@NoteBackgroundColor, ''), COALESCE(@NoteTextColor, ''), @IsSnippet, COALESCE(@SnippetText, ''), COALESCE(@TextFont, 'Courier New'),
-        COALESCE(@CommentFont, 'Courier New'), @CommentFontSize, @TextFontSize, COALESCE(@NoteHighlights, ''))";
+        COALESCE(@CommentFont, 'Courier New'), @CommentFontSize, @TextFontSize, COALESCE(@NoteHighlights, ''),
+        @TextCurrentLine, @TextWholeWords, @TextMatchCase, @TextWrapText, @CommentCurrentLine, @CommentWholeWords, @CommentMatchCase, @CommentWrapText)";
 
     private const string UpdateSql = @"
       UPDATE Shortcuts SET
@@ -32,7 +35,9 @@ namespace MDSHO.Data {
         NoteBorderColor = COALESCE(@NoteBorderColor, ''), NoteTitleBackgroundColor = COALESCE(@NoteTitleBackgroundColor, ''), NoteTitleTextColor = COALESCE(@NoteTitleTextColor, ''), NoteBackgroundColor = COALESCE(@NoteBackgroundColor, ''), NoteTextColor = COALESCE(@NoteTextColor, ''),
         ProcessWorkingFolder = COALESCE(@ProcessWorkingFolder, ''), IsSnippet = @IsSnippet, SnippetText = COALESCE(@SnippetText, ''),
         TextFont = COALESCE(@TextFont, 'Courier New'), CommentFont = COALESCE(@CommentFont, 'Courier New'), CommentFontSize = @CommentFontSize,
-        TextFontSize = @TextFontSize, NoteHighlights = COALESCE(@NoteHighlights, '')
+        TextFontSize = @TextFontSize, NoteHighlights = COALESCE(@NoteHighlights, ''),
+        TextCurrentLine = @TextCurrentLine, TextWholeWords = @TextWholeWords, TextMatchCase = @TextMatchCase, TextWrapText = @TextWrapText,
+        CommentCurrentLine = @CommentCurrentLine, CommentWholeWords = @CommentWholeWords, CommentMatchCase = @CommentMatchCase, CommentWrapText = @CommentWrapText
       WHERE ID = @ID";
 
     #region QUERIES
@@ -92,6 +97,14 @@ namespace MDSHO.Data {
         copy.CommentFontSize = template.CommentFontSize;
         copy.TextFontSize = template.TextFontSize;
         copy.NoteHighlights = template.NoteHighlights ?? "";
+        copy.TextCurrentLine = template.TextCurrentLine;
+        copy.TextWholeWords = template.TextWholeWords;
+        copy.TextMatchCase = template.TextMatchCase;
+        copy.TextWrapText = template.TextWrapText;
+        copy.CommentCurrentLine = template.CommentCurrentLine;
+        copy.CommentWholeWords = template.CommentWholeWords;
+        copy.CommentMatchCase = template.CommentMatchCase;
+        copy.CommentWrapText = template.CommentWrapText;
         return Get(Add(copy));
       });
     }
@@ -188,6 +201,13 @@ namespace MDSHO.Data {
 
     public void UpdateNoteHighlights(long id, string highlights) {
       Run("UPDATE Shortcuts SET NoteHighlights = @highlights WHERE ID = @id;", new { id, highlights = highlights ?? "" });
+    }
+
+    public void UpdateViewOptions(long id, bool comment, TextViewOptions options) {
+      string prefix = comment ? "Comment" : "Text";
+      Run("UPDATE Shortcuts SET " + prefix + "CurrentLine = @currentLine, " + prefix + "WholeWords = @wholeWords, "
+        + prefix + "MatchCase = @matchCase, " + prefix + "WrapText = @wrapText WHERE ID = @id;",
+        new { id, currentLine = options.CurrentLine, wholeWords = options.WholeWords, matchCase = options.MatchCase, wrapText = options.WrapText });
     }
 
     public void UpdatePosition(long id, long position) {
