@@ -11,6 +11,9 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 ### Added
 
 - In notes, comments and snippets, four clicks select all the text (two select a word, three a line).
+- Select some text and every other place with the same text gets a soft grey highlight, also inside other words, so you
+  can see if you already wrote it. Case doesn't matter, and it needs at least 2 letters. The title bar shows how many
+  there are.
 
 ## [1.25.0]
 

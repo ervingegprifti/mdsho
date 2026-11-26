@@ -34,6 +34,13 @@ You can also select the button and press F2.
 
 Double-click to select a word, click three times to select the line, and click four times to select all the text.
 
+## See where the same text appears
+
+Select some text, at least 2 letters. Every other place in the note with the same text gets a soft grey highlight,
+also inside other words: selecting **art** highlights the **art** in **start**. Case doesn't matter. When the text
+appears more than once, the title bar shows how many times, for example **3 matches**. The highlights follow your
+selection and go away when nothing is selected. This works in comments and snippets too.
+
 ## Keep a note on top
 
 1. Click **Keep on top** in the note's title bar. The note stays above your other windows.

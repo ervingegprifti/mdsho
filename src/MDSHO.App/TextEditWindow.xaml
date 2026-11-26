@@ -89,6 +89,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="TextTitleIcon" Grid.Column="0" FontFamily="{StaticResource IconFont}" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="#FF333333"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
@@ -97,6 +98,9 @@
                         <TextBox x:Name="TextTitleEdit" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="14" MinWidth="160" Padding="1,0"
                                  Visibility="Collapsed" WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="Note title"/>
                     </StackPanel>
+                    <!--How many times the selected text appears ("3 matches"), only while it appears more than once.-->
+                    <TextBlock x:Name="TextMatchCount" Grid.Column="2" Margin="8,0,6,0" VerticalAlignment="Center" FontSize="12" Opacity="0.8"
+                               Foreground="{Binding Foreground, ElementName=TextTitle}" Visibility="Collapsed"/>
                 </Grid>
                 <!--The text size button shows the size in points and opens the size menu. Wide enough for "72 pt", so the other buttons
                     don't move when the size changes.-->
@@ -129,6 +133,9 @@
                      HorizontalScrollBarVisibility="Auto"
                      VerticalScrollBarVisibility="Auto"
                      AutomationProperties.Name="Comment"/>
+            <!--Highlights over the text (a text box can't colour parts of its text): drawn in code for the lines on screen,
+                faint enough to read the text through, and never in the way of the mouse.-->
+            <Canvas x:Name="HighlightLayer" IsHitTestVisible="False" ClipToBounds="True"/>
         </Grid>
     </Grid>
 </Window>

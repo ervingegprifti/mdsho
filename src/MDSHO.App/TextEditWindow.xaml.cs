@@ -120,6 +120,7 @@ namespace MDSHO {
       }
       // The editor has the window's colour (a note then follows its own colours).
       this.TextComment.Background = this.Background;
+      UseHighlights();
       if (kind == TextKind.Note) {
         UseNoteTitleBar();
         UseRenamableTitle(RenameTitleToolTip);
@@ -171,6 +172,23 @@ namespace MDSHO {
     private void ShowTitle() {
       this.Title = this.shortcut.Name;
       this.TextTitle.Text = this.Title;
+    }
+
+    // ---- Highlights ----
+
+    private TextHighlighter highlighter;
+
+    /// <summary>The other places with the selected text, softly highlighted (not the selection itself).</summary>
+    public IReadOnlyList<(int Start, int Length)> LiveMatches => this.highlighter.LiveMatches;
+
+    // While text is selected, every other place with the same text is highlighted and the title bar shows the count.
+    private void UseHighlights() {
+      this.highlighter = new TextHighlighter(this.TextComment, this.HighlightLayer);
+      this.highlighter.Changed += () => {
+        string label = TextMatches.CountLabel(this.highlighter.MatchCount);
+        this.TextMatchCount.Text = label;
+        this.TextMatchCount.Visibility = label.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+      };
     }
 
     // ---- Renaming a note from its title ----
@@ -734,6 +752,7 @@ namespace MDSHO {
       this.textPoints = points;
       this.TextComment.FontSize = NoteWindowPlace.ToDips(points);
       this.ButtonSize.Content = NoteWindowPlace.SizeLabel(points);
+      this.highlighter?.QueueDraw();
     }
 
     // ---- The text size button and menu ----
@@ -1042,6 +1061,7 @@ namespace MDSHO {
 
     private void ApplyFont() {
       this.TextComment.FontFamily = NoteFontFamilies.Resolve(CurrentFont);
+      this.highlighter?.QueueDraw();
     }
 
     /// <summary>
@@ -1095,6 +1115,7 @@ namespace MDSHO {
     private void SetWrapText(bool wrap) {
       this.TextComment.TextWrapping = wrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
       this.TextComment.HorizontalScrollBarVisibility = wrap ? System.Windows.Controls.ScrollBarVisibility.Disabled : System.Windows.Controls.ScrollBarVisibility.Auto;
+      this.highlighter?.QueueDraw();
       string tip = wrap ? "Stop wrapping text" : "Wrap text";
       this.ButtonWrap.ToolTip = tip;
       System.Windows.Automation.AutomationProperties.SetName(this.ButtonWrap, tip);
