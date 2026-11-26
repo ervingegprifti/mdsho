@@ -263,6 +263,7 @@ namespace MDSHO {
       menu.Items.Add(history);
       menu.Items.Add(new System.Windows.Controls.Separator());
       menu.Items.Add(TitleToggle("Wrap text", "Wrap", this.icons.WrapText, this.IsWrapText, ToggleWrapText));
+      menu.Items.Add(TitleToggle("Highlight current line", "CurrentLine", "", this.highlighter.CurrentLine, ToggleCurrentLine));
       if (note) {
         menu.Items.Add(TitleToggle("Keep on top", "Pin", this.Topmost ? this.icons.PinOn : this.icons.PinOff, this.Topmost, TogglePinned));
       }
@@ -322,6 +323,18 @@ namespace MDSHO {
     public void ClearHighlights() {
       if (this.kind == TextKind.Note && this.shortcut.NoteHighlights.Length > 0) {
         SaveHighlights("");
+      }
+    }
+
+    // Highlight current line (the title menu): saved for every window, which all follow it.
+    private void ToggleCurrentLine() {
+      bool on = !this.highlighter.CurrentLine;
+      try {
+        CurrentLineSetting.SetOn(on);
+      } catch (Exception ex) {
+        // A setting that can't be saved still applies to this window.
+        AppLog.Warning(ex, "The current line setting could not be saved");
+        this.highlighter.CurrentLine = on;
       }
     }
 
@@ -457,7 +470,12 @@ namespace MDSHO {
 
     // While text is selected, every other place with the same text is highlighted and the title bar shows the count.
     private void UseHighlights() {
-      this.highlighter = new TextHighlighter(this.TextComment, this.HighlightLayer);
+      this.highlighter = new TextHighlighter(this.TextComment, this.HighlightLayer, this.LineLayer);
+      // Highlight current line is one choice for every window: they all follow it when it changes.
+      this.highlighter.CurrentLine = CurrentLineSetting.IsOn;
+      Action currentLineChanged = () => this.highlighter.CurrentLine = CurrentLineSetting.IsOn;
+      CurrentLineSetting.Changed += currentLineChanged;
+      this.Closed += (s, e) => CurrentLineSetting.Changed -= currentLineChanged;
       this.highlighter.Changed += () => {
         string label = TextMatches.CountLabel(this.highlighter.MatchCount);
         this.TextMatchCount.Text = label;

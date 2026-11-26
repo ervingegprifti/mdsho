@@ -179,6 +179,7 @@ belong to this PC: they are not exported and every import keeps them. Added in v
 | `ReviewLastDay` | The last local day counted in `ReviewDaysUsed` (`yyyy-MM-dd`). Added in 1.13.0; the database version stays 17. |
 | `ReviewShown` | How many times the review prompt was shown: `1` or `2`. Without a row: never. Added in 1.13.0; the database version stays 17. |
 | `ReviewLastShown` | The local date (`yyyy-MM-dd`) the review prompt was last shown. Added in 1.13.0; the database version stays 17. |
+| `HighlightCurrentLine` | **Highlight current line** in the More options menu of notes, comments and snippets: `On` or `Off`. Without a row, or with any other value: on. Exports carry it. Added in 1.26.1; the database version stays 25. |
 | `TextHistoryKeep` | **earlier texts to keep** under **Text history** (Settings > General): `0` to `50`; `0` keeps none. Without a row, or with a value that is not a number: `10`; a number outside 0 to 50 counts as the nearest. Added in version 24. |
 | `ReviewRated` | `Yes` after a rating in the Store dialog, or after Rate opened the Store page (the review prompt, the panel menu or About); the prompt then never shows. Added in 1.13.0; the database version stays 17. |
 

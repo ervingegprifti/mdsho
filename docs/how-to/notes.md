@@ -57,10 +57,17 @@ To take all the colours off at once, click **More options** (⋯) and choose **C
 ## More options
 
 Click **More options** (⋯, just left of the close button) for the note's menu. It has every command of the title bar
-and the ones you need less often: **Text history**, **Wrap text**, **Keep on top**, **Text size**, **Font**,
+and the ones you need less often: **Text history**, **Wrap text**, **Highlight current line**, **Keep on top**,
+**Text size**, **Font**,
 **Note colours...**, **Clear all highlights** and **Close**. A right-click on the title bar or Alt+F opens the same
 menu. **Wrap text** and **Keep on top** have a tick while on.
 Comments and snippets have the same menu with only **Text history**, **Wrap text**, **Text size**, **Font** and **Close**.
+
+## See the line you are on
+
+The line with the caret has a faint shade, a little darker on a light note and a little lighter on a dark one. With
+**Wrap text** on, only the row with the caret is shaded. It stays while you work in another window. To turn it off
+or on for every note, comment and snippet, click **More options** (⋯) and choose **Highlight current line**.
 
 ## Keep a note on top
 

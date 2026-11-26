@@ -19,8 +19,12 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   text stays plain, so copying, snippets and exports of the text don't change. Database version 25; exports and
   backups carry the highlights, and older exports import with none.
 - A **More options** button (⋯) just left of Close opens a menu with every command of the title bar and the ones used
-  less often: Text history, Wrap text, Keep on top, Text size, Font, Note colours, Clear all highlights and Close. A
+  less often: Text history, Wrap text, Highlight current line, Keep on top, Text size, Font, Note colours, Clear all
+  highlights and Close. A
   right-click on the title bar or Alt+F opens it too. Comments and snippets get the items that apply to them.
+- The line with the caret gets a faint shade (3% darker on a light background, 3% lighter on a dark one), also while
+  the window isn't in use. **Highlight current line** in **More options** turns it off for every note, comment and
+  snippet; exports carry the choice.
 
 ### Changed
 

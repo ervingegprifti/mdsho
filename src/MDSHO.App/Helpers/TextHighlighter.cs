@@ -37,6 +37,35 @@ namespace MDSHO.Helpers {
       }
     }
 
+    /// <summary>The Tag of the current line shape.</summary>
+    public const string LineTag = "Line";
+
+    /// <summary>
+    /// The current line shade: 3% black on a light background, 3% white on a dark one (by its lightness; a see-through
+    /// background counts by its colour), so it reads as a hint on every note colour and theme.
+    /// </summary>
+    public static Color CurrentLineColor(Color background) {
+      double Linear(byte v) {
+        double c = v / 255.0;
+        return c <= 0.03928 ? c / 12.92 : Math.Pow((c + 0.055) / 1.055, 2.4);
+      }
+      double lightness = 0.2126 * Linear(background.R) + 0.7152 * Linear(background.G) + 0.0722 * Linear(background.B);
+      // 0.179 is where black and white text have the same contrast: above it a background counts as light.
+      return lightness > 0.179 ? Color.FromArgb(8, 0, 0, 0) : Color.FromArgb(8, 255, 255, 255);
+    }
+
+    private readonly Canvas lineLayer;
+    private bool currentLine;
+
+    /// <summary>True to shade the caret's row (Highlight current line).</summary>
+    public bool CurrentLine {
+      get => this.currentLine;
+      set {
+        this.currentLine = value;
+        QueueDraw();
+      }
+    }
+
     /// <summary>The menu swatch of a saved colour (solid).</summary>
     public static Color SwatchColor(string name) {
       Color c = SavedColor(name);
@@ -82,9 +111,10 @@ namespace MDSHO.Helpers {
       }
     }
 
-    public TextHighlighter(TextBox box, Canvas layer) {
+    public TextHighlighter(TextBox box, Canvas layer, Canvas lineLayer = null) {
       this.box = box;
       this.layer = layer;
+      this.lineLayer = lineLayer;
       box.SelectionChanged += (s, e) => Update();
       box.TextChanged += (s, e) => {
         this.savedMatches = null;
@@ -95,9 +125,15 @@ namespace MDSHO.Helpers {
       // The highlight is made from the text colour, so it follows the note's colours and the window theme.
       // Removed when the window closes, since the descriptor would keep the text box alive.
       DependencyPropertyDescriptor foreground = DependencyPropertyDescriptor.FromProperty(Control.ForegroundProperty, typeof(TextBox));
+      // The current line is made from the background, so it follows that too.
+      DependencyPropertyDescriptor background = DependencyPropertyDescriptor.FromProperty(Control.BackgroundProperty, typeof(TextBox));
       EventHandler colourChanged = (s, e) => QueueDraw();
       foreground.AddValueChanged(box, colourChanged);
-      box.Unloaded += (s, e) => foreground.RemoveValueChanged(box, colourChanged);
+      background.AddValueChanged(box, colourChanged);
+      box.Unloaded += (s, e) => {
+        foreground.RemoveValueChanged(box, colourChanged);
+        background.RemoveValueChanged(box, colourChanged);
+      };
     }
 
     // Finds the matches of the selected text again.
@@ -128,6 +164,7 @@ namespace MDSHO.Helpers {
 
     private void Draw() {
       this.drawQueued = false;
+      DrawCurrentLine();
       this.layer.Children.Clear();
       if ((this.LiveMatches.Count == 0 && this.SavedMatches.Count == 0) || !this.box.IsLoaded) {
         return;
@@ -136,7 +173,7 @@ namespace MDSHO.Helpers {
       if (end <= first) {
         return;
       }
-      this.layer.Clip = new RectangleGeometry(Viewport());
+      this.layer.Clip = new RectangleGeometry(Viewport(this.layer));
       Point offset = this.box.TranslatePoint(new Point(0, 0), this.layer);
       // The saved colours first, so a live highlight shows on top of them.
       Dictionary<string, Brush> fills = new Dictionary<string, Brush>();
@@ -156,6 +193,34 @@ namespace MDSHO.Helpers {
         }
         AddShapes(start, length, first, end, offset, fill, stroke, LiveTag);
       }
+    }
+
+    // The caret's row (only that row when the text wraps), edge to edge across the text area, on its own layer under the
+    // highlights. It doesn't depend on focus, so it stays while the window isn't in use.
+    private void DrawCurrentLine() {
+      if (this.lineLayer == null) {
+        return;
+      }
+      this.lineLayer.Children.Clear();
+      if (!this.currentLine || !this.box.IsLoaded) {
+        return;
+      }
+      Rect caret = this.box.GetRectFromCharacterIndex(Math.Min(this.box.CaretIndex, this.box.Text.Length));
+      if (caret.IsEmpty) {
+        return;
+      }
+      Rect viewport = Viewport(this.lineLayer);
+      double top = this.box.TranslatePoint(new Point(0, caret.Top), this.lineLayer).Y;
+      if (top + caret.Height <= viewport.Top || top >= viewport.Bottom) {
+        return;
+      }
+      // From the left edge to the scroll bar, only inside the rows on screen.
+      this.lineLayer.Clip = new RectangleGeometry(new Rect(0, viewport.Top, viewport.Right, viewport.Height));
+      Color background = (this.box.Background as SolidColorBrush)?.Color ?? Colors.White;
+      Rectangle line = new Rectangle { Width = viewport.Right, Height = caret.Height, Fill = Frozen(CurrentLineColor(background)), Tag = LineTag };
+      Canvas.SetLeft(line, 0);
+      Canvas.SetTop(line, top);
+      this.lineLayer.Children.Add(line);
     }
 
     // The shapes of one match, when it is on screen.
@@ -227,13 +292,13 @@ namespace MDSHO.Helpers {
       }
     }
 
-    // The part of the text box that shows text (inside the padding, not over the scroll bars), in layer coordinates.
-    private Rect Viewport() {
+    // The part of the text box that shows text (inside the padding, not over the scroll bars), in the target's coordinates.
+    private Rect Viewport(Canvas target) {
       ScrollContentPresenter presenter = Descendant<ScrollContentPresenter>(this.box);
       if (presenter == null || presenter.ActualWidth <= 0) {
-        return new Rect(this.layer.RenderSize);
+        return new Rect(target.RenderSize);
       }
-      return presenter.TransformToVisual(this.layer).TransformBounds(new Rect(presenter.RenderSize));
+      return presenter.TransformToVisual(target).TransformBounds(new Rect(presenter.RenderSize));
     }
 
     private static T Descendant<T>(DependencyObject root) where T : DependencyObject {

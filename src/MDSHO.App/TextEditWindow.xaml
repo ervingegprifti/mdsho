@@ -133,6 +133,8 @@
                      AutomationProperties.Name="Comment"/>
             <!--Highlights over the text (a text box can't colour parts of its text): drawn in code for the lines on screen,
                 faint enough to read the text through, and never in the way of the mouse.-->
+            <!--The current line: a faint shade on the caret's row, edge to edge, under the highlights (see TextHighlighter).-->
+            <Canvas x:Name="LineLayer" IsHitTestVisible="False" ClipToBounds="True"/>
             <Canvas x:Name="HighlightLayer" IsHitTestVisible="False" ClipToBounds="True"/>
         </Grid>
     </Grid>
