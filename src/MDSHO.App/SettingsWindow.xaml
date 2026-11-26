@@ -24,7 +24,9 @@
         WindowState="Normal"
         UseLayoutRounding="True"
         Foreground="{DynamicResource Theme.Text}"
-        helpers:WindowThemes.IsThemed="True">
+        helpers:WindowThemes.IsThemed="True"
+        helpers:DialogKeys.EscCloses="True"
+        helpers:DialogKeys.FirstFocus="{Binding ElementName=ListSettingsPages}">
 
     <!--MDSHO's own title bar (DialogTitleBar) and the rounded frame (RoundedWindowTemplate), like the Colours window.
         The panel's colours are in the Colours window (the brush button next to the gear).-->
@@ -165,7 +167,7 @@
                 <Grid x:Name="PanelBody" Grid.Column="1" Margin="26">
                     <StackPanel x:Name="PageAppearance" Style="{StaticResource StyleSettingsPage}" Tag="{Binding ElementName=PageItemAppearance}">
                         <Label Content="Icons appearance" Style="{StaticResource StyleSettingsCategory}"/>
-                        <StackPanel Orientation="Vertical">
+                        <StackPanel x:Name="PanelIconsAppearance" Orientation="Vertical" helpers:DialogKeys.RadioGroup="True">
                             <RadioButton Content="Solid icons" Margin="0,0,0,5"
                                          IsChecked="{Binding Path=Appearance.SolidIcons, Mode=TwoWay, Converter={StaticResource SolidIconsConverter}, ConverterParameter=SolidIcons}" />
                             <RadioButton Content="Outlined icons"
@@ -174,7 +176,7 @@
 
                         <!--App-wide. Set in code; saved and applied on Apply.-->
                         <Label Content="Window theme" Margin="0,16,0,10" Style="{StaticResource StyleSettingsCategory}"/>
-                        <StackPanel x:Name="PanelWindowTheme" Orientation="Vertical">
+                        <StackPanel x:Name="PanelWindowTheme" Orientation="Vertical" helpers:DialogKeys.RadioGroup="True">
                             <RadioButton x:Name="RadioThemeSameAsWindows" Content="Same as Windows" Margin="0,0,0,5"/>
                             <RadioButton x:Name="RadioThemeLight" Content="Light" Margin="0,0,0,5"/>
                             <RadioButton x:Name="RadioThemeDark" Content="Dark"/>
@@ -301,7 +303,7 @@
                 code from the real button).-->
             <Border x:Name="Footer" Grid.Row="1" Background="{DynamicResource Theme.BarBackground}">
                 <Grid x:Name="FooterContent" Margin="26">
-                    <Button x:Name="ButtonApply" HorizontalAlignment="Right"
+                    <Button x:Name="ButtonApply" HorizontalAlignment="Right" IsDefault="True"
                         Style="{StaticResource StyleDarkButton}"
                         Padding="22,5"
                         Content="Apply"/>

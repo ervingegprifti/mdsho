@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Input;
 using MDSHO.Common;
 
 namespace MDSHO {
@@ -11,10 +12,14 @@ namespace MDSHO {
   /// The one MDSHO dialog for every message (see <see cref="MdshoMessage"/>): the title bar with the MDSHO logo, an Info or
   /// Warning icon, a bold first line, the text and an optional note, then OK, OK/Cancel, Yes/No or Yes/No/Cancel. The
   /// error windows build on it. Which buttons, the default and the answer of Esc or the close button come from
-  /// <see cref="MessageRules"/>.
+  /// <see cref="MessageRules"/>. The keys work like a Windows message box: the focus starts on the default button, the
+  /// arrow keys move between the buttons, and Y, N, C or O (alone or with Alt) answers.
   /// </summary>
   public partial class MessageWindow : Window {
     private readonly MessageButtons buttons;
+
+    /// <summary>The modifier keys held now. Tests replace it.</summary>
+    public static Func<ModifierKeys> KeyboardModifiers = () => Keyboard.Modifiers;
 
     /// <summary>The answer: the button clicked, or the cancel answer when the window was closed another way.</summary>
     public MessageResult Result { get; private set; }
@@ -54,6 +59,11 @@ namespace MDSHO {
         button.Margin = new Thickness(first ? 0 : 8, 0, 0, 0);
         button.IsDefault = result == chosen;
         button.IsCancel = result == cancel;
+        ShowAccessKey(button, MessageRules.Label(result));
+        if (result == chosen) {
+          // Like a Windows message box, the focus starts on the default button.
+          FocusManager.SetFocusedElement(this, button);
+        }
         MessageResult answer = result;
         button.Click += (s, e) => {
           this.Result = answer;
@@ -62,6 +72,7 @@ namespace MDSHO {
         this.PanelButtons.Children.Add(button);
         first = false;
       }
+      this.PreviewKeyDown += Window_PreviewKeyDown;
     }
 
     /// <summary>A line below the text, e.g. where the details of an error went (hidden when empty).</summary>
@@ -86,6 +97,51 @@ namespace MDSHO {
       if (!e.Cancel && this.Result == MessageResult.None) {
         this.Result = MessageRules.CancelResultOf(this.buttons);
       }
+    }
+
+    // Like a Windows message box: the arrow keys move between the buttons (and wrap around), and a button's letter,
+    // alone or with Alt, answers with it.
+    private void Window_PreviewKeyDown(object sender, KeyEventArgs e) {
+      Key key = e.Key == Key.System ? e.SystemKey : e.Key;
+      if (key == Key.Left || key == Key.Up || key == Key.Right || key == Key.Down) {
+        e.Handled = MoveFocus(key == Key.Right || key == Key.Down ? 1 : -1);
+      } else if (key >= Key.A && key <= Key.Z && (KeyboardModifiers() & (ModifierKeys.Control | ModifierKeys.Windows)) == 0) {
+        MessageResult answer = MessageRules.ResultOfKey(this.buttons, (char)('A' + (key - Key.A)));
+        if (answer != MessageResult.None) {
+          e.Handled = true;
+          this.Result = answer;
+          Close();
+        }
+      }
+    }
+
+    private bool MoveFocus(int step) {
+      System.Collections.Generic.List<Button> all = new System.Collections.Generic.List<Button>();
+      all.AddRange(System.Linq.Enumerable.OfType<Button>(this.PanelExtraButtons.Children));
+      all.AddRange(System.Linq.Enumerable.OfType<Button>(this.PanelButtons.Children));
+      if (all.Count == 0) {
+        return false;
+      }
+      int now = all.IndexOf(FocusManager.GetFocusedElement(this) as Button);
+      int next = now < 0 ? 0 : (now + step + all.Count) % all.Count;
+      FocusManager.SetFocusedElement(this, all[next]);
+      all[next].Focus();
+      return true;
+    }
+
+    // The first letter is underlined, like an access key that always shows. The content stays the plain label.
+    private static void ShowAccessKey(Button button, string label) {
+      FrameworkElementFactory panel = new FrameworkElementFactory(typeof(StackPanel));
+      panel.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
+      FrameworkElementFactory letter = new FrameworkElementFactory(typeof(TextBlock));
+      letter.SetValue(TextBlock.TextProperty, label.Substring(0, 1));
+      letter.SetValue(TextBlock.TextDecorationsProperty, TextDecorations.Underline);
+      FrameworkElementFactory rest = new FrameworkElementFactory(typeof(TextBlock));
+      rest.SetValue(TextBlock.TextProperty, label.Substring(1));
+      panel.AppendChild(letter);
+      panel.AppendChild(rest);
+      button.ContentTemplate = new DataTemplate { VisualTree = panel };
+      AutomationProperties.SetAccessKey(button, label.Substring(0, 1));
     }
 
     private Button NewButton(string name, string content, string style) {

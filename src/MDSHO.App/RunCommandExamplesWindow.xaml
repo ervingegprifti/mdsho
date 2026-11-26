@@ -22,7 +22,8 @@
         BorderThickness="1"
         UseLayoutRounding="True"
         Foreground="{DynamicResource Theme.Text}"
-        helpers:WindowThemes.IsThemed="True">
+        helpers:WindowThemes.IsThemed="True"
+        helpers:DialogKeys.FirstFocus="{Binding ElementName=ListExamples}">
 
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="32" ResizeBorderThickness="5" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />

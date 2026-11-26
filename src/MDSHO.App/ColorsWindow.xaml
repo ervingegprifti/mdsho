@@ -25,7 +25,9 @@
         WindowState="Normal"
         UseLayoutRounding="True"
         Foreground="{DynamicResource Theme.Text}"
-        helpers:WindowThemes.IsThemed="True">
+        helpers:WindowThemes.IsThemed="True"
+        helpers:DialogKeys.EscCloses="True"
+        helpers:DialogKeys.FirstFocus="{Binding ElementName=ListColorTargets}">
 
     <!--MDSHO's own title bar (DialogTitleBar) and the rounded frame (RoundedWindowTemplate), like the Note window-->
     <WindowChrome.WindowChrome>
@@ -379,7 +381,7 @@
                         Style="{StaticResource StyleDarkButton}" Background="{DynamicResource Theme.SecondaryButton}"
                         Padding="22,5"
                         Content="Set as default"/>
-                    <Button x:Name="ButtonApply" Grid.Column="3"
+                    <Button x:Name="ButtonApply" Grid.Column="3" IsDefault="True"
                         Style="{StaticResource StyleDarkButton}"
                         Padding="22,5"
                         Content="Apply"/>

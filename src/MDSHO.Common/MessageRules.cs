@@ -69,6 +69,18 @@ namespace MDSHO.Common {
       return all.Contains(requested) ? requested : all[0];
     }
 
+    /// <summary>The letter that answers with the button, the first of its label: Y, N, C or O.</summary>
+    public static string AccessKey(MessageResult result) {
+      string label = Label(result);
+      return label.Length == 0 ? "" : label.Substring(0, 1);
+    }
+
+    /// <summary>The button of the set that a letter answers with, in any case; None when the set has no such button.</summary>
+    public static MessageResult ResultOfKey(MessageButtons buttons, char key) {
+      string letter = char.ToUpperInvariant(key).ToString();
+      return ButtonsOf(buttons).FirstOrDefault(r => AccessKey(r) == letter);
+    }
+
     /// <summary>The text of the button.</summary>
     public static string Label(MessageResult result) {
       return result == MessageResult.None ? "" : result.ToString();
