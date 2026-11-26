@@ -5,7 +5,7 @@ namespace MDSHO.Tests {
 
   /// <summary>
   /// What a double click (a word, without the space after it) and a triple click (the whole paragraph, without its line
-  /// break) select in the Note and Comment windows.
+  /// break) and four clicks (the whole text) select in the Note and Comment windows.
   /// </summary>
   public class TextClickSelectionTests {
 
@@ -85,6 +85,25 @@ namespace MDSHO.Tests {
       Assert.Equal("two", Selected(text, TextClickSelection.WordAt(text, 99)));
       Assert.Equal("one", Selected(text, TextClickSelection.WordAt(text, -5)));
       Assert.Equal("one two", Selected(text, TextClickSelection.ParagraphAt(text, 99)));
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void Each_number_of_clicks_selects_its_part_and_four_or_more_select_everything(int clicks) {
+      string text = "Restart the server now.\r\nThen check it.";
+      (int Start, int Length)? range = TextClickSelection.ForClicks(text, 9, clicks);
+      string expected = clicks switch { 1 => null, 2 => "the", 3 => "Restart the server now.", _ => text };
+      Assert.Equal(expected, range == null ? null : Selected(text, range.Value));
+    }
+
+    [Fact]
+    public void Four_clicks_in_empty_text_select_nothing() {
+      Assert.Equal((0, 0), TextClickSelection.ForClicks("", 0, 4));
+      Assert.Equal((0, 0), TextClickSelection.ForClicks(null, 0, 4));
     }
   }
 }

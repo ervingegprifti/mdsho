@@ -30,6 +30,10 @@ Hover over a note's button to see its first lines: up to 10, each cut to one row
 
 You can also select the button and press F2.
 
+## Select text
+
+Double-click to select a word, click three times to select the line, and click four times to select all the text.
+
 ## Keep a note on top
 
 1. Click **Keep on top** in the note's title bar. The note stays above your other windows.

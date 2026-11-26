@@ -53,6 +53,16 @@
       return (start, end - start);
     }
 
+    /// <summary>What a run of clicks selects: 2 the word, 3 the paragraph, 4 or more the whole text; null for one click.</summary>
+    public static (int Start, int Length)? ForClicks(string text, int index, int clicks) {
+      switch (clicks) {
+        case < 2: return null;
+        case 2: return WordAt(text, index);
+        case 3: return ParagraphAt(text, index);
+        default: return (0, text?.Length ?? 0);
+      }
+    }
+
     private const int Word = 0, Space = 1, Punctuation = 2;
 
     private static int Clamp(string text, int index) {

@@ -448,7 +448,7 @@ namespace MDSHO.Tests {
       });
     }
 
-    // ---- Double and triple click in the editor ----
+    // ---- Double, triple and four clicks in the editor ----
 
     private static void ClickEditor(TextEditWindow window, int clicks, out bool handled) {
       TextBox editor = Named<TextBox>(window, "TextComment");
@@ -463,7 +463,7 @@ namespace MDSHO.Tests {
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void Double_click_selects_the_word_and_triple_click_the_paragraph(bool isNote) {
+    public void Double_click_selects_the_word_triple_click_the_paragraph_and_four_clicks_all(bool isNote) {
       WithGroup(f => {
         ShortcutViewModel button = isNote ? NewNoteInGroup(f) : f.Group;
         TextEditWindow window = isNote ? TextEditWindow.ForNote(button) : TextEditWindow.ForComment(button);
@@ -480,6 +480,10 @@ namespace MDSHO.Tests {
             ClickEditor(window, 3, out handled);
             Assert.True(handled);
             Assert.Equal("Restart the server now.", editor.SelectedText);
+            // A fourth click selects the whole text.
+            ClickEditor(window, 4, out handled);
+            Assert.True(handled);
+            Assert.Equal(editor.Text, editor.SelectedText);
             // A single click is left to the text box.
             editor.Select(0, 0);
             ClickEditor(window, 1, out handled);

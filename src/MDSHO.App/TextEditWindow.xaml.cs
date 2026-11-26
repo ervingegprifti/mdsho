@@ -1106,17 +1106,17 @@ namespace MDSHO {
       }
     }
 
-    // A double click selects the word without the space after it, a triple click the whole paragraph.
+    // A double click selects the word without the space after it, a triple click the whole paragraph, a fourth click all text.
     private void TextComment_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
-      if (e.ClickCount != 2 && e.ClickCount != 3) {
+      if (e.ClickCount < 2) {
         return;
       }
       int index = CharacterIndexAt(this.TextComment, e);
-      if (index < 0) {
+      if (index < 0 && e.ClickCount < 4) {
         return;
       }
       string text = this.TextComment.Text ?? "";
-      (int start, int length) = e.ClickCount == 2 ? TextClickSelection.WordAt(text, index) : TextClickSelection.ParagraphAt(text, index);
+      (int start, int length) = TextClickSelection.ForClicks(text, index, e.ClickCount).Value;
       this.TextComment.Focus();
       this.TextComment.Select(start, length);
       e.Handled = true;
