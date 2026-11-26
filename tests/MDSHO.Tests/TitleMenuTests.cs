@@ -33,7 +33,7 @@ namespace MDSHO.Tests {
       LiveHighlightTests.WithGroup(f => {
         TextEditWindow window = LiveHighlightTests.Open(f, "note");
         LiveHighlightTests.Shown(window, () => {
-          Assert.Equal(new[] { "Text history", "-", "Wrap text", "Keep on top", "Font", "Note colours...", "-", "Clear all highlights", "-", "Close" },
+          Assert.Equal(new[] { "Text history", "-", "Wrap text", "Keep on top", "Text size", "Font", "Note colours...", "-", "Clear all highlights", "-", "Close" },
             Headers(window.BuildTitleMenu()));
         });
       });
@@ -46,7 +46,7 @@ namespace MDSHO.Tests {
       LiveHighlightTests.WithGroup(f => {
         TextEditWindow window = LiveHighlightTests.Open(f, kind);
         LiveHighlightTests.Shown(window, () => {
-          Assert.Equal(new[] { "Text history", "-", "Wrap text", "Font", "-", "Close" }, Headers(window.BuildTitleMenu()));
+          Assert.Equal(new[] { "Text history", "-", "Wrap text", "Text size", "Font", "-", "Close" }, Headers(window.BuildTitleMenu()));
         });
       });
     }
@@ -112,6 +112,52 @@ namespace MDSHO.Tests {
           Click(arial);
           Assert.Equal("Arial", window.Shortcut.TextFont);
           Assert.True(Item(window.BuildTitleMenu(), "Font").Items.OfType<MenuItem>().Single(i => (string)i.Header == "Arial").IsChecked);
+        });
+      });
+    }
+
+    [Theory]
+    [InlineData("note")]
+    [InlineData("comment")]
+    [InlineData("snippet")]
+    public void Every_title_bar_button_has_its_command_in_the_menu(string kind) {
+      LiveHighlightTests.WithGroup(f => {
+        TextEditWindow window = LiveHighlightTests.Open(f, kind);
+        LiveHighlightTests.Shown(window, () => {
+          ContextMenu menu = window.BuildTitleMenu();
+          var tags = new System.Collections.Generic.Dictionary<string, string> {
+            ["ButtonSize"] = "Size", ["ButtonFont"] = "Font", ["ButtonWrap"] = "Wrap", ["ButtonPin"] = "Pin", ["ButtonClose"] = "Close"
+          };
+          Grid buttons = (Grid)LiveHighlightTests.Named<Button>(window, "ButtonClose").Parent;
+          foreach (Button button in buttons.Children.OfType<Button>().Where(b => b.Visibility == Visibility.Visible && b.Name != "ButtonMore")) {
+            Assert.True(tags.ContainsKey(button.Name), button.Name + " has no menu item to check");
+            Assert.Contains(menu.Items.OfType<MenuItem>(), i => i.Tag as string == tags[button.Name]);
+          }
+        });
+      });
+    }
+
+    [Theory]
+    [InlineData("note")]
+    [InlineData("comment")]
+    [InlineData("snippet")]
+    public void Text_size_lists_the_same_sizes_as_the_size_button_and_a_pick_applies(string kind) {
+      LiveHighlightTests.WithGroup(f => {
+        TextEditWindow window = LiveHighlightTests.Open(f, kind);
+        LiveHighlightTests.Shown(window, () => {
+          MenuItem size = Item(window.BuildTitleMenu(), "Size");
+          Assert.Equal("Text size", size.Header);
+          Assert.Equal(window.BuildSizeMenu().Items.OfType<MenuItem>().Where(i => i.Tag as string != "Header").Select(i => i.Header).ToArray(),
+            size.Items.OfType<MenuItem>().Select(i => i.Header).ToArray());
+          Assert.True(size.Items.OfType<MenuItem>().Single(i => (string)i.Header == "12 pt").IsChecked);
+          Click(size.Items.OfType<MenuItem>().Single(i => (string)i.Header == "16 pt"));
+          Button button = LiveHighlightTests.Named<Button>(window, "ButtonSize");
+          Assert.Equal("16 pt", button.Content);
+          size = Item(window.BuildTitleMenu(), "Size");
+          Assert.True(size.Items.OfType<MenuItem>().Single(i => (string)i.Header == "16 pt").IsChecked);
+          // Default (12 pt) goes back, like the size button's menu.
+          Click(size.Items.OfType<MenuItem>().Single(i => (string)i.Header == TextEditWindow.DefaultSizeText));
+          Assert.Equal("12 pt", button.Content);
         });
       });
     }

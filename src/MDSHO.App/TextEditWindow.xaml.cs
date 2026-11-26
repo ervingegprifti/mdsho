@@ -250,9 +250,10 @@ namespace MDSHO {
     }
 
     /// <summary>
-    /// The title menu, only the items that apply: Text history (the history list), Wrap text, Keep on top (a note), Font
-    /// (the font list), Note colours... (a note), Clear all highlights (a note; greyed out without any) and Close. Wrap text
-    /// and Keep on top have a tick while on.
+    /// The title menu (More options), only the items that apply: every command of the title bar buttons and the ones used less
+    /// often. Text history (the history list), Wrap text, Keep on top (a note), Text size (the sizes), Font (the font list),
+    /// Note colours... (a note), Clear all highlights (a note; greyed out without any) and Close. Wrap text and Keep on top
+    /// have a tick while on.
     /// </summary>
     public System.Windows.Controls.ContextMenu BuildTitleMenu() {
       bool note = this.kind == TextKind.Note;
@@ -265,6 +266,10 @@ namespace MDSHO {
       if (note) {
         menu.Items.Add(TitleToggle("Keep on top", "Pin", this.Topmost ? this.icons.PinOn : this.icons.PinOff, this.Topmost, TogglePinned));
       }
+      // Text size: the size button's sizes with a tick on the current one, then Default (12 pt); Ctrl + wheel also sizes.
+      System.Windows.Controls.MenuItem size = new System.Windows.Controls.MenuItem { Header = "Text size", Tag = "Size" };
+      MoveItems(BuildSizeMenu(), size, skipTag: "Header");
+      menu.Items.Add(size);
       System.Windows.Controls.MenuItem font = TitleItem("Font", "Font", this.icons.Font, null);
       MoveItems(BuildFontMenu(), font, skipTag: null);
       menu.Items.Add(font);
@@ -1049,7 +1054,7 @@ namespace MDSHO {
     /// </summary>
     public System.Windows.Controls.ContextMenu BuildSizeMenu() {
       System.Windows.Controls.ContextMenu menu = new System.Windows.Controls.ContextMenu();
-      menu.Items.Add(new System.Windows.Controls.MenuItem { Header = "Text size", IsEnabled = false, FontSize = 11 });
+      menu.Items.Add(new System.Windows.Controls.MenuItem { Header = "Text size", Tag = "Header", IsEnabled = false, FontSize = 11 });
       long current = TextSize;
       foreach (long size in NoteWindowPlace.SizePresets) {
         menu.Items.Add(SizeItem(NoteWindowPlace.SizeLabel(size), size, size == current));

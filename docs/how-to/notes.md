@@ -56,10 +56,11 @@ To take all the colours off at once, click **More options** (⋯) and choose **C
 
 ## More options
 
-Click **More options** (⋯, just left of the close button) for the note's menu: **Text history**, **Wrap text**,
-**Keep on top**, **Font**, **Note colours...**, **Clear all highlights** and **Close**. A right-click on the title bar
-or Alt+F opens the same menu. **Wrap text** and **Keep on top** have a tick while on.
-Comments and snippets have the same menu with only **Text history**, **Wrap text**, **Font** and **Close**.
+Click **More options** (⋯, just left of the close button) for the note's menu. It has every command of the title bar
+and the ones you need less often: **Text history**, **Wrap text**, **Keep on top**, **Text size**, **Font**,
+**Note colours...**, **Clear all highlights** and **Close**. A right-click on the title bar or Alt+F opens the same
+menu. **Wrap text** and **Keep on top** have a tick while on.
+Comments and snippets have the same menu with only **Text history**, **Wrap text**, **Text size**, **Font** and **Close**.
 
 ## Keep a note on top
 
@@ -71,7 +72,8 @@ Click **Wrap text** to fit long lines to the window's width.
 ## Change the text size
 
 The **Text size** button left of **Font** shows the note's size in points. Click it and pick a size from 8 to 72 pt
-(the same sizes as in Word), or **Default (12 pt)**; the current one has a tick. You can also hold Ctrl and turn the
+(the same sizes as in Word), or **Default (12 pt)**; the current one has a tick. **More options** (⋯) has the same
+sizes under **Text size**. You can also hold Ctrl and turn the
 mouse wheel to step through the same sizes, and the button follows. The note keeps its size. New notes start at 12 pt; other notes keep the size saved
 with them.
 
