@@ -25,7 +25,7 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
 ### Changed
 
 - The Text history button of notes, comments and snippets made room for **More options** (⋯); Text history is now in
-  its menu.
+  its menu. Note colours moved there too, which leaves more room for the note's title.
 
 ## [1.25.0]
 

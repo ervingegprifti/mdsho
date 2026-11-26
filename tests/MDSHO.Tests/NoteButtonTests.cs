@@ -85,7 +85,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_note_window_has_wrap_text_just_right_of_the_brush() {
+    public void The_note_window_has_wrap_text_just_right_of_the_font_button() {
       WithGroup(f => {
         ShortcutViewModel note = NewNoteInGroup(f);
         TextEditWindow window = TextEditWindow.ForNote(note);
@@ -95,8 +95,10 @@ namespace MDSHO.Tests {
           Assert.Equal(Visibility.Visible, wrap.Visibility);
           Assert.Equal(note.OwningWindow.Appearance.Icons.WrapText, wrap.Content);
           FrameworkElement bar = Named<FrameworkElement>(window, "TitleBar");
-          Rect rColors = BoundsIn(Named<Button>(window, "ButtonColors"), bar), rWrap = BoundsIn(wrap, bar), rPin = BoundsIn(Named<Button>(window, "ButtonPin"), bar);
-          Assert.Equal(rColors.Right, rWrap.Left, 1);
+          // Note colours moved to the More options menu.
+          Assert.Null(window.FindName("ButtonColors"));
+          Rect rFont = BoundsIn(Named<Button>(window, "ButtonFont"), bar), rWrap = BoundsIn(wrap, bar), rPin = BoundsIn(Named<Button>(window, "ButtonPin"), bar);
+          Assert.Equal(rFont.Right, rWrap.Left, 1);
           // The pin follows at once: Text history moved to the title menu.
           Assert.Equal(rWrap.Right, rPin.Left, 1);
           AssertWraps(window, false);
@@ -837,7 +839,7 @@ namespace MDSHO.Tests {
             Assert.Null(window.FindName(gone));
           }
           Assert.Equal(Visibility.Collapsed, Named<Button>(window, "ButtonPin").Visibility);
-          Assert.Equal(Visibility.Collapsed, Named<Button>(window, "ButtonColors").Visibility);
+          Assert.Null(window.FindName("ButtonColors"));
           Assert.Null(window.FindName("ButtonOk"));
           Button close = Named<Button>(window, "ButtonClose");
           Assert.Equal("Close (Esc)", close.ToolTip);

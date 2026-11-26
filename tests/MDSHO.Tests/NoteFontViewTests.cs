@@ -130,7 +130,7 @@ namespace MDSHO.Tests {
     // ---- The font button ----
 
     [Fact]
-    public void The_note_window_has_a_font_button_left_of_the_colours_wrap_pin_and_close() {
+    public void The_note_window_has_a_font_button_left_of_wrap_pin_and_close() {
       WithButtons(f => {
         TextEditWindow window = OpenNote(f.Note);
         Button font = Named<Button>(window, "ButtonFont");
@@ -139,7 +139,7 @@ namespace MDSHO.Tests {
         Assert.Equal("Font", System.Windows.Automation.AutomationProperties.GetName(font));
         Assert.Equal(f.Win.Appearance.Icons.Font, font.Content);
         int column = ColumnOf(font);
-        foreach (string other in new[] { "ButtonColors", "ButtonWrap", "ButtonPin", "ButtonClose" }) {
+        foreach (string other in new[] { "ButtonWrap", "ButtonPin", "ButtonClose" }) {
           Assert.True(column < ColumnOf(Named<Button>(window, other)), "Font should be left of " + other);
         }
         Assert.True(WindowChromeHit(font));

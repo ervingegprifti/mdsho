@@ -853,11 +853,10 @@ namespace MDSHO {
     private readonly DispatcherTimer noteSaveTimer = new DispatcherTimer { Interval = NoteAutoSaveDelay };
 
     /// <summary>
-    /// A note has colours, pin (keep on top) and close in its title bar and no bottom bar, so the text gets the whole window.
+    /// A note has pin (keep on top) and close in its title bar and no bottom bar, so the text gets the whole window. Its
+    /// colours are in the More options menu, since they aren't changed every day.
     /// </summary>
     private void UseNoteTitleBar() {
-      this.ButtonColors.Visibility = Visibility.Visible;
-      this.ButtonColors.Click += (s, e) => ShowNoteColours();
       this.ButtonPin.Visibility = Visibility.Visible;
       this.ButtonClose.ToolTip = "Close (Esc)";
       SetPinned(false);
@@ -895,7 +894,7 @@ namespace MDSHO {
       this.TitleBar.SetBinding(System.Windows.Controls.Border.BackgroundProperty, Bind(nameof(NoteColors.TitleBackgroundColor)));
       this.TextTitle.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       this.TextTitleIcon.SetBinding(System.Windows.Controls.TextBlock.ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
-      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonColors, this.ButtonWrap, this.ButtonPin, this.ButtonMore, this.ButtonClose }) {
+      foreach (System.Windows.Controls.Button button in new[] { this.ButtonSize, this.ButtonFont, this.ButtonWrap, this.ButtonPin, this.ButtonMore, this.ButtonClose }) {
         button.SetBinding(ForegroundProperty, Bind(nameof(NoteColors.TitleTextColor)));
       }
       SetBinding(BackgroundProperty, Bind(nameof(NoteColors.BackgroundColor)));
@@ -1499,7 +1498,6 @@ namespace MDSHO {
       string glyph = this.kind == TextKind.Note ? icons.Note : this.kind == TextKind.Snippet ? icons.Snippet : icons.Comment;
       this.TextTitleIcon.Text = glyph;
       this.ButtonClose.Content = icons.Times;
-      this.ButtonColors.Content = icons.Brush;
       this.ButtonFont.Content = icons.Font;
       this.ButtonWrap.Content = icons.WrapText;
       ShowMoreIcon(icons.More);

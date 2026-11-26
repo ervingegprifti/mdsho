@@ -103,7 +103,7 @@ plain text, without the font.
 
 ## Colour a note
 
-1. Click **Note colours** in the note's title bar.
+1. Click **More options** (⋯) in the note's title bar and choose **Note colours...**.
 2. Pick a part on the left: **Border**, **Title background**, **Title text**, **Background** or **Text**.
 3. Choose a colour in the palette. The note changes as you pick.
 4. Click **Apply**. Closing the window without Apply puts the old colours back.

@@ -69,14 +69,14 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!--Title bar: icon and the button's name, then for a note text size, font, colours, wrap text and pin (keep on top), for a
+        <!--Title bar: icon and the button's name, then for a note text size, font, wrap text and pin (keep on top), for a
             snippet or a comment text size, font and wrap text, then More options and close. Every kind saves itself while you type and when it closes, so there is no OK.
-            The pin is a thumbtack pointing left, or down while the note is on top. More options and a right-click open the title menu, which also has Text history.-->
+            The pin is a thumbtack pointing left, or down while the note is on top. More options (and a right-click) opens the title menu, which has every
+            command of the title bar and the ones used less often: Note colours, Text history and Clear all highlights.-->
         <Border x:Name="TitleBar" Grid.Row="0" Background="#FFDFDACB">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -109,15 +109,13 @@
                 <!--The font button opens the font menu.-->
                 <Button x:Name="ButtonFont" Grid.Column="2" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Font" AutomationProperties.Name="Font" Visibility="Collapsed"/>
-                <Button x:Name="ButtonColors" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
-                        ToolTip="Note colours" AutomationProperties.Name="Note colours" Visibility="Collapsed"/>
-                <Button x:Name="ButtonWrap" Grid.Column="4" Style="{StaticResource StyleTitleBarButton}" FontSize="14" ToolTip="Wrap text" AutomationProperties.Name="Wrap text"/>
-                <Button x:Name="ButtonPin" Grid.Column="5" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
+                <Button x:Name="ButtonWrap" Grid.Column="3" Style="{StaticResource StyleTitleBarButton}" FontSize="14" ToolTip="Wrap text" AutomationProperties.Name="Wrap text"/>
+                <Button x:Name="ButtonPin" Grid.Column="4" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="Keep on top" AutomationProperties.Name="Keep on top" Visibility="Collapsed"/>
                 <!--More options opens the title menu (Alt+F too). Its icon and font come from IconGlyphs.More (see ShowIcons).-->
-                <Button x:Name="ButtonMore" Grid.Column="6" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
+                <Button x:Name="ButtonMore" Grid.Column="5" Style="{StaticResource StyleTitleBarButton}" FontSize="14"
                         ToolTip="More options" AutomationProperties.Name="More options"/>
-                <Button x:Name="ButtonClose" Grid.Column="7" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"/>
+                <Button x:Name="ButtonClose" Grid.Column="6" Style="{StaticResource StyleTitleBarButton}" ToolTip="Close" AutomationProperties.Name="Close"/>
             </Grid>
         </Border>
 
