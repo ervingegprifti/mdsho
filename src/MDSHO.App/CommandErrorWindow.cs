@@ -10,7 +10,7 @@ namespace MDSHO {
   public class CommandErrorWindow : MessageWindow {
 
     /// <summary>Shows the built window (modal). Tests replace it so no window opens.</summary>
-    public static Action<CommandErrorWindow> ShowWindow = window => window.ShowDialog();
+    public static Action<CommandErrorWindow> ShowWindow = window => Helpers.DialogFocus.ShowDialog(window);
 
     /// <summary>Creates the window.</summary>
     /// <param name="title">The title, e.g. the command's name.</param>

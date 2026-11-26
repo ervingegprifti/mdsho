@@ -8,7 +8,7 @@ namespace MDSHO {
   /// <summary>Shows the modal error window for an unexpected exception and writes it to the log first.</summary>
   public static class ErrorDialog {
     /// <summary>Shows the built window (modal). Tests replace it so no window opens.</summary>
-    public static Action<ErrorWindow> ShowWindow = window => window.ShowDialog();
+    public static Action<ErrorWindow> ShowWindow = window => Helpers.DialogFocus.ShowDialog(window);
 
     /// <summary>Logs and shows an exception with the default message.</summary>
     public static void ShowDialog(Exception ex) {

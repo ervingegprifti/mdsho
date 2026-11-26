@@ -20,7 +20,8 @@
         Background="{DynamicResource Theme.WindowBackground}"
         UseLayoutRounding="True"
         Foreground="{DynamicResource Theme.Text}"
-        helpers:WindowThemes.IsThemed="True">
+        helpers:WindowThemes.IsThemed="True"
+        helpers:DialogKeys.FirstFocus="{Binding ElementName=ButtonRate}">
 
     <!--MDSHO's own title bar and rounded frame, like the Error window-->
     <WindowChrome.WindowChrome>

@@ -714,6 +714,14 @@ namespace MDSHO.Tests {
     // ---- Examples popup ----
 
     [Fact]
+    public void Examples_popup_starts_with_the_focus_in_the_list() {
+      WithCommand("cmd.exe", "", f => {
+        RunCommandExamplesWindow window = new RunCommandExamplesWindow(new RunCommandViewModel(f.Command, true));
+        Shown(window, () => Assert.Same(window.FindName("ListExamples"), System.Windows.Input.FocusManager.GetFocusedElement(window)));
+      });
+    }
+
+    [Fact]
     public void Examples_popup_has_title_grouped_list_and_no_cancel_button() {
       WithCommand("cmd.exe", "", f => {
         RunCommandExamplesWindow window = new RunCommandExamplesWindow(new RunCommandViewModel(f.Command, true));

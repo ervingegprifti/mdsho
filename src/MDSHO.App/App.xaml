@@ -29,7 +29,21 @@
                         <Setter Property="Foreground" Value="{DynamicResource Theme.MenuIcon}"/>
                     </Style>
 
+                    <!-- The keyboard focus ring of MDSHO's buttons: 2 px in the theme's focus colour, just outside the button.
+                         Like Windows, it shows only after the keyboard is used. -->
+                    <Style x:Key="StyleFocusRing">
+                        <Setter Property="Control.Template">
+                            <Setter.Value>
+                                <ControlTemplate>
+                                    <Border Margin="-3" BorderThickness="2" CornerRadius="5" SnapsToDevicePixels="True"
+                                            BorderBrush="{DynamicResource Theme.FocusBorder}"/>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+
                     <Style x:Key="StyleDarkButton" TargetType="{x:Type Button}">
+                        <Setter Property="FocusVisualStyle" Value="{StaticResource StyleFocusRing}"/>
                         <Setter Property="Background" Value="{DynamicResource Theme.Button}"/>
                         <Setter Property="Foreground" Value="{DynamicResource Theme.ButtonText}"/>
                         <Setter Property="Cursor" Value="Hand"/>
@@ -61,6 +75,7 @@
                     </Style>
 
                     <Style x:Key="StyleLightButton" TargetType="{x:Type Button}">
+                        <Setter Property="FocusVisualStyle" Value="{StaticResource StyleFocusRing}"/>
                         <Setter Property="Background" Value="{DynamicResource Theme.LightButton}"/>
                         <Setter Property="Foreground" Value="{DynamicResource Theme.LightButtonText}"/>
                         <Setter Property="Cursor" Value="Hand"/>

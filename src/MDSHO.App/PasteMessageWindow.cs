@@ -7,7 +7,7 @@ namespace MDSHO {
   public class PasteMessageWindow : MessageWindow {
 
     /// <summary>Shows the built window (modal). Tests replace it so no window opens.</summary>
-    public static Action<PasteMessageWindow> ShowWindow = window => window.ShowDialog();
+    public static Action<PasteMessageWindow> ShowWindow = window => Helpers.DialogFocus.ShowDialog(window);
 
     /// <summary>Creates the window.</summary>
     /// <param name="caption">The title, "MDSHO".</param>

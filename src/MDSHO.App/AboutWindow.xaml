@@ -22,7 +22,9 @@
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource Theme.WindowBackground}"
         Foreground="{DynamicResource Theme.Text}"
-        helpers:WindowThemes.IsThemed="True">
+        helpers:WindowThemes.IsThemed="True"
+        helpers:DialogKeys.EscCloses="True"
+        helpers:DialogKeys.FirstFocus="{Binding ElementName=HyperlinkProject}">
 
     <!--MDSHO's own title bar (DialogTitleBar) and the rounded frame (RoundedWindowTemplate), like the Note window-->
     <WindowChrome.WindowChrome>

@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.25.0]
+
+### Changed
+
+- Prompts work with the keyboard like a Windows message box: the focus starts on the default button, the arrow keys move between the buttons, and Y, N, C or O (also with Alt) answers. The letter is underlined.
+- Settings, Colours and About close with Esc. Enter is Apply in Settings and Colours.
+- Each dialog opens with the focus on a useful control, and MDSHO's buttons show a clear focus ring in light and dark.
+- In Settings, each group of options is one Tab stop; the arrow keys move and choose.
+- A prompt from the tray gives the focus back to the window you were using.
+
 ## [1.24.0]
 
 ### Changed

@@ -53,6 +53,24 @@ With the mouse, click a button or group, wait a moment, and click it again, like
 
 To rename a panel, right-click its title and choose **Rename window title**, or click the title text twice slowly.
 
+## Prompts and dialogs
+
+Prompts, such as **Delete window**, work like a Windows message box:
+
+| Key | What it does |
+| --- | --- |
+| Left, Right | Moves between the buttons. The focus starts on the default button, for example No when deleting. |
+| Y, N, C, O | Answers Yes, No, Cancel or OK (the underlined letter). Alt with the letter works too. |
+| Enter | Presses the button with the focus. |
+| Esc | Answers Cancel, or No when there is no Cancel. |
+
+In **Settings**, **Colours** and **About**:
+
+- Tab and Shift+Tab move between the controls; the focused button shows a blue ring.
+- In a group of options, such as **Window theme**, the arrow keys choose the option.
+- Enter clicks **Apply** in Settings and Colours.
+- Esc closes the window. In Settings and Colours, nothing is kept unless you click Apply.
+
 ## Notes and comments
 
 - In a note, Esc closes the note. It is already saved.

@@ -16,7 +16,7 @@ namespace MDSHO {
 
     /// <summary>Shows the built dialog (modal) and returns its answer. Tests replace it so no window opens.</summary>
     public static Func<MessageWindow, MessageResult> ShowWindow = window => {
-      window.ShowDialog();
+      DialogFocus.ShowDialog(window);
       return window.Result;
     };
 

@@ -45,7 +45,7 @@ window with your own buttons, and you can have as many panels as you like, on as
 - [Keep notes beside your work](how-to/notes.md): note buttons, keep on top, colours.
 - [Paste text with snippets](how-to/snippets.md): paste a saved text into any text field.
 - [Use several screens](how-to/screens.md): clones, docking, screen setups and bringing windows to a screen.
-- [Use the keyboard](how-to/keyboard.md): bring panels to front, pick a button, rename.
+- [Use the keyboard](how-to/keyboard.md): bring panels to front, pick a button, rename, answer prompts.
 - [Back up, restore and move to another PC](how-to/backups.md): backups, synced folders, import.
 - [Change the look](how-to/look.md): colours, icons and the window theme.
 
