@@ -9,8 +9,9 @@ owner sets), update this file in the same branch. Keep it short and describe the
 
 WPF app on .NET 10, x64, shipped as MSIX. See `README.md`, `docs/` and `CONTRIBUTING.md`.
 
-Cloud sessions run on Linux and can't build, test or package it (needs Windows). `build.yml` builds and tests on
-pushes to `main` and pull requests; `sideload.yml` makes a signed package. Say when a change wasn't tested locally.
+Cloud sessions run on Linux and can't build, test or package it (needs Windows). `build.yml` builds and tests pull
+requests, except docs-only ones and ones with the `skip tests` label (the owner adds it); `sideload.yml` makes a
+signed package. Say when a change wasn't tested locally.
 
 Every new database column or app setting must be marked Synced or Local in `src/MDSHO.Data/SyncFields.cs` (a test
 enforces it). Order siblings by `SortKey` (see `SortKeys`), never by a position number.
