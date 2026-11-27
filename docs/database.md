@@ -300,7 +300,8 @@ version builds from its list of synced columns; it drops them before an upgrade 
 Every column of every table, and every app setting, is marked as **synced** (the same on every PC) or **local** (this
 PC's own) in `src/MDSHO.Data/SyncFields.cs`; a test fails for a column that isn't. Local are, for example, window
 places, clones, screen setups and their places, the text history, `IsGroupExpanded`, the shortcut file name (`Guid`),
-the backup settings, the text history setting and the device identity. Synced are, for example, names, targets, text,
+the backup settings, the text history setting and the device identity; every app setting and the default colours are
+local too, so each PC keeps its own. Synced are, for example, names, targets, text,
 comments, fonts, colours, highlights, the order and the parent of each item. A change of a synced column of a panel or
 button is what moves its `ChangedAt`.
 

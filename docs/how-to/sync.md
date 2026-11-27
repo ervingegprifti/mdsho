@@ -17,7 +17,8 @@ Dropbox or a network drive. Nothing goes to any other server.
 - Panels, groups, buttons, notes, comments and snippets, with their text and colours.
 - Their order, moves between panels and groups, and deletes.
 
-Window places and each PC's settings (backups, keyboard shortcut, screen setups) stay on that PC.
+Window places, the default colours and all of each PC's settings (window theme, keyboard shortcut, screen setups,
+backups, text history) stay on that PC.
 
 ## Turn it on
 

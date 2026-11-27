@@ -252,6 +252,7 @@ API: a OneDrive or Google Drive folder gives a cloud copy. The manifest also hol
 ## Sync
 
 Sync (2.0.0) keeps the panels and buttons of several PCs the same through a folder they all reach; there is no server.
+App settings and default colours are not synced: every one is Local in `SyncFields.cs`, so each PC keeps its own.
 
 - **Folder** (`src/MDSHO.Data/Sync/SyncFolder.cs`): one subfolder per PC, named by its `DeviceId`; only that PC writes
   in it. `index.json` lists the PC's items (`syncId` → hash, change record, `seq`), its deletes and how far it merged

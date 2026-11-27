@@ -129,7 +129,16 @@ namespace MDSHO.Tests {
         Assert.Equal(SyncScope.Local, setting.Scope);
         Assert.False(string.IsNullOrWhiteSpace(setting.Reason));
       }
-      Assert.Equal(SyncScope.Synced, SyncFields.Settings.Single(s => s.Key == "WindowTheme").Scope);
+    }
+
+    [Fact]
+    public void App_settings_and_default_colours_stay_on_each_PC() {
+      // The owner's rule: only panels and buttons sync; each PC keeps its own settings and default colours.
+      Assert.All(SyncFields.Settings, s => {
+        Assert.Equal(SyncScope.Local, s.Scope);
+        Assert.False(string.IsNullOrWhiteSpace(s.Reason));
+      });
+      Assert.All(SyncFields.Columns.Where(f => f.Table == "DefaultColors"), f => Assert.Equal(SyncScope.Local, f.Scope));
     }
 
     // ---- Sync IDs ----
