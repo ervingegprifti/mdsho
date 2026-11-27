@@ -71,6 +71,12 @@ namespace MDSHO.Data {
     void Delete(string device, string path);
   }
 
+  /// <summary>A cloud store that can tell which account it is signed in with.</summary>
+  public interface ISyncAccount {
+    /// <summary>The account (an e-mail address or a name), or "".</summary>
+    string Account();
+  }
+
   /// <summary>A sync folder on disk: what 2.0 did, unchanged.</summary>
   public sealed class FolderSyncStore : ISyncStore {
     private const string TempName = "index.tmp";

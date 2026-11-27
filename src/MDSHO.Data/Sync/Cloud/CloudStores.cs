@@ -148,7 +148,7 @@ namespace MDSHO.Data {
   /// "MDSHO Sync" in My Drive holds sync.json and one subfolder per PC, as in a sync folder. Item files are made, then their
   /// content uploaded; the index is replaced with one content update.
   /// </summary>
-  public sealed class GoogleDriveStore : ISyncStore {
+  public sealed class GoogleDriveStore : ISyncStore, ISyncAccount {
     /// <summary>The folder MDSHO makes in My Drive.</summary>
     public const string RootFolderName = "MDSHO Sync";
     private const string Api = "https://www.googleapis.com/drive/v3/files";
@@ -351,7 +351,7 @@ namespace MDSHO.Data {
   /// OneDrive through Microsoft Graph, in MDSHO's app folder (Apps/MDSHO, scope Files.ReadWrite.AppFolder): sync.json and
   /// one subfolder per PC, addressed by path. A PUT replaces a file's content in one call, so the index needs no rename.
   /// </summary>
-  public sealed class OneDriveStore : ISyncStore {
+  public sealed class OneDriveStore : ISyncStore, ISyncAccount {
     private const string Base = "https://graph.microsoft.com/v1.0/me/drive/special/approot";
     private readonly CloudHttp http;
 
