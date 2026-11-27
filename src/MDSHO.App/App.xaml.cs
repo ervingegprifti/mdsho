@@ -115,6 +115,7 @@ namespace MDSHO
           if (unsaved.Count > 0) {
             Common.AppLog.Warning(null, "Notes not saved when Windows signed out: {Count}", unsaved.Count);
           }
+          SyncOnExit();
           BackUpOnExit();
         };
 
@@ -130,6 +131,7 @@ namespace MDSHO
         StartBringPanelsToFront();
         StartScreenSetups();
         StartBackups();
+        StartSync();
         DeleteUnusedShortcutFiles();
         StartReviewPrompt();
         CreateContextMenu();
@@ -334,6 +336,55 @@ namespace MDSHO
         AppServices.Current.Backups.Start();
       } catch (Exception ex) {
         Common.AppLog.Error(ex, "Automatic backups could not be started");
+      }
+    }
+
+    /// <summary>
+    /// At startup: sync with the other PCs when it is on. Rounds run in the background; changes they bring show in the open
+    /// panels at once, and the texts of open note, comment and snippet windows are never changed under the user.
+    /// </summary>
+    private void StartSync() {
+      try {
+        System.Windows.Threading.Dispatcher ui = this.Dispatcher;
+        AppServices.Current.Sync = new SyncService(TimeProvider.System, Data.DataExporter.AppVersion(), new DispatcherOneShotTimer(),
+          action => Task.Run(action), AppServices.Current.Backups,
+          () => ui.Invoke(() => TextEditWindow.OpenTextShortcutIds()),
+          result => ui.BeginInvoke(new Action(() => ShowSyncedChanges(result))),
+          (path, target) => ui.BeginInvoke(new Action(() => FixSyncedLink(path, target))));
+        AppServices.Current.Sync.Start();
+      } catch (Exception ex) {
+        Common.AppLog.Error(ex, "Sync could not be started");
+      }
+    }
+
+    // Changes from other PCs: panels open, close or show their new look and buttons.
+    private void ShowSyncedChanges(Data.SyncResult result) {
+      try {
+        this.DataContext.ApplySync(result, window => {
+          DesktopWindowView view = this.windows.DesktopWindow(window);
+          view.Show();
+        }, window => window.CloseThisWindow(null));
+      } catch (Exception ex) {
+        Common.AppLog.Error(ex, "Changes from other PCs could not be shown");
+      }
+    }
+
+    // A shortcut file from another PC points at the target on this PC (the user folder may differ).
+    private static void FixSyncedLink(string path, string target) {
+      try {
+        AppServices.Current.LinkWriter.CreateLnk(path, target, Common.Paths.GetShortcutsPath());
+      } catch (Exception ex) {
+        Common.AppLog.Warning(ex, "A synced shortcut file could not be updated: {Path}", path);
+      }
+    }
+
+    /// <summary>On the way out: a last sync round when sync is on. Never throws.</summary>
+    public static void SyncOnExit() {
+      try {
+        AppServices.Current.Sync.Stop();
+        AppServices.Current.Sync.RunOnExit();
+      } catch (Exception ex) {
+        Common.AppLog.Error(ex, "The sync on exit failed");
       }
     }
 
@@ -801,6 +852,7 @@ namespace MDSHO
           return;
         }
       }
+      SyncOnExit();
       BackUpOnExit();
       try {
         this.notifyIcon?.Dispose();
@@ -857,6 +909,11 @@ namespace MDSHO
       }
       try {
         AppServices.Current.Backups.Stop();
+      } catch (Exception ex) {
+        Debug.WriteLine(ex);
+      }
+      try {
+        AppServices.Current.Sync.Stop();
       } catch (Exception ex) {
         Debug.WriteLine(ex);
       }

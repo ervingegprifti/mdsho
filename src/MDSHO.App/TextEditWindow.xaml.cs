@@ -571,6 +571,24 @@ namespace MDSHO {
 
     private static readonly List<TextEditWindow> openNoteWindows = new List<TextEditWindow>();
 
+    /// <summary>The buttons whose note, comment or snippet window is open now (sync never changes their texts under the user).</summary>
+    public static HashSet<long> OpenTextShortcutIds() {
+      HashSet<long> ids = new HashSet<long>();
+      foreach (TextEditWindow window in openNoteWindows) {
+        if (window.shortcut != null) {
+          ids.Add(window.shortcut.ID);
+        }
+      }
+      if (Application.Current != null) {
+        foreach (TextEditWindow window in Application.Current.Windows.OfType<TextEditWindow>()) {
+          if (window.shortcut != null) {
+            ids.Add(window.shortcut.ID);
+          }
+        }
+      }
+      return ids;
+    }
+
     /// <summary>The note windows open now. Several notes can be open at once, but each note in one window only.</summary>
     public static IReadOnlyCollection<TextEditWindow> OpenNoteWindows => openNoteWindows.AsReadOnly();
 
@@ -631,10 +649,15 @@ namespace MDSHO {
         }
         TextEditWindow window = ForNote(shortcut);
         NoteWindowPlace place = shortcut.ID != 0 ? DataStore.NoteWindows.Get(shortcut.ID) : null;
-        if (place != null) {
+        if (place != null && place.Width > 0) {
           window.UseSavedPlace(place);
         } else {
           PlaceNoteWindow(window);
+          // A row that sync made has the note's text size and wrap from another PC, but no place on this PC yet.
+          if (place != null) {
+            window.SetWrapText(place.IsWrapText);
+            window.SetTextSize(NoteWindowPlace.FontSizeOrDefault(place.FontSize));
+          }
         }
         openNoteWindows.Add(window);
         window.Closed += (s, e) => openNoteWindows.Remove(window);
@@ -1378,7 +1401,7 @@ namespace MDSHO {
       IReadOnlyList<HistoryEntry> rows = new List<HistoryEntry>();
       TryHistory(() => rows = this.shortcut.History(HistoryField));
       foreach (HistoryEntry row in rows) {
-        System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem { Header = TextHistory.MenuLine(row.KeptAt, row.Text, now), Tag = row };
+        System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem { Header = TextHistory.MenuLine(row.KeptAt, row.Text, now, row.FromPc), Tag = row };
         item.Click += (s, e) => PickHistory(row);
         menu.Items.Add(item);
       }

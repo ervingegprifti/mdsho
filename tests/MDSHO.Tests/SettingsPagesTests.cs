@@ -14,12 +14,12 @@ using Xunit;
 namespace MDSHO.Tests {
 
   /// <summary>
-  /// The Settings window's pages: a list on the left (Appearance, General, Keyboard, Screens, Backups) and the chosen page on the
+  /// The Settings window's pages: a list on the left (Appearance, General, Keyboard, Screens, Backups, Sync) and the chosen page on the
   /// right. Settings opens on the page used last, saved in AppSettings.
   /// </summary>
   public class SettingsPagesTests {
 
-    private static readonly string[] PageNames = { "Appearance", "General", "Keyboard", "Screens", "Backups" };
+    private static readonly string[] PageNames = { "Appearance", "General", "Keyboard", "Screens", "Backups", "Sync" };
 
     // The headings each page shows, in order.
     private static readonly Dictionary<string, string[]> PageHeadings = new Dictionary<string, string[]> {
@@ -28,6 +28,7 @@ namespace MDSHO.Tests {
       ["Keyboard"] = new[] { "Keyboard shortcut" },
       ["Screens"] = new[] { "Screen setups" },
       ["Backups"] = new[] { "Backups" },
+      ["Sync"] = new[] { "Sync" },
     };
 
     private static SettingsWindow Open() {
@@ -87,7 +88,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_list_has_the_five_pages_in_order_with_names_for_screen_readers() {
+    public void The_list_has_the_six_pages_in_order_with_names_for_screen_readers() {
       using (TempDb db = new TempDb()) {
         WithSettings(window => {
           ListBox list = Pages(window);

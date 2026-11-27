@@ -11,7 +11,7 @@ namespace MDSHO {
 
   /// <summary>
   /// A panel's Settings window, in pages chosen from the list on the left. Changes show live; closing without Apply undoes them.
-  /// The shortcut, the screen setups setting, the window theme and the backup settings are app-wide and change only on Apply.
+  /// The shortcut, the screen setups setting, the window theme, the backup and the sync settings are app-wide and change only on Apply.
   /// </summary>
   public partial class SettingsWindow : Window {
     private readonly IconGlyphs icons;
@@ -24,6 +24,12 @@ namespace MDSHO {
     /// <summary>Asks for a folder, starting in the one given; returns null when cancelled. Tests replace it.</summary>
     public static System.Func<string, string> PickFolder { get; set; } = start => {
       Microsoft.Win32.OpenFolderDialog dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Backup folder", InitialDirectory = System.IO.Directory.Exists(start) ? start : "" };
+      return dialog.ShowDialog() == true ? dialog.FolderName : null;
+    };
+
+    /// <summary>Asks for the sync folder, starting in the one given; returns null when cancelled. Tests replace it.</summary>
+    public static System.Func<string, string> PickSyncFolder { get; set; } = start => {
+      Microsoft.Win32.OpenFolderDialog dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Sync folder", InitialDirectory = System.IO.Directory.Exists(start) ? start : "" };
       return dialog.ShowDialog() == true ? dialog.FolderName : null;
     };
 
@@ -127,6 +133,40 @@ namespace MDSHO {
       backups.Changed += backupsChanged;
       this.Closed += (s, e) => backups.Changed -= backupsChanged;
 
+      // Sync: on/off, folder and this PC's name are saved on Apply; Sync now acts at once.
+      SyncService sync = AppServices.Current.Sync;
+      this.CheckSyncOn.IsChecked = sync.IsOn;
+      this.TextSyncFolder.Text = SyncSettings.Folder;
+      this.TextDeviceName.Text = DeviceIdentity.Name;
+      string notice = sync.TakeBackupNotice();
+      this.TextSyncBackupNotice.Text = notice ?? "";
+      this.TextSyncBackupNotice.Visibility = notice == null ? Visibility.Collapsed : Visibility.Visible;
+      ShowSyncState(sync);
+      this.ButtonSyncFolderChange.Click += (s, e) => {
+        string chosen = PickSyncFolder(this.TextSyncFolder.Text);
+        if (!string.IsNullOrEmpty(chosen)) {
+          this.TextSyncFolder.Text = chosen;
+          ShowSyncError(null);
+        }
+      };
+      this.ButtonSyncFolderOpen.Click += (s, e) => {
+        try {
+          if (System.IO.Directory.Exists(this.TextSyncFolder.Text)) {
+            AppServices.Current.Shell.OpenFolder(this.TextSyncFolder.Text);
+          }
+        } catch (System.Exception ex) {
+          ErrorDialog.ShowDialog("The sync folder could not be opened.", ex);
+        }
+      };
+      this.ButtonSyncNow.Click += (s, e) => {
+        sync.SyncNow();
+        ShowSyncState(sync);
+      };
+      // A round can finish while Settings is open, on another thread.
+      System.Action syncChanged = () => this.Dispatcher.BeginInvoke(new System.Action(() => ShowSyncState(sync)));
+      sync.Changed += syncChanged;
+      this.Closed += (s, e) => sync.Changed -= syncChanged;
+
       this.ButtonApply.Click += (s, e) => {
         try {
           // Another app holds the new shortcut: stay open and show the red hint.
@@ -178,6 +218,15 @@ namespace MDSHO {
           ErrorDialog.ShowDialog(ex);
           return;
         }
+        try {
+          if (!ApplySync(sync)) {
+            this.PageItemSync.IsSelected = true;
+            return;
+          }
+        } catch (System.Exception ex) {
+          ErrorDialog.ShowDialog(ex);
+          return;
+        }
         this.closeWithoutApply = false;
         Close();
       };
@@ -215,6 +264,57 @@ namespace MDSHO {
       if (this.recorder.KeyPressed(modifiers, key)) {
         e.Handled = true;
       }
+    }
+
+    // This PC's name, then sync on (a backup first) or off. False keeps Settings open with the red line.
+    private bool ApplySync(SyncService sync) {
+      string name = (this.TextDeviceName.Text ?? "").Trim();
+      if (name != DeviceIdentity.Name) {
+        DeviceIdentity.Name = name;
+      }
+      bool on = this.CheckSyncOn.IsChecked == true;
+      if (!on) {
+        if (sync.IsOn) {
+          sync.TurnOff();
+        }
+        return true;
+      }
+      string folder = this.TextSyncFolder.Text;
+      if (string.IsNullOrWhiteSpace(folder)) {
+        folder = PickSyncFolder("");
+        if (string.IsNullOrEmpty(folder)) {
+          ShowSyncError("Pick the sync folder first.");
+          return false;
+        }
+        this.TextSyncFolder.Text = folder;
+      }
+      if (sync.IsOn && string.Equals(folder, SyncSettings.Folder, System.StringComparison.OrdinalIgnoreCase)) {
+        return true;
+      }
+      SyncJoin join = sync.TurnOn(folder);
+      if (!join.Ok) {
+        ShowSyncError(join.Error);
+        return false;
+      }
+      return true;
+    }
+
+    private void ShowSyncError(string error) {
+      this.TextSyncError.Text = error ?? "";
+      this.TextSyncError.Visibility = error == null ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    // The status line, its grey line, Sync now and the other PCs.
+    private void ShowSyncState(SyncService sync) {
+      this.TextSyncStatus.Text = sync.StatusText;
+      string hint = sync.StatusHint;
+      this.TextSyncStatusHint.Text = hint ?? "";
+      this.TextSyncStatusHint.ToolTip = hint;
+      this.TextSyncStatusHint.Visibility = hint == null ? Visibility.Collapsed : Visibility.Visible;
+      this.TextSyncStatus.Foreground = (System.Windows.Media.Brush)FindResource(sync.State == SyncState.Unreachable || sync.State == SyncState.NewerPc
+        ? "Theme.HintErrorText" : "Theme.Text");
+      this.ButtonSyncNow.IsEnabled = sync.IsOn;
+      this.ListSyncPeers.ItemsSource = sync.PeerRows();
     }
 
     // "Last backup: ..." and, after a failure, the red line.

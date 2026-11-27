@@ -263,6 +263,27 @@ namespace MDSHO.ViewModels {
       }
     }
 
+    /// <summary>
+    /// Before this PC joins sync: backs up its data to the backup folder, whatever the on/off setting, as
+    /// MDSHO-backup-PC-before-sync-....zip, which MDSHO never deletes. Returns the file, or null after a failure (saved
+    /// for Settings and logged).
+    /// </summary>
+    public string BackUpForSync() {
+      lock (this.writing) {
+        string folder = Folder;
+        try {
+          EnsureFolder(folder);
+          string path = Path.Combine(folder, BackupFiles.SyncName(this.pc, this.clock.GetLocalNow().DateTime));
+          DataExporter.Export(path, new ExportOptions { PcName = this.machineName });
+          AppLog.Information("Backup before joining sync written to {Path}", path);
+          return path;
+        } catch (Exception ex) {
+          Failed(ex, folder);
+          return null;
+        }
+      }
+    }
+
     private void Write(string folder, int keep, string hash) {
       EnsureFolder(folder);
       string path = Path.Combine(folder, BackupFiles.RegularName(this.pc, this.clock.GetLocalNow().DateTime));
@@ -391,6 +412,11 @@ namespace MDSHO.ViewModels {
     /// <summary>The name of the backup before a database upgrade to <paramref name="version"/>.</summary>
     public static string UpgradeName(string pc, string version, DateTime local) {
       return "MDSHO-backup-" + pc + "-before-" + version + "-" + local.ToString(Stamp, CultureInfo.InvariantCulture) + ".zip";
+    }
+
+    /// <summary>The name of the backup made before this PC joins sync.</summary>
+    public static string SyncName(string pc, DateTime local) {
+      return "MDSHO-backup-" + pc + "-before-sync-" + local.ToString(Stamp, CultureInfo.InvariantCulture) + ".zip";
     }
 
     /// <summary>True only for a regular backup of this PC with exactly that pattern.</summary>
