@@ -40,6 +40,14 @@
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+            <!--The glyph is drawn in a 16x16 box (StyleTitleBarFontIcon).-->
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Style="{StaticResource StyleTitleBarFontIcon}" Text="{Binding}"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">

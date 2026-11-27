@@ -16,6 +16,14 @@
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+            <!--The glyph is drawn in a 16x16 box (StyleTitleBarFontIcon).-->
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Style="{StaticResource StyleTitleBarFontIcon}" Text="{Binding}"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -44,7 +52,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock x:Name="TextGlyph" FontFamily="{StaticResource IconFont}" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource Theme.TextStrong}"
+                <TextBlock x:Name="TextGlyph" Style="{StaticResource StyleTitleBarFontIcon}" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource Theme.TextStrong}"
                            Text="{Binding Glyph, RelativeSource={RelativeSource AncestorType={x:Type controls:DialogTitleBar}}}"/>
                 <TextBlock x:Name="TextTitle" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource Theme.TextStrong}" TextTrimming="CharacterEllipsis"
                            Text="{Binding Text, RelativeSource={RelativeSource AncestorType={x:Type controls:DialogTitleBar}}}"/>

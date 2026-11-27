@@ -40,6 +40,14 @@
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+            <!--The glyph is drawn in a 16x16 box (StyleTitleBarFontIcon).-->
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Style="{StaticResource StyleTitleBarFontIcon}" Text="{Binding}"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -91,7 +99,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock x:Name="TextTitleIcon" Grid.Column="0" Text="{Binding Icons.Run}" FontFamily="{StaticResource IconFont}" Margin="12,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource Theme.TextStrong}"/>
+                    <TextBlock x:Name="TextTitleIcon" Grid.Column="0" Text="{Binding Icons.Run}" Style="{StaticResource StyleTitleBarFontIcon}" Margin="12,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource Theme.TextStrong}"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock x:Name="TextTitle" Text="{Binding Name}" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource Theme.TextStrong}"/>
                         <!--The command is renamed here: click the title text twice slowly; a double click maximises (Rename and F2 in the panel rename the button). Enter or leaving keeps

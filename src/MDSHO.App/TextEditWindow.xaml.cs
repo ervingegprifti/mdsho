@@ -171,16 +171,18 @@ namespace MDSHO {
       return !string.IsNullOrEmpty(glyph) && glyph[0] >= '' && glyph[0] <= '';
     }
 
-    // The More options button shows IconGlyphs.More: in the icon font once it is a glyph, else as text (three dots) in
-    // Segoe UI, smaller so it looks as big as the other icons.
+    // The More options button shows IconGlyphs.More: once it is a glyph, as a 16 px icon like the other buttons, else
+    // as text (three dots) in Segoe UI, smaller so it looks as big as the other icons.
     private void ShowMoreIcon(string glyph) {
       this.ButtonMore.Content = glyph;
       if (IsIconFontGlyph(glyph)) {
-        this.ButtonMore.SetResourceReference(FontFamilyProperty, "IconFont");
-        this.ButtonMore.FontSize = 14;
+        this.ButtonMore.ClearValue(FontFamilyProperty);
+        this.ButtonMore.ClearValue(FontSizeProperty);
+        this.ButtonMore.ClearValue(ContentTemplateProperty);
       } else {
         this.ButtonMore.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
         this.ButtonMore.FontSize = 11;
+        this.ButtonMore.ContentTemplate = null;
       }
     }
 
