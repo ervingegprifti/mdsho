@@ -154,6 +154,10 @@ namespace MDSHO {
       this.TextComment.PreviewMouseWheel += TextComment_PreviewMouseWheel;
       this.PreviewKeyDown += Window_PreviewKeyDown;
       this.TextComment.PreviewMouseLeftButtonDown += TextComment_PreviewMouseLeftButtonDown;
+      this.TextComment.PreviewMouseMove += TextComment_PreviewMouseMove;
+      this.TextComment.PreviewMouseLeftButtonUp += TextComment_PreviewMouseLeftButtonUp;
+      this.TextComment.LostMouseCapture += (s, e) => this.paddingAnchor = -1;
+      this.TextComment.LostKeyboardFocus += (s, e) => this.paddingAnchor = -1;
       this.Loaded += (s, e) => {
         this.TextComment.Focus();
         this.TextComment.CaretIndex = this.TextComment.Text.Length;
@@ -1460,14 +1464,24 @@ namespace MDSHO {
     // WPF measures its double-click time from the first click of a run, so a 4th click at a normal pace comes too late and
     // WPF counts it as a new single click. The editor counts the run itself: each click within the double-click time and
     // spot of the click before.
+    // A click in the padding, where the text box ignores clicks, goes to the nearest spot of the text
+    // (see TextBoxPoints.CaretAt). Scroll bars keep their clicks.
     private void TextComment_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+      if (TextBoxPoints.OnScrollBar(this.TextComment, e.OriginalSource as DependencyObject)) {
+        return;
+      }
       Point at = e.GetPosition(this.TextComment);
       int clicks = this.clickRun.Next(e.ClickCount, e.Timestamp, at.X, at.Y, (int)GetDoubleClickTime(),
         SystemParameters.MinimumHorizontalDragDistance, SystemParameters.MinimumVerticalDragDistance);
+      bool inPadding = TextBoxPoints.InPadding(this.TextComment, at);
       if (clicks < 2) {
+        if (inPadding) {
+          StartPaddingClick(at);
+          e.Handled = true;
+        }
         return;
       }
-      int index = CharacterIndexAt(this.TextComment, e);
+      int index = inPadding ? TextBoxPoints.CaretAt(this.TextComment, at) : CharacterIndexAt(this.TextComment, e);
       if (index < 0 && clicks < 4) {
         return;
       }
@@ -1475,6 +1489,74 @@ namespace MDSHO {
       (int start, int length) = TextClickSelection.ForClicks(text, index, clicks).Value;
       this.TextComment.Focus();
       this.TextComment.Select(start, length);
+      e.Handled = true;
+    }
+
+    // A press in the padding: the anchor of the selection while the button is held (see StartPaddingClick).
+    private int paddingAnchor = -1;
+
+    // Puts the caret at the nearest spot (Shift extends the selection to it) and selects while the mouse is dragged.
+    private void StartPaddingClick(Point at) {
+      System.Windows.Controls.TextBox box = this.TextComment;
+      box.Focus();
+      int caret = TextBoxPoints.CaretAt(box, at);
+      int anchor = caret;
+      if ((Keyboard.Modifiers & ModifierKeys.Shift) != 0) {
+        // From the end of the selection farther from the click (a text box doesn't tell which end the caret is at).
+        int start = box.SelectionStart, end = start + box.SelectionLength;
+        anchor = Math.Abs(caret - start) >= Math.Abs(caret - end) ? start : end;
+      }
+      SelectBetween(anchor, caret);
+      this.paddingAnchor = anchor;
+      this.paddingPress = at;
+    }
+
+    // Where the press in the padding was: the mouse is captured once it moves from there, not before, since a capture
+    // would end WPF's count of a double click.
+    private Point paddingPress;
+
+    private void SelectBetween(int anchor, int caret) {
+      this.TextComment.Select(Math.Min(anchor, caret), Math.Abs(caret - anchor));
+    }
+
+    private void TextComment_PreviewMouseMove(object sender, MouseEventArgs e) {
+      if (this.paddingAnchor < 0) {
+        return;
+      }
+      System.Windows.Controls.TextBox box = this.TextComment;
+      Point at = e.GetPosition(box);
+      if (!box.IsMouseCaptured) {
+        if (Math.Abs(at.X - this.paddingPress.X) <= SystemParameters.MinimumHorizontalDragDistance
+          && Math.Abs(at.Y - this.paddingPress.Y) <= SystemParameters.MinimumVerticalDragDistance) {
+          return;
+        }
+        box.CaptureMouse();
+      }
+      // Out of the text area: scroll toward the mouse, as a drag from the text does.
+      Rect area = TextBoxPoints.TextArea(box);
+      if (at.Y < area.Top) {
+        box.LineUp();
+      } else if (at.Y > area.Bottom) {
+        box.LineDown();
+      }
+      if (at.X < area.Left) {
+        box.LineLeft();
+      } else if (at.X > area.Right) {
+        box.LineRight();
+      }
+      box.UpdateLayout();
+      SelectBetween(this.paddingAnchor, TextBoxPoints.CaretAt(box, at));
+      e.Handled = true;
+    }
+
+    private void TextComment_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e) {
+      if (this.paddingAnchor < 0) {
+        return;
+      }
+      this.paddingAnchor = -1;
+      if (this.TextComment.IsMouseCaptured) {
+        this.TextComment.ReleaseMouseCapture();
+      }
       e.Handled = true;
     }
 

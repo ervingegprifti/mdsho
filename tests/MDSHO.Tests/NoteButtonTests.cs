@@ -751,7 +751,7 @@ namespace MDSHO.Tests {
           Assert.Equal(body.ActualHeight, e.Height, 1);
           Assert.Equal(((SolidColorBrush)window.Background).Color, Assert.IsType<SolidColorBrush>(editor.Background).Color);
           Assert.Equal(new Thickness(0), editor.BorderThickness);
-          Assert.Equal(new Thickness(10), editor.Padding);
+          Assert.Equal(new Thickness(20), editor.Padding);
           Assert.Equal(TextWrapping.NoWrap, editor.TextWrapping);
           Assert.Equal(ScrollBarVisibility.Auto, editor.HorizontalScrollBarVisibility);
           Assert.Equal(ScrollBarVisibility.Auto, editor.VerticalScrollBarVisibility);
@@ -968,7 +968,7 @@ namespace MDSHO.Tests {
           Assert.Equal(body.ActualHeight, e.Height, 1);
           Assert.Equal(((SolidColorBrush)window.Background).Color, Assert.IsType<SolidColorBrush>(editor.Background).Color);
           Assert.Equal(new Thickness(0), editor.BorderThickness);
-          Assert.Equal(new Thickness(10), editor.Padding);
+          Assert.Equal(new Thickness(20), editor.Padding);
           Assert.Equal(TextWrapping.NoWrap, editor.TextWrapping);
           Assert.Equal(ScrollBarVisibility.Auto, editor.HorizontalScrollBarVisibility);
           Assert.Equal(ScrollBarVisibility.Auto, editor.VerticalScrollBarVisibility);
