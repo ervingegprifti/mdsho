@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.30.0]
+
+### Changed
+
+- Groundwork for syncing MDSHO between your PCs; nothing you see changes. Every panel and button gets a fixed ID, a
+  record of its last change and an order key, deleted items are remembered, and exports and backups carry them.
+  Database version 27: export your data before installing.
+
 ## [1.29.0]
 
 ### Added

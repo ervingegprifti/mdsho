@@ -116,6 +116,8 @@ namespace MDSHO.Data {
     /// as textPrevious1/2 and commentPrevious1/2 instead (see <see cref="PortabilityJson.LegacyHistory"/>).
     /// </summary>
     public List<HistoryEntry> History { get; set; }
+    /// <summary>The deleted panels and buttons (database version 27); null in older files.</summary>
+    public List<DeletedItem> DeletedItems { get; set; }
   }
 
   /// <summary>
@@ -200,6 +202,18 @@ namespace MDSHO.Data {
     internal static readonly System.Runtime.CompilerServices.ConditionalWeakTable<DesktopWindow, object> LegacyCommentWrap =
       new System.Runtime.CompilerServices.ConditionalWeakTable<DesktopWindow, object>();
 
+    /// <summary>
+    /// The Position number read from a file of database version 26 or older (never written); the importer orders the
+    /// siblings by it when the file has no sort keys.
+    /// </summary>
+    internal static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Shortcut, object> LegacyPosition =
+      new System.Runtime.CompilerServices.ConditionalWeakTable<Shortcut, object>();
+
+    /// <summary>The Position of a shortcut from an older file, or 0.</summary>
+    internal static long LegacyPositionOf(Shortcut shortcut) {
+      return LegacyPosition.TryGetValue(shortcut, out object value) ? (long)value : 0;
+    }
+
     /// <summary>The app setting of database version 25 and older for Highlight current line; "Off" turned it off everywhere.</summary>
     internal const string LegacyCurrentLineKey = "HighlightCurrentLine";
 
@@ -258,6 +272,10 @@ namespace MDSHO.Data {
             }
           };
           info.Properties.Add(legacyNotes);
+          // Database version 26 and older ordered siblings by a Position number: read it aside, never write it.
+          JsonPropertyInfo legacyPosition = info.CreateJsonPropertyInfo(typeof(long), "position");
+          legacyPosition.Set = (obj, value) => LegacyPosition.AddOrUpdate((Shortcut)obj, (long)value);
+          info.Properties.Add(legacyPosition);
           // Database versions 22 and 23 kept two earlier copies on the shortcut: read them aside, never write them.
           for (int i = 0; i < LegacyHistoryNames.Length; i++) {
             int index = i;

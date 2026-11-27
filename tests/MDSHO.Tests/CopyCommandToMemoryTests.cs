@@ -92,7 +92,7 @@ namespace MDSHO.Tests {
       Assert.False(cmd.ShowCopyTargetToMemory);
       Assert.False(group.ShowCopyCommandToMemory);
       Assert.False(note.ShowCopyCommandToMemory);
-      ShortcutViewModel file = new ShortcutViewModel(null, null, 2, null, "f", @"C:\x.txt", ".lnk", "g2", false, false, null, false, null, 0, false, "", "");
+      ShortcutViewModel file = new ShortcutViewModel(null, null, 2, null, "f", @"C:\x.txt", ".lnk", "g2", false, false, null, false, null, false, "", "");
       Assert.False(file.ShowCopyCommandToMemory);
       Assert.True(file.ShowCopyTargetToMemory);
     }

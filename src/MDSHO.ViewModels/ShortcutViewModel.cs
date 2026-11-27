@@ -185,7 +185,6 @@ namespace MDSHO.ViewModels {
     /// <summary>The mark colour.</summary>
     [ObservableProperty]
     private string markColor;
-    private long position;
     private bool isProcessCommand;
     private bool isNote;
     private bool isSnippet;
@@ -585,7 +584,6 @@ namespace MDSHO.ViewModels {
       }
     }
     /// <summary>Order among the siblings, counting from 0.</summary>
-    public long Position { get { return this.position; } set { this.position = value; } }
     /// <summary>True when the shortcut runs a command.</summary>
     public bool IsProcessCommand { get { return this.isProcessCommand; } set { this.isProcessCommand = value; } }
     /// <summary>True for a note button.</summary>
@@ -682,7 +680,7 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0, long textFontSize = 0, string noteHighlights = "", TextViewOptions textViewOptions = null, TextViewOptions commentViewOptions = null) {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0, long textFontSize = 0, string noteHighlights = "", TextViewOptions textViewOptions = null, TextViewOptions commentViewOptions = null) {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -696,7 +694,6 @@ namespace MDSHO.ViewModels {
       this.comment = comment;
       this.isMarked = isMarked;
       this.markColor = markColor;
-      this.position = position;
       this.isProcessCommand = isProcessCommand;
       this.processFileName = processFileName;
       this.processArguments = processArguments;
@@ -1174,17 +1171,13 @@ namespace MDSHO.ViewModels {
       if (!delete) {
         return;
       }
-      // Delete from the database and renumber the remaining siblings in one transaction.
+      // Delete from the database (everything inside goes with it). The others keep their sort keys.
       using (var tx = DataStore.BeginTransaction()) {
         DataStore.Shortcuts.Delete(this.ID);
-        DataStore.Shortcuts.UpdatePositions(siblings.Where(s => !ReferenceEquals(s, this)).Select(s => s.ID));
         tx.Commit();
       }
       // Committed: update the view model, then delete the physical file/s.
       siblings.Remove(this);
-      for (int i = 0; i < siblings.Count; i++) {
-        siblings[i].Position = i;
-      }
       this.AppViewModel.ForgetDeleted(this);
       NotesDeleted?.Invoke(this);
       ShortcutFileService.DeleteShortcutFiles(this);

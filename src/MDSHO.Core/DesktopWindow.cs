@@ -40,6 +40,14 @@ namespace MDSHO.Core {
     public bool SingleClickToOpen { get; set; }
     /// <summary>True when the title bar shows the app version after the title (on for new windows and older exports).</summary>
     public bool ShowVersionInTitle { get; set; } = true;
+    /// <summary>The fixed ID that names this panel on every PC (a GUID); it never changes. Empty in older export files.</summary>
+    public string SyncId { get; set; } = "";
+    /// <summary>Order among the panels: a text sort key (see MDSHO.Common.SortKeys); equal keys are ordered by SyncId.</summary>
+    public string SortKey { get; set; } = "";
+    /// <summary>When a synced field last changed: UTC milliseconds since 1970 (0 in older export files).</summary>
+    public long ChangedAt { get; set; }
+    /// <summary>The DeviceId of the PC that made that change.</summary>
+    public string ChangedBy { get; set; } = "";
     /// <summary>
     /// Children RootShortcuts.
     /// </summary>

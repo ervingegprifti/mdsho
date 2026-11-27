@@ -18,7 +18,7 @@ namespace MDSHO.Tests {
     private static readonly Regex ReferenceLink = new Regex(@"^\s{0,3}\[[^\]]+\]:\s*<?(\S+?)>?(?:\s+.*)?$");
     private static readonly Regex InlineCode = new Regex(@"`[^`]*`");
 
-    private static string RepoRoot() {
+    internal static string RepoRoot() {
       DirectoryInfo dir = new DirectoryInfo(AppContext.BaseDirectory);
       while (dir != null && !File.Exists(Path.Combine(dir.FullName, "Directory.Packages.props"))) {
         dir = dir.Parent;

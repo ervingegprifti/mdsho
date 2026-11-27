@@ -88,6 +88,13 @@ namespace MDSHO.Tests {
       }
     }
 
+    /// <summary>Drops the sync triggers, as an older database (before version 27) has none.</summary>
+    public void DropSyncTriggers() {
+      using (SqliteConnection c = Open()) {
+        SyncTriggers.Drop(c);
+      }
+    }
+
     public void Dispose() {
       MDSHO.ViewModels.Dialogs.Confirm = originalConfirm;
       MDSHO.ViewModels.Dialogs.ShowMessage = originalShowMessage;

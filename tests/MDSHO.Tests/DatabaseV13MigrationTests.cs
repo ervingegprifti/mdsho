@@ -88,6 +88,7 @@ namespace MDSHO.Tests {
       DesktopWindow window = DataStore.Windows.GetAll().First();
       window.ShowVersionInTitle = false;
       window.ID = 0;
+      window.SyncId = ""; // a new row needs its own SyncId
       long id = DataStore.Windows.Add(window);
       Assert.False(DataStore.Windows.Get(id).ShowVersionInTitle);
       DesktopWindow read = DataStore.Windows.Get(id);

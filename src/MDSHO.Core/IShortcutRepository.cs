@@ -4,7 +4,7 @@ namespace MDSHO.Core {
 
   /// <summary>
   /// Persistence of <see cref="Shortcut"/> (Shortcuts table). A shortcut belongs either to a window (root shortcut:
-  /// ParentWindowID set) or to a group (ParentShortcutID set), never both. Positions count from 0 per parent.
+  /// ParentWindowID set) or to a group (ParentShortcutID set), never both. Siblings are ordered by SortKey, then SyncId.
   /// Returned entities have an empty <see cref="Shortcut.Shortcuts"/> list; whole trees come from <see cref="IDesktopWindowRepository.LoadAll()"/>.
   /// </summary>
   public interface IShortcutRepository {
@@ -12,16 +12,14 @@ namespace MDSHO.Core {
     Shortcut Get(long id);
     /// <summary>All shortcut rows (flat, without children).</summary>
     List<Shortcut> GetAll();
-    /// <summary>Root shortcuts of a window ordered by Position.</summary>
+    /// <summary>Root shortcuts of a window in order (SortKey, then SyncId).</summary>
     List<Shortcut> GetRoots(long parentWindowID);
-    /// <summary>Children of a group ordered by Position.</summary>
+    /// <summary>Children of a group in order (SortKey, then SyncId).</summary>
     List<Shortcut> GetChildren(long parentShortcutID);
-    /// <summary>The highest Position among the siblings under the given parent (exactly one parent id must be set), -1 when there are none.</summary>
-    long GetMaxPosition(long? parentShortcutID, long? parentWindowID);
 
-    /// <summary>Inserts the shortcut exactly as given (its Position included; its ID too when not 0, e.g. on import, otherwise a new one is assigned), sets <see cref="Shortcut.ID"/> and returns it.</summary>
+    /// <summary>Inserts the shortcut exactly as given (its ID, SyncId, SortKey and change record too when set, e.g. on import; otherwise a new ID and SyncId, a key after the last sibling and a new change record), sets <see cref="Shortcut.ID"/> and returns it.</summary>
     long Add(Shortcut shortcut);
-    /// <summary>Inserts a copy of all the fields of the template as the last sibling under its parent (the template's ID and Position are ignored).</summary>
+    /// <summary>Inserts a copy of all the fields of the template as the last sibling under its parent (the template's ID, SyncId, SortKey and change record are ignored).</summary>
     Shortcut Append(Shortcut template);
     /// <summary>Appends a new empty group named "New group".</summary>
     Shortcut CreateGroup(long? parentShortcutID, long? parentWindowID);
@@ -72,9 +70,10 @@ namespace MDSHO.Core {
     void UpdateViewOptions(long id, bool comment, TextViewOptions options);
     /// <summary>Saves the five colours of a note's window (empty = the default colour).</summary>
     void UpdateNoteColors(long id, string border, string titleBackground, string titleText, string background, string text);
-    /// <summary>Saves the order among the siblings.</summary>
-    void UpdatePosition(long id, long position);
-    /// <summary>Sets Position to the index in the list (0, 1, 2, ...) in one transaction: either all positions change or none.</summary>
+    /// <summary>
+    /// Saves the list as the order of these siblings in one transaction (all or nothing). Only the keys that must
+    /// change do: the longest run already in order keeps its keys, every other button gets a key between its neighbours.
+    /// </summary>
     void UpdatePositions(IEnumerable<long> orderedShortcutIDs);
     /// <summary>Saves the program of a command shortcut.</summary>
     void UpdateProcessFileName(long id, string processFileName);

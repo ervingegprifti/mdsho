@@ -582,6 +582,8 @@ namespace MDSHO.Tests {
       DataStore.Shortcuts.Create(null, w.ID, "old", @"C:\old.exe", ".lnk", Identifiers.NewGuid());
       DataStore.Clones.Create(w.ID, "S2", 1, 2);
       Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+      // Before version 27 there are no sync triggers.
+      db.DropSyncTriggers();
       db.Exec("ALTER TABLE Shortcuts DROP COLUMN NoteTextColor; PRAGMA user_version = 9;");
       Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
     }

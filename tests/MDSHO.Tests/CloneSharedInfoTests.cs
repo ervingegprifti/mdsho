@@ -28,7 +28,7 @@ namespace MDSHO.Tests {
       Assert.NotEqual(a.ID, b.ID);
       // Count every UPDATE on MDSHOWindows per row.
       db.Exec("CREATE TABLE UpdLog (RowID INTEGER NOT NULL);" +
-              "CREATE TRIGGER trg_upd AFTER UPDATE ON MDSHOWindows BEGIN INSERT INTO UpdLog VALUES (NEW.ID); END;");
+              "CREATE TRIGGER trg_upd AFTER UPDATE ON MDSHOWindows WHEN NEW.ChangedAt IS OLD.ChangedAt BEGIN INSERT INTO UpdLog VALUES (NEW.ID); END;");
       return (a, b, colliding);
     }
     private long Updates(long id) { return db.Scalar("SELECT COUNT(*) FROM UpdLog WHERE RowID=" + id); }

@@ -48,6 +48,8 @@ namespace MDSHO.Tests {
       long win = DataStore.Windows.LoadAll()[0].ID;
       long id = Shortcuts.CreateProcessCommand(null, win).ID;
       // Turn it back into a version 3 database (as 1.1.0 wrote it).
+      // Before version 27 there are no sync triggers.
+      db.DropSyncTriggers();
       db.Exec("ALTER TABLE Shortcuts DROP COLUMN ProcessRunAsAdmin; ALTER TABLE Shortcuts DROP COLUMN ProcessWorkingFolder; PRAGMA user_version = 3;");
       Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
       Assert.Equal(0, Column("ProcessRunAsAdmin"));
@@ -109,7 +111,7 @@ namespace MDSHO.Tests {
       Assert.NotEqual(read.ID, copy.ID);
       Assert.Equal((1L, @"C:\Work"), (copy.ProcessRunAsAdmin, copy.ProcessWorkingFolder));
 
-      Shortcut added = new Shortcut(null, win, "x", "", "", "gx", 0, 0, "", 0, "#FFFFFFFF", 9, 1, "cmd.exe", "/K x",
+      Shortcut added = new Shortcut(null, win, "x", "", "", "gx", 0, 0, "", 0, "#FFFFFFFF", 1, "cmd.exe", "/K x",
         processRunAsAdmin: 1, processWorkingFolder: @"D:\Logs");
       Shortcuts.Add(added);
       Assert.Equal((1L, @"D:\Logs"), (Shortcuts.Get(added.ID).ProcessRunAsAdmin, Shortcuts.Get(added.ID).ProcessWorkingFolder));

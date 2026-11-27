@@ -141,6 +141,8 @@ namespace MDSHO.Tests {
     [Fact]
     public void A_v22_database_gets_the_text_size_column_with_0_after_a_backup() {
       ShortcutViewModel snippet = NewSnippet();
+      // Before version 27 there are no sync triggers.
+      db.DropSyncTriggers();
       db.Exec("ALTER TABLE Shortcuts DROP COLUMN TextFontSize; PRAGMA user_version = 22;");
       Assert.Equal(0, Columns("Shortcuts", "TextFontSize"));
       DataStore.Upgrade();

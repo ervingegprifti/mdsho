@@ -169,10 +169,15 @@ namespace MDSHO.Data {
 
     private static void WriteData(DataFile data, ImportMode mode, Dictionary<long, string> guidMap) {
       bool keepIds = mode == ImportMode.Replace;
+      PrepareSyncData(data, keepIds);
       Dictionary<long, long> windowIds = new Dictionary<long, long>();
-      foreach (DesktopWindow w in data.Windows.OrderBy(x => x.ID)) {
+      // In key order, so Add as new appends them after this PC's panels in the file's order.
+      foreach (DesktopWindow w in data.Windows.OrderBy(x => x.SortKey, StringComparer.Ordinal).ThenBy(x => x.SyncId, StringComparer.Ordinal).ThenBy(x => x.ID)) {
         long oldId = w.ID;
-        if (!keepIds) { w.ID = 0; }
+        if (!keepIds) {
+          w.ID = 0;
+          w.SortKey = "";
+        }
         DataStore.Windows.Add(w);
         windowIds[oldId] = w.ID;
       }
@@ -181,14 +186,14 @@ namespace MDSHO.Data {
         c.ParentWindowID = windowIds[c.ParentWindowID];
         DataStore.Clones.Add(c);
       }
-      // Parents before children (foreign keys); the stored Position values keep the order.
+      // Parents before children (foreign keys); the sort keys keep the order.
       ILookup<long, Shortcut> children = data.Shortcuts.Where(s => s.ParentShortcutID != null).ToLookup(s => s.ParentShortcutID.Value);
       Dictionary<long, long> shortcutIds = new Dictionary<long, long>();
-      Queue<Shortcut> queue = new Queue<Shortcut>(data.Shortcuts.Where(s => s.ParentShortcutID == null).OrderBy(s => s.ParentWindowID).ThenBy(s => s.Position).ThenBy(s => s.ID));
+      Queue<Shortcut> queue = new Queue<Shortcut>(data.Shortcuts.Where(s => s.ParentShortcutID == null).OrderBy(s => s.ParentWindowID).ThenBy(s => s.SortKey, StringComparer.Ordinal).ThenBy(s => s.ID));
       while (queue.Count > 0) {
         Shortcut s = queue.Dequeue();
         long oldId = s.ID;
-        foreach (Shortcut child in children[oldId].OrderBy(x => x.Position).ThenBy(x => x.ID)) {
+        foreach (Shortcut child in children[oldId].OrderBy(x => x.SortKey, StringComparer.Ordinal).ThenBy(x => x.ID)) {
           queue.Enqueue(child);
         }
         if (s.ParentWindowID != null) { s.ParentWindowID = windowIds[s.ParentWindowID.Value]; }
@@ -212,6 +217,64 @@ namespace MDSHO.Data {
           place.ShortcutID = noteId;
           DataStore.NoteWindows.Save(place);
         }
+      }
+      if (keepIds) {
+        // A note window's text size counts as a change of the note: put back the records the file has.
+        foreach (Shortcut s in data.Shortcuts.Where(x => x.ChangedAt != 0)) {
+          ShortcutRepository.SetChangeRecord(s.ID, s.ChangedAt, s.ChangedBy);
+        }
+        // The file's deleted items join this PC's; the ones it brings back were removed when they were added.
+        DataStore.DeletedItems.Merge(data.DeletedItems ?? new List<DeletedItem>());
+      }
+    }
+
+    /// <summary>
+    /// The sync data of the file before it is written. A replace keeps the SyncIds and change records (a missing or
+    /// repeated SyncId gets a new one); Add as new gives every item a new SyncId and a change record of now on this PC.
+    /// Every list of siblings gets valid sort keys in the file's order (older files: their Position, then ID).
+    /// </summary>
+    private static void PrepareSyncData(DataFile data, bool keepIds) {
+      HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+      string SyncIdFor(string fileId) {
+        if (keepIds && Guid.TryParse(fileId, out Guid parsed) && seen.Add(parsed.ToString())) {
+          return parsed.ToString();
+        }
+        return Guid.NewGuid().ToString();
+      }
+      // The order is decided before the SyncIds change: key, then SyncId as in the database, then older files' order.
+      List<List<Shortcut>> siblingLists = data.Shortcuts.GroupBy(s => (s.ParentShortcutID, s.ParentWindowID))
+        .Select(g => g.OrderBy(s => s.SortKey, StringComparer.Ordinal).ThenBy(s => s.SyncId, StringComparer.Ordinal)
+          .ThenBy(PortabilityJson.LegacyPositionOf).ThenBy(s => s.ID).ToList()).ToList();
+      List<DesktopWindow> windows = data.Windows.OrderBy(w => w.SortKey, StringComparer.Ordinal).ThenBy(w => w.SyncId, StringComparer.Ordinal).ThenBy(w => w.ID).ToList();
+      foreach (DesktopWindow w in windows) {
+        w.SyncId = SyncIdFor(w.SyncId);
+        if (!keepIds) {
+          w.ChangedAt = 0;
+          w.ChangedBy = "";
+        }
+      }
+      foreach (Shortcut s in data.Shortcuts.OrderBy(x => x.ID)) {
+        s.SyncId = SyncIdFor(s.SyncId);
+        if (!keepIds) {
+          s.ChangedAt = 0;
+          s.ChangedBy = "";
+        }
+      }
+      FixSortKeys(windows, w => w.SortKey, (w, key) => w.SortKey = key);
+      foreach (List<Shortcut> siblings in siblingLists) {
+        FixSortKeys(siblings, s => s.SortKey, (s, key) => s.SortKey = key);
+      }
+    }
+
+    // Keeps the keys of a list that are all valid (equal keys too: the SyncId orders them); otherwise gives new keys
+    // where needed, in the list's order.
+    private static void FixSortKeys<T>(List<T> ordered, Func<T, string> get, Action<T, string> set) {
+      if (ordered.All(row => SortKeys.IsValid(get(row)))) {
+        return;
+      }
+      string[] keys = SortKeys.Reorder(ordered.Select(get).ToList());
+      for (int i = 0; i < ordered.Count; i++) {
+        set(ordered[i], keys[i]);
       }
     }
 
@@ -432,7 +495,8 @@ namespace MDSHO.Data {
       }
 
       private void Validate() {
-        foreach (object row in Data.Windows.Cast<object>().Concat(Data.Clones).Concat(Data.Shortcuts).Concat(Data.NoteWindows).Concat(Data.History)) {
+        foreach (object row in Data.Windows.Cast<object>().Concat(Data.Clones).Concat(Data.Shortcuts).Concat(Data.NoteWindows).Concat(Data.History)
+            .Concat(Data.DeletedItems ?? new List<DeletedItem>())) {
           if (row == null) {
             throw new DataPortabilityException("data.json is not valid: it contains an empty record.");
           }

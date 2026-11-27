@@ -19,7 +19,7 @@ namespace MDSHO.Tests {
     private string SavedTitle(long id) { return DataStore.Windows.LoadAll().Single(w => w.ID == id).Title; }
     private void LogUpdates() {
       db.Exec("CREATE TABLE UpdLog (RowID INTEGER NOT NULL);" +
-              "CREATE TRIGGER trg_upd AFTER UPDATE ON MDSHOWindows BEGIN INSERT INTO UpdLog VALUES (NEW.ID); END;");
+              "CREATE TRIGGER trg_upd AFTER UPDATE ON MDSHOWindows WHEN NEW.ChangedAt IS OLD.ChangedAt BEGIN INSERT INTO UpdLog VALUES (NEW.ID); END;");
     }
     private long Updates(long id) { return db.Scalar("SELECT COUNT(*) FROM UpdLog WHERE RowID=" + id); }
 

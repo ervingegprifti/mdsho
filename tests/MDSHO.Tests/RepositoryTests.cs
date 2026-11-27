@@ -225,36 +225,39 @@ namespace MDSHO.Tests {
     public void Shortcut_Create_variants_use_their_defaults_and_append_positions() {
       DesktopWindow w = NewWindow();
       Shortcut g = Shortcuts.CreateGroup(null, w.ID);
-      Assert.Equal(("New group", 1L, 1L, 0L, 0L), (g.Name, g.IsGroup, g.IsGroupExpanded, g.IsProcessCommand, g.Position));
+      Assert.Equal(("New group", 1L, 1L, 0L), (g.Name, g.IsGroup, g.IsGroupExpanded, g.IsProcessCommand));
       Assert.Equal("#FFFFFFFF", g.MarkColor);
       Assert.Null(g.ParentShortcutID);
       Assert.Equal(w.ID, g.ParentWindowID);
       Assert.False(string.IsNullOrEmpty(g.Guid));
 
       Shortcut s = Shortcuts.Create(null, w.ID, "calc", "C:\\calc.exe", ".lnk", "GUID-1");
-      Assert.Equal(("calc", "C:\\calc.exe", ".lnk", "GUID-1", 0L, 0L, 1L), (s.Name, s.Target, s.Ext, s.Guid, s.IsGroup, s.IsProcessCommand, s.Position));
+      Assert.Equal(("calc", "C:\\calc.exe", ".lnk", "GUID-1", 0L, 0L), (s.Name, s.Target, s.Ext, s.Guid, s.IsGroup, s.IsProcessCommand));
+      Assert.True(string.CompareOrdinal(g.SortKey, s.SortKey) < 0);
 
       Shortcut c = Shortcuts.CreateProcessCommand(null, w.ID);
-      Assert.Equal(("New command", 1L, 0L, 2L), (c.Name, c.IsProcessCommand, c.IsGroup, c.Position));
+      Assert.Equal(("New command", 1L, 0L), (c.Name, c.IsProcessCommand, c.IsGroup));
+      Assert.True(string.CompareOrdinal(s.SortKey, c.SortKey) < 0);
       Assert.Equal("", c.ProcessFileName);
       Assert.Equal("", c.ProcessArguments);
 
-      // Positions are counted per parent: first child of the group starts at 0 again.
+      // Keys are per parent: the first child of the group gets the first key again.
       Shortcut child = Shortcuts.Create(g.ID, null, "k", "t", ".lnk", "GUID-2");
       Assert.Equal(g.ID, child.ParentShortcutID);
       Assert.Null(child.ParentWindowID);
-      Assert.Equal(0, child.Position);
-      Assert.Equal(1, Shortcuts.Create(g.ID, null, "k2", "t", ".lnk", "GUID-3").Position);
+      Assert.Equal(g.SortKey, child.SortKey);
+      Assert.True(string.CompareOrdinal(child.SortKey, Shortcuts.Create(g.ID, null, "k2", "t", ".lnk", "GUID-3").SortKey) < 0);
     }
 
     [Fact]
     public void Shortcut_Append_copies_all_fields_and_takes_the_next_position() {
       DesktopWindow w = NewWindow();
       Shortcuts.CreateGroup(null, w.ID);
-      Shortcut template = new Shortcut(null, w.ID, "n", "t", ".url", "G9", 0, 1, "notes", 1, "#FF112233", 77, 1, "cmd.exe", "/c dir");
+      Shortcut template = new Shortcut(null, w.ID, "n", "t", ".url", "G9", 0, 1, "notes", 1, "#FF112233", 1, "cmd.exe", "/c dir") { SortKey = "Zz", SyncId = "template" };
       Shortcut r = Shortcuts.Append(template);
       Assert.True(r.ID > 0);
-      Assert.Equal(1, r.Position); // template position is ignored
+      Assert.Equal(r.ID, Shortcuts.GetRoots(w.ID).Last().ID); // the template's key is ignored: it goes last
+      Assert.NotEqual("template", r.SyncId);
       Assert.Equal(("n", "t", ".url", "G9", 0L, 1L, "notes", 1L, "#FF112233", 1L, "cmd.exe", "/c dir"),
         (r.Name, r.Target, r.Ext, r.Guid, r.IsGroup, r.IsGroupExpanded, r.Comment, r.IsMarked, r.MarkColor, r.IsProcessCommand, r.ProcessFileName, r.ProcessArguments));
     }
@@ -262,19 +265,19 @@ namespace MDSHO.Tests {
     [Fact]
     public void Shortcut_Add_Update_Get_roundtrip_with_null_parents() {
       DesktopWindow w = NewWindow();
-      Shortcut s = new Shortcut(null, w.ID, "n", "t", ".lnk", "G1", 0, 0, "x", 0, "#FFFFFFFF", 5, 0, "", "");
+      Shortcut s = new Shortcut(null, w.ID, "n", "t", ".lnk", "G1", 0, 0, "x", 0, "#FFFFFFFF", 0, "", "") { SortKey = "a5" };
       long id = Shortcuts.Add(s);
       Assert.Equal(id, s.ID);
       Shortcut r = Shortcuts.Get(id);
       Assert.Null(r.ParentShortcutID);
       Assert.Equal(w.ID, r.ParentWindowID);
-      Assert.Equal(5, r.Position);
+      Assert.Equal("a5", r.SortKey);
       r.Name = "n2"; r.Target = "t2"; r.Ext = ".url"; r.Guid = "G2"; r.IsGroup = 1; r.IsGroupExpanded = 1; r.Comment = "y"; r.IsMarked = 1;
-      r.MarkColor = "#FF000001"; r.Position = 9; r.IsProcessCommand = 1; r.ProcessFileName = "p"; r.ProcessArguments = "a";
+      r.MarkColor = "#FF000001"; r.SortKey = "a9"; r.IsProcessCommand = 1; r.ProcessFileName = "p"; r.ProcessArguments = "a";
       Shortcuts.Update(r);
       Shortcut u = Shortcuts.Get(id);
-      Assert.Equal(("n2", "t2", ".url", "G2", 1L, 1L, "y", 1L, "#FF000001", 9L, 1L, "p", "a"),
-        (u.Name, u.Target, u.Ext, u.Guid, u.IsGroup, u.IsGroupExpanded, u.Comment, u.IsMarked, u.MarkColor, u.Position, u.IsProcessCommand, u.ProcessFileName, u.ProcessArguments));
+      Assert.Equal(("n2", "t2", ".url", "G2", 1L, 1L, "y", 1L, "#FF000001", "a9", 1L, "p", "a"),
+        (u.Name, u.Target, u.Ext, u.Guid, u.IsGroup, u.IsGroupExpanded, u.Comment, u.IsMarked, u.MarkColor, u.SortKey, u.IsProcessCommand, u.ProcessFileName, u.ProcessArguments));
       Assert.Null(Shortcuts.Get(99999));
       Assert.Equal(1, Shortcuts.GetAll().Count);
     }
@@ -288,11 +291,10 @@ namespace MDSHO.Tests {
       Shortcuts.UpdateIsGroupExpanded(s.ID, true);
       Shortcuts.UpdateIsMarked(s.ID, true);
       Shortcuts.UpdateMarkColor(s.ID, "#FF00FF00");
-      Shortcuts.UpdatePosition(s.ID, 42);
       Shortcuts.UpdateProcessFileName(s.ID, "pf");
       Shortcuts.UpdateProcessArguments(s.ID, "pa");
       Shortcut r = Shortcuts.Get(s.ID);
-      Assert.Equal(("renamed", 1L, 1L, "#FF00FF00", 42L, "pf", "pa"), (r.Name, r.IsGroupExpanded, r.IsMarked, r.MarkColor, r.Position, r.ProcessFileName, r.ProcessArguments));
+      Assert.Equal(("renamed", 1L, 1L, "#FF00FF00", "pf", "pa"), (r.Name, r.IsGroupExpanded, r.IsMarked, r.MarkColor, r.ProcessFileName, r.ProcessArguments));
       Shortcuts.UpdateIsGroupExpanded(s.ID, false);
       Shortcuts.UpdateIsMarked(s.ID, false);
       r = Shortcuts.Get(s.ID);
@@ -324,22 +326,23 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Shortcut_UpdatePositions_numbers_from_zero_in_the_given_order() {
+    public void Shortcut_UpdatePositions_saves_the_given_order() {
       DesktopWindow w = NewWindow();
       long a = Shortcuts.CreateGroup(null, w.ID).ID;
       long b = Shortcuts.CreateGroup(null, w.ID).ID;
       long c = Shortcuts.CreateGroup(null, w.ID).ID;
       Shortcuts.UpdatePositions(new[] { c, a, b });
       Assert.Equal(new long[] { c, a, b }, Shortcuts.GetRoots(w.ID).Select(x => x.ID).ToArray());
-      Assert.Equal(new long[] { 0, 1, 2 }, Shortcuts.GetRoots(w.ID).Select(x => x.Position).ToArray());
+      string[] keys = Shortcuts.GetRoots(w.ID).Select(x => x.SortKey).ToArray();
+      Assert.Equal(keys.OrderBy(k => k, StringComparer.Ordinal), keys);
+      Assert.Equal(3, keys.Distinct().Count());
       Shortcuts.UpdatePositions(new long[0]); // empty is a no-op
     }
 
     [Fact]
-    public void Shortcut_GetRoots_GetChildren_GetMaxPosition_are_ordered_and_scoped() {
+    public void Shortcut_GetRoots_GetChildren_are_ordered_and_scoped() {
       DesktopWindow w1 = NewWindow();
       DesktopWindow w2 = NewWindow();
-      Assert.Equal(-1, Shortcuts.GetMaxPosition(null, w1.ID));
       Shortcut g = Shortcuts.CreateGroup(null, w1.ID);
       Shortcut a = Shortcuts.Create(g.ID, null, "a", "t", ".lnk", "A");
       Shortcut b = Shortcuts.Create(g.ID, null, "b", "t", ".lnk", "B");
@@ -348,8 +351,6 @@ namespace MDSHO.Tests {
       Assert.Equal(new[] { "b", "a" }, Shortcuts.GetChildren(g.ID).Select(x => x.Name).ToArray());
       Assert.Equal(new[] { g.ID }, Shortcuts.GetRoots(w1.ID).Select(x => x.ID).ToArray());
       Assert.Equal(new[] { "z" }, Shortcuts.GetRoots(w2.ID).Select(x => x.Name).ToArray());
-      Assert.Equal(1, Shortcuts.GetMaxPosition(g.ID, null));
-      Assert.Equal(0, Shortcuts.GetMaxPosition(null, w1.ID));
       Assert.Empty(Shortcuts.GetChildren(a.ID));
     }
 

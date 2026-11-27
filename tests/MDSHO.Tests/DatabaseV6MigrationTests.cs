@@ -98,7 +98,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Export_writes_comment_and_an_old_export_with_notes_still_imports_as_the_comment() {
-      Shortcut s = new Shortcut(1, null, 1, "S", "t", ".lnk", "g", 0, 0, "my comment", 0, "", 0, 0, "", "");
+      Shortcut s = new Shortcut(1, null, 1, "S", "t", ".lnk", "g", 0, 0, "my comment", 0, "", 0, "", "");
       string json = System.Text.Json.JsonSerializer.Serialize(s, PortabilityJson.Options);
       Assert.Contains("\"comment\": \"my comment\"", json);
       Assert.DoesNotContain("\"notes\"", json);

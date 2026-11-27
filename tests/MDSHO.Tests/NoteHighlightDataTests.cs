@@ -148,6 +148,8 @@ namespace MDSHO.Tests {
     [Fact]
     public void A_v24_database_gets_the_highlights_column_empty_after_a_backup() {
       ShortcutViewModel note = NewNote();
+      // Before version 27 there are no sync triggers.
+      db.DropSyncTriggers();
       db.Exec("ALTER TABLE Shortcuts DROP COLUMN NoteHighlights; PRAGMA user_version = 24;");
       Assert.Equal(0, Columns("Shortcuts", "NoteHighlights"));
       DataStore.Upgrade();

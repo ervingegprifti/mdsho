@@ -231,12 +231,13 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Version_26_is_a_known_step() {
-      Assert.Equal(26, AppConstants.DatabaseVersion);
+      Assert.True(AppConstants.DatabaseVersion >= 26);
       Assert.Single(SchemaManager.Migrations, m => m.Version == 26);
     }
 
     // The database as version 25 had it: no per-item columns, the panel's CommentWrapText and maybe the app setting.
     private void MakeV25(long commentWrapText, string currentLine) {
+      db.DropSyncTriggers(); // before version 27 there are no sync triggers
       foreach (string column in NewColumns) {
         db.Exec("ALTER TABLE Shortcuts DROP COLUMN " + column + ";");
       }

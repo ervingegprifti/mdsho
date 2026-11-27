@@ -200,7 +200,8 @@ namespace MDSHO.Tests {
         using (DataStore.BeginTransaction()) {
           DataStore.Shortcuts.CreateGroup(null, win);
           DataStore.Shortcuts.CreateGroup(null, win);
-          Assert.Equal(2, DataStore.Shortcuts.CreateGroup(null, win).Position); // sees its own uncommitted rows
+          DataStore.Shortcuts.CreateGroup(null, win);
+          Assert.Equal(3, DataStore.Shortcuts.GetRoots(win).Count); // sees its own uncommitted rows
           throw new InvalidOperationException("boom");
         }
       }));
@@ -229,14 +230,16 @@ namespace MDSHO.Tests {
       long win = DataStore.Windows.LoadAll()[0].ID;
       long a = DataStore.Shortcuts.CreateGroup(null, win).ID;
       long b = DataStore.Shortcuts.CreateGroup(null, win).ID;
-      DataStore.Shortcuts.UpdatePositions(new[] { b, a });
-      Assert.Equal(0, db.Scalar("SELECT Position FROM Shortcuts WHERE ID=" + b));
-      Assert.Equal(1, db.Scalar("SELECT Position FROM Shortcuts WHERE ID=" + a));
-      // Make the second update fail via a trigger: nothing may change.
-      db.Exec("CREATE TRIGGER t BEFORE UPDATE OF Position ON Shortcuts WHEN NEW.Position = 1 AND OLD.ID = " + b + " BEGIN SELECT RAISE(ABORT,'no'); END;");
-      Assert.ThrowsAny<Exception>(() => DataStore.Shortcuts.UpdatePositions(new[] { a, b }));
-      Assert.Equal(0, db.Scalar("SELECT Position FROM Shortcuts WHERE ID=" + b));
-      Assert.Equal(1, db.Scalar("SELECT Position FROM Shortcuts WHERE ID=" + a));
+      long c = DataStore.Shortcuts.CreateGroup(null, win).ID;
+      Assert.Equal(new[] { a, b, c }, DataStore.Shortcuts.GetRoots(win).Select(s => s.ID));
+      string keys = string.Join(",", DataStore.Shortcuts.GetRoots(win).Select(s => s.SortKey));
+      // The reverse order keeps one key and needs two new ones: c's is saved first, then b's fails. Nothing may change.
+      db.Exec("CREATE TRIGGER t BEFORE UPDATE OF SortKey ON Shortcuts WHEN OLD.ID = " + b + " BEGIN SELECT RAISE(ABORT,'no'); END;");
+      long changes = db.Scalar("SELECT ChangedAt FROM Shortcuts WHERE ID = " + c);
+      Assert.ThrowsAny<Exception>(() => DataStore.Shortcuts.UpdatePositions(new[] { c, b, a }));
+      Assert.Equal(new[] { a, b, c }, DataStore.Shortcuts.GetRoots(win).Select(s => s.ID));
+      Assert.Equal(keys, string.Join(",", DataStore.Shortcuts.GetRoots(win).Select(s => s.SortKey)));
+      Assert.Equal(changes, db.Scalar("SELECT ChangedAt FROM Shortcuts WHERE ID = " + c));
     }
 
     [Fact]

@@ -44,8 +44,8 @@ namespace MDSHO.Tests {
 
     // A note button in the window, as a row (the note windows' places use the button's ID).
     private long AddNote(long windowID) {
-      db.Exec("INSERT INTO Shortcuts (ParentMDSHOWindowID,Name,Target,Ext,Guid,IsGroup,IsGroupExpanded,Comment,IsMarked,MarkColor,Position,IsProcessCommand,ProcessFileName,ProcessArguments,IsNote,NoteText) VALUES "
-        + "(" + windowID + ",'N','','','',0,0,'',0,'',0,0,'','',1,'text');");
+      db.Exec("INSERT INTO Shortcuts (ParentMDSHOWindowID,Name,Target,Ext,Guid,IsGroup,IsGroupExpanded,Comment,IsMarked,MarkColor,IsProcessCommand,ProcessFileName,ProcessArguments,IsNote,NoteText) VALUES "
+        + "(" + windowID + ",'N','','','',0,0,'',0,'',0,'','',1,'text');");
       return db.Scalar("SELECT max(ID) FROM Shortcuts");
     }
 

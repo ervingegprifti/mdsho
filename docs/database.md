@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 26**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 27**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -40,6 +40,10 @@ One row per panel (MDSHO window).
 | `SolidIcons` | INTEGER | NOT NULL | | `1` = filled icons, `0` = outline icons. |
 | `SingleClickToOpen` | INTEGER | NOT NULL | | `1` = one click opens a button, `0` = double click. |
 | `ShowVersionInTitle` | INTEGER | NOT NULL | `1` | `1` = the title bar of the panel and its clones shows the MDSHO version after the title, for example `MDSHO v1.5.10` ("Show version in title" in Settings). Exports carry it; older exports import with it on. Added in version 13. |
+| `SyncId` | TEXT | NOT NULL | `''` | The fixed ID that names the panel on every PC, a GUID such as `3f2b8c1e-...`. Made when the row is added and never changed; a copy gets a new one, a move keeps it. Unique among the panels with a SyncId. Added in version 27. |
+| `SortKey` | TEXT | NOT NULL | `''` | Order of the panels. A text key (digits `0-9`, `A-Z`, `a-z`) compared byte by byte, then by `SyncId` when two keys are equal. A new or moved panel gets a key between its neighbours, so the others keep theirs (see [Sort keys](#sort-keys)). Added in version 27. |
+| `ChangedAt` | INTEGER | NOT NULL | `0` | When a synced column of the panel last changed: UTC milliseconds since 1970. A local column (see [Synced and local](#synced-and-local)) doesn't count, and saving the same value again doesn't either. Kept by database triggers. Added in version 27. |
+| `ChangedBy` | TEXT | NOT NULL | `''` | The `DeviceId` of the PC that made that change. Added in version 27. |
 
 ### MDSHOWindowClones
 
@@ -76,7 +80,6 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `Comment` | TEXT | NOT NULL | | The button's comment, edited with **Comment...** and shown in its tooltip (empty = no comment). Called `Notes` before database version 6. |
 | `IsMarked` | INTEGER | NOT NULL | | `1` when the button is marked with a color. |
 | `MarkColor` | TEXT | NOT NULL | | The mark color. |
-| `Position` | INTEGER | NOT NULL | | Order among buttons with the same parent, from 0. |
 | `IsProcessCommand` | INTEGER | NOT NULL | | `1` for a run command. |
 | `ProcessFileName` | TEXT | NOT NULL | | Program a run command starts, e.g. `cmd.exe`. |
 | `ProcessArguments` | TEXT | NOT NULL | | Arguments of a run command, exactly as typed (one command per line; `{=1}` to `{=9}` and `{=name}` are replaced by group values). |
@@ -104,6 +107,10 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `CommentWholeWords` | INTEGER | NOT NULL | `0` | Like `TextWholeWords`, for the comment. Added in version 26. |
 | `CommentMatchCase` | INTEGER | NOT NULL | `0` | Like `TextMatchCase`, for the comment. Added in version 26. |
 | `CommentWrapText` | INTEGER | NOT NULL | `0` | `1` = the comment's text wraps. Added in version 26. |
+| `SyncId` | TEXT | NOT NULL | `''` | The fixed ID that names the button on every PC, a GUID such as `3f2b8c1e-...`. Made when the row is added and never changed; a copy gets a new one, a move keeps it. Unique among the buttons with a SyncId. Added in version 27. |
+| `SortKey` | TEXT | NOT NULL | `''` | Order among buttons with the same parent; it replaces `Position` (an integer from 0) of version 26 and older. A text key (digits `0-9`, `A-Z`, `a-z`) compared byte by byte, then by `SyncId` when two keys are equal. A new or moved button gets a key between its neighbours, so the others keep theirs (see [Sort keys](#sort-keys)). Added in version 27. |
+| `ChangedAt` | INTEGER | NOT NULL | `0` | When a synced column of the button last changed, or of its note window's `FontSize` or `IsWrapText`: UTC milliseconds since 1970. A local column (see [Synced and local](#synced-and-local)) doesn't count, and saving the same value again doesn't either. Kept by database triggers. Added in version 27. |
+| `ChangedBy` | TEXT | NOT NULL | `''` | The `DeviceId` of the PC that made that change. Added in version 27. |
 
 ### NoteWindows
 
@@ -138,6 +145,20 @@ backups carry them (still export format 3), linked to their button. Added in ver
 | `Field` | TEXT | NOT NULL | | `Text` = a note's or snippet's text, `Comment` = the button's comment. |
 | `Text` | TEXT | NOT NULL | | The text as it was (empty for an empty text). |
 | `KeptAt` | TEXT | NOT NULL | | When it was kept, local time `yyyy-MM-ddTHH:mm:ss`. |
+
+### DeletedItems
+
+The panels and buttons deleted on this PC, so a later version can delete them on the other PCs too. Deleting a group or
+a panel adds a row for it and for everything inside; clones are not items and add none. Adding an item with the same
+`SyncId` again (an import that brings it back) removes its row. Exports and backups carry the rows; an import that
+replaces the data adds the file's rows to this PC's, Add as new ignores them. Added in version 27.
+
+| Column | Type | Null | Default | Meaning |
+|---|---|---|---|---|
+| `SyncId` | TEXT | NOT NULL | | Primary key: the `SyncId` the item had. |
+| `Kind` | TEXT | NOT NULL | | What it was: `Panel`, `Group`, `Shortcut` (a file, folder or program), `Link` (a web link), `Note`, `Snippet` or `RunCommand`. |
+| `DeletedAt` | INTEGER | NOT NULL | | When it was deleted: UTC milliseconds since 1970. |
+| `DeletedBy` | TEXT | NOT NULL | | The `DeviceId` of the PC that deleted it. |
 
 ### DefaultColors
 
@@ -188,6 +209,9 @@ belong to this PC: they are not exported and every import keeps them. Added in v
 | `ReviewLastShown` | The local date (`yyyy-MM-dd`) the review prompt was last shown. Added in 1.13.0; the database version stays 17. |
 | `TextHistoryKeep` | **earlier texts to keep** under **Text history** (Settings > General): `0` to `50`; `0` keeps none. Without a row, or with a value that is not a number: `10`; a number outside 0 to 50 counts as the nearest. Added in version 24. |
 | `ReviewRated` | `Yes` after a rating in the Store dialog, or after Rate opened the Store page (the review prompt, the panel menu or About); the prompt then never shows. Added in 1.13.0; the database version stays 17. |
+| `DeviceId` | This PC's device ID for sync, a GUID made once (when the database is created or upgraded to version 27, or again if the row is lost). It is the `ChangedBy` and `DeletedBy` of the changes made here. Never exported, imported or synced. Added in version 27. |
+| `DeviceName` | This PC's name for sync. Without a row, or empty: the Windows computer name. Nothing sets it yet. Never exported, imported or synced. Added in version 27. |
+| `SyncFolder` | The sync folder of a later version (nothing uses it yet). Belongs to this PC: never exported or synced. Added in version 27. |
 
 ### ScreenSetups
 
@@ -233,6 +257,7 @@ Foreign keys are switched on for every connection, and all of them use `ON DELET
 - `Shortcuts.ParentShortcutID` → `Shortcuts.ID`: deleting a group deletes everything inside it.
 - `NoteWindows.ShortcutID` → `Shortcuts.ID`: deleting a note deletes its window place.
 - `History.ShortcutID` → `Shortcuts.ID`: deleting a button deletes its text history.
+- `DeletedItems.SyncId` is not a foreign key: it names items that are gone.
 - `ScreenSetupPlaces.SetupID` → `ScreenSetups.ID`: forgetting a screen setup deletes its places.
 
 The shortcut files in the shortcuts folder are not part of the database; the app deletes them itself.
@@ -245,6 +270,41 @@ The shortcut files in the shortcuts folder are not part of the database; the app
 | `IX_MDSHOWindowClones_ParentMDSHOWindowID` | `MDSHOWindowClones(ParentMDSHOWindowID)` |
 | `IX_Shortcuts_ParentMDSHOWindowID` | `Shortcuts(ParentMDSHOWindowID)` |
 | `IX_Shortcuts_ParentShortcutID` | `Shortcuts(ParentShortcutID)` |
+| `UX_MDSHOWindows_SyncId` | `MDSHOWindows(SyncId)` |
+| `UX_Shortcuts_SyncId` | `Shortcuts(SyncId)` |
+
+The two `UX_` indexes are unique and cover only rows with a `SyncId` (`WHERE SyncId <> ''`).
+
+### Triggers
+
+Database triggers named `Sync_...` keep the sync columns, so every way of writing (the app, an import, a delete that
+cascades) is covered. MDSHO makes them when it creates the database and again at start when they differ from what this
+version builds from its list of synced columns; it drops them before an upgrade step and makes them after the last one.
+
+- `Sync_MDSHOWindows_Insert`, `Sync_Shortcuts_Insert`: a new row without a `SyncId` or `ChangedAt` gets one (now, this
+  PC), and a `DeletedItems` row with its `SyncId` is removed.
+- `Sync_MDSHOWindows_Update`, `Sync_Shortcuts_Update`: when a synced column changes and the update didn't set
+  `ChangedAt` itself, `ChangedAt` becomes now (but always later than before) and `ChangedBy` this PC.
+- `Sync_MDSHOWindows_Delete`, `Sync_Shortcuts_Delete`: a deleted row adds a `DeletedItems` row.
+- `Sync_NoteWindows_Insert`, `Sync_NoteWindows_Update`: a change of a note window's `FontSize` or `IsWrapText` (or a new
+  row with other values than the defaults) is a change of its note.
+
+## Synced and local
+
+Every column of every table, and every app setting, is marked as **synced** (the same on every PC) or **local** (this
+PC's own) in `src/MDSHO.Data/SyncFields.cs`; a test fails for a column that isn't. Local are, for example, window
+places, clones, screen setups and their places, the text history, `IsGroupExpanded`, the shortcut file name (`Guid`),
+the backup settings, the text history setting and the device identity. Synced are, for example, names, targets, text,
+comments, fonts, colours, highlights, the order and the parent of each item. A change of a synced column of a panel or
+button is what moves its `ChangedAt`.
+
+## Sort keys
+
+Siblings are ordered by `SortKey`, then `SyncId`. The keys use fractional indexing: a key has an integer part, whose
+first character gives its length (`a0`, `a1`, ... `az`, `b00`, ...), and an optional fraction, so there is always a key
+between two others (`a0` < `a0V` < `a1`). Saving a new order keeps the keys that are already in order and gives new
+keys only to the moved or added items, so two PCs that change the same list while apart never need to renumber it.
+Version 27 gives every list keys in its old order (`Position`, then `ID`; panels by `ID`).
 
 ## Upgrade history
 
@@ -279,6 +339,7 @@ that worked.
 | 23 | 1.21.1 | `Shortcuts.TextFontSize` (`INTEGER NOT NULL DEFAULT 0`): each snippet keeps its own text size. Copies, exports and backups carry it (still export format 3); older exports import with `0` (12 pt). |
 | 24 | 1.22.0 | `History` table and its index: the text history, up to the **Text history** setting per button and field. The step moves each non-empty `TextPrevious1/2` and `CommentPrevious1/2` (with its time, the older copy first) into `History`, then drops those eight `Shortcuts` columns (`ALTER TABLE ... DROP COLUMN`). Exports and backups carry the rows (still export format 3); older exports import their two earlier copies as rows. A copied button starts with no history. |
 | 25 | 1.26.2 | `Shortcuts.NoteHighlights` (`TEXT NOT NULL DEFAULT ''`): the saved colour highlights of each note, as terms rather than places, so they survive edits. Copies, exports and backups carry it (still export format 3); older exports import with none. |
+| 27 | 1.30.0 | Groundwork for sync, nothing visible changes. `MDSHOWindows` and `Shortcuts` get `SyncId` (a new GUID for every row), `SortKey` (keys in the old order: `Position`, then `ID`; panels by `ID`), `ChangedAt` (the upgrade time) and `ChangedBy` (this PC); `Shortcuts.Position` is dropped. New: the `DeletedItems` table, the `UX_` indexes, the `Sync_` triggers and the `DeviceId` setting. Exports and backups carry the new columns and `deletedItems` (still export format 3); older exports import with new IDs and keys in their old order. |
 | 26 | 1.27.0 | More options settings per button: `Shortcuts.TextCurrentLine`, `TextWholeWords`, `TextMatchCase`, `TextWrapText`, `CommentCurrentLine`, `CommentWholeWords`, `CommentMatchCase` and `CommentWrapText` (`INTEGER NOT NULL`, current line `DEFAULT 1`, the rest `DEFAULT 0`). The step turns current line off on every button when the app setting `HighlightCurrentLine` (1.26.2) was `Off`, then deletes that setting; it copies each panel's `MDSHOWindows.CommentWrapText` to its buttons' comment wrap and its snippets' text wrap, then drops that column. Exports and backups carry the new columns (still export format 3); older exports import the same way as the step. |
 
 ### Backup before an upgrade
