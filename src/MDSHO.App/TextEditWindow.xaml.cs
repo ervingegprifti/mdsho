@@ -171,16 +171,18 @@ namespace MDSHO {
       return !string.IsNullOrEmpty(glyph) && glyph[0] >= '' && glyph[0] <= '';
     }
 
-    // The More options button shows IconGlyphs.More: in the icon font once it is a glyph, else as text (three dots) in
-    // Segoe UI, smaller so it looks as big as the other icons.
+    // The More options button shows IconGlyphs.More, the three dots in Segoe UI, smaller so they look as big as the other
+    // icons. A glyph of the icon font would show as a 16 px icon like the other buttons.
     private void ShowMoreIcon(string glyph) {
       this.ButtonMore.Content = glyph;
       if (IsIconFontGlyph(glyph)) {
-        this.ButtonMore.SetResourceReference(FontFamilyProperty, "IconFont");
-        this.ButtonMore.FontSize = 14;
+        this.ButtonMore.ClearValue(FontFamilyProperty);
+        this.ButtonMore.ClearValue(FontSizeProperty);
+        this.ButtonMore.ClearValue(ContentTemplateProperty);
       } else {
         this.ButtonMore.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
         this.ButtonMore.FontSize = 11;
+        this.ButtonMore.ContentTemplate = null;
       }
     }
 
@@ -206,6 +208,7 @@ namespace MDSHO {
       };
       isOpen.AddValueChanged(menu, closed);
       this.TitleMenu = menu;
+      WatchPreviews(menu);
       menu.IsOpen = true;
     }
 
@@ -222,6 +225,7 @@ namespace MDSHO {
       this.TitleBar.ContextMenu = new System.Windows.Controls.ContextMenu();
       this.TitleBar.ContextMenuOpening += (s, e) => {
         this.TitleMenu = BuildTitleMenu();
+        WatchPreviews(this.TitleMenu);
         this.TitleBar.ContextMenu = this.TitleMenu;
       };
       this.SourceInitialized += (s, e) => {
@@ -251,6 +255,7 @@ namespace MDSHO {
       this.TitleMenu = BuildTitleMenu();
       this.TitleMenu.PlacementTarget = this.TitleBar;
       this.TitleMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
+      WatchPreviews(this.TitleMenu);
       this.TitleMenu.IsOpen = true;
     }
 
@@ -1105,6 +1110,7 @@ namespace MDSHO {
         this.SizeMenu = BuildSizeMenu();
         this.SizeMenu.PlacementTarget = this.ButtonSize;
         this.SizeMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        WatchPreviews(this.SizeMenu);
         this.SizeMenu.IsOpen = true;
       };
     }
@@ -1128,7 +1134,78 @@ namespace MDSHO {
     private System.Windows.Controls.MenuItem SizeItem(string header, long size, bool isChecked) {
       System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem { Header = header, IsChecked = isChecked };
       item.Click += (s, e) => PickSize(size);
+      this.previews.AddOrUpdate(item, () => PreviewSize(size));
       return item;
+    }
+
+    // ---- Preview in the Text size and Font menus ----
+
+    // What a size or font item shows while it is highlighted.
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<System.Windows.Controls.MenuItem, Action> previews = new();
+
+    // The item whose size or font the text shows now; null when it shows its own.
+    private System.Windows.Controls.MenuItem previewItem;
+
+    private static readonly DependencyPropertyDescriptor IsHighlightedDescriptor =
+      DependencyPropertyDescriptor.FromProperty(System.Windows.Controls.MenuItem.IsHighlightedProperty, typeof(System.Windows.Controls.MenuItem));
+
+    // While the menu is open, a highlighted size or font item (mouse or arrow keys) shows on the text. Leaving it, or
+    // closing the menu, puts the text's own size and font back; a click has saved the new one by then.
+    private void WatchPreviews(System.Windows.Controls.ContextMenu menu) {
+      List<(System.Windows.Controls.MenuItem Item, EventHandler Handler)> watched = new();
+      foreach (System.Windows.Controls.MenuItem item in MenuItems(menu)) {
+        if (this.previews.TryGetValue(item, out Action preview)) {
+          EventHandler handler = (s, e) => {
+            if (item.IsHighlighted) {
+              this.previewItem = item;
+              preview();
+            } else if (this.previewItem == item) {
+              EndPreview();
+            }
+          };
+          IsHighlightedDescriptor.AddValueChanged(item, handler);
+          watched.Add((item, handler));
+        }
+      }
+      DependencyPropertyDescriptor isOpen = DependencyPropertyDescriptor.FromProperty(System.Windows.Controls.ContextMenu.IsOpenProperty, typeof(System.Windows.Controls.ContextMenu));
+      EventHandler closed = null;
+      closed = (s, e) => {
+        if (!menu.IsOpen) {
+          isOpen.RemoveValueChanged(menu, closed);
+          foreach ((System.Windows.Controls.MenuItem item, EventHandler handler) in watched) {
+            IsHighlightedDescriptor.RemoveValueChanged(item, handler);
+          }
+          EndPreview();
+        }
+      };
+      isOpen.AddValueChanged(menu, closed);
+    }
+
+    private static IEnumerable<System.Windows.Controls.MenuItem> MenuItems(System.Windows.Controls.ItemsControl parent) {
+      foreach (System.Windows.Controls.MenuItem item in parent.Items.OfType<System.Windows.Controls.MenuItem>()) {
+        yield return item;
+        foreach (System.Windows.Controls.MenuItem child in MenuItems(item)) {
+          yield return child;
+        }
+      }
+    }
+
+    // Shows a size on the text only: the size button and the saved size stay.
+    private void PreviewSize(long points) {
+      this.TextComment.FontSize = NoteWindowPlace.ToDips(Math.Clamp(points, NoteWindowPlace.MinFontSize, NoteWindowPlace.MaxFontSize));
+      this.highlighter?.QueueDraw();
+    }
+
+    private void PreviewFont(string font) {
+      this.TextComment.FontFamily = NoteFontFamilies.Resolve(font);
+      this.highlighter?.QueueDraw();
+    }
+
+    // The text shows its own size and font again.
+    private void EndPreview() {
+      this.previewItem = null;
+      this.TextComment.FontSize = NoteWindowPlace.ToDips(this.textPoints);
+      ApplyFont();
     }
 
     /// <summary>Uses a text size at once; a note and a comment save it, like the wheel does.</summary>
@@ -1377,6 +1454,7 @@ namespace MDSHO {
         this.FontMenu = BuildFontMenu();
         this.FontMenu.PlacementTarget = this.ButtonFont;
         this.FontMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        WatchPreviews(this.FontMenu);
         this.FontMenu.IsOpen = true;
       };
       ApplyFont();
@@ -1414,6 +1492,7 @@ namespace MDSHO {
         };
         string picked = font;
         item.Click += (s, e) => PickFont(picked);
+        this.previews.AddOrUpdate(item, () => PreviewFont(picked));
         menu.Items.Add(item);
       }
     }
@@ -1645,6 +1724,10 @@ namespace MDSHO {
       this.ButtonFont.Content = icons.Font;
       this.ButtonWrap.Content = icons.WrapText;
       ShowMoreIcon(icons.More);
+      // The text buttons look like the icons: bold with solid icons, normal with outline ones.
+      FontWeight weight = icons.SolidIcons ? FontWeights.Bold : FontWeights.Normal;
+      this.ButtonSize.FontWeight = weight;
+      this.ButtonMore.FontWeight = IsIconFontGlyph(icons.More) ? FontWeights.Normal : weight;
       this.ButtonPin.Content = this.Topmost ? icons.PinOn : icons.PinOff;
       this.Icon = GlyphIcon.Create(glyph);
     }

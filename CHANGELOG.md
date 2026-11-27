@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.29.0]
+
+### Added
+
+- In the **Text size** and **Font** menus of notes, comments and snippets, pointing at a size or font shows it on the
+  text at once. A click keeps it; closing the menu without a click puts the old one back.
+
+### Changed
+
+- The text size button and the three dots of **More options** are bold with solid icons, like the icons.
+
+### Fixed
+
+- The icons in the title bars of notes, comments, snippets, Run command and dialogs are sharp, not blurry.
+
 ## [1.28.0]
 
 ### Changed

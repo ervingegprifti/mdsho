@@ -102,8 +102,8 @@ namespace MDSHO.ViewModels {
     public string Time { get { return this.SolidIcons ? UnicodeText.FromHex("e95e") : UnicodeText.FromHex("e95f"); } }
 
     /// <summary>
-    /// The More options button of the note, comment and snippet title bars. Three dots as text until MDSHOFont has a glyph
-    /// for it; then this one line becomes FromHex(solid) / FromHex(outline), and the button switches to the icon font itself.
+    /// The More options button of the note, comment and snippet title bars: three dots as text (no glyph is planned), bold
+    /// with solid icons. A glyph of the icon font here would still work: the button switches to the icon font itself.
     /// </summary>
     public string More { get { return "•••"; } }
 

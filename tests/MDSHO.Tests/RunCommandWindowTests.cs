@@ -35,7 +35,7 @@ namespace MDSHO.Tests {
       }
     }
 
-    private sealed class Fixture {
+    internal sealed class Fixture {
       public AppViewModel App;
       public DesktopWindowViewModel Win;
       public ShortcutViewModel Command;
@@ -59,7 +59,7 @@ namespace MDSHO.Tests {
     }
 
     /// <summary>Temp database, a group "T {SRV01}" with a cmd command, process starts recorded; runs <paramref name="body"/> on the WPF thread.</summary>
-    private static void WithCommand(string fileName, string arguments, Action<Fixture> body) {
+    internal static void WithCommand(string fileName, string arguments, Action<Fixture> body) {
       WpfAppHost.Run(() => {
         Action<ProcessStartInfo> oldStarter = ShortcutViewModel.ProcessStarter;
         Action<ShortcutViewModel, bool> oldEditor = ShortcutViewModel.OpenRunCommandEditor;
@@ -182,7 +182,7 @@ namespace MDSHO.Tests {
           Assert.Same(Application.Current.FindResource("IconFont"), icon.FontFamily);
           Assert.Equal(((SolidColorBrush)title.Foreground).Color, ((SolidColorBrush)icon.Foreground).Color);
           Assert.True(Position(icon, window).X + icon.ActualWidth <= Position(title, window).X, "The run icon is not left of the title.");
-          Assert.Equal(Position(icon, window).Y + icon.ActualHeight / 2, Position(title, window).Y + title.ActualHeight / 2, 1.5);
+          Assert.Equal(Position(icon, window).Y + icon.Height / 2, Position(title, window).Y + title.ActualHeight / 2, 1.5);
         });
       });
     }
