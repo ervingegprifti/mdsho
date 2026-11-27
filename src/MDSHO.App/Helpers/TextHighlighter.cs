@@ -66,6 +66,21 @@ namespace MDSHO.Helpers {
       }
     }
 
+    private MatchOptions options;
+
+    /// <summary>How the selected text and the saved terms match (whole words, matching case); a change finds them again at once.</summary>
+    public MatchOptions Options {
+      get => this.options;
+      set {
+        if (value == this.options) {
+          return;
+        }
+        this.options = value;
+        this.savedMatches = null;
+        Update();
+      }
+    }
+
     /// <summary>The menu swatch of a saved colour (solid).</summary>
     public static Color SwatchColor(string name) {
       Color c = SavedColor(name);
@@ -105,7 +120,7 @@ namespace MDSHO.Helpers {
     public IReadOnlyList<(int Start, int Length, string Color)> SavedMatches {
       get {
         if (this.savedMatches == null) {
-          this.savedMatches = this.savedTerms.Length == 0 ? NoSaved : NoteHighlights.Matches(this.box.Text, this.savedTerms).ToList();
+          this.savedMatches = this.savedTerms.Length == 0 ? NoSaved : NoteHighlights.Matches(this.box.Text, this.savedTerms, this.options).ToList();
         }
         return this.savedMatches;
       }
@@ -143,7 +158,7 @@ namespace MDSHO.Helpers {
         this.LiveMatches = None;
         this.MatchCount = 0;
       } else {
-        List<(int Start, int Length)> all = TextMatches.Find(this.box.Text, selected);
+        List<(int Start, int Length)> all = TextMatches.Find(this.box.Text, selected, this.options);
         int start = this.box.SelectionStart;
         this.MatchCount = all.Count;
         this.LiveMatches = all.Where(m => m.Start != start).ToList();

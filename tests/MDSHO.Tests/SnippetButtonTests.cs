@@ -856,15 +856,21 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Wrap_text_is_shared_with_the_comment_windows_of_the_panel() {
+    public void Wrap_text_is_saved_with_the_snippet_apart_from_its_comment() {
       WithSnippet(f => {
         TextEditWindow window = TextEditWindow.ForSnippet(f.Clip);
         Shown(window, () => {
           Assert.False(window.IsWrapText);
           Click(Named<Button>(window, "ButtonWrap"));
           Assert.True(window.IsWrapText);
-          Assert.True(f.Win.Appearance.CommentWrapText);
+          Assert.True(f.Clip.TextViewOptions.WrapText);
+          Assert.False(f.Clip.CommentViewOptions.WrapText);
+          Assert.Equal(1, DataStore.Shortcuts.Get(f.Clip.ID).TextWrapText);
         });
+        TextEditWindow again = TextEditWindow.ForSnippet(f.Clip);
+        Shown(again, () => Assert.True(again.IsWrapText));
+        TextEditWindow comment = TextEditWindow.ForComment(f.Clip);
+        Shown(comment, () => Assert.False(comment.IsWrapText));
       });
     }
 

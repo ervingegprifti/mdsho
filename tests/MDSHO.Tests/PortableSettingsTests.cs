@@ -134,7 +134,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void The_portable_setting_keys_are_the_ones_the_app_uses() {
-      Assert.Equal(new[] { Theme, Shortcut, Remember, TextHistorySetting.SettingKey, CurrentLineSetting.SettingKey }, PortableSettings.Keys);
+      Assert.Equal(new[] { Theme, Shortcut, Remember, TextHistorySetting.SettingKey }, PortableSettings.Keys);
     }
 
     [Fact]
@@ -152,7 +152,7 @@ namespace MDSHO.Tests {
       Assert.True(colors.ContainsKey("Note"));
       Assert.Null(colors["Note"]); // never set: none
       JsonObject settings = data["settings"].AsObject();
-      Assert.Equal(new[] { Shortcut, CurrentLineSetting.SettingKey, Remember, TextHistorySetting.SettingKey, Theme }, settings.Select(kv => kv.Key).OrderBy(k => k, StringComparer.Ordinal).ToArray());
+      Assert.Equal(new[] { Shortcut, Remember, TextHistorySetting.SettingKey, Theme }, settings.Select(kv => kv.Key).OrderBy(k => k, StringComparer.Ordinal).ToArray());
       Assert.Equal("Dark", (string)settings[Theme]);
       Assert.Equal("Ctrl+Alt+K", (string)settings[Shortcut]);
       Assert.Equal("On", (string)settings[Remember]);

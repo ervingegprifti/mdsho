@@ -59,15 +59,27 @@ To take all the colours off at once, click **More options** (⋯) and choose **C
 Click **More options** (⋯, just left of the close button) for the note's menu. It has every command of the title bar
 and the ones you need less often: **Text history**, **Wrap text**, **Highlight current line**, **Keep on top**,
 **Text size**, **Font**,
-**Note colours...**, **Clear all highlights** and **Close**. A right-click on the title bar or Alt+F opens the same
-menu. **Wrap text** and **Keep on top** have a tick while on.
-Comments and snippets have the same menu with only **Text history**, **Wrap text**, **Text size**, **Font** and **Close**.
+**Note colours...**, **Highlight whole words only**, **Highlight matching case only**, **Clear all highlights** and
+**Close**. A right-click on the title bar or Alt+F opens the same menu. The items you turn on and off have a tick while
+on, and each note keeps its own choices.
+Comments and snippets have the same menu without **Keep on top**, **Note colours...** and **Clear all highlights**.
+A comment keeps its choices apart from its note or snippet.
+
+## Choose what lights up
+
+Selected text lights up everywhere else it appears, and so do saved colours. By default that is also inside other
+words, whatever the case. In **More options** (⋯):
+
+- **Highlight whole words only**: selecting "art" won't light up "start".
+- **Highlight matching case only**: selecting "art" won't light up "Art".
+
+The highlights and the match count in the title bar change at once.
 
 ## See the line you are on
 
 The line with the caret has a faint shade, a little darker on a light note and a little lighter on a dark one. With
 **Wrap text** on, only the row with the caret is shaded. It stays while you work in another window. To turn it off
-or on for every note, comment and snippet, click **More options** (⋯) and choose **Highlight current line**.
+or on for this note, comment or snippet, click **More options** (⋯) and choose **Highlight current line**.
 
 ## Keep a note on top
 

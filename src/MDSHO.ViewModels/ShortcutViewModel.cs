@@ -682,7 +682,7 @@ namespace MDSHO.ViewModels {
     #endregion PROPERTIES
 
     /// <summary>Creates the view model of a shortcut from its stored values.</summary>
-    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0, long textFontSize = 0, string noteHighlights = "") {
+    public ShortcutViewModel(AppViewModel appViewModel, ShortcutViewModel parentShortcut, long id, long? parentWindowID, string name, string target, string ext, string guid, bool isGroup, bool isGroupExpanded, string comment, bool isMarked, string markColor, long position, bool isProcessCommand, string processFileName, string processArguments, bool processRunAsAdmin = false, string processWorkingFolder = "", bool isNote = false, string noteText = "", NoteColors noteColors = null, bool isSnippet = false, string snippetText = "", string textFont = NoteFonts.Default, string commentFont = NoteFonts.Default, long commentFontSize = 0, long textFontSize = 0, string noteHighlights = "", TextViewOptions textViewOptions = null, TextViewOptions commentViewOptions = null) {
       this.AppViewModel = appViewModel;
       this.ParentShortcut = parentShortcut;
       this.id = id;
@@ -711,6 +711,8 @@ namespace MDSHO.ViewModels {
       this.commentFontSize = commentFontSize;
       this.textFontSize = textFontSize;
       this.noteHighlights = noteHighlights ?? "";
+      this.textViewOptions = textViewOptions ?? TextViewOptions.Default;
+      this.commentViewOptions = commentViewOptions ?? TextViewOptions.Default;
       this.NoteColors = noteColors ?? new NoteColors();
       UpdateTargetKind(false);
       // Events.
@@ -924,6 +926,24 @@ namespace MDSHO.ViewModels {
       if (stored != this.noteHighlights) {
         this.noteHighlights = stored;
         OnPropertyChanged(nameof(NoteHighlights));
+      }
+    }
+    private TextViewOptions textViewOptions = TextViewOptions.Default;
+    /// <summary>The More options settings of the note's or snippet's window.</summary>
+    public TextViewOptions TextViewOptions => this.textViewOptions;
+    private TextViewOptions commentViewOptions = TextViewOptions.Default;
+    /// <summary>The More options settings of the Comment window.</summary>
+    public TextViewOptions CommentViewOptions => this.commentViewOptions;
+    /// <summary>Saves the More options settings of the text or the comment: the database first, then memory.</summary>
+    public void SaveViewOptions(bool comment, TextViewOptions options) {
+      options ??= TextViewOptions.Default;
+      DataStore.Shortcuts.UpdateViewOptions(this.ID, comment, options);
+      if (comment && options != this.commentViewOptions) {
+        this.commentViewOptions = options;
+        OnPropertyChanged(nameof(CommentViewOptions));
+      } else if (!comment && options != this.textViewOptions) {
+        this.textViewOptions = options;
+        OnPropertyChanged(nameof(TextViewOptions));
       }
     }
     /// <summary>The earlier copies of the text (<see cref="HistoryFields.Text"/>) or comment, newest first.</summary>

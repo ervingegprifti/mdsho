@@ -11,7 +11,8 @@ namespace MDSHO.Tests {
 
   /// <summary>
   /// Database version 11 adds wrap text: NoteWindows.IsWrapText (each note window remembers it) and
-  /// MDSHOWindows.CommentWrapText (the Comment windows opened from a panel share it). Both start off.
+  /// MDSHOWindows.CommentWrapText (the Comment windows opened from a panel share it). Both start off. Version 26 moves
+  /// the comment's wrap to each button (see ViewOptionsDataTests).
   /// </summary>
   public class DatabaseV11MigrationTests : IDisposable {
     private TempDb db;
@@ -46,11 +47,12 @@ namespace MDSHO.Tests {
       DataStore.Upgrade();
       Assert.True(db.Scalar("PRAGMA user_version") >= 11);
       Assert.Equal(1, Columns("NoteWindows", "IsWrapText"));
-      Assert.Equal(1, Columns("MDSHOWindows", "CommentWrapText"));
+      // Version 26 moves comment wrap from the panel to each button.
+      Assert.Equal(0, Columns("MDSHOWindows", "CommentWrapText"));
       NoteWindowPlace place = DataStore.NoteWindows.Get(1);
       Assert.Equal((10L, 20L, true, true, false), (place.Left, place.Top, place.IsOpen, place.IsTopmost, place.IsWrapText));
       DesktopWindow window = DataStore.Windows.GetAll().Single();
-      Assert.False(window.CommentWrapText);
+      Assert.Equal(0, DataStore.Shortcuts.Get(1).CommentWrapText);
       Assert.True(window.SolidIcons);
       Assert.Contains(Directory.GetFiles(db.Folder, "test.sqlite3.bak-v*"), p => p.Contains("bak-v10-"));
     }
@@ -67,10 +69,11 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void A_new_database_has_both_columns() {
+    public void A_new_database_keeps_wrap_text_with_the_note_window_and_the_button() {
       db = new TempDb();
       Assert.Equal(1, Columns("NoteWindows", "IsWrapText"));
-      Assert.Equal(1, Columns("MDSHOWindows", "CommentWrapText"));
+      Assert.Equal(0, Columns("MDSHOWindows", "CommentWrapText"));
+      Assert.Equal(1, Columns("Shortcuts", "CommentWrapText"));
     }
 
     [Fact]
@@ -82,39 +85,6 @@ namespace MDSHO.Tests {
       Assert.True(DataStore.NoteWindows.Get(note.ID).IsWrapText);
       DataStore.NoteWindows.Save(new NoteWindowPlace(note.ID, 1, 2, 300, 200, NoteWindowPlace.Normal, isOpen: true) { IsWrapText = false });
       Assert.False(DataStore.NoteWindows.Get(note.ID).IsWrapText);
-    }
-
-    [Fact]
-    public void Comment_wrap_text_is_saved_with_the_panel() {
-      db = new TempDb();
-      long windowId = DataStore.Windows.GetAll().First().ID;
-      DataStore.Windows.UpdateCommentWrapText(windowId, true);
-      Assert.True(DataStore.Windows.GetAll().Single(w => w.ID == windowId).CommentWrapText);
-      DataStore.Windows.UpdateCommentWrapText(windowId, false);
-      Assert.False(DataStore.Windows.GetAll().Single(w => w.ID == windowId).CommentWrapText);
-    }
-
-    [Fact]
-    public void A_panel_added_or_updated_keeps_its_comment_wrap_text() {
-      db = new TempDb();
-      DesktopWindow window = DataStore.Windows.GetAll().First();
-      window.CommentWrapText = true;
-      window.ID = 0;
-      long id = DataStore.Windows.Add(window);
-      Assert.True(DataStore.Windows.Get(id).CommentWrapText);
-      DesktopWindow read = DataStore.Windows.Get(id);
-      read.CommentWrapText = false;
-      DataStore.Windows.Update(read);
-      Assert.False(DataStore.Windows.Get(id).CommentWrapText);
-    }
-
-    [Fact]
-    public void Export_writes_comment_wrap_text_and_an_old_export_imports_with_it_off() {
-      DesktopWindow window = new DesktopWindow { Title = "W", CommentWrapText = true };
-      string json = System.Text.Json.JsonSerializer.Serialize(window, PortabilityJson.Options);
-      Assert.Contains("\"commentWrapText\": true", json);
-      DesktopWindow old = System.Text.Json.JsonSerializer.Deserialize<DesktopWindow>("{\"id\":1,\"title\":\"W\"}", PortabilityJson.Options);
-      Assert.False(old.CommentWrapText);
     }
   }
 }

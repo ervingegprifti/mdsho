@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 25**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 26**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -39,7 +39,6 @@ One row per panel (MDSHO window).
 | `Notes` | TEXT | NOT NULL | | Free notes about the panel (kept, but the current app has no field to edit them). |
 | `SolidIcons` | INTEGER | NOT NULL | | `1` = filled icons, `0` = outline icons. |
 | `SingleClickToOpen` | INTEGER | NOT NULL | | `1` = one click opens a button, `0` = double click. |
-| `CommentWrapText` | INTEGER | NOT NULL | `0` | `1` = the Comment windows opened from this window wrap their text (the wrap text button in their title bar). Exports carry it; older exports import with it off. Added in version 11. |
 | `ShowVersionInTitle` | INTEGER | NOT NULL | `1` | `1` = the title bar of the panel and its clones shows the MDSHO version after the title, for example `MDSHO v1.5.10` ("Show version in title" in Settings). Exports carry it; older exports import with it on. Added in version 13. |
 
 ### MDSHOWindowClones
@@ -96,7 +95,15 @@ belongs directly to a panel (`ParentMDSHOWindowID` set, `ParentShortcutID` NULL)
 | `CommentFont` | TEXT | NOT NULL | `'Courier New'` | The font of the button's comment, by name, like `TextFont`. Added in version 22. |
 | `CommentFontSize` | INTEGER | NOT NULL | `0` | The text size of the button's comment in whole points (8 to 72); `0` = 12 pt. Added in version 22. |
 | `TextFontSize` | INTEGER | NOT NULL | `0` | The text size of a snippet in whole points (8 to 72); `0` = 12 pt. A note keeps its size in `NoteWindows.FontSize`. Added in version 23. |
-| `NoteHighlights` | TEXT | NOT NULL | `''` | A note's saved colour highlights, apart from its text: a JSON list of terms and colours, for example `[{"term":"pay","color":"Yellow"}]` (colours `Yellow`, `Green`, `Blue`, `Pink`, `Orange`); empty = none. Each term colours every match in the text, ignoring case, also inside other words. Added in version 25. |
+| `NoteHighlights` | TEXT | NOT NULL | `''` | A note's saved colour highlights, apart from its text: a JSON list of terms and colours, for example `[{"term":"pay","color":"Yellow"}]` (colours `Yellow`, `Green`, `Blue`, `Pink`, `Orange`); empty = none. Each term colours every match in the text, by default ignoring case and also inside other words (see `TextWholeWords` and `TextMatchCase`). Added in version 25. |
+| `TextCurrentLine` | INTEGER | NOT NULL | `1` | `1` = the note's or snippet's window shades the line with the caret (**Highlight current line** in More options). Added in version 26. |
+| `TextWholeWords` | INTEGER | NOT NULL | `0` | `1` = the note's or snippet's highlights (the live grey ones, the match count and a note's colours) match whole words only: no letter, digit or `_` right before or after. Added in version 26. |
+| `TextMatchCase` | INTEGER | NOT NULL | `0` | `1` = the note's or snippet's highlights match the case. Added in version 26. |
+| `TextWrapText` | INTEGER | NOT NULL | `0` | `1` = the snippet's text wraps. A note keeps its wrap in `NoteWindows.IsWrapText`. Added in version 26. |
+| `CommentCurrentLine` | INTEGER | NOT NULL | `1` | Like `TextCurrentLine`, for the button's Comment window. Added in version 26. |
+| `CommentWholeWords` | INTEGER | NOT NULL | `0` | Like `TextWholeWords`, for the comment. Added in version 26. |
+| `CommentMatchCase` | INTEGER | NOT NULL | `0` | Like `TextMatchCase`, for the comment. Added in version 26. |
+| `CommentWrapText` | INTEGER | NOT NULL | `0` | `1` = the comment's text wraps. Added in version 26. |
 
 ### NoteWindows
 
@@ -179,7 +186,6 @@ belong to this PC: they are not exported and every import keeps them. Added in v
 | `ReviewLastDay` | The last local day counted in `ReviewDaysUsed` (`yyyy-MM-dd`). Added in 1.13.0; the database version stays 17. |
 | `ReviewShown` | How many times the review prompt was shown: `1` or `2`. Without a row: never. Added in 1.13.0; the database version stays 17. |
 | `ReviewLastShown` | The local date (`yyyy-MM-dd`) the review prompt was last shown. Added in 1.13.0; the database version stays 17. |
-| `HighlightCurrentLine` | **Highlight current line** in the More options menu of notes, comments and snippets: `On` or `Off`. Without a row, or with any other value: on. Exports carry it. Added in 1.26.2; the database version stays 25. |
 | `TextHistoryKeep` | **earlier texts to keep** under **Text history** (Settings > General): `0` to `50`; `0` keeps none. Without a row, or with a value that is not a number: `10`; a number outside 0 to 50 counts as the nearest. Added in version 24. |
 | `ReviewRated` | `Yes` after a rating in the Store dialog, or after Rate opened the Store page (the review prompt, the panel menu or About); the prompt then never shows. Added in 1.13.0; the database version stays 17. |
 
@@ -273,6 +279,7 @@ that worked.
 | 23 | 1.21.1 | `Shortcuts.TextFontSize` (`INTEGER NOT NULL DEFAULT 0`): each snippet keeps its own text size. Copies, exports and backups carry it (still export format 3); older exports import with `0` (12 pt). |
 | 24 | 1.22.0 | `History` table and its index: the text history, up to the **Text history** setting per button and field. The step moves each non-empty `TextPrevious1/2` and `CommentPrevious1/2` (with its time, the older copy first) into `History`, then drops those eight `Shortcuts` columns (`ALTER TABLE ... DROP COLUMN`). Exports and backups carry the rows (still export format 3); older exports import their two earlier copies as rows. A copied button starts with no history. |
 | 25 | 1.26.2 | `Shortcuts.NoteHighlights` (`TEXT NOT NULL DEFAULT ''`): the saved colour highlights of each note, as terms rather than places, so they survive edits. Copies, exports and backups carry it (still export format 3); older exports import with none. |
+| 26 | 1.27.0 | More options settings per button: `Shortcuts.TextCurrentLine`, `TextWholeWords`, `TextMatchCase`, `TextWrapText`, `CommentCurrentLine`, `CommentWholeWords`, `CommentMatchCase` and `CommentWrapText` (`INTEGER NOT NULL`, current line `DEFAULT 1`, the rest `DEFAULT 0`). The step turns current line off on every button when the app setting `HighlightCurrentLine` (1.26.2) was `Off`, then deletes that setting; it copies each panel's `MDSHOWindows.CommentWrapText` to its buttons' comment wrap and its snippets' text wrap, then drops that column. Exports and backups carry the new columns (still export format 3); older exports import the same way as the step. |
 
 ### Backup before an upgrade
 

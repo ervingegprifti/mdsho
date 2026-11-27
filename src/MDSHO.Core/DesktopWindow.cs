@@ -38,8 +38,6 @@ namespace MDSHO.Core {
     public bool SolidIcons { get; set; }
     /// <summary>True when one click opens a shortcut, false when it takes a double click.</summary>
     public bool SingleClickToOpen { get; set; }
-    /// <summary>True when the Comment windows opened from this window wrap their text (off for new windows).</summary>
-    public bool CommentWrapText { get; set; }
     /// <summary>True when the title bar shows the app version after the title (on for new windows and older exports).</summary>
     public bool ShowVersionInTitle { get; set; } = true;
     /// <summary>

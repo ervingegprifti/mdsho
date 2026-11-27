@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using MDSHO.Data;
 using MDSHO.Helpers;
+using MDSHO.ViewModels;
 using Xunit;
 
 namespace MDSHO.Tests {
@@ -12,7 +13,7 @@ namespace MDSHO.Tests {
   /// <summary>
   /// The current line highlight of the Note, Comment and snippet windows: the caret's row gets a faint shade (3% darker on
   /// a light background, 3% lighter on a dark one), edge to edge, under the highlights, also while the window isn't
-  /// focused. "Highlight current line" in the More options menu turns it off and on for every window (AppSettings).
+  /// focused. "Highlight current line" in the More options menu turns it off and on for that note, comment or snippet.
   /// </summary>
   public class CurrentLineTests {
 
@@ -149,39 +150,36 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Turning_it_off_and_on_saves_the_setting_for_every_window() {
+    public void Turning_it_off_and_on_saves_it_for_that_note_only() {
       LiveHighlightTests.WithGroup(f => {
-        Assert.True(CurrentLineSetting.IsOn);
         TextEditWindow window = LiveHighlightTests.Open(f, "note");
+        ShortcutViewModel note = f.Group.Children.Last();
         LiveHighlightTests.Shown(window, () => {
           LiveHighlightTests.Named<TextBox>(window, "TextComment").Text = Text;
           WpfAppHost.Pump();
           Click(Item(window.BuildTitleMenu(), "CurrentLine"));
-          Assert.False(CurrentLineSetting.IsOn);
-          Assert.Equal("Off", DataStore.AppSettings.Get(CurrentLineSetting.SettingKey));
+          Assert.False(note.TextViewOptions.CurrentLine);
+          Assert.Equal(0, DataStore.Shortcuts.Get(note.ID).TextCurrentLine);
           Assert.Empty(LineShapes(window));
           Assert.False(Item(window.BuildTitleMenu(), "CurrentLine").IsChecked);
-          // A window opened now starts without it.
+          // Other windows keep their own choice: the comment of the group and another note.
           TextEditWindow comment = LiveHighlightTests.Open(f, "comment");
-          LiveHighlightTests.Shown(comment, () => Assert.Empty(LineShapes(comment)));
+          LiveHighlightTests.Shown(comment, () => Assert.Single(LineShapes(comment)));
+          TextEditWindow other = LiveHighlightTests.Open(f, "note");
+          LiveHighlightTests.Shown(other, () => Assert.Single(LineShapes(other)));
           Click(Item(window.BuildTitleMenu(), "CurrentLine"));
-          Assert.True(CurrentLineSetting.IsOn);
-          Assert.Equal("On", DataStore.AppSettings.Get(CurrentLineSetting.SettingKey));
+          Assert.True(note.TextViewOptions.CurrentLine);
+          Assert.Equal(1, DataStore.Shortcuts.Get(note.ID).TextCurrentLine);
           Assert.Single(LineShapes(window));
         });
       });
     }
 
     [Fact]
-    public void The_setting_is_on_without_a_row_or_with_any_other_value_and_exports_carry_it() {
+    public void It_is_no_longer_an_app_setting() {
       LiveHighlightTests.WithGroup(f => {
-        Assert.Null(DataStore.AppSettings.Get(CurrentLineSetting.SettingKey));
-        Assert.True(CurrentLineSetting.IsOn);
-        DataStore.AppSettings.Set(CurrentLineSetting.SettingKey, "Off");
-        Assert.False(CurrentLineSetting.IsOn);
-        DataStore.AppSettings.Set(CurrentLineSetting.SettingKey, "maybe");
-        Assert.True(CurrentLineSetting.IsOn);
-        Assert.Contains(CurrentLineSetting.SettingKey, PortableSettings.Keys);
+        Assert.DoesNotContain("HighlightCurrentLine", PortableSettings.Keys);
+        Assert.Null(typeof(PortableSettings).Assembly.GetType("MDSHO.Data.CurrentLineSetting"));
       });
     }
   }

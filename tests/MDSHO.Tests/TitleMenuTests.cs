@@ -33,7 +33,7 @@ namespace MDSHO.Tests {
       LiveHighlightTests.WithGroup(f => {
         TextEditWindow window = LiveHighlightTests.Open(f, "note");
         LiveHighlightTests.Shown(window, () => {
-          Assert.Equal(new[] { "Text history", "-", "Wrap text", "Highlight current line", "Keep on top", "Text size", "Font", "Note colours...", "-", "Clear all highlights", "-", "Close" },
+          Assert.Equal(new[] { "Text history", "-", "Wrap text", "Highlight current line", "Keep on top", "Text size", "Font", "Note colours...", "-", "Highlight whole words only", "Highlight matching case only", "Clear all highlights", "-", "Close" },
             Headers(window.BuildTitleMenu()));
         });
       });
@@ -46,7 +46,7 @@ namespace MDSHO.Tests {
       LiveHighlightTests.WithGroup(f => {
         TextEditWindow window = LiveHighlightTests.Open(f, kind);
         LiveHighlightTests.Shown(window, () => {
-          Assert.Equal(new[] { "Text history", "-", "Wrap text", "Highlight current line", "Text size", "Font", "-", "Close" }, Headers(window.BuildTitleMenu()));
+          Assert.Equal(new[] { "Text history", "-", "Wrap text", "Highlight current line", "Text size", "Font", "-", "Highlight whole words only", "Highlight matching case only", "-", "Close" }, Headers(window.BuildTitleMenu()));
         });
       });
     }

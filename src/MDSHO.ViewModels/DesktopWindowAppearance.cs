@@ -35,9 +35,6 @@ namespace MDSHO.ViewModels {
     /// <summary>True when one click opens a shortcut.</summary>
     [ObservableProperty]
     private bool singleClickToOpen;
-    /// <summary>True when the Comment windows opened from this window (and its clones) wrap their text.</summary>
-    [ObservableProperty]
-    private bool commentWrapText;
     /// <summary>True when the title bar of the window and its clones shows the app version after the title.</summary>
     [ObservableProperty]
     private bool showVersionInTitle = true;

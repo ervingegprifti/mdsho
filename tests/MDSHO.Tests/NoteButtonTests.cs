@@ -370,7 +370,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Wrap_text_in_a_comment_is_saved_with_its_panel_and_is_not_a_change_to_the_comment() {
+    public void Wrap_text_in_a_comment_is_saved_with_that_comment_and_is_not_a_change_to_the_comment() {
       WithGroup(f => {
         f.Group.Comment = "old";
         TextEditWindow window = TextEditWindow.ForComment(f.Group);
@@ -378,49 +378,43 @@ namespace MDSHO.Tests {
           Button wrap = Named<Button>(window, "ButtonWrap");
           Click(wrap);
           AssertWraps(window, true);
-          Assert.True(f.Win.Appearance.CommentWrapText);
-          Assert.True(DataStore.Windows.Get(f.Win.ID).CommentWrapText);
+          Assert.True(f.Group.CommentViewOptions.WrapText);
+          Assert.Equal(1, DataStore.Shortcuts.Get(f.Group.ID).CommentWrapText);
+          Assert.Equal(0, DataStore.Shortcuts.Get(f.Group.ID).TextWrapText);
           Assert.False(window.Saved);
           Click(wrap);
           AssertWraps(window, false);
-          Assert.False(f.Win.Appearance.CommentWrapText);
-          Assert.False(DataStore.Windows.Get(f.Win.ID).CommentWrapText);
+          Assert.False(f.Group.CommentViewOptions.WrapText);
+          Assert.Equal(0, DataStore.Shortcuts.Get(f.Group.ID).CommentWrapText);
         });
         Assert.Equal("old", f.Group.Comment);
       });
     }
 
     [Fact]
-    public void A_comment_opens_wrapped_when_its_panel_wraps_comments() {
+    public void A_comment_opens_wrapped_when_it_was_wrapped_and_other_comments_do_not() {
       WithGroup(f => {
-        f.Win.Appearance.CommentWrapText = true;
+        f.Group.SaveViewOptions(true, f.Group.CommentViewOptions with { WrapText = true });
         TextEditWindow window = TextEditWindow.ForComment(f.Group);
         Shown(window, () => AssertWraps(window, true));
+        ShortcutViewModel note = NewNoteInGroup(f);
+        TextEditWindow other = TextEditWindow.ForComment(note);
+        Shown(other, () => AssertWraps(other, false));
       });
     }
 
     [Fact]
-    public void Wrapping_a_note_does_not_change_how_the_panel_wraps_comments() {
+    public void Wrapping_a_note_does_not_change_how_its_comment_wraps() {
       WithGroup(f => {
         ShortcutViewModel note = NewNoteInGroup(f);
         TextEditWindow window = TextEditWindow.ForNote(note);
         Shown(window, () => {
           Click(Named<Button>(window, "ButtonWrap"));
           AssertWraps(window, true);
-          Assert.False(f.Win.Appearance.CommentWrapText);
+          Assert.False(note.CommentViewOptions.WrapText);
         });
       });
     }
-
-    [Fact]
-    public void A_panel_loads_its_comment_wrap_text_from_the_database() {
-      WithGroup(f => {
-        DataStore.Windows.UpdateCommentWrapText(f.Win.ID, true);
-        DesktopWindowViewModel loaded = ViewModelFactory.WindowToViewModel(f.App, DataStore.Windows.Get(f.Win.ID));
-        Assert.True(loaded.Appearance.CommentWrapText);
-      });
-    }
-
 
     // ---- Toggling from the button ----
 

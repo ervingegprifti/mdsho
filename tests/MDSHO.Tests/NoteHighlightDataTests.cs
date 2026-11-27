@@ -141,7 +141,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Version_25_is_a_known_step() {
-      Assert.Equal(25, AppConstants.DatabaseVersion);
+      Assert.True(AppConstants.DatabaseVersion >= 25);
       Assert.Single(SchemaManager.Migrations, m => m.Version == 25);
     }
 
