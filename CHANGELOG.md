@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.28.0]
+
+### Changed
+
+- Notes, comments and snippets have more space around the text. A click anywhere in that space puts the cursor at the
+  nearest spot of the text, so you no longer have to click right next to a letter.
+
 ## [1.27.0]
 
 ### Added
