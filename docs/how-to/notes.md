@@ -92,7 +92,7 @@ Click **Wrap text** to fit long lines to the window's width.
 
 The **Text size** button left of **Font** shows the note's size in points. Click it and pick a size from 8 to 72 pt
 (the same sizes as in Word), or **Default (12 pt)**; the current one has a tick. **More options** (⋯) has the same
-sizes under **Text size**. You can also hold Ctrl and turn the
+sizes under **Text size**. Point at a size to see it on the text; it stays only when you click it. You can also hold Ctrl and turn the
 mouse wheel to step through the same sizes, and the button follows. The note keeps its size. New notes start at 12 pt; other notes keep the size saved
 with them.
 
@@ -116,7 +116,8 @@ To keep more or fewer, open a panel's **Settings**, choose **General** and set *
 ## Pick a font
 
 1. Click **Font** in the note's title bar.
-2. Pick a font. Each name shows in its own font, and the current one has a check mark.
+2. Pick a font. Each name shows in its own font, and the current one has a check mark. Point at a font to see it on
+   the text first; it stays only when you click it.
 
 The note changes at once and keeps its font. New notes start in Courier New. **From Windows** lists Courier New,
 Consolas, Arial, Verdana and Calibri; **Comes with MDSHO** lists fonts that are part of MDSHO. Copying text from a note still copies
