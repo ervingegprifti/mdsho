@@ -219,6 +219,10 @@ belong to this PC: they are not exported and every import keeps them. Added in v
 | `SyncLastTime` | When this PC last synced (UTC, round-trip format). Added in 2.0.0 (version 28). |
 | `SyncBackupNotice` | The backup made when this PC joined sync, until Settings has said so once. Added in 2.0.0 (version 28). |
 | `SyncKind` | What this PC syncs through (**Sync through**, Settings > Sync): `Folder`, `GoogleDrive` or `OneDrive`. Without a row, or with any other value: `Folder`. Added in 2.1.0; the database version stays 28. |
+| `SyncGoogleToken` | The Google Drive refresh token after **Connect...**, protected by Windows for this user (DPAPI, `CryptProtectData`) and stored as base64; only this Windows user on this PC can open it. Never in the sync place, exported or synced. **Disconnect** revokes and deletes it. Added in 2.1.0; the database version stays 28. |
+| `SyncOneDriveToken` | The OneDrive refresh token, kept like `SyncGoogleToken`. Microsoft has no revoke call for it, so **Disconnect** deletes it. Added in 2.1.0; the database version stays 28. |
+| `SyncGoogleAccount` | The Google account shown as **Connected:** in Settings. Added in 2.1.0; the database version stays 28. |
+| `SyncOneDriveAccount` | The Microsoft account shown as **Connected:** in Settings. Added in 2.1.0; the database version stays 28. |
 
 ### ScreenSetups
 

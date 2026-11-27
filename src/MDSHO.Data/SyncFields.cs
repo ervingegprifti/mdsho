@@ -192,6 +192,10 @@ namespace MDSHO.Data {
       new SyncSetting(SyncSettings.LastTimeKey, SyncScope.Local, "when this PC last synced"),
       new SyncSetting(SyncSettings.BackupNoticeKey, SyncScope.Local, "the backup made when this PC joined"),
       new SyncSetting(SyncSettings.KindKey, SyncScope.Local, "each PC picks what it syncs through"),
+      new SyncSetting(SyncSettings.GoogleTokenKey, SyncScope.Local, "a sign-in of this PC, protected by Windows"),
+      new SyncSetting(SyncSettings.OneDriveTokenKey, SyncScope.Local, "a sign-in of this PC, protected by Windows"),
+      new SyncSetting(SyncSettings.GoogleAccountKey, SyncScope.Local, "the account this PC signed in with"),
+      new SyncSetting(SyncSettings.OneDriveAccountKey, SyncScope.Local, "the account this PC signed in with"),
       new SyncSetting("StartWithWindows", SyncScope.Local, "a Windows startup task of this PC's install", InDatabase: false),
     };
 
