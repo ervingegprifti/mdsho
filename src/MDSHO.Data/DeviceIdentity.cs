@@ -25,11 +25,14 @@ namespace MDSHO.Data {
       }
     }
 
-    /// <summary>This PC's name: the saved name, else the Windows computer name. An empty name goes back to that.</summary>
+    /// <summary>
+    /// This PC's name: the saved name, else the Windows computer name (a sync lab profile: its name). An empty name goes
+    /// back to that.
+    /// </summary>
     public static string Name {
       get {
         string name = DataStore.AppSettings.Get(NameKey);
-        return string.IsNullOrWhiteSpace(name) ? Environment.MachineName : name;
+        return string.IsNullOrWhiteSpace(name) ? Common.LabOptions.Current.Profile ?? Environment.MachineName : name;
       }
       set {
         if (string.IsNullOrWhiteSpace(value)) {

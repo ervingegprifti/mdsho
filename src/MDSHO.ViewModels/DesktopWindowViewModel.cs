@@ -125,6 +125,7 @@ namespace MDSHO.ViewModels {
     public string TitleDisplay {
       get {
         string title = IsClone ? $"{Appearance.Title} (Clone)" : Appearance.Title;
+        title += MDSHO.Common.LabOptions.Current.TitleSuffix;
 #if DEBUG
         title += " DEBUG";
 #endif

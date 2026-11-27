@@ -40,7 +40,7 @@ namespace MDSHO {
     public SettingsWindow(DesktopWindowViewModel desktopWindow) {
       InitializeComponent();
       DesktopWindowAppearance a = desktopWindow.Appearance;
-      this.Title = "Settings: " + a.Title;
+      this.Title = "Settings: " + a.Title + Common.LabOptions.Current.TitleSuffix;
 #if DEBUG
       this.Title += " DEBUG";
 #endif

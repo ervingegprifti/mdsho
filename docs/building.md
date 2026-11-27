@@ -45,6 +45,36 @@ A Debug build keeps its data apart from the installed app (`mdsho-debug.sqlite3`
 from Visual Studio uses the real data in `%LOCALAPPDATA%\MDSHO` and the same single-instance lock as the installed app,
 so close the installed MDSHO first.
 
+## Test sync on one PC
+
+The sync lab runs two or more copies of a Debug MDSHO side by side, each acting as its own PC, syncing through a lab
+folder. From the repository root:
+
+```powershell
+.\tools\sync-lab.ps1
+```
+
+If Windows refuses to run scripts, use `powershell -ExecutionPolicy Bypass -File .\tools\sync-lab.ps1` instead.
+
+It builds Debug once, makes `%LOCALAPPDATA%\MDSHO-lab\sync` and starts **PC-A** and **PC-B** with sync on to it, checking
+every 3 seconds. Each copy shows its name in its titles and tray tooltip and keeps its data, backups and log in
+`%LOCALAPPDATA%\MDSHO-lab\<name>`, so your real MDSHO data is never touched and the installed MDSHO keeps running.
+
+- `-Count 3` or `-Profiles Home,Work` for other copies, `-Every 10` for another interval, `-NoBuild` to skip the build.
+- `-Stop` ends every lab copy (only copies started with `--profile`), without the exit sync; to test that, use
+  **Exit application** in a copy's tray menu. `-Reset` also deletes all lab data and the lab sync folder.
+
+The script passes these start options, which work only in a run outside the MSIX package (the package ignores them):
+
+| Option | What it does |
+|---|---|
+| `--profile <name>` | Letters, digits and dashes (up to 32). Its own data folder, single-instance lock, device ID and name (default: the profile name), and the name after window titles. |
+| `--sync-every <seconds>` | With a profile: checks for changes and reads the other copies this often (normally 10 s and 1 min). |
+| `--sync-folder <path>` | With a profile: turns sync on to this folder at start (with the usual backup first), when it isn't on to it already. |
+
+Every copy tries to register the same Bring panels to front shortcut, so only the first one gets it; Settings shows that
+on the others.
+
 ## Build a signed sideload MSIX
 
 MDSHO ships only as MSIX; there is no `setup.exe`. The `.msixbundle` file is the installer, and it includes the .NET

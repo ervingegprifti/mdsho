@@ -103,6 +103,12 @@ namespace MDSHO.ViewModels {
     /// </summary>
     public TimeSpan WaitLimit { get; set; } = TimeSpan.FromSeconds(5);
 
+    /// <summary>How often it checks for a local change (<see cref="CheckEvery"/>; the sync lab shortens it).</summary>
+    public TimeSpan CheckDelay { get; set; } = CheckEvery;
+
+    /// <summary>How often the other PCs are read with no local change (<see cref="ReadEvery"/>; the sync lab shortens it).</summary>
+    public TimeSpan ReadInterval { get; set; } = ReadEvery;
+
     /// <summary>Whether a folder exists (Directory.Exists; tests replace it).</summary>
     public Func<string, bool> FolderExists { get; set; } = Directory.Exists;
 
@@ -147,7 +153,7 @@ namespace MDSHO.ViewModels {
     }
 
     private void Arm() {
-      this.timer.Start(CheckEvery, () => {
+      this.timer.Start(CheckDelay, () => {
         if (!this.running) {
           return;
         }
@@ -167,7 +173,7 @@ namespace MDSHO.ViewModels {
       if (!IsOn) {
         return false;
       }
-      if (this.lastRound == null || this.clock.GetUtcNow() - this.lastRound.Value >= ReadEvery) {
+      if (this.lastRound == null || this.clock.GetUtcNow() - this.lastRound.Value >= ReadInterval) {
         return true;
       }
       return SyncEngine.ChangeStamp() != this.lastStamp;
