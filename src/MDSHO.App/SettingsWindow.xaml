@@ -327,9 +327,11 @@
                         <TextBlock x:Name="TextSyncError" Style="{StaticResource StyleSettingsHint}" Visibility="Collapsed"
                                    Foreground="{DynamicResource Theme.HintErrorText}"/>
 
-                        <TextBlock x:Name="TextDeviceNameLabel" Text="This PC's name" Margin="0,16,0,4" Foreground="{DynamicResource Theme.TextSecondary}"/>
-                        <TextBox x:Name="TextDeviceName" Width="230" HorizontalAlignment="Left" VerticalContentAlignment="Center" Padding="4,0" Height="26"
-                                 MaxLength="60" AutomationProperties.Name="This PC's name"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                            <TextBlock x:Name="TextDeviceNameLabel" Text="This PC's name" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="{DynamicResource Theme.TextSecondary}"/>
+                            <TextBox x:Name="TextDeviceName" Width="230" VerticalContentAlignment="Center" Padding="4,0" Height="26"
+                                     MaxLength="60" AutomationProperties.Name="This PC's name"/>
+                        </StackPanel>
                         <TextBlock x:Name="TextDeviceNameHint" Style="{StaticResource StyleSettingsHint}" Text="Shown on your other PCs and in Text history."/>
 
                         <!--The status line with Sync now, its grey line, the backup notice once after joining, then the other PCs.-->
@@ -346,7 +348,7 @@
                         <TextBlock x:Name="TextSyncBackupNotice" Style="{StaticResource StyleSettingsHint}" Visibility="Collapsed"/>
 
                         <TextBlock x:Name="TextSyncPeersLabel" Text="Other PCs in this sync" Margin="0,16,0,4" Foreground="{DynamicResource Theme.TextSecondary}"/>
-                        <Border x:Name="BorderSyncPeers" BorderThickness="1" BorderBrush="{DynamicResource Theme.TextBoxBorder}" Height="106" ClipToBounds="True">
+                        <Border x:Name="BorderSyncPeers" BorderThickness="1" BorderBrush="{DynamicResource Theme.TextBoxBorder}" Height="80" ClipToBounds="True">
                             <StackPanel>
                                 <Grid Background="{DynamicResource Theme.BarBackground}" Height="26">
                                     <Grid.ColumnDefinitions>

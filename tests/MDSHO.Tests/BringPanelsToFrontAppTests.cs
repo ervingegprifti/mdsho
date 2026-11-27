@@ -192,7 +192,7 @@ namespace MDSHO.Tests {
         s.Shortcut.Start();
         WithSettings(s, window => {
           List<string> headings = WpfAppHost.VisualDescendants<Label>(window).Select(l => l.Content as string).ToList();
-          Assert.Equal(new[] { "Icons appearance", "Window theme", "Other", "Text history", "Keyboard shortcut", "Screen setups", "Backups" }, headings);
+          Assert.Equal(new[] { "Icons appearance", "Window theme", "Other", "Text history", "Keyboard shortcut", "Screen setups", "Backups", "Sync" }, headings);
           Label heading = WpfAppHost.VisualDescendants<Label>(window).Single(l => (l.Content as string) == "Keyboard shortcut");
           Assert.Equal(window.FindResource("StyleSettingsCategory"), heading.Style);
           Assert.True(Named<FrameworkElement>(window, "PageKeyboard").IsAncestorOf(heading));
