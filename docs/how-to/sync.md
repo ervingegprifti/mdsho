@@ -9,8 +9,15 @@ permalink: /how-to/sync/
 
 This page helps you keep the same panels, buttons and notes on your home PC, your work PC and your laptop.
 
-MDSHO syncs through a folder that all your PCs can reach, for example a Google Drive or OneDrive for desktop folder,
-Dropbox or a network drive. Nothing goes to any other server.
+MDSHO syncs through one of these, the same on every PC:
+
+- **Folder**: a folder all your PCs reach, for example a Google Drive or OneDrive for desktop folder, Dropbox or a
+  network drive. Nothing goes to any other server.
+- **Google Drive** (from 2.1.0): MDSHO talks to Google Drive itself, no Google app needed.
+- **OneDrive** (from 2.1.0): MDSHO talks to OneDrive itself with a personal Microsoft account.
+
+A sync is one kind everywhere. If a PC set to OneDrive finds a place used by a folder sync (or the other way round), it
+says so and reads and changes nothing there.
 
 ## What syncs
 
@@ -23,7 +30,10 @@ backups, text history) stay on that PC.
 ## Turn it on
 
 1. Open a panel's **Settings** and choose **Sync**.
-2. Click **...** and pick the folder, for example `G:\My Drive\MDSHO Sync`. Pick the same folder on each PC.
+2. Under **Sync through**, choose **Folder**, **Google Drive** or **OneDrive**.
+   - Folder: click **...** and pick the folder, for example `G:\My Drive\MDSHO Sync`. Pick the same folder on each PC.
+   - Google Drive or OneDrive: click **Connect...**, sign in in your browser and allow MDSHO. The page then says you can
+     close the tab. Settings shows **Connected:** and the account. Use the same account on each PC.
 3. Tick **Keep this PC in sync with my other PCs**.
 4. Check **This PC's name**. Your other PCs show it, and so does Text history.
 5. Click **Apply**.
@@ -64,6 +74,10 @@ deleted a panel while another PC added a button to it, the panel comes back.
 - **Syncing...**
 - **Can't reach the folder.** The drive isn't there, for example Google Drive isn't running. Your changes are kept and
   sync later; MDSHO tries again every minute.
+- **Can't reach Google Drive.** (or OneDrive) No connection, or this PC was signed out: click **Connect...** again.
+  Your changes are kept and sync later.
+- **This sync folder is used by a OneDrive sync.** The place is used by another kind of sync. Choose the same
+  **Sync through** on every PC.
 - **Work PC has a newer MDSHO.** Update this PC to sync with it. The other PCs keep syncing.
 
 The table below it lists your other PCs, when they last synced and their MDSHO version.
@@ -73,7 +87,20 @@ The table below it lists your other PCs, when they last synced and their MDSHO v
 Clear **Keep this PC in sync with my other PCs** and click **Apply**. This PC keeps everything as it is and stops
 syncing. The folder is not touched.
 
+## What Google and Microsoft can see
+
+- **Google Drive**: MDSHO asks only for the files it makes itself (the `drive.file` permission). It makes a folder
+  **MDSHO Sync** in your My Drive, with one subfolder per PC, and can't see or change your other files. Google stores the
+  sync files like any file in your Drive: your panels, buttons, notes, comments and snippets.
+- **OneDrive**: MDSHO asks only for its own app folder (**Apps\MDSHO** in your OneDrive) and to stay signed in. It can't
+  see your other files. Microsoft stores the sync files there.
+
+MDSHO keeps the sign-in on this PC only, protected by Windows for your Windows account; it never goes into the sync
+files. **Disconnect** signs this PC out and forgets the sign-in; for Google it also tells Google to cancel it. To take
+MDSHO's access away from a Microsoft account completely, remove MDSHO in your Microsoft account's app permissions.
+
 ## The folder
 
-The folder holds one subfolder per PC, named by an ID; only that PC writes in it. Don't edit the files. Old files that
+The folder (or the MDSHO Sync folder in Google Drive, or the app folder in OneDrive) holds `sync.json`, which says which
+kind of sync uses it, and one subfolder per PC, named by an ID; only that PC writes in it. Don't edit the files. Old files that
 nothing uses any more are deleted after 7 days.

@@ -5,14 +5,16 @@ permalink: /privacy/
 
 # MDSHO Privacy Policy
 
-Last updated: 9 November 2026
+Last updated: 27 November 2026
 
 This page explains what the MDSHO app (Multi Desktop Shortcut Organizer) does with your data. It covers the MDSHO app only.
 
 ## In short
 
-MDSHO does not collect, store elsewhere or send any personal data. It has no analytics, no ads and no tracking, and it
-makes no network connections of its own. Everything you create in MDSHO stays on your PC.
+MDSHO does not collect any personal data. It has no analytics, no ads and no tracking. Everything you create in MDSHO
+stays on your PC, unless you turn on sync: then it goes only where you choose (a folder, or your own Google Drive or
+OneDrive), and only to keep your own PCs the same. MDSHO connects to Google or Microsoft only when you choose Google
+Drive or OneDrive for sync.
 
 ## What stays on your PC
 
@@ -22,11 +24,33 @@ panels and notes were), together with the shortcut files it makes for your butto
 folder on your PC (`%LOCALAPPDATA%\MDSHO`, or the private folder Windows gives the installed package). You can open that
 folder with **Browse app data** in the tray menu or in a panel's title menu.
 
-The database also holds a random ID that MDSHO makes for your PC, for a sync feature of a later version. Each panel and
-button records which PC changed it last by that ID, so exports and backups contain it. It says nothing about you or your
-PC.
+The database also holds a random ID that MDSHO makes for your PC, for sync. Each panel and button records which PC
+changed it last by that ID, so exports and backups contain it. It says nothing about you or your PC.
 
-None of this data leaves your PC. Nobody, including the author of MDSHO, can see it.
+Without sync, none of this data leaves your PC. Nobody, including the author of MDSHO, can see it.
+
+## Sync
+
+Sync is off until you turn it on in Settings > Sync. It keeps your panels, buttons, notes, comments and snippets (with
+their text and colours) the same on your PCs, together with the name you give each PC and its MDSHO version. Window
+places and your settings stay on each PC. You choose where the sync files go:
+
+- **Folder**: a folder you pick. MDSHO writes the files there and sends them nowhere itself; if the folder belongs to a
+  cloud drive app (for example Google Drive or OneDrive for desktop, or Dropbox), that app copies them under its own
+  privacy policy.
+- **Google Drive**: after you click **Connect...** and allow it in your browser, MDSHO reads and writes its sync files in a
+  folder **MDSHO Sync** in your Google Drive over Google's API. It asks only for the files it makes (`drive.file`), so it
+  can't see your other files. It reads your account's e-mail address only to show which account is connected.
+  [Google's Privacy Policy](https://policies.google.com/privacy) covers what Google does.
+- **OneDrive**: after you click **Connect...** and allow it, MDSHO reads and writes its sync files in its own app folder
+  (Apps\MDSHO) in your OneDrive over Microsoft Graph. It can't see your other files. It reads your account name only to
+  show which account is connected. The [Microsoft Privacy Statement](https://privacy.microsoft.com/privacystatement)
+  covers what Microsoft does.
+
+The sign-in for Google Drive or OneDrive stays on your PC, protected by Windows for your Windows account; it is never
+put in the sync files, exports or backups, and is never sent to the author of MDSHO. **Disconnect** signs your PC out and
+forgets the sign-in (for Google it also asks Google to cancel it). The sync files go only to the place you chose, and
+nobody else, including the author of MDSHO, gets them.
 
 ## Log files
 
@@ -51,7 +75,8 @@ want to keep your panels and buttons, export them first.
 
 ## Links and network use
 
-MDSHO only reaches the internet when you click a link:
+Apart from sync through Google Drive or OneDrive (see [Sync](#sync)), MDSHO only reaches the internet when you click a
+link:
 
 - **Rate** and **Share** open the MDSHO page in the Microsoft Store (Share also copies the Store link to your clipboard
   and opens it in your browser).
