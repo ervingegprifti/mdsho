@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
@@ -229,10 +230,11 @@ namespace MDSHO.Helpers {
       if (top + caret.Height <= viewport.Top || top >= viewport.Bottom) {
         return;
       }
-      // From the left edge to the scroll bar, only inside the rows on screen.
-      this.lineLayer.Clip = new RectangleGeometry(new Rect(0, viewport.Top, viewport.Right, viewport.Height));
+      // From the left edge to the scroll bar (over the padding too), only inside the rows on screen.
+      double right = RightEdge(this.lineLayer);
+      this.lineLayer.Clip = new RectangleGeometry(new Rect(0, viewport.Top, right, viewport.Height));
       Color background = (this.box.Background as SolidColorBrush)?.Color ?? Colors.White;
-      Rectangle line = new Rectangle { Width = viewport.Right, Height = caret.Height, Fill = Frozen(CurrentLineColor(background)), Tag = LineTag };
+      Rectangle line = new Rectangle { Width = right, Height = caret.Height, Fill = Frozen(CurrentLineColor(background)), Tag = LineTag };
       Canvas.SetLeft(line, 0);
       Canvas.SetTop(line, top);
       this.lineLayer.Children.Add(line);
@@ -316,10 +318,16 @@ namespace MDSHO.Helpers {
       return presenter.TransformToVisual(target).TransformBounds(new Rect(presenter.RenderSize));
     }
 
-    private static T Descendant<T>(DependencyObject root) where T : DependencyObject {
+    // The right edge of the text box, or the left of its vertical scroll bar when one shows, in the target's coordinates.
+    private double RightEdge(Canvas target) {
+      ScrollBar bar = Descendant<ScrollBar>(this.box, b => b.Orientation == Orientation.Vertical && b.IsVisible && b.ActualWidth > 0);
+      return bar != null ? bar.TranslatePoint(new Point(0, 0), target).X : this.box.TranslatePoint(new Point(this.box.ActualWidth, 0), target).X;
+    }
+
+    private static T Descendant<T>(DependencyObject root, Func<T, bool> match = null) where T : DependencyObject {
       for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++) {
         DependencyObject child = VisualTreeHelper.GetChild(root, i);
-        T found = child as T ?? Descendant<T>(child);
+        T found = child is T t && (match == null || match(t)) ? t : Descendant(child, match);
         if (found != null) {
           return found;
         }

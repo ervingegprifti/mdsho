@@ -119,7 +119,8 @@
             </Grid>
         </Border>
 
-        <!--Body: the text fills it (window colour, no border, 10 px padding, no word wrap, each scroll bar only when needed).
+        <!--Body: the text fills it (window colour, no border, 20 px padding, no word wrap, each scroll bar only when needed).
+            A click in the padding goes to the nearest spot of the text (see TextBoxPoints).
             Its size is set in code: 12 pt at first; the size button and Ctrl + mouse wheel change it.-->
         <Grid x:Name="Body" Grid.Row="1" Background="#FFF4F3ED">
             <TextBox x:Name="TextComment"
@@ -127,7 +128,7 @@
                      AcceptsTab="False"
                      TextWrapping="NoWrap"
                      BorderThickness="0"
-                     Padding="10"
+                     Padding="20"
                      HorizontalScrollBarVisibility="Auto"
                      VerticalScrollBarVisibility="Auto"
                      AutomationProperties.Name="Comment"/>
