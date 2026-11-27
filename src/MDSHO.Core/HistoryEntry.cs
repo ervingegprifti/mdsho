@@ -25,6 +25,8 @@ namespace MDSHO.Core {
     public string Text { get; set; } = "";
     /// <summary>When it was kept: local time, "yyyy-MM-ddTHH:mm:ss".</summary>
     public string KeptAt { get; set; } = "";
+    /// <summary>The PC a synced text came from when it lost a clash; "" for this PC's own copies.</summary>
+    public string FromPc { get; set; } = "";
   }
 
   /// <summary>The History table: earlier copies of each button's text and comment.</summary>

@@ -46,9 +46,17 @@ namespace MDSHO.Core {
 
     /// <summary>A copy in the menu: its time and its first line, "(empty)" for an empty text.</summary>
     public static string MenuLine(string keptAt, string text, DateTime now) {
+      return MenuLine(keptAt, text, now, "");
+    }
+
+    /// <summary>Like <see cref="MenuLine(string, string, DateTime)"/>, with "from PC" after the time for a text another PC sent.</summary>
+    public static string MenuLine(string keptAt, string text, DateTime now, string fromPc) {
       string first = FirstLine(text);
       if (first.Length == 0) {
         first = "(empty)";
+      }
+      if (!string.IsNullOrWhiteSpace(fromPc)) {
+        first = "from " + fromPc.Trim() + "  ·  " + first;
       }
       string when = TimeLabel(keptAt, now);
       return when.Length == 0 ? first : when + "  ·  " + first;

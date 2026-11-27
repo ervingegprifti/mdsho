@@ -26,7 +26,7 @@
     /// <summary>
     /// We use this to identify the current database schema version.
     /// </summary>
-    public const int DatabaseVersion = 27;
+    public const int DatabaseVersion = 28;
 
     // Database file name.
     /// <summary>File name of the database of the Release build.</summary>
@@ -91,4 +91,4 @@
     public const string UrlExtension = ".url";
   }
 
-}
+}
