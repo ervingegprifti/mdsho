@@ -45,7 +45,7 @@ namespace MDSHO.Tests {
       DataStore.Upgrade();
       Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Equal(1, Tables("AppSettings"));
-      Assert.Equal(0, db.Scalar("SELECT count(*) FROM AppSettings"));
+      Assert.Equal(0, db.Scalar("SELECT count(*) FROM AppSettings WHERE Key <> 'DeviceId'")); // the DeviceId comes with version 27
       Assert.Equal("W1", DataStore.Windows.GetAll().Single().Title);
       Assert.Null(DataStore.AppSettings.Get("BringToFrontShortcut"));
     }
@@ -76,7 +76,7 @@ namespace MDSHO.Tests {
       DataStore.AppSettings.Set("A", "3");
       Assert.Equal("3", DataStore.AppSettings.Get("A"));
       Assert.Equal("2", DataStore.AppSettings.Get("B"));
-      Assert.Equal(2, db.Scalar("SELECT count(*) FROM AppSettings"));
+      Assert.Equal(2, db.Scalar("SELECT count(*) FROM AppSettings WHERE Key <> 'DeviceId'"));
     }
   }
 }

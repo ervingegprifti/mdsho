@@ -12,6 +12,7 @@ namespace MDSHO.Data {
     public IAppSettingsRepository AppSettings { get; }
     public IScreenSetupRepository ScreenSetups { get; }
     public IHistoryRepository History { get; }
+    public IDeletedItemsRepository DeletedItems { get; }
 
     public SqliteDataStore() {
       Clones = new DesktopWindowCloneRepository();
@@ -21,6 +22,7 @@ namespace MDSHO.Data {
       AppSettings = new AppSettingsRepository();
       ScreenSetups = new ScreenSetupRepository();
       History = new HistoryRepository();
+      DeletedItems = new DeletedItemsRepository();
       Windows = new DesktopWindowRepository(Clones, DefaultColors);
     }
 
@@ -63,6 +65,8 @@ namespace MDSHO.Data {
     public static IScreenSetupRepository ScreenSetups { get { return Current.ScreenSetups; } }
     /// <summary>The History table.</summary>
     public static IHistoryRepository History { get { return Current.History; } }
+    /// <summary>The deleted panels and buttons, kept for sync.</summary>
+    public static IDeletedItemsRepository DeletedItems { get { return Current.DeletedItems; } }
 
     /// <summary>Begin a transaction scope. Use: <c>using (var tx = DataStore.BeginTransaction()) { ...; tx.Commit(); }</c></summary>
     public static ITransactionScope BeginTransaction() {

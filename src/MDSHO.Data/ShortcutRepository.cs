@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using MDSHO.Common;
 using MDSHO.Core;
 
@@ -7,30 +9,36 @@ namespace MDSHO.Data {
   internal sealed class ShortcutRepository : RepositoryBase, IShortcutRepository {
     /// <summary>Column list for SELECTs: the database column ParentMDSHOWindowID is exposed as the property ParentWindowID.</summary>
     internal const string SelectColumns = @"ID, ParentShortcutID, ParentMDSHOWindowID AS ParentWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded,
-      Comment, IsMarked, MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText,
+      Comment, IsMarked, MarkColor, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText,
       NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor, IsSnippet, SnippetText, TextFont,
       CommentFont, CommentFontSize, TextFontSize, NoteHighlights,
-      TextCurrentLine, TextWholeWords, TextMatchCase, TextWrapText, CommentCurrentLine, CommentWholeWords, CommentMatchCase, CommentWrapText";
+      TextCurrentLine, TextWholeWords, TextMatchCase, TextWrapText, CommentCurrentLine, CommentWholeWords, CommentMatchCase, CommentWrapText,
+      SyncId, SortKey, ChangedAt, ChangedBy";
+
+    /// <summary>The order of siblings: by sort key, then SyncId.</summary>
+    internal const string Order = "SortKey ASC, SyncId ASC";
 
     private const string InsertSql = @"
       INSERT INTO Shortcuts (
         ID, ParentShortcutID, ParentMDSHOWindowID, Name, Target, Ext, Guid, IsGroup, IsGroupExpanded, Comment, IsMarked,
-        MarkColor, Position, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText,
+        MarkColor, IsProcessCommand, ProcessFileName, ProcessArguments, ProcessRunAsAdmin, ProcessWorkingFolder, IsNote, NoteText,
         NoteBorderColor, NoteTitleBackgroundColor, NoteTitleTextColor, NoteBackgroundColor, NoteTextColor, IsSnippet, SnippetText, TextFont,
         CommentFont, CommentFontSize, TextFontSize, NoteHighlights,
-        TextCurrentLine, TextWholeWords, TextMatchCase, TextWrapText, CommentCurrentLine, CommentWholeWords, CommentMatchCase, CommentWrapText)
+        TextCurrentLine, TextWholeWords, TextMatchCase, TextWrapText, CommentCurrentLine, CommentWholeWords, CommentMatchCase, CommentWrapText,
+        SyncId, SortKey, ChangedAt, ChangedBy)
       VALUES (
         NULLIF(@ID, 0), @ParentShortcutID, @ParentWindowID, @Name, @Target, @Ext, @Guid, @IsGroup, @IsGroupExpanded, @Comment, @IsMarked,
-        @MarkColor, @Position, @IsProcessCommand, @ProcessFileName, @ProcessArguments, @ProcessRunAsAdmin, COALESCE(@ProcessWorkingFolder, ''), @IsNote, COALESCE(@NoteText, ''),
+        @MarkColor, @IsProcessCommand, @ProcessFileName, @ProcessArguments, @ProcessRunAsAdmin, COALESCE(@ProcessWorkingFolder, ''), @IsNote, COALESCE(@NoteText, ''),
         COALESCE(@NoteBorderColor, ''), COALESCE(@NoteTitleBackgroundColor, ''), COALESCE(@NoteTitleTextColor, ''), COALESCE(@NoteBackgroundColor, ''), COALESCE(@NoteTextColor, ''), @IsSnippet, COALESCE(@SnippetText, ''), COALESCE(@TextFont, 'Courier New'),
         COALESCE(@CommentFont, 'Courier New'), @CommentFontSize, @TextFontSize, COALESCE(@NoteHighlights, ''),
-        @TextCurrentLine, @TextWholeWords, @TextMatchCase, @TextWrapText, @CommentCurrentLine, @CommentWholeWords, @CommentMatchCase, @CommentWrapText)";
+        @TextCurrentLine, @TextWholeWords, @TextMatchCase, @TextWrapText, @CommentCurrentLine, @CommentWholeWords, @CommentMatchCase, @CommentWrapText,
+        @SyncId, @SortKey, @ChangedAt, COALESCE(@ChangedBy, ''))";
 
     private const string UpdateSql = @"
       UPDATE Shortcuts SET
         ParentShortcutID = @ParentShortcutID, ParentMDSHOWindowID = @ParentWindowID, Name = @Name, Target = @Target,
         Ext = @Ext, Guid = @Guid, IsGroup = @IsGroup, IsGroupExpanded = @IsGroupExpanded, Comment = @Comment, IsMarked = @IsMarked,
-        MarkColor = @MarkColor, Position = @Position, IsProcessCommand = @IsProcessCommand, ProcessFileName = @ProcessFileName,
+        MarkColor = @MarkColor, SortKey = CASE WHEN COALESCE(@SortKey, '') = '' THEN SortKey ELSE @SortKey END, IsProcessCommand = @IsProcessCommand, ProcessFileName = @ProcessFileName,
         ProcessArguments = @ProcessArguments, ProcessRunAsAdmin = @ProcessRunAsAdmin, IsNote = @IsNote, NoteText = COALESCE(@NoteText, ''),
         NoteBorderColor = COALESCE(@NoteBorderColor, ''), NoteTitleBackgroundColor = COALESCE(@NoteTitleBackgroundColor, ''), NoteTitleTextColor = COALESCE(@NoteTitleTextColor, ''), NoteBackgroundColor = COALESCE(@NoteBackgroundColor, ''), NoteTextColor = COALESCE(@NoteTextColor, ''),
         ProcessWorkingFolder = COALESCE(@ProcessWorkingFolder, ''), IsSnippet = @IsSnippet, SnippetText = COALESCE(@SnippetText, ''),
@@ -50,31 +58,45 @@ namespace MDSHO.Data {
     }
 
     public List<Shortcut> GetRoots(long parentWindowID) {
-      return Many<Shortcut>("SELECT " + SelectColumns + " FROM Shortcuts WHERE ParentShortcutID IS NULL AND ParentMDSHOWindowID = @parentWindowID ORDER BY Position ASC, ID ASC", new { parentWindowID });
+      return Many<Shortcut>("SELECT " + SelectColumns + " FROM Shortcuts WHERE ParentShortcutID IS NULL AND ParentMDSHOWindowID = @parentWindowID ORDER BY " + Order, new { parentWindowID });
     }
 
     public List<Shortcut> GetChildren(long parentShortcutID) {
-      return Many<Shortcut>("SELECT " + SelectColumns + " FROM Shortcuts WHERE ParentShortcutID = @parentShortcutID ORDER BY Position ASC, ID ASC", new { parentShortcutID });
+      return Many<Shortcut>("SELECT " + SelectColumns + " FROM Shortcuts WHERE ParentShortcutID = @parentShortcutID ORDER BY " + Order, new { parentShortcutID });
     }
 
-    public long GetMaxPosition(long? parentShortcutID, long? parentWindowID) {
-      // Both parentShortcutID and parentWindowID cannot be null and cannot be both NOT null.
-      // The set is empty if -1. Since we start positioning from 0 then -1 + 1 = 0 is the first position element.
-      long? max = null;
-      if (parentShortcutID != null) {
-        max = One<long?>("SELECT MAX(Position) FROM Shortcuts WHERE ParentShortcutID = @parentShortcutID AND ParentMDSHOWindowID IS NULL", new { parentShortcutID });
+    // The highest valid sort key among the siblings under the given parent, or null when there is none.
+    private static string LastKey(long? parentShortcutID, long? parentWindowID) {
+      List<string> keys = parentShortcutID != null
+        ? Many<string>("SELECT SortKey FROM Shortcuts WHERE ParentShortcutID = @parentShortcutID", new { parentShortcutID })
+        : Many<string>("SELECT SortKey FROM Shortcuts WHERE ParentShortcutID IS NULL AND ParentMDSHOWindowID = @parentWindowID", new { parentWindowID });
+      string last = null;
+      foreach (string key in keys) {
+        if (SortKeys.IsValid(key) && (last == null || string.CompareOrdinal(key, last) > 0)) {
+          last = key;
+        }
       }
-      if (parentWindowID != null) {
-        max = One<long?>("SELECT MAX(Position) FROM Shortcuts WHERE ParentShortcutID IS NULL AND ParentMDSHOWindowID = @parentWindowID", new { parentWindowID });
-      }
-      return max ?? -1;
+      return last;
     }
     #endregion QUERIES
 
     #region CREATE
     public long Add(Shortcut shortcut) {
-      shortcut.ID = Insert(InsertSql, shortcut);
-      return shortcut.ID;
+      return InTransaction(() => {
+        if (string.IsNullOrEmpty(shortcut.SyncId)) {
+          shortcut.SyncId = Guid.NewGuid().ToString();
+        }
+        if (!SortKeys.IsValid(shortcut.SortKey)) {
+          shortcut.SortKey = SortKeys.Between(LastKey(shortcut.ParentShortcutID, shortcut.ParentWindowID), null);
+        }
+        shortcut.ID = Insert(InsertSql, shortcut);
+        return shortcut.ID;
+      });
+    }
+
+    /// <summary>Puts back a change record an import keeps (writing ChangedAt itself, so the triggers leave it).</summary>
+    internal static void SetChangeRecord(long id, long changedAt, string changedBy) {
+      Run("UPDATE Shortcuts SET ChangedAt = @changedAt, ChangedBy = @changedBy WHERE ID = @id", new { id, changedAt, changedBy = changedBy ?? "" });
     }
 
     public Shortcut Append(Shortcut template) {
@@ -82,7 +104,6 @@ namespace MDSHO.Data {
         Shortcut copy = new Shortcut(
           template.ParentShortcutID, template.ParentWindowID, template.Name, template.Target, template.Ext, template.Guid,
           template.IsGroup, template.IsGroupExpanded, template.Comment, template.IsMarked, template.MarkColor,
-          GetMaxPosition(template.ParentShortcutID, template.ParentWindowID) + 1,
           template.IsProcessCommand, template.ProcessFileName, template.ProcessArguments,
           template.ProcessRunAsAdmin, template.ProcessWorkingFolder, template.IsNote, template.NoteText);
         copy.NoteBorderColor = template.NoteBorderColor;
@@ -111,30 +132,30 @@ namespace MDSHO.Data {
 
     public Shortcut CreateGroup(long? parentShortcutID, long? parentWindowID) {
       return Append(new Shortcut(parentShortcutID, parentWindowID, "New group", "", "", Identifiers.NewGuid(),
-        isGroup: 1, isGroupExpanded: 1, comment: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
+        isGroup: 1, isGroupExpanded: 1, comment: "", isMarked: 0, markColor: "#FFFFFFFF",
         isProcessCommand: 0, processFileName: "", processArguments: ""));
     }
 
     public Shortcut Create(long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid) {
       return Append(new Shortcut(parentShortcutID, parentWindowID, name, target, ext, guid,
-        isGroup: 0, isGroupExpanded: 0, comment: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
+        isGroup: 0, isGroupExpanded: 0, comment: "", isMarked: 0, markColor: "#FFFFFFFF",
         isProcessCommand: 0, processFileName: "", processArguments: ""));
     }
 
     public Shortcut CreateProcessCommand(long? parentShortcutID, long? parentWindowID) {
       return Append(new Shortcut(parentShortcutID, parentWindowID, "New command", "", "", Identifiers.NewGuid(),
-        isGroup: 0, isGroupExpanded: 0, comment: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
+        isGroup: 0, isGroupExpanded: 0, comment: "", isMarked: 0, markColor: "#FFFFFFFF",
         isProcessCommand: 1, processFileName: "", processArguments: ""));
     }
 
     public Shortcut CreateNote(long? parentShortcutID, long? parentWindowID) {
       return Append(new Shortcut(parentShortcutID, parentWindowID, "New note", "", "", Identifiers.NewGuid(),
-        isGroup: 0, isGroupExpanded: 0, comment: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
+        isGroup: 0, isGroupExpanded: 0, comment: "", isMarked: 0, markColor: "#FFFFFFFF",
         isProcessCommand: 0, processFileName: "", processArguments: "", isNote: 1, noteText: ""));
     }
     public Shortcut CreateSnippet(long? parentShortcutID, long? parentWindowID) {
       return Append(new Shortcut(parentShortcutID, parentWindowID, "New snippet", "", "", Identifiers.NewGuid(),
-        isGroup: 0, isGroupExpanded: 0, comment: "", isMarked: 0, markColor: "#FFFFFFFF", position: 0,
+        isGroup: 0, isGroupExpanded: 0, comment: "", isMarked: 0, markColor: "#FFFFFFFF",
         isProcessCommand: 0, processFileName: "", processArguments: "") { IsSnippet = 1, SnippetText = "" });
     }
     #endregion CREATE
@@ -210,14 +231,22 @@ namespace MDSHO.Data {
         new { id, currentLine = options.CurrentLine, wholeWords = options.WholeWords, matchCase = options.MatchCase, wrapText = options.WrapText });
     }
 
-    public void UpdatePosition(long id, long position) {
-      Run("UPDATE Shortcuts SET Position = @position WHERE ID = @id;", new { id, position });
-    }
     public void UpdatePositions(IEnumerable<long> orderedShortcutIDs) {
+      List<long> ids = orderedShortcutIDs.ToList();
+      if (ids.Count == 0) {
+        return;
+      }
       InTransaction(() => {
-        long position = 0;
-        foreach (long id in orderedShortcutIDs) {
-          UpdatePosition(id, position++);
+        Dictionary<long, string> current = new Dictionary<long, string>();
+        foreach (Shortcut row in Many<Shortcut>("SELECT ID, SortKey FROM Shortcuts WHERE ID IN @ids", new { ids })) {
+          current[row.ID] = row.SortKey;
+        }
+        string[] old = ids.Select(id => current.TryGetValue(id, out string key) ? key : null).ToArray();
+        string[] keys = SortKeys.Reorder(old);
+        for (int i = 0; i < ids.Count; i++) {
+          if (keys[i] != old[i]) {
+            Run("UPDATE Shortcuts SET SortKey = @key WHERE ID = @id;", new { id = ids[i], key = keys[i] });
+          }
         }
       });
     }

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using MDSHO.Core;
@@ -12,16 +12,41 @@ namespace MDSHO.Data {
   /// </summary>
   internal sealed class OldSchemaReader : RepositoryBase {
 
+    // Before version 27 panels had no sort key: they get keys in ID order, so the file keeps their order.
     public static List<DesktopWindow> Windows() {
-      return Filled(Many<DesktopWindow>("SELECT * FROM MDSHOWindows ORDER BY ID ASC"));
+      List<DesktopWindow> windows = Filled(Many<DesktopWindow>("SELECT * FROM MDSHOWindows ORDER BY ID ASC"));
+      if (!ColumnExists("MDSHOWindows", "SortKey")) {
+        List<string> keys = MDSHO.Common.SortKeys.Sequence(windows.Count);
+        for (int i = 0; i < windows.Count; i++) {
+          windows[i].SortKey = keys[i];
+        }
+      }
+      return windows;
     }
 
     public static List<DesktopWindowClone> Clones() {
       return Filled(Many<DesktopWindowClone>("SELECT *, ParentMDSHOWindowID AS ParentWindowID FROM MDSHOWindowClones ORDER BY ID ASC"));
     }
 
+    // Before version 27 buttons were ordered by Position, then ID: they get sort keys in that order.
     public static List<Shortcut> Shortcuts() {
-      return Filled(Many<Shortcut>("SELECT *, ParentMDSHOWindowID AS ParentWindowID FROM Shortcuts ORDER BY ID ASC"));
+      List<Shortcut> shortcuts = Filled(Many<Shortcut>("SELECT *, ParentMDSHOWindowID AS ParentWindowID FROM Shortcuts ORDER BY ID ASC"));
+      if (!ColumnExists("Shortcuts", "SortKey") && ColumnExists("Shortcuts", "Position")) {
+        Dictionary<long, long> positions = Many<(long ID, long Position)>("SELECT ID, Position FROM Shortcuts").ToDictionary(r => r.ID, r => r.Position);
+        foreach (IGrouping<(long?, long?), Shortcut> siblings in shortcuts.GroupBy(s => (s.ParentShortcutID, s.ParentWindowID))) {
+          List<Shortcut> ordered = siblings.OrderBy(s => positions[s.ID]).ThenBy(s => s.ID).ToList();
+          List<string> keys = MDSHO.Common.SortKeys.Sequence(ordered.Count);
+          for (int i = 0; i < ordered.Count; i++) {
+            ordered[i].SortKey = keys[i];
+          }
+        }
+      }
+      return shortcuts;
+    }
+
+    // DeletedItems came in version 27; older databases have none.
+    public static List<DeletedItem> DeletedItems() {
+      return TableExists("DeletedItems") ? Many<DeletedItem>("SELECT SyncId, Kind, DeletedAt, DeletedBy FROM DeletedItems ORDER BY DeletedAt ASC") : new List<DeletedItem>();
     }
 
     // The NoteWindows table came in version 8; IsTopmost, IsWrapText and FontSize later (missing ones read as 0).

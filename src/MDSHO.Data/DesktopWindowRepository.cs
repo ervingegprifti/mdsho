@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using MDSHO.Common;
 using MDSHO.Core;
@@ -9,10 +10,13 @@ namespace MDSHO.Data {
     private const string InsertSql = @"
       INSERT INTO MDSHOWindows (
         ID, Title, ScreenDeviceName, Left, Top, Width, Height, BorderColor, BackgroundColor, TextColor,
-        TitleBackgroundColor, TitleTextColor, Notes, SolidIcons, SingleClickToOpen, ShowVersionInTitle)
+        TitleBackgroundColor, TitleTextColor, Notes, SolidIcons, SingleClickToOpen, ShowVersionInTitle, SyncId, SortKey, ChangedAt, ChangedBy)
       VALUES (
         NULLIF(@ID, 0), @Title, @ScreenDeviceName, @Left, @Top, @Width, @Height, @BorderColor, @BackgroundColor, @TextColor,
-        @TitleBackgroundColor, @TitleTextColor, @Notes, @SolidIcons, @SingleClickToOpen, @ShowVersionInTitle)";
+        @TitleBackgroundColor, @TitleTextColor, @Notes, @SolidIcons, @SingleClickToOpen, @ShowVersionInTitle, @SyncId, @SortKey, @ChangedAt, COALESCE(@ChangedBy, ''))";
+
+    /// <summary>The order of the panels: by sort key, then SyncId.</summary>
+    private const string Order = "SortKey ASC, SyncId ASC";
 
     private const string UpdateSql = @"
       UPDATE MDSHOWindows SET
@@ -20,7 +24,7 @@ namespace MDSHO.Data {
         BorderColor = @BorderColor, BackgroundColor = @BackgroundColor, TextColor = @TextColor,
         TitleBackgroundColor = @TitleBackgroundColor, TitleTextColor = @TitleTextColor, Notes = @Notes,
         SolidIcons = @SolidIcons, SingleClickToOpen = @SingleClickToOpen,
-        ShowVersionInTitle = @ShowVersionInTitle
+        ShowVersionInTitle = @ShowVersionInTitle, SortKey = CASE WHEN COALESCE(@SortKey, '') = '' THEN SortKey ELSE @SortKey END
       WHERE ID = @ID";
 
     private readonly IDesktopWindowCloneRepository clones;
@@ -46,10 +50,10 @@ namespace MDSHO.Data {
           isNew = One<long>("SELECT (SELECT COUNT(*) FROM Shortcuts) + (SELECT COUNT(*) FROM ScreenSetups)") == 0;
           windows.Add(Create());
         }
-        List<Shortcut> allShortcuts = Many<Shortcut>("SELECT " + ShortcutRepository.SelectColumns + " FROM Shortcuts ORDER BY Position ASC, ID ASC");
+        List<Shortcut> allShortcuts = Many<Shortcut>("SELECT " + ShortcutRepository.SelectColumns + " FROM Shortcuts ORDER BY " + ShortcutRepository.Order);
         List<DesktopWindowClone> allClones = clones.GetAll();
 
-        // Build the tree in memory. The lists keep the Position order of the query.
+        // Build the tree in memory. The lists keep the order of the query.
         Dictionary<long, Shortcut> byId = allShortcuts.ToDictionary(s => s.ID);
         Dictionary<long, DesktopWindow> windowById = windows.ToDictionary(w => w.ID);
         foreach (Shortcut shortcut in allShortcuts) {
@@ -85,7 +89,7 @@ namespace MDSHO.Data {
     }
 
     public List<DesktopWindow> GetAll() {
-      return Many<DesktopWindow>("SELECT * FROM MDSHOWindows ORDER BY ID ASC");
+      return Many<DesktopWindow>("SELECT * FROM MDSHOWindows ORDER BY " + Order);
     }
 
     public DesktopWindow Create(string screenDeviceName = "", long left = 0, long top = 0) {
@@ -112,8 +116,22 @@ namespace MDSHO.Data {
     }
 
     public long Add(DesktopWindow window) {
-      window.ID = Insert(InsertSql, window);
-      return window.ID;
+      return InTransaction(() => {
+        if (string.IsNullOrEmpty(window.SyncId)) {
+          window.SyncId = Guid.NewGuid().ToString();
+        }
+        if (!SortKeys.IsValid(window.SortKey)) {
+          string last = null;
+          foreach (string key in Many<string>("SELECT SortKey FROM MDSHOWindows")) {
+            if (SortKeys.IsValid(key) && (last == null || string.CompareOrdinal(key, last) > 0)) {
+              last = key;
+            }
+          }
+          window.SortKey = SortKeys.Between(last, null);
+        }
+        window.ID = Insert(InsertSql, window);
+        return window.ID;
+      });
     }
 
     public void Update(DesktopWindow window) {

@@ -85,7 +85,7 @@ namespace MDSHO.ViewModels {
         string target = "", string ext = "", bool isGroup = false) {
       return new Shortcut(parentShortcutID, parentWindowID, name, target, ext, Identifiers.NewGuid(),
         isGroup: isGroup ? 1 : 0, isGroupExpanded: isGroup ? 1 : 0, comment: comment, isMarked: 0, markColor: "#FFFFFFFF",
-        position: 0, isProcessCommand: 0, processFileName: "", processArguments: "");
+        isProcessCommand: 0, processFileName: "", processArguments: "");
     }
   }
 

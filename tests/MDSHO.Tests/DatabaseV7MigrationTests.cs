@@ -79,7 +79,7 @@ namespace MDSHO.Tests {
       db = new TempDb();
       Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       long windowId = DataStore.Windows.GetAll().First().ID;
-      Shortcut note = DataStore.Shortcuts.Append(new Shortcut(null, windowId, "Checklist", "", "", "gN", 0, 0, "", 0, "", 0, 0, "", "",
+      Shortcut note = DataStore.Shortcuts.Append(new Shortcut(null, windowId, "Checklist", "", "", "gN", 0, 0, "", 0, "", 0, "", "",
         isNote: 1, noteText: "1. Tell the help desk.\r\n2. Restart SRV01."));
       Shortcut read = DataStore.Shortcuts.GetAll().Single(s => s.ID == note.ID);
       Assert.Equal((1L, "1. Tell the help desk.\r\n2. Restart SRV01."), (read.IsNote, read.NoteText));
@@ -90,7 +90,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Export_writes_isNote_and_noteText_and_an_old_export_imports_as_a_normal_button() {
-      Shortcut s = new Shortcut(1, null, 1, "N", "", "", "g", 0, 0, "", 0, "", 0, 0, "", "", 0, "", isNote: 1, noteText: "text");
+      Shortcut s = new Shortcut(1, null, 1, "N", "", "", "g", 0, 0, "", 0, "", 0, "", "", 0, "", isNote: 1, noteText: "text");
       string json = System.Text.Json.JsonSerializer.Serialize(s, PortabilityJson.Options);
       Assert.Contains("\"isNote\": 1", json);
       Assert.Contains("\"noteText\": \"text\"", json);

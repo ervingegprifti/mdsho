@@ -96,7 +96,6 @@ namespace MDSHO.ViewModels {
         comment: shortcutRecord.Comment,
         isMarked: Convert.ToBoolean(shortcutRecord.IsMarked),
         markColor: ColorConversions.NormalizeHex(shortcutRecord.MarkColor),
-        position: shortcutRecord.Position,
         isProcessCommand: Convert.ToBoolean(shortcutRecord.IsProcessCommand),
         processFileName: shortcutRecord.ProcessFileName,
         processArguments: shortcutRecord.ProcessArguments,
@@ -234,7 +233,6 @@ namespace MDSHO.ViewModels {
         comment: shortcut.Comment,
         isMarked: Convert.ToInt64(shortcut.IsMarked),
         markColor: shortcut.MarkColor,
-        position: 0,
         isProcessCommand: Convert.ToInt64(shortcut.IsProcessCommand),
         processFileName: shortcut.ProcessFileName,
         processArguments: shortcut.ProcessArguments,
@@ -360,14 +358,9 @@ namespace MDSHO.ViewModels {
 
 
     #region Update Shortcuts Position
-    /// <summary>Saves the list order as the Position of each shortcut.</summary>
+    /// <summary>Saves the list order (only the sort keys that must change).</summary>
     public static void UpdateShortcutsPosition(IList shortcuts) {
-      for (int i = 0; i < shortcuts.Count; i++) {
-        if (shortcuts[i] is ShortcutViewModel) {
-          ShortcutViewModel shortcut = (ShortcutViewModel)shortcuts[i];
-          DataStore.Shortcuts.UpdatePosition(shortcut.ID, i);
-        }
-      }
+      DataStore.Shortcuts.UpdatePositions(shortcuts.OfType<ShortcutViewModel>().Select(s => s.ID));
     }
     /// <summary>
     /// Moves/reorders shortcuts (and/or inserts newly created ones) as ONE database transaction, then applies the
@@ -440,19 +433,8 @@ namespace MDSHO.ViewModels {
           m.SetParentInMemory(newParentShortcut, newParentWindow?.ID);
         }
       }
-      SetPositionsInMemory(destinationList);
-      if (sourceList != null && !sameList) {
-        SetPositionsInMemory(sourceList);
-      }
       // A move can change where a cut group may be pasted (not into itself or its own children).
       moved.FirstOrDefault()?.AppViewModel?.NotifyPasteTargetsChanged();
-    }
-    private static void SetPositionsInMemory(IList shortcuts) {
-      for (int i = 0; i < shortcuts.Count; i++) {
-        if (shortcuts[i] is ShortcutViewModel) {
-          ((ShortcutViewModel)shortcuts[i]).Position = i;
-        }
-      }
     }
     #endregion Update Shortcuts Position
 

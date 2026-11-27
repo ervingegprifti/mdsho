@@ -326,7 +326,7 @@ namespace MDSHO.Tests {
       ShortcutViewModel clip = NewSnippet();
       Assert.True(clip.ShowSetNameTheSameAsValue);
       Assert.False(Group("G").ShowSetNameTheSameAsValue);
-      ShortcutViewModel file = new ShortcutViewModel(null, null, 2, null, "f", @"C:\x.txt", ".lnk", "g2", false, false, null, false, null, 0, false, "", "");
+      ShortcutViewModel file = new ShortcutViewModel(null, null, 2, null, "f", @"C:\x.txt", ".lnk", "g2", false, false, null, false, null, false, "", "");
       Assert.False(file.ShowSetNameTheSameAsValue);
       Assert.True(file.ShowSetNameTheSameAsTarget);
     }

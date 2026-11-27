@@ -22,6 +22,10 @@ panels and notes were), together with the shortcut files it makes for your butto
 folder on your PC (`%LOCALAPPDATA%\MDSHO`, or the private folder Windows gives the installed package). You can open that
 folder with **Browse app data** in the tray menu or in a panel's title menu.
 
+The database also holds a random ID that MDSHO makes for your PC, for a sync feature of a later version. Each panel and
+button records which PC changed it last by that ID, so exports and backups contain it. It says nothing about you or your
+PC.
+
 None of this data leaves your PC. Nobody, including the author of MDSHO, can see it.
 
 ## Log files

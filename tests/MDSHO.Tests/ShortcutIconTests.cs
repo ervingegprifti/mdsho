@@ -34,7 +34,7 @@ namespace MDSHO.Tests {
     }
 
     private static ShortcutViewModel Make(string target, string ext = ".lnk", bool group = false, bool command = false) {
-      return new ShortcutViewModel(null, null, 1, null, "n", target, ext, "g", group, false, null, false, null, 0, command, "cmd.exe", "/c");
+      return new ShortcutViewModel(null, null, 1, null, "n", target, ext, "g", group, false, null, false, null, command, "cmd.exe", "/c");
     }
 
     // ---- Target kind ----

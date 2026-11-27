@@ -37,9 +37,9 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Show_flags_follow_the_shortcut_kind() {
-      ShortcutViewModel group = new ShortcutViewModel(null, null, 1, null, "g", "", "", "g1", true, false, null, true, null, 0, false, "", "");
-      ShortcutViewModel file = new ShortcutViewModel(null, null, 2, null, "f", @"C:\x.txt", ".lnk", "g2", false, false, null, false, null, 0, false, "", "");
-      ShortcutViewModel command = new ShortcutViewModel(null, null, 3, null, "c", "", "", "g3", false, false, null, false, null, 0, true, "cmd.exe", "");
+      ShortcutViewModel group = new ShortcutViewModel(null, null, 1, null, "g", "", "", "g1", true, false, null, true, null, false, "", "");
+      ShortcutViewModel file = new ShortcutViewModel(null, null, 2, null, "f", @"C:\x.txt", ".lnk", "g2", false, false, null, false, null, false, "", "");
+      ShortcutViewModel command = new ShortcutViewModel(null, null, 3, null, "c", "", "", "g3", false, false, null, false, null, true, "cmd.exe", "");
       Assert.True(group.ShowGroup);
       Assert.True(group.ShowNewShortcut);
       Assert.False(group.ShowSetNameTheSameAsTarget);

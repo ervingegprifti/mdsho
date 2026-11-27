@@ -190,7 +190,10 @@ full exception text on the clipboard, and **Open logs folder** opens the logs fo
   state, whether it was open, pinned or wrapped, and its text size), each linked to its note by the note's ID; the
   default colours (`defaultColors`: `Window` and `Note`, `null` when never set); and three settings (`settings`:
   `WindowTheme`, `BringToFrontShortcut` and `RememberScreenSetupPlaces`, `null` when never set). Settings tied to the PC
-  (backups, the review prompt, the last Settings page) are never in the file;
+  (backups, the review prompt, the last Settings page) are never in the file. From 1.30.0 each window and shortcut also
+  has its `syncId`, `sortKey`, `changedAt` and `changedBy`, and `deletedItems` lists the deleted panels and buttons
+  (see [Database](database.md#synced-and-local)). A replace keeps the IDs in the file; Add as new, and files from before
+  1.30.0, get new IDs, and older files' `position` numbers become sort keys in the same order;
 - `shortcuts/`: the shortcut files of the buttons.
 
 **Import data...** first checks the whole file (format, versions, counts, size limits) and then either:

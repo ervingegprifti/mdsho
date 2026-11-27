@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Microsoft.Data.Sqlite;
 
 namespace MDSHO.Data {
@@ -36,7 +37,11 @@ namespace MDSHO.Data {
           Notes TEXT NOT NULL,
           SolidIcons INTEGER NOT NULL,
           SingleClickToOpen INTEGER NOT NULL,
-          ShowVersionInTitle INTEGER NOT NULL DEFAULT 1);
+          ShowVersionInTitle INTEGER NOT NULL DEFAULT 1,
+          SyncId TEXT NOT NULL DEFAULT '',
+          SortKey TEXT NOT NULL DEFAULT '',
+          ChangedAt INTEGER NOT NULL DEFAULT 0,
+          ChangedBy TEXT NOT NULL DEFAULT '');
 
         CREATE TABLE MDSHOWindowClones (
           ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
@@ -61,7 +66,6 @@ namespace MDSHO.Data {
           Comment TEXT NOT NULL,
           IsMarked INTEGER NOT NULL,
           MarkColor TEXT NOT NULL,
-          Position INTEGER NOT NULL,
           IsProcessCommand INTEGER NOT NULL,
           ProcessFileName TEXT NOT NULL,
           ProcessArguments TEXT NOT NULL,
@@ -89,6 +93,10 @@ namespace MDSHO.Data {
           CommentWholeWords INTEGER NOT NULL DEFAULT 0,
           CommentMatchCase INTEGER NOT NULL DEFAULT 0,
           CommentWrapText INTEGER NOT NULL DEFAULT 0,
+          SyncId TEXT NOT NULL DEFAULT '',
+          SortKey TEXT NOT NULL DEFAULT '',
+          ChangedAt INTEGER NOT NULL DEFAULT 0,
+          ChangedBy TEXT NOT NULL DEFAULT '',
           FOREIGN KEY(ParentShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE,
           FOREIGN KEY(ParentMDSHOWindowID) REFERENCES MDSHOWindows(ID) ON DELETE CASCADE);
 
@@ -145,6 +153,13 @@ namespace MDSHO.Data {
           Dock INTEGER NOT NULL DEFAULT 0,
           UNIQUE(SetupID, Kind, ItemID),
           FOREIGN KEY(SetupID) REFERENCES ScreenSetups(ID) ON DELETE CASCADE);
+        CREATE TABLE IF NOT EXISTS DeletedItems (
+          SyncId TEXT NOT NULL PRIMARY KEY,
+          Kind TEXT NOT NULL,
+          DeletedAt INTEGER NOT NULL,
+          DeletedBy TEXT NOT NULL);
+        CREATE UNIQUE INDEX IF NOT EXISTS UX_MDSHOWindows_SyncId ON MDSHOWindows(SyncId) WHERE SyncId <> '';
+        CREATE UNIQUE INDEX IF NOT EXISTS UX_Shortcuts_SyncId ON Shortcuts(SyncId) WHERE SyncId <> '';
       ";
 
     /// <summary>
@@ -169,6 +184,8 @@ namespace MDSHO.Data {
               using (SqliteCommand cmd = new SqliteCommand(CreateDatabaseSql, conn, tx)) {
                 cmd.ExecuteNonQuery();
               }
+              EnsureDeviceId(conn);
+              SyncTriggers.Ensure(conn);
               CreateDatabaseTestHook?.Invoke();
               using (SqliteCommand cmd = new SqliteCommand($"PRAGMA user_version = {MDSHO.Common.AppConstants.DatabaseVersion};", conn, tx)) {
                 cmd.ExecuteNonQuery();
@@ -440,8 +457,79 @@ namespace MDSHO.Data {
             WHERE ID IN (SELECT ID FROM Owner);");
           Execute(conn, "ALTER TABLE MDSHOWindows DROP COLUMN CommentWrapText;");
         }
+      }),
+      new DbMigration(27, "Sync groundwork: SyncId, SortKey, ChangedAt and ChangedBy on panels and buttons, the DeletedItems table and this PC's DeviceId; Shortcuts.Position dropped", conn => {
+        EnsureDeviceId(conn);
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        foreach (string table in new[] { "MDSHOWindows", "Shortcuts" }) {
+          foreach ((string column, string type) in SyncColumns) {
+            if (!ColumnExists(conn, table, column)) {
+              Execute(conn, "ALTER TABLE " + table + " ADD COLUMN " + column + " " + type + ";");
+            }
+          }
+          // Every row gets its own SyncId, and a change record of now on this PC.
+          Execute(conn, "UPDATE " + table + " SET SyncId = " + SyncTriggers.NewGuid + " WHERE SyncId = '';");
+          Execute(conn, "UPDATE " + table + " SET ChangedAt = " + now + ", ChangedBy = " + SyncTriggers.Device + " WHERE ChangedAt = 0;");
+        }
+        // Sort keys in the old order: panels by ID, buttons by Position then ID within each parent.
+        bool hasPosition = ColumnExists(conn, "Shortcuts", "Position");
+        GiveSortKeys(conn, "SELECT ID, SortKey, 0 FROM MDSHOWindows ORDER BY ID", "MDSHOWindows");
+        GiveSortKeys(conn, "SELECT ID, SortKey, COALESCE(ParentShortcutID, -ParentMDSHOWindowID) FROM Shortcuts ORDER BY "
+          + "COALESCE(ParentShortcutID, -ParentMDSHOWindowID), " + (hasPosition ? "Position, " : "") + "ID", "Shortcuts");
+        if (hasPosition) {
+          Execute(conn, "ALTER TABLE Shortcuts DROP COLUMN Position;");
+        }
+        Execute(conn, @"CREATE TABLE IF NOT EXISTS DeletedItems (
+          SyncId TEXT NOT NULL PRIMARY KEY,
+          Kind TEXT NOT NULL,
+          DeletedAt INTEGER NOT NULL,
+          DeletedBy TEXT NOT NULL);");
+        Execute(conn, "CREATE UNIQUE INDEX IF NOT EXISTS UX_MDSHOWindows_SyncId ON MDSHOWindows(SyncId) WHERE SyncId <> '';");
+        Execute(conn, "CREATE UNIQUE INDEX IF NOT EXISTS UX_Shortcuts_SyncId ON Shortcuts(SyncId) WHERE SyncId <> '';");
       })
     };
+
+    /// <summary>The columns version 27 adds to MDSHOWindows and Shortcuts.</summary>
+    internal static readonly (string Column, string Type)[] SyncColumns = {
+      ("SyncId", "TEXT NOT NULL DEFAULT ''"), ("SortKey", "TEXT NOT NULL DEFAULT ''"),
+      ("ChangedAt", "INTEGER NOT NULL DEFAULT 0"), ("ChangedBy", "TEXT NOT NULL DEFAULT ''") };
+
+    /// <summary>Saves this PC's DeviceId in AppSettings when it has none.</summary>
+    internal static void EnsureDeviceId(SqliteConnection conn) {
+      Execute(conn, "INSERT INTO AppSettings (Key, Value) VALUES ('DeviceId', " + SyncTriggers.NewGuid + ") "
+        + "ON CONFLICT(Key) DO UPDATE SET Value = excluded.Value WHERE AppSettings.Value = '';");
+    }
+
+    // The query gives ID, SortKey and a sibling-list number, in order. A list with a missing or bad key gets keys in
+    // that order; the keys that are already fine and in order stay.
+    private static void GiveSortKeys(SqliteConnection conn, string query, string table) {
+      List<(long Id, string Key, long List)> rows = new List<(long, string, long)>();
+      using (SqliteCommand cmd = conn.CreateCommand()) {
+        cmd.CommandText = query;
+        using (SqliteDataReader r = cmd.ExecuteReader()) {
+          while (r.Read()) {
+            rows.Add((r.GetInt64(0), r.GetString(1), r.IsDBNull(2) ? 0 : r.GetInt64(2)));
+          }
+        }
+      }
+      foreach (IGrouping<long, (long Id, string Key, long List)> list in rows.GroupBy(x => x.List)) {
+        List<(long Id, string Key, long List)> siblings = list.ToList();
+        if (siblings.All(x => MDSHO.Common.SortKeys.IsValid(x.Key))) {
+          continue;
+        }
+        string[] keys = MDSHO.Common.SortKeys.Reorder(siblings.Select(x => x.Key).ToList());
+        for (int i = 0; i < siblings.Count; i++) {
+          if (keys[i] != siblings[i].Key) {
+            using (SqliteCommand cmd = conn.CreateCommand()) {
+              cmd.CommandText = "UPDATE " + table + " SET SortKey = @key WHERE ID = @id";
+              cmd.Parameters.AddWithValue("@key", keys[i]);
+              cmd.Parameters.AddWithValue("@id", siblings[i].Id);
+              cmd.ExecuteNonQuery();
+            }
+          }
+        }
+      }
+    }
 
     /// <summary>The columns version 26 adds, with their defaults: current line on, the rest off.</summary>
     internal static readonly (string Column, int Default)[] ViewOptionColumns = {
@@ -540,6 +628,8 @@ namespace MDSHO.Data {
         using (SqliteConnection conn = new SqliteConnection(ConnectionFactory.GetConnectionString())) {
           conn.Open();
           using (SqliteTransaction tx = conn.BeginTransaction()) {
+            // The sync triggers name columns a step may change; they are made again after the last step.
+            SyncTriggers.Drop(conn);
             migration.Apply(conn);
             Execute(conn, $"PRAGMA user_version = {migration.Version};");
             tx.Commit();
@@ -567,6 +657,26 @@ namespace MDSHO.Data {
     public static void Upgrade() {
       ApplyMigrations(Migrations);
       RepairVersion17();
+      EnsureSyncSchema();
+    }
+
+    // This PC's DeviceId and the sync triggers as this version makes them (no write when they are already right).
+    private static void EnsureSyncSchema() {
+      using (SqliteConnection conn = new SqliteConnection(ConnectionFactory.GetConnectionString())) {
+        conn.Open();
+        using (SqliteTransaction tx = conn.BeginTransaction()) {
+          bool hasId;
+          using (SqliteCommand cmd = conn.CreateCommand()) {
+            cmd.CommandText = "SELECT count(*) FROM AppSettings WHERE Key = 'DeviceId' AND Value <> ''";
+            hasId = Convert.ToInt64(cmd.ExecuteScalar()) > 0;
+          }
+          if (!hasId) {
+            EnsureDeviceId(conn);
+          }
+          SyncTriggers.Ensure(conn);
+          tx.Commit();
+        }
+      }
     }
 
     // Fixes a database from the 1.7.0 test build (version 17 or later).

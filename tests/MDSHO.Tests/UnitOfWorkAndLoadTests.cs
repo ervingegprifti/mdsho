@@ -55,7 +55,8 @@ namespace MDSHO.Tests {
         using (DataStore.BeginTransaction()) {
           DataStore.Shortcuts.CreateGroup(null, win);
           DataStore.Shortcuts.CreateGroup(null, win);
-          Assert.Equal(2, DataStore.Shortcuts.CreateGroup(null, win).Position); // sees its own uncommitted rows
+          DataStore.Shortcuts.CreateGroup(null, win);
+          Assert.Equal(3, DataStore.Shortcuts.GetRoots(win).Count);              // sees its own uncommitted rows
           Assert.Equal(3, DataStore.Shortcuts.GetAll().Count);
           Assert.Equal(0, Shortcuts());                                          // another connection does not
           throw new InvalidOperationException("boom");
@@ -163,20 +164,23 @@ namespace MDSHO.Tests {
       long win = Win();
       long a = DataStore.Shortcuts.CreateGroup(null, win).ID;
       long b = DataStore.Shortcuts.CreateGroup(null, win).ID;
-      DataStore.Shortcuts.UpdatePositions(new[] { b, a });
-      Assert.Equal(0, db.Scalar("SELECT Position FROM Shortcuts WHERE ID=" + b));
-      Assert.Equal(1, db.Scalar("SELECT Position FROM Shortcuts WHERE ID=" + a));
-      db.Exec("CREATE TRIGGER t BEFORE UPDATE OF Position ON Shortcuts WHEN NEW.Position = 1 AND OLD.ID = " + b + " BEGIN SELECT RAISE(ABORT,'no'); END;");
-      Assert.ThrowsAny<Exception>(() => DataStore.Shortcuts.UpdatePositions(new[] { a, b }));
-      Assert.Equal(0, db.Scalar("SELECT Position FROM Shortcuts WHERE ID=" + b));
-      Assert.Equal(1, db.Scalar("SELECT Position FROM Shortcuts WHERE ID=" + a));
+      long c = DataStore.Shortcuts.CreateGroup(null, win).ID;
+      Assert.Equal(new[] { a, b, c }, DataStore.Shortcuts.GetRoots(win).Select(s => s.ID));
+      string keys = string.Join(",", DataStore.Shortcuts.GetRoots(win).Select(s => s.SortKey));
+      // The reverse order keeps one key and needs two new ones: c's is saved first, then b's fails. Nothing may change.
+      db.Exec("CREATE TRIGGER t BEFORE UPDATE OF SortKey ON Shortcuts WHEN OLD.ID = " + b + " BEGIN SELECT RAISE(ABORT,'no'); END;");
+      long changes = db.Scalar("SELECT ChangedAt FROM Shortcuts WHERE ID = " + c);
+      Assert.ThrowsAny<Exception>(() => DataStore.Shortcuts.UpdatePositions(new[] { c, b, a }));
+      Assert.Equal(new[] { a, b, c }, DataStore.Shortcuts.GetRoots(win).Select(s => s.ID));
+      Assert.Equal(keys, string.Join(",", DataStore.Shortcuts.GetRoots(win).Select(s => s.SortKey)));
+      Assert.Equal(changes, db.Scalar("SELECT ChangedAt FROM Shortcuts WHERE ID = " + c));
     }
     #endregion TRANSACTION SCOPE
 
     #region TREE LOAD
     /// <summary>
     /// Window 1: G1[ S1, G2[ S2 ] ], S3, P(command) + 2 clones; window 2: S4.
-    /// Children are inserted so that Position order differs from insertion (ID) order.
+    /// Children are inserted so that the saved order differs from insertion (ID) order.
     /// </summary>
     private (long w1, long w2) BuildSample() {
       IShortcutRepository sc = DataStore.Shortcuts;
@@ -210,7 +214,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void LoadAll_returns_the_tree_ordered_by_Position() {
+    public void LoadAll_returns_the_tree_in_the_saved_order() {
       (long w1, long w2) = BuildSample();
       List<DesktopWindow> all = DataStore.Windows.LoadAll();
       Assert.Equal(2, all.Count);
@@ -218,7 +222,8 @@ namespace MDSHO.Tests {
       DesktopWindow b = all.Single(w => w.ID == w2);
       Assert.Equal("P,G1[G2[S2],S1],S3", Dump(a.RootShortcuts));
       Assert.Equal("S4", Dump(b.RootShortcuts));
-      Assert.Equal(new[] { 0L, 1L, 2L }, a.RootShortcuts.Select(s => s.Position).ToArray());
+      string[] keys = a.RootShortcuts.Select(s => s.SortKey).ToArray();
+      Assert.Equal(keys.OrderBy(k => k, StringComparer.Ordinal), keys);
       Assert.Equal(2, a.Clones.Count);
       Assert.Empty(b.Clones);
       // Clones share the window's root shortcut list instance (existing behaviour).
@@ -242,8 +247,8 @@ namespace MDSHO.Tests {
       for (int i = 0; i < expected.Count; i++) {
         Shortcut e = expected[i], a = actual[i];
         Assert.Equal(
-          (e.ID, e.ParentShortcutID, e.ParentWindowID, e.Name, e.Target, e.Ext, e.Guid, e.IsGroup, e.IsGroupExpanded, e.Comment, e.IsMarked, e.MarkColor, e.Position, e.IsProcessCommand, e.ProcessFileName, e.ProcessArguments),
-          (a.ID, a.ParentShortcutID, a.ParentWindowID, a.Name, a.Target, a.Ext, a.Guid, a.IsGroup, a.IsGroupExpanded, a.Comment, a.IsMarked, a.MarkColor, a.Position, a.IsProcessCommand, a.ProcessFileName, a.ProcessArguments));
+          (e.ID, e.ParentShortcutID, e.ParentWindowID, e.Name, e.Target, e.Ext, e.Guid, e.IsGroup, e.IsGroupExpanded, e.Comment, e.IsMarked, e.MarkColor, e.SortKey, e.SyncId, e.ChangedAt, e.ChangedBy, e.IsProcessCommand, e.ProcessFileName, e.ProcessArguments),
+          (a.ID, a.ParentShortcutID, a.ParentWindowID, a.Name, a.Target, a.Ext, a.Guid, a.IsGroup, a.IsGroupExpanded, a.Comment, a.IsMarked, a.MarkColor, a.SortKey, a.SyncId, a.ChangedAt, a.ChangedBy, a.IsProcessCommand, a.ProcessFileName, a.ProcessArguments));
         AssertSameTree(e.Shortcuts, a.Shortcuts);
       }
     }

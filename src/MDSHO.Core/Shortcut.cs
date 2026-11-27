@@ -37,8 +37,11 @@ namespace MDSHO.Core {
     public long IsMarked { get; set; }
     /// <summary>The mark colour as #AARRGGBB text.</summary>
     public string MarkColor { get; set; }
-    /// <summary>Order among the siblings, counting from 0.</summary>
-    public long Position { get; set; }
+    /// <summary>
+    /// Order among the siblings: a text sort key (see MDSHO.Common.SortKeys), compared ordinally; equal keys are ordered
+    /// by <see cref="SyncId"/>. Empty in older export files, which carry a Position number instead.
+    /// </summary>
+    public string SortKey { get; set; } = "";
     /// <summary>1 when the shortcut runs a command instead of opening a file.</summary>
     public long IsProcessCommand { get; set; }
     /// <summary>Program to run for a command shortcut.</summary>
@@ -93,6 +96,12 @@ namespace MDSHO.Core {
     public long CommentMatchCase { get; set; }
     /// <summary>1 when the comment's text wraps.</summary>
     public long CommentWrapText { get; set; }
+    /// <summary>The fixed ID that names this button on every PC (a GUID); it never changes. Empty in older export files.</summary>
+    public string SyncId { get; set; } = "";
+    /// <summary>When a synced field last changed: UTC milliseconds since 1970 (0 in older export files).</summary>
+    public long ChangedAt { get; set; }
+    /// <summary>The DeviceId of the PC that made that change.</summary>
+    public string ChangedBy { get; set; } = "";
     /// <summary>
     /// Children shortcuts.
     /// </summary>
@@ -103,11 +112,11 @@ namespace MDSHO.Core {
     public Shortcut() { }
 
     /// <summary>Creates a shortcut record (the first overload gets a new ID from the database, the second keeps the given ID).</summary>
-    public Shortcut(long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid, long isGroup, long isGroupExpanded, string comment, long isMarked, string markColor, long position, long isProcessCommand, string processFileName, string processArguments, long processRunAsAdmin = 0, string processWorkingFolder = "", long isNote = 0, string noteText = "") :
-      this (id: 0, parentShortcutID, parentWindowID, name, target, ext, guid, isGroup, isGroupExpanded, comment, isMarked, markColor, position, isProcessCommand, processFileName, processArguments, processRunAsAdmin, processWorkingFolder, isNote, noteText) { }
+    public Shortcut(long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid, long isGroup, long isGroupExpanded, string comment, long isMarked, string markColor, long isProcessCommand, string processFileName, string processArguments, long processRunAsAdmin = 0, string processWorkingFolder = "", long isNote = 0, string noteText = "") :
+      this (id: 0, parentShortcutID, parentWindowID, name, target, ext, guid, isGroup, isGroupExpanded, comment, isMarked, markColor, isProcessCommand, processFileName, processArguments, processRunAsAdmin, processWorkingFolder, isNote, noteText) { }
 
     /// <summary>Creates a shortcut record (the first overload gets a new ID from the database, the second keeps the given ID).</summary>
-    public Shortcut(long id, long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid, long isGroup, long isGroupExpanded, string comment, long isMarked, string markColor, long position, long isProcessCommand, string processFileName, string processArguments, long processRunAsAdmin = 0, string processWorkingFolder = "", long isNote = 0, string noteText = "") {
+    public Shortcut(long id, long? parentShortcutID, long? parentWindowID, string name, string target, string ext, string guid, long isGroup, long isGroupExpanded, string comment, long isMarked, string markColor, long isProcessCommand, string processFileName, string processArguments, long processRunAsAdmin = 0, string processWorkingFolder = "", long isNote = 0, string noteText = "") {
       this.ID = id;
       this.ParentShortcutID = parentShortcutID;
       this.ParentWindowID = parentWindowID;
@@ -120,7 +129,6 @@ namespace MDSHO.Core {
       this.Comment = comment;
       this.IsMarked = isMarked;
       this.MarkColor = markColor;
-      this.Position = position;
       this.IsProcessCommand = isProcessCommand;
       this.ProcessFileName = processFileName;
       this.ProcessArguments = processArguments;

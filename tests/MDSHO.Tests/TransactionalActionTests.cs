@@ -30,16 +30,23 @@ namespace MDSHO.Tests {
     }
     private long ParentShortcutId(ShortcutViewModel s) { return db.Scalar("SELECT ParentShortcutID FROM Shortcuts WHERE ID=" + s.ID); }
     private long Count() { return db.Scalar("SELECT COUNT(*) FROM Shortcuts"); }
-    private long Pos(ShortcutViewModel s) { return db.Scalar("SELECT Position FROM Shortcuts WHERE ID=" + s.ID); }
-    private void FailOnPositionUpdateOf(ShortcutViewModel s) {
-      db.Exec("CREATE TRIGGER fail_pos BEFORE UPDATE OF Position ON Shortcuts WHEN NEW.ID=" + s.ID + " BEGIN SELECT RAISE(ABORT,'boom'); END;");
+    // The place among the siblings in the saved order (sort key, then SyncId), from 0.
+    private long Pos(ShortcutViewModel s) {
+      return db.Scalar("SELECT COUNT(*) FROM Shortcuts o, Shortcuts s WHERE s.ID=" + s.ID + " AND o.ID <> s.ID"
+        + " AND o.ParentShortcutID IS s.ParentShortcutID AND o.ParentMDSHOWindowID IS s.ParentMDSHOWindowID"
+        + " AND (o.SortKey < s.SortKey OR (o.SortKey = s.SortKey AND o.SyncId < s.SyncId))");
+    }
+    // Fails when the row gets a new sort key or a new parent.
+    private void FailOnMoveOf(ShortcutViewModel s) {
+      db.Exec("CREATE TRIGGER fail_pos BEFORE UPDATE ON Shortcuts WHEN NEW.ID=" + s.ID + " AND (NEW.SortKey IS NOT OLD.SortKey"
+        + " OR NEW.ParentShortcutID IS NOT OLD.ParentShortcutID OR NEW.ParentMDSHOWindowID IS NOT OLD.ParentMDSHOWindowID) BEGIN SELECT RAISE(ABORT,'boom'); END;");
     }
     private void FailOnInsertNumber(long n) { // fails the n-th insert from now on
       long start = Count();
       db.Exec("CREATE TRIGGER fail_ins BEFORE INSERT ON Shortcuts WHEN (SELECT COUNT(*) FROM Shortcuts) >= " + (start + n - 1) + " BEGIN SELECT RAISE(ABORT,'boom'); END;");
     }
     private void DropTriggers() {
-      db.Exec("DROP TRIGGER IF EXISTS fail_pos; DROP TRIGGER IF EXISTS fail_ins;");
+      db.Exec("DROP TRIGGER IF EXISTS fail_pos; DROP TRIGGER IF EXISTS fail_ins; DROP TRIGGER IF EXISTS fail_del;");
     }
 
     // ---- Paste: cut ----
@@ -61,7 +68,7 @@ namespace MDSHO.Tests {
     public void PasteCut_group_failing_midway_changes_neither_db_nor_vm() {
       ShortcutViewModel a = Root(), x = Root(), c1 = Child(x);
       ShortcutViewModel ac = Child(a);
-      FailOnPositionUpdateOf(a);
+      FailOnMoveOf(a);
       app.CutShortcut(a, null, win);
       Assert.ThrowsAny<Exception>(() => app.PasteShortcut(x, null));
       Assert.Equal(-1, ParentShortcutId(a));
@@ -117,7 +124,7 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Delete_group_with_children_renumbers_siblings_happy_path() {
+    public void Delete_group_with_children_keeps_the_order_of_the_others_happy_path() {
       var (g1, g2, g3, kid, file) = ArrangeDelete();
       g2.DeleteShortcutCommand.Execute(null);
       Assert.Equal(new[] { g1, g3 }, win.RootShortcuts.ToArray());
@@ -129,10 +136,11 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Delete_group_failing_on_renumbering_keeps_db_vm_and_files() {
+    public void Delete_group_failing_midway_keeps_db_vm_and_files() {
       var (g1, g2, g3, kid, file) = ArrangeDelete();
       long before = Count();
-      FailOnPositionUpdateOf(g3);
+      // The group goes, then deleting a child inside it fails: nothing may change.
+      db.Exec("CREATE TRIGGER fail_del BEFORE DELETE ON Shortcuts WHEN OLD.ID=" + kid.ID + " BEGIN SELECT RAISE(ABORT,'boom'); END;");
       Assert.ThrowsAny<Exception>(() => g2.DeleteShortcutCommand.Execute(null));
       Assert.Equal(before, Count());
       Assert.Equal(new[] { g1, g2, g3 }, win.RootShortcuts.ToArray());
@@ -212,7 +220,7 @@ namespace MDSHO.Tests {
     public void Drop_reorder_failing_midway_changes_nothing() {
       ShortcutViewModel a = Root(), b = Root(), c = Root();
       ViewModelFactory.UpdateShortcutsPosition(win.RootShortcuts);
-      FailOnPositionUpdateOf(a);
+      FailOnMoveOf(a);
       Assert.ThrowsAny<Exception>(() => ViewModelFactory.ApplyShortcutMove(win.RootShortcuts, win.RootShortcuts, 3, null, win, new[] { a }, null));
       Assert.Equal(new[] { a, b, c }, win.RootShortcuts.ToArray());
       Assert.Equal(0, Pos(a)); Assert.Equal(1, Pos(b)); Assert.Equal(2, Pos(c));
@@ -222,7 +230,7 @@ namespace MDSHO.Tests {
     public void Drop_move_into_group_happy_path_and_failure() {
       ShortcutViewModel a = Root(), x = Root(), c1 = Child(x);
       ViewModelFactory.UpdateShortcutsPosition(win.RootShortcuts);
-      FailOnPositionUpdateOf(a);
+      FailOnMoveOf(a);
       Assert.ThrowsAny<Exception>(() => ViewModelFactory.ApplyShortcutMove(win.RootShortcuts, x.Children, 0, x, null, new[] { a }, null));
       Assert.Equal(-1, ParentShortcutId(a));
       Assert.Contains(a, win.RootShortcuts);
@@ -243,7 +251,7 @@ namespace MDSHO.Tests {
       ShortcutViewModel a = Root();
       ViewModelFactory.UpdateShortcutsPosition(win.RootShortcuts);
       long before = Count();
-      FailOnPositionUpdateOf(a); // new rows insert fine, the final renumbering fails
+      FailOnMoveOf(a); // new rows insert fine, the new order fails
       Assert.ThrowsAny<Exception>(() => ViewModelFactory.ApplyShortcutMove(null, win.RootShortcuts, 0, null, win, new ShortcutViewModel[0], created => {
         created.Add(ViewModelFactory.NewShortcut(app, null, win, "n1", "http://a", ".url", "g1"));
         created.Add(ViewModelFactory.NewShortcut(app, null, win, "n2", "http://b", ".url", "g2"));

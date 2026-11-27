@@ -62,7 +62,7 @@ namespace MDSHO.Tests {
       List<string> rows = new List<string>();
       foreach (DesktopWindow w in DataStore.Windows.GetAll().OrderBy(x => x.ID)) { rows.Add("W" + JsonSerializer.Serialize(new { w.ID, w.Title, w.ScreenDeviceName, w.Left, w.Top, w.Width, w.Height, w.BorderColor, w.BackgroundColor, w.TextColor, w.TitleBackgroundColor, w.TitleTextColor, w.Notes, w.SolidIcons, w.SingleClickToOpen }, Json)); }
       foreach (DesktopWindowClone c in DataStore.Clones.GetAll().OrderBy(x => x.ID)) { rows.Add("C" + JsonSerializer.Serialize(new { c.ID, c.ParentWindowID, c.ScreenDeviceName, c.Left, c.Top, c.Width, c.Height }, Json)); }
-      foreach (Shortcut s in DataStore.Shortcuts.GetAll().OrderBy(x => x.ID)) { rows.Add("S" + JsonSerializer.Serialize(new { s.ID, s.ParentShortcutID, s.ParentWindowID, s.Name, s.Target, s.Ext, s.Guid, s.IsGroup, s.IsGroupExpanded, s.Comment, s.IsMarked, s.MarkColor, s.Position, s.IsProcessCommand, s.ProcessFileName, s.ProcessArguments }, Json)); }
+      foreach (Shortcut s in DataStore.Shortcuts.GetAll().OrderBy(x => x.ID)) { rows.Add("S" + JsonSerializer.Serialize(new { s.ID, s.ParentShortcutID, s.ParentWindowID, s.Name, s.Target, s.Ext, s.Guid, s.IsGroup, s.IsGroupExpanded, s.Comment, s.IsMarked, s.MarkColor, s.SortKey, s.SyncId, s.IsProcessCommand, s.ProcessFileName, s.ProcessArguments }, Json)); }
       return rows;
     }
 
@@ -368,7 +368,7 @@ namespace MDSHO.Tests {
       Assert.Equal(2, m.Counts.Windows);
       Assert.Equal(1, m.Counts.Clones);
       Assert.Equal(7, m.Counts.Shortcuts);
-      Assert.Equal("1.29.0", m.AppVersion);
+      Assert.Equal("1.30.0", m.AppVersion);
       Assert.Equal(DateTimeKind.Utc, m.ExportedAtUtc.Kind);
     }
 
@@ -650,9 +650,11 @@ namespace MDSHO.Tests {
     public void Add_with_explicit_id_keeps_the_id_and_zero_means_auto() {
       DesktopWindow w = DataStore.Windows.Get(DataStore.Windows.GetAll()[0].ID);
       w.ID = 500;
+      w.SyncId = ""; // a second row of the same panel needs its own SyncId
       Assert.Equal(500, DataStore.Windows.Add(w));
       Assert.NotNull(DataStore.Windows.Get(500));
       w.ID = 0;
+      w.SyncId = "";
       long auto = DataStore.Windows.Add(w);
       Assert.True(auto > 500);
     }

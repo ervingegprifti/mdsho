@@ -20,6 +20,8 @@
     IScreenSetupRepository ScreenSetups { get; }
     /// <summary>The History table.</summary>
     IHistoryRepository History { get; }
+    /// <summary>The deleted panels and buttons, kept for sync.</summary>
+    IDeletedItemsRepository DeletedItems { get; }
     /// <summary>Begin a transaction scope (joins the current one on this thread, if any).</summary>
     ITransactionScope BeginTransaction();
     /// <summary>Create the database if missing and apply every pending schema migration (with a backup first).

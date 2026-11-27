@@ -159,6 +159,8 @@ namespace MDSHO.Tests {
     [Fact]
     public void A_v21_database_gets_the_comment_columns_with_the_defaults_after_a_backup() {
       ShortcutViewModel command = NewCommand();
+      // Before version 27 there are no sync triggers.
+      db.DropSyncTriggers();
       db.Exec("ALTER TABLE Shortcuts DROP COLUMN CommentFont; ALTER TABLE Shortcuts DROP COLUMN CommentFontSize; PRAGMA user_version = 21;");
       Assert.Equal(0, Columns("Shortcuts", "CommentFont"));
       DataStore.Upgrade();

@@ -99,7 +99,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Export_writes_the_note_colours_and_an_old_export_imports_with_default_colours() {
-      Shortcut s = new Shortcut(1, null, 1, "N", "", "", "g", 0, 0, "", 0, "", 0, 0, "", "", 0, "", isNote: 1, noteText: "t") { NoteBackgroundColor = "#FFFFF8DC" };
+      Shortcut s = new Shortcut(1, null, 1, "N", "", "", "g", 0, 0, "", 0, "", 0, "", "", 0, "", isNote: 1, noteText: "t") { NoteBackgroundColor = "#FFFFF8DC" };
       string json = System.Text.Json.JsonSerializer.Serialize(s, PortabilityJson.Options);
       Assert.Contains("\"noteBackgroundColor\": \"#FFFFF8DC\"", json);
       Shortcut old = System.Text.Json.JsonSerializer.Deserialize<Shortcut>("{\"id\":1,\"name\":\"N\",\"isNote\":1}", PortabilityJson.Options);
