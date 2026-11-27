@@ -13,6 +13,16 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace MDSHO.ViewModels {
 
+  /// <summary>Which text of a button: a note's, a snippet's or the comment.</summary>
+  public enum ShortcutTextKind {
+    /// <summary>A note's text.</summary>
+    Note,
+    /// <summary>A snippet's text.</summary>
+    Snippet,
+    /// <summary>The comment.</summary>
+    Comment
+  }
+
   /// <summary>Which text field of a shortcut is being edited in place.</summary>
   public enum EditField {
     /// <summary>Nothing is being edited.</summary>
@@ -735,6 +745,25 @@ namespace MDSHO.ViewModels {
     /// Saves the note text: the database first, then memory. A failed write throws and leaves the old text in both, so
     /// the new text still counts as unsaved and the next save tries again.
     /// </summary>
+    /// <summary>Takes a text that sync already saved, without saving it again.</summary>
+    public void ShowSyncedText(ShortcutTextKind kind, string value) {
+      value ??= "";
+      switch (kind) {
+        case ShortcutTextKind.Note:
+          this.savingNoteText = true;
+          try { this.NoteText = value; } finally { this.savingNoteText = false; }
+          break;
+        case ShortcutTextKind.Snippet:
+          this.savingSnippetText = true;
+          try { this.SnippetText = value; } finally { this.savingSnippetText = false; }
+          break;
+        default:
+          this.savingComment = true;
+          try { this.Comment = value; } finally { this.savingComment = false; }
+          break;
+      }
+    }
+
     public void SaveNoteText(string value) {
       value ??= "";
       DataStore.Shortcuts.UpdateNoteText(this.ID, value);

@@ -38,18 +38,20 @@ same panel on two PCs, it shows twice. Delete the double once; the delete syncs.
 - When MDSHO starts.
 - About 10 seconds after you change something.
 - Every minute, to pick up your other PCs' changes.
-- When MDSHO closes.
+- When MDSHO closes. If the folder doesn't answer within about 5 seconds (a cloud drive offline, a network drive
+  asleep), MDSHO closes anyway and your changes go the next time it starts.
 - When you click **Sync now**.
 
-Changes from your other PCs show in open panels at once.
+Changes from your other PCs show at once in open panels and in open notes, comments and snippets.
 
 ## When two PCs changed the same thing
 
 The newer change wins. If both PCs changed the same text (a note, a snippet or a comment) while apart, the newer text
 wins and the other one goes into **Text history**, marked with the PC it came from.
 
-A note, comment or snippet you have open is never changed under you: the text from the other PC goes into its Text
-history instead.
+An open note, comment or snippet shows the other PC's text at once, as long as you typed nothing since it was last
+saved; the text it had goes into Text history. While you are typing in it, it is never changed under you: the change
+from the other PC waits until your typing is saved, then the rules above decide.
 
 If a PC deleted a group while another PC added a button to it, the button goes to the top of its panel. If a PC
 deleted a panel while another PC added a button to it, the panel comes back.

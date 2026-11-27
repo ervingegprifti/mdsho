@@ -162,6 +162,54 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
+    public void Exit_gives_up_after_the_time_limit_when_a_round_is_stuck() {
+      SyncSettings.Save(true, folder);
+      using (System.Threading.ManualResetEventSlim started = new System.Threading.ManualResetEventSlim())
+      using (System.Threading.ManualResetEventSlim release = new System.Threading.ManualResetEventSlim()) {
+        SyncService sync = new SyncService(clock, "2.0.0", timer, action => System.Threading.Tasks.Task.Run(action), backups,
+          () => new HashSet<long>(), result => { }, null, options => {
+            started.Set();
+            release.Wait(TimeSpan.FromSeconds(30));
+            return SyncEngine.Run(options);
+          }) { WaitLimit = TimeSpan.FromMilliseconds(300) };
+        // A round already running hangs on the folder; exit waits only up to the limit.
+        sync.SyncNow();
+        Assert.True(started.Wait(TimeSpan.FromSeconds(10)));
+        System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+        sync.RunOnExit();
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(5), "Exit waited " + watch.Elapsed);
+        release.Set();
+      }
+    }
+
+    [Fact]
+    public void Exit_gives_up_after_the_time_limit_when_its_own_round_hangs() {
+      SyncSettings.Save(true, folder);
+      using (System.Threading.ManualResetEventSlim release = new System.Threading.ManualResetEventSlim()) {
+        SyncService sync = new SyncService(clock, "2.0.0", timer, action => action(), backups, () => new HashSet<long>(), result => { }, null,
+          options => { release.Wait(TimeSpan.FromSeconds(30)); return SyncEngine.Run(options); }) { WaitLimit = TimeSpan.FromMilliseconds(300) };
+        System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+        sync.RunOnExit();
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(5), "Exit waited " + watch.Elapsed);
+        release.Set();
+      }
+      Assert.Equal(TimeSpan.FromSeconds(5), new SyncService(clock, "2.0.0", timer, a => a(), backups, null, null).WaitLimit);
+    }
+
+    [Fact]
+    public void Turning_on_with_a_folder_that_hangs_gives_up_after_the_time_limit() {
+      SyncService sync = Service();
+      sync.WaitLimit = TimeSpan.FromMilliseconds(300);
+      sync.FolderExists = path => { System.Threading.Thread.Sleep(10000); return true; };
+      System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+      SyncJoin join = sync.TurnOn(folder);
+      Assert.True(watch.Elapsed < TimeSpan.FromSeconds(5), "Turning on waited " + watch.Elapsed);
+      Assert.False(join.Ok);
+      Assert.False(SyncSettings.IsOn);
+      Assert.Empty(Directory.Exists(backups.Folder) ? Directory.GetFiles(backups.Folder) : new string[0]);
+    }
+
+    [Fact]
     public void A_folder_that_cannot_be_reached_says_so_and_retries() {
       SyncSettings.Save(true, Path.Combine(db.Folder, "gone"));
       SyncService sync = Service();

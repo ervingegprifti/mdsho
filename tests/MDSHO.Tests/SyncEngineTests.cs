@@ -268,25 +268,69 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void An_open_note_being_typed_in_is_not_changed_and_the_incoming_text_goes_to_history() {
+    public void An_edit_from_another_PC_reaches_a_PC_with_the_note_open_and_stays_on_both() {
+      Shortcut note = Note(a, null, a.FirstPanelId, "Open", "base");
+      SyncAll();
+      b.Use();
+      DataStore.Shortcuts.UpdateNoteText(b.Button(note.SyncId).ID, "from work");
+      b.Sync();
+      // Home has the note open but typed nothing since its last save: it is not in Editing.
+      a.Sync();
+      Assert.Equal("from work", a.Button(note.SyncId).NoteText);
+      SyncAll();
+      b.Sync();
+      Assert.Equal("from work", b.Button(note.SyncId).NoteText);
+      Assert.Empty(b.History());
+      Assert.Equal(a.Snapshot(), b.Snapshot());
+    }
+
+    [Fact]
+    public void A_note_with_unsaved_typing_waits_and_nothing_is_reverted_on_the_other_PC() {
       Shortcut note = Note(a, null, a.FirstPanelId, "Open", "base");
       SyncAll();
       b.Use();
       DataStore.Shortcuts.UpdateNoteText(b.Button(note.SyncId).ID, "from work");
       DataStore.Shortcuts.UpdateName(b.Button(note.SyncId).ID, "Renamed at work");
+      b.Stamp(note.SyncId, T + 1000);
+      b.Sync();
+      a.Editing.Add(note.ID);
+      SyncResult result = a.Sync();
+      Shortcut home = a.Button(note.SyncId);
+      Assert.Equal(("base", "Open"), (home.NoteText, home.Name));
+      Assert.Empty(a.History());
+      Assert.False(result.Applied);
+      b.Sync();
+      Assert.Equal(("from work", "Renamed at work"), (b.Button(note.SyncId).NoteText, b.Button(note.SyncId).Name));
+      // Typing saved: nothing new typed, so the waiting change comes in.
+      a.Editing.Clear();
+      a.Sync();
+      Assert.Equal("from work", a.Button(note.SyncId).NoteText);
+      Assert.Empty(a.History());
+      SyncAll();
+      Assert.Equal(a.Snapshot(), b.Snapshot());
+    }
+
+    [Fact]
+    public void Once_the_typing_is_saved_the_normal_rules_decide() {
+      Shortcut note = Note(a, null, a.FirstPanelId, "Open", "base");
+      SyncAll();
+      b.Use();
+      DataStore.Shortcuts.UpdateNoteText(b.Button(note.SyncId).ID, "from work");
+      b.Stamp(note.SyncId, T + 1000);
       b.Sync();
       a.Editing.Add(note.ID);
       a.Sync();
-      Shortcut home = a.Button(note.SyncId);
-      Assert.Equal("base", home.NoteText);
-      Assert.Equal("Renamed at work", home.Name);
-      HistoryEntry kept = a.History().Single();
-      Assert.Equal(("from work", "Work PC"), (kept.Text, kept.FromPc));
-      // This PC's text now wins everywhere; the other PC keeps its own text in history.
+      // Home saves its typing later: the newer text wins and Work's goes into Text history on both.
+      a.Use();
+      DataStore.Shortcuts.UpdateNoteText(note.ID, "typed at home");
+      a.Stamp(note.SyncId, T + 2000);
       a.Editing.Clear();
       SyncAll();
       b.Sync();
-      Assert.Equal("base", b.Button(note.SyncId).NoteText);
+      Assert.Equal("typed at home", a.Button(note.SyncId).NoteText);
+      Assert.Equal("typed at home", b.Button(note.SyncId).NoteText);
+      Assert.Contains(a.History(), h => h.Text == "from work" && h.FromPc == "Work PC");
+      Assert.Contains(b.History(), h => h.Text == "from work" && h.FromPc == "Work PC");
       Assert.Equal(a.Snapshot(), b.Snapshot());
     }
 

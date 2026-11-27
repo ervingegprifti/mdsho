@@ -19,7 +19,10 @@ namespace MDSHO.Data {
     public string DeviceName { get; set; }
     /// <summary>This MDSHO's version.</summary>
     public string AppVersion { get; set; }
-    /// <summary>The buttons whose note, comment or snippet window is open: their texts are never changed under the user.</summary>
+    /// <summary>
+    /// The buttons whose open note, comment or snippet window has unsaved typing: changes to them wait for a later round,
+    /// so nothing is changed under the user and nothing is forced.
+    /// </summary>
     public ISet<long> Editing { get; set; } = new HashSet<long>();
     /// <summary>Now as UTC milliseconds.</summary>
     public Func<long> NowMs { get; set; } = () => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -449,18 +452,26 @@ namespace MDSHO.Data {
           final[e.Key] = best;
         }
 
-        // An item whose group or panel is not known yet (its file is still being copied) waits for the next round.
+        // A change waits for the next round when its button has unsaved typing in an open window here (nothing is
+        // changed under the user, and nothing is forced: once the typing is saved the normal rules decide), or when its
+        // group or panel is not known yet (its file is still being copied).
         bool waited = true;
         while (waited) {
           waited = false;
           foreach (string id in touched.ToList()) {
             Version w = final[id];
-            if (w.Source == null || w.IsDelete || w.Item.IsPanel) {
+            if (w.Source == null) {
               continue;
             }
-            string needed = w.Item.Parent ?? w.Item.Panel;
-            if (needed != null && final.ContainsKey(needed)) {
-              continue;
+            bool typing = local.Buttons.TryGetValue(id, out Row typed) && this.o.Editing.Contains(typed.Id);
+            if (!typing) {
+              if (w.IsDelete || w.Item.IsPanel) {
+                continue;
+              }
+              string needed = w.Item.Parent ?? w.Item.Panel;
+              if (needed != null && final.ContainsKey(needed)) {
+                continue;
+              }
             }
             Version mine = versions[id][0].Source == null ? versions[id][0] : null;
             if (mine != null) {
@@ -484,27 +495,6 @@ namespace MDSHO.Data {
           string from = this.names.TryGetValue(by ?? "", out string n) && !string.IsNullOrEmpty(n) ? n : "another PC";
           if (!list.Contains((field, text, from))) {
             list.Add((field, text, from));
-          }
-        }
-
-        // A text window open on this PC keeps its texts: the incoming ones go to Text history and this PC's version wins next.
-        foreach (string id in touched) {
-          Version w = final[id];
-          if (w.Source == null || w.IsDelete || w.Item.IsPanel || !local.Buttons.TryGetValue(id, out Row row) || !this.o.Editing.Contains(row.Id)) {
-            continue;
-          }
-          bool differs = false;
-          SyncItem copy = Copy(w.Item);
-          foreach (string field in TextFields) {
-            string mine = row.Text(field);
-            if (copy.Text(field) != mine) {
-              Keep(id, HistoryField(field), copy.Text(field), w.By);
-              copy.Fields[field] = mine;
-              differs = true;
-            }
-          }
-          if (differs) {
-            final[id] = Bump(w, copy);
           }
         }
 

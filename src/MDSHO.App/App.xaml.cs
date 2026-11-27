@@ -341,14 +341,14 @@ namespace MDSHO
 
     /// <summary>
     /// At startup: sync with the other PCs when it is on. Rounds run in the background; changes they bring show in the open
-    /// panels at once, and the texts of open note, comment and snippet windows are never changed under the user.
+    /// panels and text windows at once. A window with unsaved typing is never changed under the user: its button waits.
     /// </summary>
     private void StartSync() {
       try {
         System.Windows.Threading.Dispatcher ui = this.Dispatcher;
         AppServices.Current.Sync = new SyncService(TimeProvider.System, Data.DataExporter.AppVersion(), new DispatcherOneShotTimer(),
           action => Task.Run(action), AppServices.Current.Backups,
-          () => ui.Invoke(() => TextEditWindow.OpenTextShortcutIds()),
+          () => ui.Invoke(() => TextEditWindow.UnsavedTextShortcutIds()),
           result => ui.BeginInvoke(new Action(() => ShowSyncedChanges(result))),
           (path, target) => ui.BeginInvoke(new Action(() => FixSyncedLink(path, target))));
         AppServices.Current.Sync.Start();
@@ -364,6 +364,8 @@ namespace MDSHO
           DesktopWindowView view = this.windows.DesktopWindow(window);
           view.Show();
         }, window => window.CloseThisWindow(null));
+        // Open note, comment and snippet windows with nothing typed since their last save show the new text.
+        TextEditWindow.ShowSyncedTexts();
       } catch (Exception ex) {
         Common.AppLog.Error(ex, "Changes from other PCs could not be shown");
       }

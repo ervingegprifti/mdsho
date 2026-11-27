@@ -62,6 +62,7 @@ namespace MDSHO.ViewModels {
     private readonly Func<ISet<long>> editing;
     private readonly Action<SyncResult> applied;
     private readonly Action<string, string> fixLink;
+    private readonly Func<SyncOptions, SyncResult> run;
     private readonly object gate = new object();
     private bool running;
     private DateTimeOffset? lastRound;
@@ -78,8 +79,10 @@ namespace MDSHO.ViewModels {
     /// <param name="editing">The buttons whose note, comment or snippet window is open (may be called on any thread).</param>
     /// <param name="applied">Gets the result of a round that changed this PC's data (on the round's thread).</param>
     /// <param name="fixLink">Points a .lnk file at a target on this PC, or null.</param>
+    /// <param name="run">Runs one round (SyncEngine.Run; tests replace it).</param>
     public SyncService(TimeProvider clock, string appVersion, IOneShotTimer timer, Action<Action> runInBackground, BackupService backups,
-      Func<ISet<long>> editing, Action<SyncResult> applied, Action<string, string> fixLink = null) {
+      Func<ISet<long>> editing, Action<SyncResult> applied, Action<string, string> fixLink = null, Func<SyncOptions, SyncResult> run = null) {
+      this.run = run ?? SyncEngine.Run;
       this.clock = clock ?? throw new ArgumentNullException(nameof(clock));
       this.appVersion = appVersion;
       this.timer = timer ?? throw new ArgumentNullException(nameof(timer));
@@ -89,6 +92,15 @@ namespace MDSHO.ViewModels {
       this.applied = applied;
       this.fixLink = fixLink;
     }
+
+    /// <summary>
+    /// How long exit and turning on wait for the folder (and exit for a round already running). Past it they give up and
+    /// log it: a folder that hangs (a cloud drive offline, a network drive asleep) never keeps MDSHO or Windows from closing.
+    /// </summary>
+    public TimeSpan WaitLimit { get; set; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>Whether a folder exists (Directory.Exists; tests replace it).</summary>
+    public Func<string, bool> FolderExists { get; set; } = Directory.Exists;
 
     /// <summary>Raised when the state or the other PCs changed (maybe on a background thread).</summary>
     public event Action Changed;
@@ -158,11 +170,23 @@ namespace MDSHO.ViewModels {
       }
     }
 
-    /// <summary>When MDSHO closes: a last round, here and now. Never throws.</summary>
+    /// <summary>
+    /// When MDSHO closes: a last round, waiting at most <see cref="WaitLimit"/>, also for a round already running. Past
+    /// that it is skipped and logged; the changes go at the next start. Never throws.
+    /// </summary>
     public void RunOnExit() {
       try {
-        if (IsOn) {
-          Round();
+        if (!IsOn) {
+          return;
+        }
+        // Read here (the UI thread at exit), so the round never waits for this thread.
+        ISet<long> open = OpenWindows();
+        if (open == null) {
+          return;
+        }
+        System.Threading.Tasks.Task round = System.Threading.Tasks.Task.Run(() => Round(open, WaitLimit));
+        if (!round.Wait(WaitLimit)) {
+          AppLog.Warning(null, "The sync at exit took longer than {Seconds} s and was skipped; the changes go at the next start", WaitLimit.TotalSeconds);
         }
       } catch (Exception ex) {
         AppLog.Error(ex, "The sync at exit failed");
@@ -172,21 +196,35 @@ namespace MDSHO.ViewModels {
     // One round. Rounds never overlap. Never throws. The open text windows are read before the lock, so a round waiting
     // on the UI thread never holds it while the UI thread waits for the lock (at exit).
     private void Round() {
-      ISet<long> open;
+      ISet<long> open = OpenWindows();
+      if (open != null) {
+        Round(open, System.Threading.Timeout.InfiniteTimeSpan);
+      }
+    }
+
+    // The buttons with unsaved typing, or null when they can't be read (the round then waits).
+    private ISet<long> OpenWindows() {
       try {
-        open = this.editing() ?? new HashSet<long>();
+        return this.editing() ?? new HashSet<long>();
       } catch (Exception ex) {
         AppLog.Warning(ex, "The open text windows could not be read; sync waits");
+        return null;
+      }
+    }
+
+    private void Round(ISet<long> open, TimeSpan wait) {
+      if (!System.Threading.Monitor.TryEnter(this.gate, wait)) {
+        AppLog.Warning(null, "A sync round is still running; this one is skipped");
         return;
       }
-      lock (this.gate) {
+      try {
         try {
           if (!IsOn) {
             return;
           }
           this.state = SyncState.Syncing;
           Changed?.Invoke();
-          SyncResult result = SyncEngine.Run(new SyncOptions {
+          SyncResult result = this.run(new SyncOptions {
             Folder = SyncSettings.Folder,
             DeviceId = DeviceIdentity.Id,
             DeviceName = DeviceIdentity.Name,
@@ -208,6 +246,8 @@ namespace MDSHO.ViewModels {
           this.lastRound = this.clock.GetUtcNow();
           this.state = SyncState.Unreachable;
         }
+      } finally {
+        System.Threading.Monitor.Exit(this.gate);
       }
       Changed?.Invoke();
     }
@@ -219,9 +259,19 @@ namespace MDSHO.ViewModels {
     /// (this PC's data is written, the other PCs' data merged in). No question is asked.
     /// </summary>
     public SyncJoin TurnOn(string folder) {
-      if (string.IsNullOrWhiteSpace(folder) || !Path.IsPathFullyQualified(folder) || !Directory.Exists(folder)) {
+      if (string.IsNullOrWhiteSpace(folder) || !Path.IsPathFullyQualified(folder)) {
         return new SyncJoin { Error = "The sync folder can't be found: " + folder };
       }
+      // A folder that hangs (a cloud drive offline) is given up after the time limit.
+      System.Threading.Tasks.Task<bool> exists = System.Threading.Tasks.Task.Run(() => FolderExists(folder));
+      if (!exists.Wait(WaitLimit)) {
+        AppLog.Warning(null, "The sync folder did not answer in {Seconds} s: {Folder}", WaitLimit.TotalSeconds, folder);
+        return new SyncJoin { Error = "The sync folder can't be reached: " + folder + ". Is the drive running?" };
+      }
+      if (!exists.Result) {
+        return new SyncJoin { Error = "The sync folder can't be found: " + folder };
+      }
+      // The backup goes to the backup folder (Settings > Backups), not the sync folder; Back up now writes there the same way.
       string backup = this.backups?.BackUpForSync();
       if (this.backups != null && backup == null) {
         return new SyncJoin { Error = "Sync was not turned on: the backup before it failed. " + (this.backups.LastErrorText ?? "") };

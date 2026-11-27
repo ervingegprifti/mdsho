@@ -265,13 +265,15 @@ Sync (2.0.0) keeps the panels and buttons of several PCs the same through a fold
   that only read writes nothing; `seen` is also kept in the `SyncSeen` setting). Items are matched only by `SyncId`.
   Per item the newer `ChangedAt` wins, a tie goes to the higher device id. Each item file carries the version it was
   changed from (`baseAt`, `baseBy`): a losing version the winner was not made from is a clash, and its texts (note,
-  snippet, comment) go into `History` with `FromPc`. The texts of a button whose note, comment or snippet window is
-  open are kept; the incoming ones go into `History` and this PC's version wins next. An item whose group is gone goes
+  snippet, comment) go into `History` with `FromPc`. A change to a button whose open window has unsaved typing waits
+  for a later round (nothing is forced); after the round the app shows the saved texts in the other open windows
+  (`TextEditWindow.ShowSyncedTexts`, the old text into `History`). An item whose group is gone goes
   to the top of its panel, a deleted panel with a living item comes back, and of two moves that make a loop the older
   one is undone; these fixes are new changes by this PC, so they reach the others. Writes set `ChangedAt` themselves,
   so the triggers keep the other PC's change record.
 - **Service** (`src/MDSHO.ViewModels/SyncService.cs`): a round at start, at the first 10-second check after a local
-  change (`SyncEngine.ChangeStamp`), every minute, at exit and on Sync now, each in the background. Turning on makes a
+  change (`SyncEngine.ChangeStamp`), every minute, at exit and on Sync now, each in the background. The exit round and
+  the folder check when turning on give up after `WaitLimit` (5 s), so a hanging folder never blocks closing. Turning on makes a
   backup first (`BackupService.BackUpForSync`, never deleted). The app hands a round's result to
   `AppViewModel.ApplySync`, which opens, closes and rebuilds the panels it changed.
 
