@@ -564,11 +564,14 @@ namespace MDSHO.Data {
 
         // Buttons, first at the top of their panel, then (once all exist) in their group.
         List<Version> buttonChanges = changes.Where(v => !v.IsDelete && !v.Item.IsPanel).ToList();
+        HashSet<string> placed = new HashSet<string>(StringComparer.Ordinal);
         foreach (Version v in buttonChanges) {
           string panel = FinalPanel(final, v);
           if (panel == null || !panelIds.TryGetValue(panel, out long panelId)) {
+            AppLog.Warning(null, "Sync could not place an item from another PC; it waits");
             continue;
           }
+          placed.Add(v.SyncId);
           Dictionary<string, object> values = ButtonValues(v.Item);
           values["ParentShortcutID"] = null;
           values["ParentMDSHOWindowID"] = panelId;
@@ -616,7 +619,7 @@ namespace MDSHO.Data {
           }
         }
         foreach (Version v in buttonChanges) {
-          if (!buttonIds.TryGetValue(v.SyncId, out long id)) {
+          if (!placed.Contains(v.SyncId) || !buttonIds.TryGetValue(v.SyncId, out long id)) {
             continue;
           }
           string group = FinalGroup(final, v);
