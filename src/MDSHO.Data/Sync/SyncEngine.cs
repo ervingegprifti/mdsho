@@ -33,6 +33,8 @@ namespace MDSHO.Data {
     /// each next one in the same round is 30 px right and down. Asked only when a panel arrives. Null: 100, 100.
     /// </summary>
     public Func<SyncPanelPlace> NewPanelPlace { get; set; }
+    /// <summary>Where the sync files are (Google Drive, OneDrive); null: the folder <see cref="Folder"/>.</summary>
+    public ISyncStore Store { get; set; }
   }
 
   /// <summary>A screen and the top-left (DIPs) on it where a panel opens.</summary>
@@ -75,6 +77,11 @@ namespace MDSHO.Data {
     public HashSet<long> AddedPanels { get; } = new HashSet<long>();
     /// <summary>Panels (row IDs) deleted by this round.</summary>
     public HashSet<long> RemovedPanels { get; } = new HashSet<long>();
+    /// <summary>
+    /// The kind of sync that uses the location when it is not this PC's (see <see cref="SyncMarker"/>): nothing was read
+    /// or written. Null otherwise.
+    /// </summary>
+    public string OtherKind { get; set; }
     /// <summary>Panels (row IDs) whose look or buttons changed.</summary>
     public HashSet<long> ChangedPanels { get; } = new HashSet<long>();
     /// <summary>Why the folder could not be reached, or null.</summary>
@@ -111,15 +118,22 @@ namespace MDSHO.Data {
     /// <summary>Runs one round. Never blocks on a missing folder: it returns at once with FolderReachable false.</summary>
     public static SyncResult Run(SyncOptions options) {
       SyncResult result = new SyncResult();
-      if (string.IsNullOrWhiteSpace(options.Folder) || !Directory.Exists(options.Folder)) {
+      ISyncStore store = options.Store ?? new FolderSyncStore(options.Folder);
+      try {
+        if (!store.IsReachable()) {
+          return result;
+        }
+      } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
+        AppLog.Warning(ex, "Sync could not reach {Kind}", SyncKinds.DisplayName(store.Kind));
+        result.Error = ex;
         return result;
       }
       result.FolderReachable = true;
       try {
-        Round round = new Round(options, result);
+        Round round = new Round(options, store, result);
         round.Run();
       } catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException) {
-        AppLog.Warning(ex, "Sync could not reach the folder {Folder}", options.Folder);
+        AppLog.Warning(ex, "Sync could not reach {Kind} {Folder}", SyncKinds.DisplayName(store.Kind), options.Folder);
         result.FolderReachable = false;
         result.Error = ex;
       }
@@ -165,7 +179,8 @@ namespace MDSHO.Data {
     private sealed class Round {
       private readonly SyncOptions o;
       private readonly SyncResult result;
-      private readonly string myFolder;
+      private readonly ISyncStore store;
+      private readonly string me;
       private readonly KnownFolders folders = KnownFolders.Current();
       private readonly long now;
       private SyncIndex prev;
@@ -178,16 +193,26 @@ namespace MDSHO.Data {
       // The base of each version adopted from another PC this round.
       private readonly Dictionary<string, (long At, string By)> adoptedBase = new Dictionary<string, (long, string)>(StringComparer.Ordinal);
 
-      public Round(SyncOptions options, SyncResult result) {
+      public Round(SyncOptions options, ISyncStore store, SyncResult result) {
         this.o = options;
+        this.store = store;
         this.result = result;
-        this.myFolder = SyncFolder.DeviceFolder(options.Folder, options.DeviceId);
+        this.me = options.DeviceId;
         this.now = options.NowMs();
         this.names[options.DeviceId] = options.DeviceName ?? "";
       }
 
       public void Run() {
-        SyncIndexRead own = SyncFolder.ReadIndex(this.myFolder);
+        // One kind per sync: a location another kind of sync uses is left alone.
+        string kind = SyncMarker.Claim(this.store);
+        if (kind != this.store.Kind) {
+          if (kind.Length > 0) {
+            this.result.OtherKind = kind;
+            AppLog.Warning(null, "The sync location is used by a {Other} sync; this PC syncs through {Kind}", kind, this.store.Kind);
+          }
+          return;
+        }
+        SyncIndexRead own = SyncFolder.ReadIndex(this.store, this.me);
         this.prev = own.Index;
         if (this.prev != null) {
           foreach (KeyValuePair<string, long> s in this.prev.Seen) {
@@ -208,9 +233,8 @@ namespace MDSHO.Data {
 
       #region READING THE OTHER PCS
       private void ReadOthers() {
-        foreach (string device in SyncFolder.OtherDevices(this.o.Folder, this.o.DeviceId)) {
-          string folder = SyncFolder.DeviceFolder(this.o.Folder, device);
-          SyncIndexRead read = SyncFolder.ReadIndex(folder);
+        foreach (string device in SyncFolder.OtherDevices(this.store, this.me)) {
+          SyncIndexRead read = SyncFolder.ReadIndex(this.store, device);
           if (read.State == SyncIndexState.Missing) {
             continue;
           }
@@ -243,7 +267,7 @@ namespace MDSHO.Data {
           this.seenBefore[device] = last;
           bool complete = true;
           foreach (KeyValuePair<string, SyncIndexItem> e in index.Items.Where(e => e.Value.Seq > last)) {
-            SyncItem item = LoadItem(folder, e.Key, e.Value);
+            SyncItem item = LoadItem(device, e.Key, e.Value);
             if (item == null) {
               complete = false;
               continue;
@@ -262,14 +286,14 @@ namespace MDSHO.Data {
       }
 
       // The item of an index entry, or null when its file (or its blob) is missing, still being copied or not this entry.
-      private SyncItem LoadItem(string folder, string syncId, SyncIndexItem entry) {
-        byte[] bytes = SyncFolder.ReadItem(folder, entry.Hash);
+      private SyncItem LoadItem(string device, string syncId, SyncIndexItem entry) {
+        byte[] bytes = SyncFolder.ReadItem(this.store, device, entry.Hash);
         SyncItem item = bytes == null ? null : SyncItem.Parse(bytes);
         if (item == null || item.SyncId != syncId) {
           return null;
         }
         if (item.FileHash != null && !this.blobs.ContainsKey(item.FileHash)) {
-          byte[] blob = SyncFolder.ReadBlob(folder, item.FileHash);
+          byte[] blob = SyncFolder.ReadBlob(this.store, device, item.FileHash);
           if (blob == null) {
             return null;
           }
@@ -978,15 +1002,15 @@ namespace MDSHO.Data {
           return;
         }
         foreach (byte[] file in files.Values) {
-          SyncFolder.WriteBlob(this.myFolder, file);
+          SyncFolder.WriteBlob(this.store, this.me, file);
         }
         foreach (byte[] bytes in items.Values) {
-          SyncFolder.WriteItem(this.myFolder, bytes);
+          SyncFolder.WriteItem(this.store, this.me, bytes);
         }
-        SyncFolder.WriteIndex(this.myFolder, index);
+        SyncFolder.WriteIndex(this.store, this.me, index);
         SyncSettings.Seq = seq;
         this.result.Wrote = true;
-        SyncFolder.DeleteUnused(this.myFolder, DateTime.UtcNow);
+        SyncFolder.DeleteUnused(this.store, this.me, DateTime.UtcNow);
       }
 
       // The same entries and name as the last index: nothing to write (only what was merged changed).

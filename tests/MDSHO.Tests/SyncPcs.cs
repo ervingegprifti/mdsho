@@ -63,6 +63,8 @@ namespace MDSHO.Tests {
     public HashSet<long> Editing { get; } = new HashSet<long>();
     /// <summary>Where panels that arrive from other PCs go (null: the engine's fallback).</summary>
     public Func<SyncPanelPlace> NewPanelPlace { get; set; }
+    /// <summary>The sync location this PC uses (null: the shared folder).</summary>
+    public ISyncStore Store { get; set; }
     /// <summary>The panel made with the database.</summary>
     public long FirstPanelId { get; }
 
@@ -97,7 +99,8 @@ namespace MDSHO.Tests {
         AppVersion = "2.0.0",
         Editing = new HashSet<long>(Editing),
         NowMs = () => pcs.NowMs,
-        NewPanelPlace = NewPanelPlace
+        NewPanelPlace = NewPanelPlace,
+        Store = Store
       });
     }
 

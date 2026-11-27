@@ -191,6 +191,7 @@ namespace MDSHO.Data {
       new SyncSetting(SyncSettings.SeenKey, SyncScope.Local, "how far this PC merged the others"),
       new SyncSetting(SyncSettings.LastTimeKey, SyncScope.Local, "when this PC last synced"),
       new SyncSetting(SyncSettings.BackupNoticeKey, SyncScope.Local, "the backup made when this PC joined"),
+      new SyncSetting(SyncSettings.KindKey, SyncScope.Local, "each PC picks what it syncs through"),
       new SyncSetting("StartWithWindows", SyncScope.Local, "a Windows startup task of this PC's install", InDatabase: false),
     };
 

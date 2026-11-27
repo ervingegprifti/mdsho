@@ -21,8 +21,17 @@ namespace MDSHO.Data {
     /// <summary>The last seq of each other PC that this PC merged, as "device=seq" pairs split by ";".</summary>
     public const string SeenKey = "SyncSeen";
 
-    /// <summary>True when sync is on and has a folder.</summary>
-    public static bool IsOn => DataStore.AppSettings.Get(OnKey) == "On" && !string.IsNullOrWhiteSpace(Folder);
+    /// <summary>What this PC syncs through: Folder, GoogleDrive or OneDrive (see <see cref="SyncKinds"/>).</summary>
+    public const string KindKey = "SyncKind";
+
+    /// <summary>What this PC syncs through; no row means Folder.</summary>
+    public static string Kind {
+      get { return SyncKinds.Parse(DataStore.AppSettings.Get(KindKey)); }
+      set { DataStore.AppSettings.Set(KindKey, SyncKinds.Parse(value)); }
+    }
+
+    /// <summary>True when sync is on with a place: a folder, or Google Drive or OneDrive.</summary>
+    public static bool IsOn => DataStore.AppSettings.Get(OnKey) == "On" && (Kind != SyncKinds.Folder || !string.IsNullOrWhiteSpace(Folder));
 
     /// <summary>The folder, or "".</summary>
     public static string Folder => DataStore.AppSettings.Get(FolderKey) ?? "";

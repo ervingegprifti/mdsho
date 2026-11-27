@@ -218,6 +218,7 @@ belong to this PC: they are not exported and every import keeps them. Added in v
 | `SyncSeen` | How far this PC has merged each other PC: `deviceId=seq` pairs split by `;`. Added in 2.0.0 (version 28). |
 | `SyncLastTime` | When this PC last synced (UTC, round-trip format). Added in 2.0.0 (version 28). |
 | `SyncBackupNotice` | The backup made when this PC joined sync, until Settings has said so once. Added in 2.0.0 (version 28). |
+| `SyncKind` | What this PC syncs through (**Sync through**, Settings > Sync): `Folder`, `GoogleDrive` or `OneDrive`. Without a row, or with any other value: `Folder`. Added in 2.1.0; the database version stays 28. |
 
 ### ScreenSetups
 

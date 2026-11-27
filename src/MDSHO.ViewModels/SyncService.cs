@@ -19,7 +19,9 @@ namespace MDSHO.ViewModels {
     /// <summary>The folder could not be reached; changes wait.</summary>
     Unreachable,
     /// <summary>Another PC has a newer MDSHO.</summary>
-    NewerPc
+    NewerPc,
+    /// <summary>The sync location is used by another kind of sync (a folder sync found a OneDrive one, ...).</summary>
+    OtherKind
   }
 
   /// <summary>What turning sync on did.</summary>
@@ -71,6 +73,8 @@ namespace MDSHO.ViewModels {
     private SyncState state = SyncState.Off;
     private List<SyncPeer> peers = new List<SyncPeer>();
     private string newerPc;
+    private string kind = SyncKinds.Folder;
+    private string otherKind;
 
     /// <param name="clock">The time.</param>
     /// <param name="appVersion">This MDSHO's version, written to the index.</param>
@@ -108,6 +112,12 @@ namespace MDSHO.ViewModels {
 
     /// <summary>How often the other PCs are read with no local change (<see cref="ReadEvery"/>; the sync lab shortens it).</summary>
     public TimeSpan ReadInterval { get; set; } = ReadEvery;
+
+    /// <summary>
+    /// The sync location for a kind and the folder setting (may be called on any thread): a folder store, or the app's
+    /// Google Drive or OneDrive store; null when that cloud is not connected.
+    /// </summary>
+    public Func<string, string, ISyncStore> StoreFor { get; set; } = (kind, folder) => kind == SyncKinds.Folder ? new FolderSyncStore(folder) : null;
 
     /// <summary>Whether a folder exists (Directory.Exists; tests replace it).</summary>
     public Func<string, bool> FolderExists { get; set; } = Directory.Exists;
@@ -240,8 +250,12 @@ namespace MDSHO.ViewModels {
           }
           this.state = SyncState.Syncing;
           Changed?.Invoke();
-          SyncResult result = this.run(new SyncOptions {
-            Folder = SyncSettings.Folder,
+          this.kind = SyncSettings.Kind;
+          string folder = SyncSettings.Folder;
+          ISyncStore store = StoreFor?.Invoke(this.kind, folder);
+          SyncResult result = this.kind != SyncKinds.Folder && store == null ? new SyncResult() : this.run(new SyncOptions {
+            Folder = folder,
+            Store = store,
             DeviceId = DeviceIdentity.Id,
             DeviceName = DeviceIdentity.Name,
             AppVersion = this.appVersion,
@@ -254,7 +268,9 @@ namespace MDSHO.ViewModels {
           this.lastStamp = SyncEngine.ChangeStamp();
           this.peers = result.Peers.ToList();
           this.newerPc = result.NewerPcs.FirstOrDefault();
-          this.state = !result.FolderReachable ? SyncState.Unreachable : this.newerPc != null ? SyncState.NewerPc : SyncState.UpToDate;
+          this.otherKind = result.OtherKind;
+          this.state = !result.FolderReachable ? SyncState.Unreachable : result.OtherKind != null ? SyncState.OtherKind
+            : this.newerPc != null ? SyncState.NewerPc : SyncState.UpToDate;
           if (result.Applied) {
             this.applied?.Invoke(result);
           }
@@ -329,7 +345,10 @@ namespace MDSHO.ViewModels {
         switch (State) {
           case SyncState.Off: return "Sync is off.";
           case SyncState.Syncing: return "Syncing...";
-          case SyncState.Unreachable: return "Can't reach the folder. Will try again in a minute.";
+          case SyncState.Unreachable:
+            return "Can't reach " + (this.kind == SyncKinds.Folder ? "the folder" : SyncKinds.DisplayName(this.kind)) + ". Will try again in a minute.";
+          case SyncState.OtherKind:
+            return "This sync " + (this.kind == SyncKinds.Folder ? "folder" : "place") + " is used by a " + SyncKinds.DisplayName(this.otherKind) + " sync.";
           case SyncState.NewerPc: return this.newerPc + " has a newer MDSHO. Update this PC to sync with it.";
           default: return "Up to date. Last sync " + LastSyncText() + ".";
         }
@@ -340,7 +359,10 @@ namespace MDSHO.ViewModels {
     public string StatusHint {
       get {
         switch (State) {
-          case SyncState.Unreachable: return SyncSettings.Folder + " is not there (cloud drive not running?). Your changes are kept and sync later.";
+          case SyncState.Unreachable:
+            return this.kind == SyncKinds.Folder ? SyncSettings.Folder + " is not there (cloud drive not running?). Your changes are kept and sync later."
+              : "No connection, or this PC is signed out. Your changes are kept and sync later.";
+          case SyncState.OtherKind: return "Every PC must sync through the same choice. Nothing is read or changed there.";
           case SyncState.NewerPc: return "The other PCs keep syncing.";
           default: return null;
         }
