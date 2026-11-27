@@ -5,7 +5,7 @@ permalink: /terms/
 
 # MDSHO Terms and Conditions
 
-Last updated: 14 November 2026
+Last updated: 27 November 2026
 
 These terms apply to the MDSHO app (Multi Desktop Shortcut Organizer). By installing or using MDSHO you agree to them.
 They are written in plain English and are not legal advice.
@@ -51,6 +51,14 @@ You are responsible for the shortcuts, web links and run commands you create and
 exactly what you set, with your Windows permissions, and as administrator when you choose it and accept the Windows
 prompt. Check commands before you run them, especially ones copied from elsewhere, and keep your own backups (for
 example with **Export data...**).
+
+## Sync and cloud services
+
+Sync copies your changes to all your PCs, deletes included: a panel or button deleted on one PC is deleted on the others.
+Keep your own backups (**Export data...**, or **Settings** › **Backups**).
+
+When you sync through a cloud service, whether Google Drive, OneDrive or a cloud app's folder, that service's own terms
+apply, and you are responsible for your account there. MDSHO is not made, endorsed or supported by Google or Microsoft.
 
 ## Privacy
 
