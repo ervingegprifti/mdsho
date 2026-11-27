@@ -9,7 +9,7 @@ namespace MDSHO.Data {
 
   /// <summary>The History table. Newest means the latest KeptAt, then the highest ID.</summary>
   internal sealed class HistoryRepository : RepositoryBase, IHistoryRepository {
-    private const string Columns = "ID, ShortcutID, Field, Text, KeptAt";
+    private const string Columns = "ID, ShortcutID, Field, Text, KeptAt, FromPc";
     // The rows of one button and field beyond the newest @keep.
     private const string Extra = "SELECT ID FROM History WHERE ShortcutID = @shortcutId AND Field = @field ORDER BY KeptAt DESC, ID DESC LIMIT -1 OFFSET @keep";
 
@@ -23,7 +23,7 @@ namespace MDSHO.Data {
     }
 
     public void Add(HistoryEntry entry) {
-      entry.ID = Insert("INSERT INTO History (ShortcutID, Field, Text, KeptAt) VALUES (@ShortcutID, @Field, COALESCE(@Text, ''), COALESCE(@KeptAt, ''))", entry);
+      entry.ID = Insert("INSERT INTO History (ShortcutID, Field, Text, KeptAt, FromPc) VALUES (@ShortcutID, @Field, COALESCE(@Text, ''), COALESCE(@KeptAt, ''), COALESCE(@FromPc, ''))", entry);
     }
 
     public void Delete(long id) {

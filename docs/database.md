@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 27**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 28**. The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -145,6 +145,7 @@ backups carry them (still export format 3), linked to their button. Added in ver
 | `Field` | TEXT | NOT NULL | | `Text` = a note's or snippet's text, `Comment` = the button's comment. |
 | `Text` | TEXT | NOT NULL | | The text as it was (empty for an empty text). |
 | `KeptAt` | TEXT | NOT NULL | | When it was kept, local time `yyyy-MM-ddTHH:mm:ss`. |
+| `FromPc` | TEXT | NOT NULL | `''` | The name of the PC a synced text came from when it lost a clash (both PCs changed it); `''` for this PC's own copies. The Text history menu shows "from PC". Added in version 28. |
 
 ### DeletedItems
 
@@ -195,7 +196,7 @@ belong to this PC: they are not exported and every import keeps them. Added in v
 | `BringToFrontShortcut` | The **Bring panels to front** keyboard shortcut (Settings > Keyboard), for example `Ctrl+Shift+Alt+M`, or `Off`. Without a row: `Ctrl+Shift+Alt+M`. |
 | `RememberScreenSetupPlaces` | **Remember places for each screen setup** (Settings > Screens): `On` or `Off`. Without a row: on. Added in version 17. |
 | `WindowTheme` | **Window theme** (Settings > Appearance): `SameAsWindows`, `Light` or `Dark`. Without a row, or with any other value: `SameAsWindows`. Added in 1.10.1; the database version stays 17. |
-| `SettingsPage` | The Settings page used last, which Settings opens on: `Appearance`, `General`, `Keyboard`, `Screens` or `Backups` (from 1.12.3). Without a row, or with any other value: `Appearance`. Added in 1.11.0; the database version stays 17. |
+| `SettingsPage` | The Settings page used last, which Settings opens on: `Appearance`, `General`, `Keyboard`, `Screens`, `Backups` (from 1.12.3) or `Sync` (from 2.0.0). Without a row, or with any other value: `Appearance`. Added in 1.11.0; the database version stays 17. |
 | `BackupOn` | **Back up my data every day** (Settings > Backups): `On` or `Off`. Without a row: on. Added in 1.12.3; the database version stays 17. |
 | `BackupFolder` | The backup folder (Settings > Backups). Without a row, empty, or an old default (`MDSHO backups` in the profile or Documents folder): `%USERPROFILE%\mdsho-backups` (`mdsho-backups-debug` in the Debug build). Added in 1.12.3; the database version stays 17. |
 | `BackupKeep` | How many regular backups of this PC to keep: `3`, `5`, `10`, `20` or `30`. Without a row, or with any other value: `10`. Added in 1.12.3; the database version stays 17. |
@@ -210,8 +211,13 @@ belong to this PC: they are not exported and every import keeps them. Added in v
 | `TextHistoryKeep` | **earlier texts to keep** under **Text history** (Settings > General): `0` to `50`; `0` keeps none. Without a row, or with a value that is not a number: `10`; a number outside 0 to 50 counts as the nearest. Added in version 24. |
 | `ReviewRated` | `Yes` after a rating in the Store dialog, or after Rate opened the Store page (the review prompt, the panel menu or About); the prompt then never shows. Added in 1.13.0; the database version stays 17. |
 | `DeviceId` | This PC's device ID for sync, a GUID made once (when the database is created or upgraded to version 27, or again if the row is lost). It is the `ChangedBy` and `DeletedBy` of the changes made here. Never exported, imported or synced. Added in version 27. |
-| `DeviceName` | This PC's name for sync. Without a row, or empty: the Windows computer name. Nothing sets it yet. Never exported, imported or synced. Added in version 27. |
-| `SyncFolder` | The sync folder of a later version (nothing uses it yet). Belongs to this PC: never exported or synced. Added in version 27. |
+| `DeviceName` | This PC's name for sync (**This PC's name**, Settings > Sync). Without a row, or empty: the Windows computer name. Never exported, imported or synced. Added in version 27. |
+| `SyncFolder` | The sync folder (Settings > Sync). Belongs to this PC: never exported or synced. Added in version 27; used from 2.0.0. |
+| `SyncOn` | **Keep this PC in sync with my other PCs** (Settings > Sync): `On` or `Off`. Without a row: off. Added in 2.0.0 (version 28). |
+| `SyncSeq` | The number of this PC's last write to the sync folder, so it never goes back. Added in 2.0.0 (version 28). |
+| `SyncSeen` | How far this PC has merged each other PC: `deviceId=seq` pairs split by `;`. Added in 2.0.0 (version 28). |
+| `SyncLastTime` | When this PC last synced (UTC, round-trip format). Added in 2.0.0 (version 28). |
+| `SyncBackupNotice` | The backup made when this PC joined sync, until Settings has said so once. Added in 2.0.0 (version 28). |
 
 ### ScreenSetups
 
@@ -339,6 +345,7 @@ that worked.
 | 23 | 1.21.1 | `Shortcuts.TextFontSize` (`INTEGER NOT NULL DEFAULT 0`): each snippet keeps its own text size. Copies, exports and backups carry it (still export format 3); older exports import with `0` (12 pt). |
 | 24 | 1.22.0 | `History` table and its index: the text history, up to the **Text history** setting per button and field. The step moves each non-empty `TextPrevious1/2` and `CommentPrevious1/2` (with its time, the older copy first) into `History`, then drops those eight `Shortcuts` columns (`ALTER TABLE ... DROP COLUMN`). Exports and backups carry the rows (still export format 3); older exports import their two earlier copies as rows. A copied button starts with no history. |
 | 25 | 1.26.2 | `Shortcuts.NoteHighlights` (`TEXT NOT NULL DEFAULT ''`): the saved colour highlights of each note, as terms rather than places, so they survive edits. Copies, exports and backups carry it (still export format 3); older exports import with none. |
+| 28 | 2.0.0 | Sync through a folder. `History.FromPc` (`TEXT NOT NULL DEFAULT ''`): the PC a text that lost a sync clash came from. New app settings `SyncOn`, `SyncSeq`, `SyncSeen`, `SyncLastTime` and `SyncBackupNotice` (all local). Exports and backups carry `fromPc` on history rows (still export format 3); older exports import with `''`. |
 | 27 | 1.30.0 | Groundwork for sync, nothing visible changes. `MDSHOWindows` and `Shortcuts` get `SyncId` (a new GUID for every row), `SortKey` (keys in the old order: `Position`, then `ID`; panels by `ID`), `ChangedAt` (the upgrade time) and `ChangedBy` (this PC); `Shortcuts.Position` is dropped. New: the `DeletedItems` table, the `UX_` indexes, the `Sync_` triggers and the `DeviceId` setting. Exports and backups carry the new columns and `deletedItems` (still export format 3); older exports import with new IDs and keys in their old order. |
 | 26 | 1.27.0 | More options settings per button: `Shortcuts.TextCurrentLine`, `TextWholeWords`, `TextMatchCase`, `TextWrapText`, `CommentCurrentLine`, `CommentWholeWords`, `CommentMatchCase` and `CommentWrapText` (`INTEGER NOT NULL`, current line `DEFAULT 1`, the rest `DEFAULT 0`). The step turns current line off on every button when the app setting `HighlightCurrentLine` (1.26.2) was `Off`, then deletes that setting; it copies each panel's `MDSHOWindows.CommentWrapText` to its buttons' comment wrap and its snippets' text wrap, then drops that column. Exports and backups carry the new columns (still export format 3); older exports import the same way as the step. |
 

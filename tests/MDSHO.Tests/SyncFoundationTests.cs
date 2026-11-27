@@ -404,7 +404,7 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void Version_27_is_a_known_step() {
-      Assert.Equal(27, AppConstants.DatabaseVersion);
+      Assert.True(AppConstants.DatabaseVersion >= 27);
       Assert.Single(SchemaManager.Migrations, m => m.Version == 27);
     }
 
@@ -444,7 +444,7 @@ namespace MDSHO.Tests {
       DataStore.Upgrade();
       long after = Now();
 
-      Assert.Equal(27, db.Scalar("PRAGMA user_version"));
+      Assert.Equal(AppConstants.DatabaseVersion, db.Scalar("PRAGMA user_version"));
       Assert.Single(Directory.GetFiles(db.Folder, "test.sqlite3.bak-v26-*"));
       Assert.Equal(0, db.Scalar("SELECT count(*) FROM pragma_table_info('Shortcuts') WHERE name = 'Position'"));
       Assert.Equal(new[] { c.ID, b.ID, d.ID, a.ID }, DataStore.Shortcuts.GetRoots(windowId).Select(s => s.ID));

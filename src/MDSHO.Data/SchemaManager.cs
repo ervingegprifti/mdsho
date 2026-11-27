@@ -123,6 +123,7 @@ namespace MDSHO.Data {
           Field TEXT NOT NULL,
           Text TEXT NOT NULL,
           KeptAt TEXT NOT NULL,
+          FromPc TEXT NOT NULL DEFAULT '',
           FOREIGN KEY(ShortcutID) REFERENCES Shortcuts(ID) ON DELETE CASCADE);
         CREATE INDEX IF NOT EXISTS IX_History_ShortcutID_Field_KeptAt ON History(ShortcutID, Field, KeptAt);
         CREATE TABLE IF NOT EXISTS DefaultColors (
@@ -486,6 +487,11 @@ namespace MDSHO.Data {
           DeletedBy TEXT NOT NULL);");
         Execute(conn, "CREATE UNIQUE INDEX IF NOT EXISTS UX_MDSHOWindows_SyncId ON MDSHOWindows(SyncId) WHERE SyncId <> '';");
         Execute(conn, "CREATE UNIQUE INDEX IF NOT EXISTS UX_Shortcuts_SyncId ON Shortcuts(SyncId) WHERE SyncId <> '';");
+      }),
+      new DbMigration(28, "Sync: History.FromPc, the PC a text that lost a sync clash came from", conn => {
+        if (!ColumnExists(conn, "History", "FromPc")) {
+          Execute(conn, "ALTER TABLE History ADD COLUMN FromPc TEXT NOT NULL DEFAULT '';");
+        }
       })
     };
 

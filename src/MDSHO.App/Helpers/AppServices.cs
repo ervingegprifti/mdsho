@@ -66,6 +66,15 @@ namespace MDSHO.Helpers {
       set { this.backups = value; }
     }
     private BackupService backups;
+    /// <summary>Sync with the user's other PCs. Made on first use; the app connects it to the windows at start.</summary>
+    public SyncService Sync {
+      get {
+        return this.sync ??= new SyncService(System.TimeProvider.System, Data.DataExporter.AppVersion(), new DispatcherOneShotTimer(),
+          action => System.Threading.Tasks.Task.Run(action), Backups, () => new System.Collections.Generic.HashSet<long>(), result => { });
+      }
+      set { this.sync = value; }
+    }
+    private SyncService sync;
     /// <summary>The one-time "Enjoying MDSHO?" prompt (off in the Debug build). Made on first use.</summary>
     public ReviewPrompt Review {
       get {

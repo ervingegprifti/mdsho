@@ -15,6 +15,7 @@ signed package. Say when a change wasn't tested locally.
 
 Every new database column or app setting must be marked Synced or Local in `src/MDSHO.Data/SyncFields.cs` (a test
 enforces it). Order siblings by `SortKey` (see `SortKeys`), never by a position number.
+A change to the sync folder files that an older MDSHO can't read raises `SyncIndex.CurrentFormat`.
 
 ## Git
 

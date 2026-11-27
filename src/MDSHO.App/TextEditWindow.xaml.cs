@@ -571,6 +571,89 @@ namespace MDSHO {
 
     private static readonly List<TextEditWindow> openNoteWindows = new List<TextEditWindow>();
 
+    /// <summary>
+    /// The buttons whose note, comment or snippet window has unsaved typing now: sync leaves them for a later round, so
+    /// nothing is changed under the user. An open window with nothing typed since its last save takes synced text live.
+    /// </summary>
+    public static HashSet<long> UnsavedTextShortcutIds() {
+      HashSet<long> ids = new HashSet<long>();
+      foreach (TextEditWindow window in AllOpen()) {
+        if (window.shortcut != null && window.HasUnsavedTyping) {
+          ids.Add(window.shortcut.ID);
+        }
+      }
+      return ids;
+    }
+
+    /// <summary>
+    /// After a sync round: every open window with nothing typed since its last save shows its button's saved text (see
+    /// <see cref="TakeSyncedText"/>). A window whose button is gone is left to close on its own. Never throws.
+    /// </summary>
+    public static void ShowSyncedTexts() {
+      foreach (TextEditWindow window in AllOpen()) {
+        try {
+          if (window.shortcut == null || window.shortcut.ID == 0) {
+            continue;
+          }
+          Shortcut row = DataStore.Shortcuts.Get(window.shortcut.ID);
+          if (row == null) {
+            continue;
+          }
+          window.TakeSyncedText(window.kind == TextKind.Note ? row.NoteText : window.kind == TextKind.Snippet ? row.SnippetText : row.Comment);
+        } catch (Exception ex) {
+          AppLog.Warning(ex, "A synced text could not be shown in its open window");
+        }
+      }
+    }
+
+    /// <summary>Every open note, comment and snippet window.</summary>
+    public static IReadOnlyList<TextEditWindow> AllOpen() {
+      List<TextEditWindow> all = new List<TextEditWindow>(openNoteWindows);
+      if (Application.Current != null) {
+        all.AddRange(Application.Current.Windows.OfType<TextEditWindow>().Where(w => !all.Contains(w)));
+      }
+      return all;
+    }
+
+    /// <summary>True when something was typed since the last save (its autosave is still waiting, or the text differs).</summary>
+    public bool HasUnsavedTyping => this.noteSaveTimer.IsEnabled || TextToSave() != (StoredText() ?? "");
+
+    /// <summary>
+    /// Shows a text another PC sent, already saved by sync, when nothing was typed since the last save: the old text goes
+    /// into Text history like any change, and the caret and scroll stay where they were as far as the text allows. Returns
+    /// false (and changes nothing) when there is unsaved typing.
+    /// </summary>
+    public bool TakeSyncedText(string text) {
+      text ??= "";
+      if (forgetting || this.discarded || HasUnsavedTyping) {
+        return false;
+      }
+      string shown = this.TextComment.Text ?? "";
+      if (text == shown) {
+        return true;
+      }
+      KeepHistoryOnLeave();
+      TryHistory(() => KeepHistory(shown));
+      this.shortcut.ShowSyncedText(this.kind == TextKind.Note ? ShortcutTextKind.Note : this.kind == TextKind.Snippet ? ShortcutTextKind.Snippet : ShortcutTextKind.Comment, text);
+      int caret = this.TextComment.CaretIndex;
+      double top = this.TextComment.VerticalOffset;
+      double left = this.TextComment.HorizontalOffset;
+      this.pickingHistory = true;
+      try {
+        this.TextComment.Text = text;
+        this.TextComment.CaretIndex = Math.Min(caret, text.Length);
+        this.TextComment.ScrollToVerticalOffset(top);
+        this.TextComment.ScrollToHorizontalOffset(left);
+      } finally {
+        this.pickingHistory = false;
+      }
+      // The text came saved: nothing for the autosave to do.
+      this.noteSaveTimer.Stop();
+      this.historyUndo = null;
+      this.lastPick = null;
+      return true;
+    }
+
     /// <summary>The note windows open now. Several notes can be open at once, but each note in one window only.</summary>
     public static IReadOnlyCollection<TextEditWindow> OpenNoteWindows => openNoteWindows.AsReadOnly();
 
@@ -631,10 +714,15 @@ namespace MDSHO {
         }
         TextEditWindow window = ForNote(shortcut);
         NoteWindowPlace place = shortcut.ID != 0 ? DataStore.NoteWindows.Get(shortcut.ID) : null;
-        if (place != null) {
+        if (place != null && place.Width > 0) {
           window.UseSavedPlace(place);
         } else {
           PlaceNoteWindow(window);
+          // A row that sync made has the note's text size and wrap from another PC, but no place on this PC yet.
+          if (place != null) {
+            window.SetWrapText(place.IsWrapText);
+            window.SetTextSize(NoteWindowPlace.FontSizeOrDefault(place.FontSize));
+          }
         }
         openNoteWindows.Add(window);
         window.Closed += (s, e) => openNoteWindows.Remove(window);
@@ -1378,7 +1466,7 @@ namespace MDSHO {
       IReadOnlyList<HistoryEntry> rows = new List<HistoryEntry>();
       TryHistory(() => rows = this.shortcut.History(HistoryField));
       foreach (HistoryEntry row in rows) {
-        System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem { Header = TextHistory.MenuLine(row.KeptAt, row.Text, now), Tag = row };
+        System.Windows.Controls.MenuItem item = new System.Windows.Controls.MenuItem { Header = TextHistory.MenuLine(row.KeptAt, row.Text, now, row.FromPc), Tag = row };
         item.Click += (s, e) => PickHistory(row);
         menu.Items.Add(item);
       }

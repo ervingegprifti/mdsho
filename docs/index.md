@@ -37,6 +37,8 @@ window with your own buttons, and you can have as many panels as you like, on as
   upgrade, MDSHO saves the same
   `.zip` to an `mdsho-backups` folder in your user folder (`C:\Users\<you>\mdsho-backups`). Pick another folder, such as a OneDrive or Google Drive folder, in a panel's
   Settings on the **Backups** page. Restore a backup with **Import data**.
+- **Sync:** keep the same panels, buttons and notes on all your PCs through a folder they all reach (Google Drive or
+  OneDrive for desktop, Dropbox, a network drive). Turn it on in a panel's Settings on the **Sync** page.
 
 ## How-to
 
@@ -47,6 +49,7 @@ window with your own buttons, and you can have as many panels as you like, on as
 - [Use several screens](how-to/screens.md): clones, docking, screen setups and bringing windows to a screen.
 - [Use the keyboard](how-to/keyboard.md): bring panels to front, pick a button, rename, answer prompts.
 - [Back up, restore and move to another PC](how-to/backups.md): backups, synced folders, import.
+- [Sync your PCs](how-to/sync.md): the same panels, buttons and notes on all your PCs.
 - [Change the look](how-to/look.md): colours, icons and the window theme.
 
 ## Install

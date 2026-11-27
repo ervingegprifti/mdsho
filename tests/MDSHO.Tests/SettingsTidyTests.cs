@@ -298,10 +298,10 @@ namespace MDSHO.Tests {
 
     [Fact]
     public void The_window_stays_compact() {
-      // 481 px: the Backups page is the tallest, with Back up now on its own line and two lines always kept for the red
-      // line, inside the Apply-height margins and bar of the other windows. This catches it growing further.
+      // 563 px: the Sync page (2.0.0) is the tallest, with its status line and a table of two other PCs, inside the
+      // Apply-height margins and bar of the other windows. This catches it growing further.
       using (new Setup()) {
-        WithSettings(window => Assert.True(window.ActualHeight <= 483, "Settings is " + window.ActualHeight + " px high."));
+        WithSettings(window => Assert.True(window.ActualHeight <= 565, "Settings is " + window.ActualHeight + " px high."));
       }
     }
   }

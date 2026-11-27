@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [2.0.0]
+
+### Added
+
+- **Sync** between your PCs through a folder they all reach (Google Drive or OneDrive for desktop, Dropbox, a network
+  drive). Turn it on in Settings on the new **Sync** page. Panels, groups, buttons, notes, comments and snippets sync,
+  with their text and colours; window places and each PC's settings stay on that PC. A backup is made first.
+- When two PCs changed the same text, the newer one wins and the other goes into **Text history**, marked with the PC
+  it came from. Open notes show changes at once; a note you're typing in is never changed under you.
+- Database version 28: export your data before installing.
+
 ## [1.30.0]
 
 ### Changed

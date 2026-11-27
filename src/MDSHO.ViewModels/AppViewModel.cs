@@ -93,6 +93,104 @@ namespace MDSHO.ViewModels {
         DataStore.Windows.UpdateLeftTopScreenDeviceName(window.ID, window.Left, window.Top, screenDeviceName);
       }
     }
+    /// <summary>
+    /// Shows changes another PC sent (on the UI thread, after they are saved): a removed panel closes, an added one opens
+    /// and a changed one shows its new look and buttons. Notes of buttons that are gone close; groups keep this PC's
+    /// open or closed state.
+    /// </summary>
+    /// <param name="result">What the sync round changed.</param>
+    /// <param name="show">Opens the window of a new panel.</param>
+    /// <param name="close">Closes the window of a panel (and is called for each of its clones).</param>
+    public void ApplySync(SyncResult result, System.Action<DesktopWindowViewModel> show, System.Action<DesktopWindowViewModel> close) {
+      Dictionary<long, DesktopWindow> records = new Dictionary<long, DesktopWindow>();
+      foreach (DesktopWindow record in DataStore.Windows.LoadAll()) {
+        records[record.ID] = record;
+      }
+      foreach (long id in result.RemovedPanels) {
+        DesktopWindowViewModel window = FindWindow(id);
+        if (window == null) {
+          continue;
+        }
+        foreach (DesktopWindowViewModel clone in new List<DesktopWindowViewModel>(window.Clones)) {
+          close(clone);
+        }
+        close(window);
+        Windows.Remove(window);
+        foreach (ShortcutViewModel gone in Tree(window.RootShortcuts)) {
+          ForgetDeleted(gone);
+          ShortcutViewModel.NotesDeleted?.Invoke(gone);
+        }
+      }
+      foreach (long id in result.ChangedPanels) {
+        DesktopWindowViewModel window = FindWindow(id);
+        if (window != null && records.TryGetValue(id, out DesktopWindow record)) {
+          Reload(window, record);
+        }
+      }
+      foreach (long id in result.AddedPanels) {
+        if (FindWindow(id) == null && records.TryGetValue(id, out DesktopWindow record)) {
+          DesktopWindowViewModel window = ViewModelFactory.WindowToViewModel(this, record);
+          Windows.Add(window);
+          show(window);
+        }
+      }
+    }
+
+    private DesktopWindowViewModel FindWindow(long id) {
+      foreach (DesktopWindowViewModel window in Windows) {
+        if (!window.IsClone && window.ID == id) {
+          return window;
+        }
+      }
+      return null;
+    }
+
+    // Every button of a tree.
+    private static List<ShortcutViewModel> Tree(IEnumerable<ShortcutViewModel> roots) {
+      List<ShortcutViewModel> all = new List<ShortcutViewModel>();
+      Stack<ShortcutViewModel> todo = new Stack<ShortcutViewModel>(roots);
+      while (todo.Count > 0) {
+        ShortcutViewModel s = todo.Pop();
+        all.Add(s);
+        foreach (ShortcutViewModel child in s.Children) {
+          todo.Push(child);
+        }
+      }
+      return all;
+    }
+
+    // The panel's look from its record, and its buttons built again (the clones share the same list).
+    private void Reload(DesktopWindowViewModel window, DesktopWindow record) {
+      DesktopWindowAppearance a = window.Appearance;
+      a.Title = record.Title;
+      a.BorderColor = MDSHO.Common.ColorConversions.NormalizeHex(record.BorderColor);
+      a.BackgroundColor = MDSHO.Common.ColorConversions.NormalizeHex(record.BackgroundColor);
+      a.TextColor = MDSHO.Common.ColorConversions.NormalizeHex(record.TextColor);
+      a.TitleBackgroundColor = MDSHO.Common.ColorConversions.NormalizeHex(record.TitleBackgroundColor);
+      a.TitleTextColor = MDSHO.Common.ColorConversions.NormalizeHex(record.TitleTextColor);
+      a.Notes = record.Notes;
+      a.SolidIcons = record.SolidIcons;
+      a.SingleClickToOpen = record.SingleClickToOpen;
+      a.ShowVersionInTitle = record.ShowVersionInTitle;
+      List<ShortcutViewModel> before = Tree(window.RootShortcuts);
+      ObservableCollection<ShortcutViewModel> fresh = ViewModelFactory.RootShortcutsToViewModels(this, record.RootShortcuts);
+      HashSet<long> still = new HashSet<long>();
+      foreach (ShortcutViewModel s in Tree(fresh)) {
+        still.Add(s.ID);
+      }
+      window.RootShortcuts.Clear();
+      foreach (ShortcutViewModel s in fresh) {
+        window.RootShortcuts.Add(s);
+      }
+      foreach (ShortcutViewModel old in before) {
+        // A cut or copied button now has a new view model: forget it rather than paste an old one.
+        ForgetDeleted(old);
+        if (!still.Contains(old.ID)) {
+          ShortcutViewModel.NotesDeleted?.Invoke(old);
+        }
+      }
+    }
+
     /// <summary>Number of real windows (clones not counted).</summary>
     public int CountWindows() {
       int counter = 0;

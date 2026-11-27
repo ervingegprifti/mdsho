@@ -249,6 +249,34 @@ API: a OneDrive or Google Drive folder gives a cloud copy. The manifest also hol
   counts as no folder chosen, so the current default applies; files there are left alone.
 - The settings are in `AppSettings` (see [Database](database.md)). Import data's file dialog opens in the backup folder.
 
+## Sync
+
+Sync (2.0.0) keeps the panels and buttons of several PCs the same through a folder they all reach; there is no server.
+
+- **Folder** (`src/MDSHO.Data/Sync/SyncFolder.cs`): one subfolder per PC, named by its `DeviceId`; only that PC writes
+  in it. `index.json` lists the PC's items (`syncId` → hash, change record, `seq`), its deletes and how far it merged
+  each other PC (`seen`), with a `check` (SHA-256 of the rest). Item files (`items/<sha256>.json`) and shortcut files
+  (`blobs/<sha256>.bin`) are named by the hash of their content and never change; a file whose hash doesn't match is
+  still being copied and is read next round. A write puts new files first, then `index.tmp`, then renames
+  `index.json` to `index.prev.json` and `index.tmp` to `index.json`; a bad `index.json` means `index.prev.json` is read.
+  Files no index uses are deleted after 7 days. A PC with a newer `format` is not read.
+- **Engine** (`SyncEngine.Run`): reads the entries of each other PC with a `seq` above the last one merged, merges
+  them into this PC's data in one transaction, then writes this PC's index when an item or delete changed (a round
+  that only read writes nothing; `seen` is also kept in the `SyncSeen` setting). Items are matched only by `SyncId`.
+  Per item the newer `ChangedAt` wins, a tie goes to the higher device id. Each item file carries the version it was
+  changed from (`baseAt`, `baseBy`): a losing version the winner was not made from is a clash, and its texts (note,
+  snippet, comment) go into `History` with `FromPc`. A change to a button whose open window has unsaved typing waits
+  for a later round (nothing is forced); after the round the app shows the saved texts in the other open windows
+  (`TextEditWindow.ShowSyncedTexts`, the old text into `History`). An item whose group is gone goes
+  to the top of its panel, a deleted panel with a living item comes back, and of two moves that make a loop the older
+  one is undone; these fixes are new changes by this PC, so they reach the others. Writes set `ChangedAt` themselves,
+  so the triggers keep the other PC's change record.
+- **Service** (`src/MDSHO.ViewModels/SyncService.cs`): a round at start, at the first 10-second check after a local
+  change (`SyncEngine.ChangeStamp`), every minute, at exit and on Sync now, each in the background. The exit round and
+  the folder check when turning on give up after `WaitLimit` (5 s), so a hanging folder never blocks closing. Turning on makes a
+  backup first (`BackupService.BackUpForSync`, never deleted). The app hands a round's result to
+  `AppViewModel.ApplySync`, which opens, closes and rebuilds the panels it changed.
+
 ## Review prompt
 
 `src/MDSHO.ViewModels/ReviewPrompt.cs` decides when the one-time "Enjoying MDSHO?" window (`ReviewWindow`) shows:
@@ -350,7 +378,7 @@ right-click menus and the tray menu. Panels, clones and notes keep their own col
 ## Settings window
 
 `src/MDSHO.App/SettingsWindow.xaml` has a list of pages on the left (`ListSettingsPages`: Appearance, General,
-Keyboard, Screens, Backups) and shows the chosen page on the right. All pages share one cell of `PanelBody`; hidden pages keep
+Keyboard, Screens, Backups, Sync) and shows the chosen page on the right. All pages share one cell of `PanelBody`; hidden pages keep
 their space, so the window fits the tallest page and its height never changes. Apply saves every page at once; when the
 shortcut is taken it switches to the Keyboard page. The page used last is saved in `AppSettings` (`SettingsPage`).
 To add a page, add a `ListBoxItem` to the list and a panel in `PanelBody` with `Style="{StaticResource StyleSettingsPage}"`

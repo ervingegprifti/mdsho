@@ -159,6 +159,7 @@
                         <ListBoxItem x:Name="PageItemKeyboard" Content="Keyboard"/>
                         <ListBoxItem x:Name="PageItemScreens" Content="Screens"/>
                         <ListBoxItem x:Name="PageItemBackups" Content="Backups"/>
+                        <ListBoxItem x:Name="PageItemSync" Content="Sync"/>
                     </ListBox>
                 </Border>
 
@@ -295,6 +296,88 @@
                                         Style="{StaticResource StyleSettingsButton}" Content="Back up now"/>
                             </StackPanel>
                         </Grid>
+                    </StackPanel>
+                    <StackPanel x:Name="PageSync" Style="{StaticResource StyleSettingsPage}" Tag="{Binding ElementName=PageItemSync}">
+                        <!--This PC's own settings. Set in code; on/off, folder and name saved on Apply. Sync now acts at once.-->
+                        <Label Content="Sync" Style="{StaticResource StyleSettingsCategory}"/>
+                        <CheckBox x:Name="CheckSyncOn" Content="Keep this PC in sync with my other PCs"/>
+                        <TextBlock x:Name="TextSyncOnHint" Style="{StaticResource StyleSettingsHint}"
+                                   Text="Panels, groups, buttons, notes, comments and snippets, with their text and colours. Window places and this PC's settings stay here."/>
+
+                        <TextBlock x:Name="TextSyncFolderLabel" Text="Folder" Margin="0,16,0,4" Foreground="{DynamicResource Theme.TextSecondary}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TextSyncFolder" Grid.Column="0" IsReadOnly="True" VerticalContentAlignment="Center" Padding="4,0" Height="26"
+                                     AutomationProperties.Name="Sync folder"/>
+                            <Button x:Name="ButtonSyncFolderChange" Grid.Column="1" Margin="6,0,0,0" Width="32" Padding="0"
+                                    Style="{StaticResource StyleSettingsButton}"
+                                    ToolTip="Change folder" AutomationProperties.Name="Change sync folder"
+                                    Content="..."/>
+                            <Button x:Name="ButtonSyncFolderOpen" Grid.Column="2" Margin="6,0,0,0"
+                                    Style="{StaticResource StyleSettingsButton}"
+                                    ToolTip="Open the folder in Explorer" AutomationProperties.Name="Open sync folder"
+                                    Content="Open"/>
+                        </Grid>
+                        <TextBlock x:Name="TextSyncFolderHint" Style="{StaticResource StyleSettingsHint}"
+                                   Text="A folder all your PCs can reach: Google Drive or OneDrive for desktop, Dropbox, or a network drive. Pick the same one on each PC."/>
+                        <TextBlock x:Name="TextSyncError" Style="{StaticResource StyleSettingsHint}" Visibility="Collapsed"
+                                   Foreground="{DynamicResource Theme.HintErrorText}"/>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                            <TextBlock x:Name="TextDeviceNameLabel" Text="This PC's name" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="{DynamicResource Theme.TextSecondary}"/>
+                            <TextBox x:Name="TextDeviceName" Width="230" VerticalContentAlignment="Center" Padding="4,0" Height="26"
+                                     MaxLength="60" AutomationProperties.Name="This PC's name"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TextDeviceNameHint" Style="{StaticResource StyleSettingsHint}" Text="Shown on your other PCs and in Text history."/>
+
+                        <!--The status line with Sync now, its grey line, the backup notice once after joining, then the other PCs.-->
+                        <Grid Margin="0,16,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="TextSyncStatus" Grid.Column="0" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                            <Button x:Name="ButtonSyncNow" Grid.Column="1" Margin="6,0,0,0" Style="{StaticResource StyleSettingsButton}" Content="Sync now"/>
+                        </Grid>
+                        <TextBlock x:Name="TextSyncStatusHint" Style="{StaticResource StyleSettingsHint}" Visibility="Collapsed"
+                                   TextTrimming="CharacterEllipsis" MaxHeight="32"/>
+                        <TextBlock x:Name="TextSyncBackupNotice" Style="{StaticResource StyleSettingsHint}" Visibility="Collapsed"/>
+
+                        <TextBlock x:Name="TextSyncPeersLabel" Text="Other PCs in this sync" Margin="0,16,0,4" Foreground="{DynamicResource Theme.TextSecondary}"/>
+                        <Border x:Name="BorderSyncPeers" BorderThickness="1" BorderBrush="{DynamicResource Theme.TextBoxBorder}" Height="80" ClipToBounds="True">
+                            <StackPanel>
+                                <Grid Background="{DynamicResource Theme.BarBackground}" Height="26">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2*"/>
+                                        <ColumnDefinition Width="2*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="PC" Margin="8,0" VerticalAlignment="Center" FontSize="12"/>
+                                    <TextBlock Grid.Column="1" Text="Last sync" Margin="8,0" VerticalAlignment="Center" FontSize="12"/>
+                                    <TextBlock Grid.Column="2" Text="MDSHO" Margin="8,0" VerticalAlignment="Center" FontSize="12"/>
+                                </Grid>
+                                <ItemsControl x:Name="ListSyncPeers" AutomationProperties.Name="Other PCs in this sync">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type viewmodels:SyncPeerRow}">
+                                            <Grid Height="26">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="2*"/>
+                                                    <ColumnDefinition Width="2*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding Name}" Margin="8,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding LastSync}" Margin="8,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding Version}" Margin="8,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </Grid>
             </Grid>

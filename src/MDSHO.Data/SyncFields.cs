@@ -127,6 +127,7 @@ namespace MDSHO.Data {
       L("History", "Field", "each PC keeps its own text history"),
       L("History", "Text", "each PC keeps its own text history"),
       L("History", "KeptAt", "each PC keeps its own text history"),
+      L("History", "FromPc", "each PC keeps its own text history"),
 
       // Default colours: settings, synced with the settings (release 3).
       S("DefaultColors", "Kind"),
@@ -184,7 +185,12 @@ namespace MDSHO.Data {
       new SyncSetting("ReviewRated", SyncScope.Local, "the Store rating of this PC's install"),
       new SyncSetting(DeviceIdentity.IdKey, SyncScope.Local, "identifies this PC"),
       new SyncSetting(DeviceIdentity.NameKey, SyncScope.Local, "names this PC"),
-      new SyncSetting("SyncFolder", SyncScope.Local, "the sync place as this PC sees it"),
+      new SyncSetting(SyncSettings.OnKey, SyncScope.Local, "each PC joins the sync itself"),
+      new SyncSetting(SyncSettings.FolderKey, SyncScope.Local, "the sync place as this PC sees it"),
+      new SyncSetting(SyncSettings.SeqKey, SyncScope.Local, "counts this PC's writes to the sync folder"),
+      new SyncSetting(SyncSettings.SeenKey, SyncScope.Local, "how far this PC merged the others"),
+      new SyncSetting(SyncSettings.LastTimeKey, SyncScope.Local, "when this PC last synced"),
+      new SyncSetting(SyncSettings.BackupNoticeKey, SyncScope.Local, "the backup made when this PC joined"),
       new SyncSetting("StartWithWindows", SyncScope.Local, "a Windows startup task of this PC's install", InDatabase: false),
     };
 
