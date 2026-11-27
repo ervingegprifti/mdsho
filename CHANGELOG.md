@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [1.28.1]
+
+### Fixed
+
+- The icons in the title bars of notes, comments, snippets, Run command and dialogs are sharp, not blurry.
+
 ## [1.28.0]
 
 ### Changed
