@@ -63,6 +63,7 @@ namespace MDSHO.ViewModels {
     private readonly Action<SyncResult> applied;
     private readonly Action<string, string> fixLink;
     private readonly Func<SyncOptions, SyncResult> run;
+    private readonly Func<SyncPanelPlace> newPanelPlace;
     private readonly object gate = new object();
     private bool running;
     private DateTimeOffset? lastRound;
@@ -80,8 +81,10 @@ namespace MDSHO.ViewModels {
     /// <param name="applied">Gets the result of a round that changed this PC's data (on the round's thread).</param>
     /// <param name="fixLink">Points a .lnk file at a target on this PC, or null.</param>
     /// <param name="run">Runs one round (SyncEngine.Run; tests replace it).</param>
+    /// <param name="newPanelPlace">Where panels from other PCs open (may be called on any thread), or null.</param>
     public SyncService(TimeProvider clock, string appVersion, IOneShotTimer timer, Action<Action> runInBackground, BackupService backups,
-      Func<ISet<long>> editing, Action<SyncResult> applied, Action<string, string> fixLink = null, Func<SyncOptions, SyncResult> run = null) {
+      Func<ISet<long>> editing, Action<SyncResult> applied, Action<string, string> fixLink = null, Func<SyncOptions, SyncResult> run = null,
+      Func<SyncPanelPlace> newPanelPlace = null) {
       this.run = run ?? SyncEngine.Run;
       this.clock = clock ?? throw new ArgumentNullException(nameof(clock));
       this.appVersion = appVersion;
@@ -91,6 +94,7 @@ namespace MDSHO.ViewModels {
       this.editing = editing ?? (() => new HashSet<long>());
       this.applied = applied;
       this.fixLink = fixLink;
+      this.newPanelPlace = newPanelPlace;
     }
 
     /// <summary>
@@ -101,6 +105,12 @@ namespace MDSHO.ViewModels {
 
     /// <summary>Whether a folder exists (Directory.Exists; tests replace it).</summary>
     public Func<string, bool> FolderExists { get; set; } = Directory.Exists;
+
+    /// <summary>The place New panel uses on <paramref name="screen"/>: its centre, at the initial size.</summary>
+    public static SyncPanelPlace CentreOf(ScreenInfo screen) {
+      ScreenPoint centre = ScreenGeometry.CenterNewWindow(screen);
+      return new SyncPanelPlace { ScreenDeviceName = screen.DeviceName ?? "", Left = (long)centre.X, Top = (long)centre.Y };
+    }
 
     /// <summary>Raised when the state or the other PCs changed (maybe on a background thread).</summary>
     public event Action Changed;
@@ -231,7 +241,8 @@ namespace MDSHO.ViewModels {
             AppVersion = this.appVersion,
             Editing = open,
             NowMs = () => this.clock.GetUtcNow().ToUnixTimeMilliseconds(),
-            FixLink = this.fixLink
+            FixLink = this.fixLink,
+            NewPanelPlace = this.newPanelPlace
           });
           this.lastRound = this.clock.GetUtcNow();
           this.lastStamp = SyncEngine.ChangeStamp();

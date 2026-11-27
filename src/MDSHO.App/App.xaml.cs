@@ -350,7 +350,9 @@ namespace MDSHO
           action => Task.Run(action), AppServices.Current.Backups,
           () => ui.Invoke(() => TextEditWindow.UnsavedTextShortcutIds()),
           result => ui.BeginInvoke(new Action(() => ShowSyncedChanges(result))),
-          (path, target) => ui.BeginInvoke(new Action(() => FixSyncedLink(path, target))));
+          (path, target) => ui.BeginInvoke(new Action(() => FixSyncedLink(path, target))),
+          // Panels from other PCs open in the centre of the primary screen, like New panel (read on the round's thread).
+          newPanelPlace: () => SyncService.CentreOf(AppServices.Current.Screens.PrimaryScreen()));
         AppServices.Current.Sync.Start();
       } catch (Exception ex) {
         Common.AppLog.Error(ex, "Sync could not be started");

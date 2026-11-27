@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [2.0.1]
+
+### Changed
+
+- A panel that comes from another PC opens in the middle of the main screen, like a new panel; several at once are
+  shifted a little from each other. Database version stays 28.
+
 ## [2.0.0]
 
 ### Added

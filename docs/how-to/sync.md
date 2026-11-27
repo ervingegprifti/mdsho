@@ -42,7 +42,8 @@ same panel on two PCs, it shows twice. Delete the double once; the delete syncs.
   asleep), MDSHO closes anyway and your changes go the next time it starts.
 - When you click **Sync now**.
 
-Changes from your other PCs show at once in open panels and in open notes, comments and snippets.
+Changes from your other PCs show at once in open panels and in open notes, comments and snippets. A panel that comes
+from another PC opens in the middle of your main screen; move it where you want it, and it stays there.
 
 ## When two PCs changed the same thing
 

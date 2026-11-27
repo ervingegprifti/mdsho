@@ -28,6 +28,21 @@ namespace MDSHO.Data {
     public Func<long> NowMs { get; set; } = () => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     /// <summary>Makes a .lnk file point at a target on this PC (the app sets it); null keeps the file's bytes as they came.</summary>
     public Action<string, string> FixLink { get; set; }
+    /// <summary>
+    /// Where a panel that arrives from another PC opens (the app gives the centre of the primary screen, like New panel);
+    /// each next one in the same round is 30 px right and down. Asked only when a panel arrives. Null: 100, 100.
+    /// </summary>
+    public Func<SyncPanelPlace> NewPanelPlace { get; set; }
+  }
+
+  /// <summary>A screen and the top-left (DIPs) on it where a panel opens.</summary>
+  public sealed class SyncPanelPlace {
+    /// <summary>The screen's device name ("" when not known).</summary>
+    public string ScreenDeviceName { get; set; } = "";
+    /// <summary>Left, in DIPs.</summary>
+    public long Left { get; set; }
+    /// <summary>Top, in DIPs.</summary>
+    public long Top { get; set; }
   }
 
   /// <summary>Another PC in the sync, for Settings.</summary>
@@ -532,16 +547,18 @@ namespace MDSHO.Data {
         Dictionary<string, long> buttonIds = local.Buttons.ToDictionary(b => b.Key, b => b.Value.Id, StringComparer.Ordinal);
         HashSet<string> changedPanels = new HashSet<string>(StringComparer.Ordinal);
 
-        // Panels.
+        // Panels. A new one opens where the app says (the centre of the primary screen), each next one 30 px on.
         int added = 0;
+        SyncPanelPlace panelPlace = null;
         foreach (Version v in changes.Where(v => !v.IsDelete && v.Item.IsPanel)) {
           if (panelIds.TryGetValue(v.SyncId, out long id)) {
             Exec("UPDATE " + Panels + " SET ChangedAt = -1 WHERE ID = @id", new Dictionary<string, object> { ["@id"] = id });
             UpdateRow(Panels, id, v.Item.Fields, ("ChangedAt", v.At), ("ChangedBy", v.By));
             changedPanels.Add(v.SyncId);
           } else {
+            panelPlace = panelPlace ?? this.o.NewPanelPlace?.Invoke() ?? new SyncPanelPlace { Left = 100, Top = 100 };
             Dictionary<string, object> values = new Dictionary<string, object>(v.Item.Fields, StringComparer.Ordinal) {
-              ["ScreenDeviceName"] = "", ["Left"] = 100L + 40L * added, ["Top"] = 100L + 40L * added,
+              ["ScreenDeviceName"] = panelPlace.ScreenDeviceName ?? "", ["Left"] = panelPlace.Left + 30L * added, ["Top"] = panelPlace.Top + 30L * added,
               ["Width"] = (long)AppConstants.InitialWindowWidth, ["Height"] = (long)AppConstants.InitialWindowHeight,
               ["SyncId"] = v.SyncId, ["ChangedAt"] = v.At, ["ChangedBy"] = v.By
             };

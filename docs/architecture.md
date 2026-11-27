@@ -275,7 +275,9 @@ Sync (2.0.0) keeps the panels and buttons of several PCs the same through a fold
   change (`SyncEngine.ChangeStamp`), every minute, at exit and on Sync now, each in the background. The exit round and
   the folder check when turning on give up after `WaitLimit` (5 s), so a hanging folder never blocks closing. Turning on makes a
   backup first (`BackupService.BackUpForSync`, never deleted). The app hands a round's result to
-  `AppViewModel.ApplySync`, which opens, closes and rebuilds the panels it changed.
+  `AppViewModel.ApplySync`, which opens, closes and rebuilds the panels it changed. A panel new to this PC is inserted
+  at `SyncOptions.NewPanelPlace` (the app passes `SyncService.CentreOf` the primary screen, like New panel), each next
+  one in the round 30 px right and down; without it, at 100, 100.
 
 ## Review prompt
 
