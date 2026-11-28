@@ -32,6 +32,22 @@ dotnet test MDSHO.Cli.slnf -c Release
 `MDSHO.Cli.slnf` contains every project except the MSIX packaging project, which the `dotnet` command line can't build.
 Compiler warnings are treated as errors, so a build with warnings fails.
 
+### Google Drive sign-in
+
+Google Drive sync needs Google's client secret, which is not in the repository. To build with it, put a file named
+`MDSHO.secrets.props` in the repository root (git ignores it; copy it into each worktree you build from):
+
+```xml
+<Project>
+  <PropertyGroup>
+    <GoogleClientSecret>the secret</GoogleClientSecret>
+  </PropertyGroup>
+</Project>
+```
+
+Or set the `GOOGLE_CLIENT_SECRET` environment variable. Without either, the build works, but Google Drive shows as not
+set up.
+
 The tests never touch your real MDSHO data: they use temporary databases and open windows off screen.
 
 ## Run from Visual Studio
@@ -44,6 +60,36 @@ A Debug build keeps its data apart from the installed app (`mdsho-debug.sqlite3`
 [Architecture](architecture.md#where-the-data-lives), and it can run next to an installed MDSHO. A Release build run
 from Visual Studio uses the real data in `%LOCALAPPDATA%\MDSHO` and the same single-instance lock as the installed app,
 so close the installed MDSHO first.
+
+## Test sync on one PC
+
+The sync lab runs two or more copies of a Debug MDSHO side by side, each acting as its own PC, syncing through a lab
+folder. From the repository root:
+
+```powershell
+.\tools\sync-lab.ps1
+```
+
+If Windows refuses to run scripts, use `powershell -ExecutionPolicy Bypass -File .\tools\sync-lab.ps1` instead.
+
+It builds Debug once, makes `%LOCALAPPDATA%\MDSHO-lab\sync` and starts **PC-A** and **PC-B** with sync on to it, checking
+every 3 seconds. Each copy shows its name in its titles and tray tooltip and keeps its data, backups and log in
+`%LOCALAPPDATA%\MDSHO-lab\<name>`, so your real MDSHO data is never touched and the installed MDSHO keeps running.
+
+- `-Count 3` or `-Profiles Home,Work` for other copies, `-Every 10` for another interval, `-NoBuild` to skip the build.
+- `-Stop` ends every lab copy (only copies started with `--profile`), without the exit sync; to test that, use
+  **Exit application** in a copy's tray menu. `-Reset` also deletes all lab data and the lab sync folder.
+
+The script passes these start options, which work only in a run outside the MSIX package (the package ignores them):
+
+| Option | What it does |
+|---|---|
+| `--profile <name>` | Letters, digits and dashes (up to 32). Its own data folder, single-instance lock, device ID and name (default: the profile name), and the name after window titles. |
+| `--sync-every <seconds>` | With a profile: checks for changes and reads the other copies this often (normally 10 s and 1 min). |
+| `--sync-folder <path>` | With a profile: turns sync on to this folder at start (with the usual backup first), when it isn't on to it already. |
+
+Every copy tries to register the same Bring panels to front shortcut, so only the first one gets it; Settings shows that
+on the others.
 
 ## Build a signed sideload MSIX
 
@@ -162,6 +208,9 @@ Set-up (once): in the repository's **Settings** → **Secrets and variables** �
   [Convert]::ToBase64String([IO.File]::ReadAllBytes("<private folder>\MDSHO-sideload.pfx")) | Set-Clipboard
   ```
 - `SIDELOAD_PFX_PASSWORD`: its password.
+
+Optional: `GOOGLE_CLIENT_SECRET`, the Google sign-in client secret, so Google Drive sync works in the build (see
+[Google Drive sign-in](#google-drive-sign-in)).
 
 To build: **Actions** → **sideload** → **Run workflow**, choose the branch and start it. The workflow:
 

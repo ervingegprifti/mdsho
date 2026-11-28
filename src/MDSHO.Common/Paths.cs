@@ -42,7 +42,10 @@ namespace MDSHO.Common {
     /// </returns>
     private static string GetAppDataLocalApplicationFolderPath() {
       string appDataLocalPath = GetAppDataLocalPath();
-      string appDataLocalApplicationFolderPath = Path.Combine(appDataLocalPath, AppConstants.ApplicationFolderName);
+      // A sync lab profile (developers only) keeps everything in its own folder.
+      string appDataLocalApplicationFolderPath = LabOptions.Current.IsLab
+        ? LabOptions.Current.DataFolder
+        : Path.Combine(appDataLocalPath, AppConstants.ApplicationFolderName);
       // Creates all directories and subdirectories in the specified path unless they already exist.
       DirectoryInfo directoryInfo = Directory.CreateDirectory(appDataLocalApplicationFolderPath);
       return directoryInfo.FullName;

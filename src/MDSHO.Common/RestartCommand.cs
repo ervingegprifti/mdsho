@@ -14,14 +14,15 @@ namespace MDSHO.Common {
     /// Packaged (MSIX) builds are started through the shell by their AppUserModelId so the new process keeps its package
     /// identity; otherwise the exe is started directly. Returns null when there is nothing to start.
     /// </summary>
-    public static RestartCommand Build(bool isPackaged, string packageFamilyName, string exePath) {
+    /// <param name="arguments">The arguments an unpackaged run starts with again (the lab options), or null.</param>
+    public static RestartCommand Build(bool isPackaged, string packageFamilyName, string exePath, string arguments = null) {
       if (isPackaged && !string.IsNullOrWhiteSpace(packageFamilyName)) {
         return new RestartCommand { FileName = "explorer.exe", Arguments = @"shell:AppsFolder\" + packageFamilyName + "!" + PackagedApplicationId };
       }
       if (string.IsNullOrEmpty(exePath)) {
         return null;
       }
-      return new RestartCommand { FileName = exePath, Arguments = "" };
+      return new RestartCommand { FileName = exePath, Arguments = arguments ?? "" };
     }
   }
 }

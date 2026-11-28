@@ -9,7 +9,7 @@ MDSHO keeps its data in one SQLite file, `mdsho.sqlite3`, in its app data folder
 Debug builds use `mdsho-debug.sqlite3` instead, so they never touch the data of the installed app. Versions before
 1.1.2 called the file `MDSHO.sqlite3` (Debug: `MDSHODebug.sqlite3`); MDSHO renames it automatically at start-up.
 
-The current schema is **database version 28**. The version is stored in the file itself (`PRAGMA user_version`).
+The current schema is **database version 28** (from 2.0.0; 2.0.1 and 2.1.0 keep it). The version is stored in the file itself (`PRAGMA user_version`).
 The schema is created and upgraded by `src/MDSHO.Data/SchemaManager.cs`; a test (`tests/MDSHO.Tests/DocsTests.cs`)
 checks that this page lists exactly the tables, columns and indexes of a freshly created database.
 
@@ -218,6 +218,11 @@ belong to this PC: they are not exported and every import keeps them. Added in v
 | `SyncSeen` | How far this PC has merged each other PC: `deviceId=seq` pairs split by `;`. Added in 2.0.0 (version 28). |
 | `SyncLastTime` | When this PC last synced (UTC, round-trip format). Added in 2.0.0 (version 28). |
 | `SyncBackupNotice` | The backup made when this PC joined sync, until Settings has said so once. Added in 2.0.0 (version 28). |
+| `SyncKind` | What this PC syncs through (**Sync through**, Settings > Sync): `Folder`, `GoogleDrive` or `OneDrive`. Without a row, or with any other value: `Folder`. Added in 2.1.0; the database version stays 28. |
+| `SyncGoogleToken` | The Google Drive refresh token after **Connect...**, protected by Windows for this user (DPAPI, `CryptProtectData`) and stored as base64; only this Windows user on this PC can open it. Never in the sync place, exported or synced. **Disconnect** revokes and deletes it. Added in 2.1.0; the database version stays 28. |
+| `SyncOneDriveToken` | The OneDrive refresh token, kept like `SyncGoogleToken`. Microsoft has no revoke call for it, so **Disconnect** deletes it. Added in 2.1.0; the database version stays 28. |
+| `SyncGoogleAccount` | The Google account shown as **Connected:** in Settings. Added in 2.1.0; the database version stays 28. |
+| `SyncOneDriveAccount` | The Microsoft account shown as **Connected:** in Settings. Added in 2.1.0; the database version stays 28. |
 
 ### ScreenSetups
 
@@ -300,7 +305,8 @@ version builds from its list of synced columns; it drops them before an upgrade 
 Every column of every table, and every app setting, is marked as **synced** (the same on every PC) or **local** (this
 PC's own) in `src/MDSHO.Data/SyncFields.cs`; a test fails for a column that isn't. Local are, for example, window
 places, clones, screen setups and their places, the text history, `IsGroupExpanded`, the shortcut file name (`Guid`),
-the backup settings, the text history setting and the device identity. Synced are, for example, names, targets, text,
+the backup settings, the text history setting and the device identity; every app setting and the default colours are
+local too, so each PC keeps its own. Synced are, for example, names, targets, text,
 comments, fonts, colours, highlights, the order and the parent of each item. A change of a synced column of a panel or
 button is what moves its `ChangedAt`.
 

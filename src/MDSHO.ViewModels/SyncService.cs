@@ -19,7 +19,19 @@ namespace MDSHO.ViewModels {
     /// <summary>The folder could not be reached; changes wait.</summary>
     Unreachable,
     /// <summary>Another PC has a newer MDSHO.</summary>
-    NewerPc
+    NewerPc,
+    /// <summary>The sync location is used by another kind of sync (a folder sync found a OneDrive one, ...).</summary>
+    OtherKind
+  }
+
+  /// <summary>What Connect did.</summary>
+  public sealed class SyncConnect {
+    /// <summary>True when this PC is connected now.</summary>
+    public bool Ok { get; set; }
+    /// <summary>The account it is connected with ("" when not known).</summary>
+    public string Account { get; set; } = "";
+    /// <summary>Why it did not work, for the red line.</summary>
+    public string Error { get; set; }
   }
 
   /// <summary>What turning sync on did.</summary>
@@ -63,6 +75,7 @@ namespace MDSHO.ViewModels {
     private readonly Action<SyncResult> applied;
     private readonly Action<string, string> fixLink;
     private readonly Func<SyncOptions, SyncResult> run;
+    private readonly Func<SyncPanelPlace> newPanelPlace;
     private readonly object gate = new object();
     private bool running;
     private DateTimeOffset? lastRound;
@@ -70,6 +83,8 @@ namespace MDSHO.ViewModels {
     private SyncState state = SyncState.Off;
     private List<SyncPeer> peers = new List<SyncPeer>();
     private string newerPc;
+    private string kind = SyncKinds.Folder;
+    private string otherKind;
 
     /// <param name="clock">The time.</param>
     /// <param name="appVersion">This MDSHO's version, written to the index.</param>
@@ -80,8 +95,10 @@ namespace MDSHO.ViewModels {
     /// <param name="applied">Gets the result of a round that changed this PC's data (on the round's thread).</param>
     /// <param name="fixLink">Points a .lnk file at a target on this PC, or null.</param>
     /// <param name="run">Runs one round (SyncEngine.Run; tests replace it).</param>
+    /// <param name="newPanelPlace">Where panels from other PCs open (may be called on any thread), or null.</param>
     public SyncService(TimeProvider clock, string appVersion, IOneShotTimer timer, Action<Action> runInBackground, BackupService backups,
-      Func<ISet<long>> editing, Action<SyncResult> applied, Action<string, string> fixLink = null, Func<SyncOptions, SyncResult> run = null) {
+      Func<ISet<long>> editing, Action<SyncResult> applied, Action<string, string> fixLink = null, Func<SyncOptions, SyncResult> run = null,
+      Func<SyncPanelPlace> newPanelPlace = null) {
       this.run = run ?? SyncEngine.Run;
       this.clock = clock ?? throw new ArgumentNullException(nameof(clock));
       this.appVersion = appVersion;
@@ -91,6 +108,8 @@ namespace MDSHO.ViewModels {
       this.editing = editing ?? (() => new HashSet<long>());
       this.applied = applied;
       this.fixLink = fixLink;
+      StoreFor = DefaultStore;
+      this.newPanelPlace = newPanelPlace;
     }
 
     /// <summary>
@@ -99,8 +118,137 @@ namespace MDSHO.ViewModels {
     /// </summary>
     public TimeSpan WaitLimit { get; set; } = TimeSpan.FromSeconds(5);
 
+    /// <summary>How often it checks for a local change (<see cref="CheckEvery"/>; the sync lab shortens it).</summary>
+    public TimeSpan CheckDelay { get; set; } = CheckEvery;
+
+    /// <summary>How often the other PCs are read with no local change (<see cref="ReadEvery"/>; the sync lab shortens it).</summary>
+    public TimeSpan ReadInterval { get; set; } = ReadEvery;
+
+    /// <summary>
+    /// The sync location for a kind and the folder setting (may be called on any thread): a folder store, or the app's
+    /// Google Drive or OneDrive store; null when that cloud is not connected.
+    /// </summary>
+    public Func<string, string, ISyncStore> StoreFor { get; set; }
+
+    /// <summary>The OAuth provider of a cloud kind (OAuthProviders.For, with the IDs in SyncClients; tests replace it).</summary>
+    public Func<string, OAuthProvider> ProviderFor { get; set; } = OAuthProviders.For;
+
+    /// <summary>The OAuth client of a provider (tests give it a fake network).</summary>
+    public Func<OAuthProvider, OAuthClient> ClientFor { get; set; } = p => new OAuthClient(p);
+
+    /// <summary>The network of the cloud stores; null uses the real one (tests give a fake).</summary>
+    public System.Net.Http.HttpMessageHandler CloudHandler { get; set; }
+
+    private readonly Dictionary<string, ISyncStore> cloudStores = new Dictionary<string, ISyncStore>(StringComparer.Ordinal);
+
+    // A folder store, or the cached Google Drive or OneDrive store of this PC's connection (null when not connected).
+    private ISyncStore DefaultStore(string kind, string folder) {
+      if (kind == SyncKinds.Folder) {
+        return new FolderSyncStore(folder);
+      }
+      if (!IsSetUp(kind) || !IsConnected(kind)) {
+        return null;
+      }
+      lock (this.cloudStores) {
+        if (this.cloudStores.TryGetValue(kind, out ISyncStore known)) {
+          return known;
+        }
+        OAuthClient client = ClientFor(ProviderFor(kind));
+        CloudTokenSource tokens = new CloudTokenSource(client, () => SyncSettings.RefreshToken(kind), t => SyncSettings.SetRefreshToken(kind, t));
+        CloudHttp http = new CloudHttp(kind, tokens, CloudHandler);
+        ISyncStore store = kind == SyncKinds.GoogleDrive ? new GoogleDriveStore(http) : new OneDriveStore(http);
+        this.cloudStores[kind] = store;
+        return store;
+      }
+    }
+
+    private void ForgetStore(string kind) {
+      lock (this.cloudStores) {
+        this.cloudStores.Remove(kind);
+      }
+    }
+
+    /// <summary>True for Folder, and for a cloud whose client ID is filled in (see SyncClients).</summary>
+    public bool IsSetUp(string kind) => kind == SyncKinds.Folder || ProviderFor(kind)?.IsSetUp == true;
+
+    /// <summary>True when this PC has a sign-in for the cloud.</summary>
+    public bool IsConnected(string kind) {
+      try {
+        return kind != SyncKinds.Folder && SyncSettings.RefreshToken(kind) != null;
+      } catch (Exception ex) {
+        AppLog.Warning(ex, "The sync sign-in could not be read");
+        return false;
+      }
+    }
+
+    /// <summary>
+    /// Connect...: signs in to Google Drive or OneDrive in the default browser (<paramref name="openBrowser"/>), keeps the
+    /// refresh token on this PC (DPAPI) and the account for Settings. Never throws.
+    /// </summary>
+    public async System.Threading.Tasks.Task<SyncConnect> ConnectAsync(string kind, Action<string> openBrowser) {
+      string name = SyncKinds.DisplayName(kind);
+      OAuthProvider provider = kind == SyncKinds.Folder ? null : ProviderFor(kind);
+      if (provider == null || !provider.IsSetUp) {
+        return new SyncConnect { Error = name + " is not set up in this version of MDSHO yet." };
+      }
+      try {
+        OAuthTokens tokens = await ClientFor(provider).SignInAsync(openBrowser, System.Threading.CancellationToken.None).ConfigureAwait(false);
+        if (string.IsNullOrEmpty(tokens.RefreshToken)) {
+          return new SyncConnect { Error = name + " did not allow MDSHO to stay signed in. Try Connect again." };
+        }
+        SyncSettings.SetRefreshToken(kind, tokens.RefreshToken);
+        ForgetStore(kind);
+        string account = "";
+        try {
+          account = (StoreFor?.Invoke(kind, SyncSettings.Folder) as ISyncAccount)?.Account() ?? "";
+        } catch (IOException ex) {
+          AppLog.Warning(ex, "The {Kind} account could not be read", name);
+        }
+        SyncSettings.SetAccount(kind, account);
+        AppLog.Information("Connected to {Kind}", name);
+        Changed?.Invoke();
+        return new SyncConnect { Ok = true, Account = account };
+      } catch (CloudSignInException ex) {
+        AppLog.Warning(ex, "Signing in to {Kind} did not work", name);
+        return new SyncConnect { Error = ex.Message };
+      } catch (IOException ex) {
+        AppLog.Warning(ex, "Signing in to {Kind} did not work", name);
+        return new SyncConnect { Error = "Can't reach " + name + ". Check the connection and try again." };
+      }
+    }
+
+    /// <summary>
+    /// Disconnect: revokes the sign-in where the provider supports it (Google) and forgets it on this PC. Sync through that
+    /// cloud stops. Never throws.
+    /// </summary>
+    public async System.Threading.Tasks.Task DisconnectAsync(string kind) {
+      try {
+        string token = SyncSettings.RefreshToken(kind);
+        OAuthProvider provider = ProviderFor(kind);
+        if (token != null && provider != null) {
+          await ClientFor(provider).Revoke(token).ConfigureAwait(false);
+        }
+        SyncSettings.SetRefreshToken(kind, null);
+        SyncSettings.SetAccount(kind, null);
+        ForgetStore(kind);
+        if (IsOn && SyncSettings.Kind == kind) {
+          TurnOff();
+        }
+        AppLog.Information("Disconnected from {Kind}", SyncKinds.DisplayName(kind));
+      } catch (Exception ex) {
+        AppLog.Warning(ex, "Disconnecting from {Kind} did not finish", SyncKinds.DisplayName(kind));
+      }
+      Changed?.Invoke();
+    }
+
     /// <summary>Whether a folder exists (Directory.Exists; tests replace it).</summary>
     public Func<string, bool> FolderExists { get; set; } = Directory.Exists;
+
+    /// <summary>The place New panel uses on <paramref name="screen"/>: its centre, at the initial size.</summary>
+    public static SyncPanelPlace CentreOf(ScreenInfo screen) {
+      ScreenPoint centre = ScreenGeometry.CenterNewWindow(screen);
+      return new SyncPanelPlace { ScreenDeviceName = screen.DeviceName ?? "", Left = (long)centre.X, Top = (long)centre.Y };
+    }
 
     /// <summary>Raised when the state or the other PCs changed (maybe on a background thread).</summary>
     public event Action Changed;
@@ -137,7 +285,7 @@ namespace MDSHO.ViewModels {
     }
 
     private void Arm() {
-      this.timer.Start(CheckEvery, () => {
+      this.timer.Start(CheckDelay, () => {
         if (!this.running) {
           return;
         }
@@ -157,7 +305,7 @@ namespace MDSHO.ViewModels {
       if (!IsOn) {
         return false;
       }
-      if (this.lastRound == null || this.clock.GetUtcNow() - this.lastRound.Value >= ReadEvery) {
+      if (this.lastRound == null || this.clock.GetUtcNow() - this.lastRound.Value >= ReadInterval) {
         return true;
       }
       return SyncEngine.ChangeStamp() != this.lastStamp;
@@ -224,20 +372,27 @@ namespace MDSHO.ViewModels {
           }
           this.state = SyncState.Syncing;
           Changed?.Invoke();
-          SyncResult result = this.run(new SyncOptions {
-            Folder = SyncSettings.Folder,
+          this.kind = SyncSettings.Kind;
+          string folder = SyncSettings.Folder;
+          ISyncStore store = StoreFor?.Invoke(this.kind, folder);
+          SyncResult result = this.kind != SyncKinds.Folder && store == null ? new SyncResult() : this.run(new SyncOptions {
+            Folder = folder,
+            Store = store,
             DeviceId = DeviceIdentity.Id,
             DeviceName = DeviceIdentity.Name,
             AppVersion = this.appVersion,
             Editing = open,
             NowMs = () => this.clock.GetUtcNow().ToUnixTimeMilliseconds(),
-            FixLink = this.fixLink
+            FixLink = this.fixLink,
+            NewPanelPlace = this.newPanelPlace
           });
           this.lastRound = this.clock.GetUtcNow();
           this.lastStamp = SyncEngine.ChangeStamp();
           this.peers = result.Peers.ToList();
           this.newerPc = result.NewerPcs.FirstOrDefault();
-          this.state = !result.FolderReachable ? SyncState.Unreachable : this.newerPc != null ? SyncState.NewerPc : SyncState.UpToDate;
+          this.otherKind = result.OtherKind;
+          this.state = !result.FolderReachable ? SyncState.Unreachable : result.OtherKind != null ? SyncState.OtherKind
+            : this.newerPc != null ? SyncState.NewerPc : SyncState.UpToDate;
           if (result.Applied) {
             this.applied?.Invoke(result);
           }
@@ -258,7 +413,23 @@ namespace MDSHO.ViewModels {
     /// Apply in Settings with the box ticked: a backup of this PC first, then sync on with this folder and a plain merge
     /// (this PC's data is written, the other PCs' data merged in). No question is asked.
     /// </summary>
-    public SyncJoin TurnOn(string folder) {
+    public SyncJoin TurnOn(string folder) => TurnOn(SyncKinds.Folder, folder);
+
+    /// <summary>
+    /// Apply with the box ticked: syncs through a folder, Google Drive or OneDrive. A cloud must be connected; a backup is
+    /// made first, as for a folder.
+    /// </summary>
+    public SyncJoin TurnOn(string kind, string folder) {
+      if (kind != SyncKinds.Folder) {
+        string name = SyncKinds.DisplayName(kind);
+        if (!IsSetUp(kind)) {
+          return new SyncJoin { Error = name + " is not set up in this version of MDSHO yet." };
+        }
+        if (!IsConnected(kind)) {
+          return new SyncJoin { Error = "Connect to " + name + " first." };
+        }
+        return Join(kind, SyncSettings.Folder);
+      }
       if (string.IsNullOrWhiteSpace(folder) || !Path.IsPathFullyQualified(folder)) {
         return new SyncJoin { Error = "The sync folder can't be found: " + folder };
       }
@@ -271,14 +442,20 @@ namespace MDSHO.ViewModels {
       if (!exists.Result) {
         return new SyncJoin { Error = "The sync folder can't be found: " + folder };
       }
+      return Join(SyncKinds.Folder, folder);
+    }
+
+    // The backup first, then on with the kind and folder, and a round.
+    private SyncJoin Join(string kind, string folder) {
       // The backup goes to the backup folder (Settings > Backups), not the sync folder; Back up now writes there the same way.
       string backup = this.backups?.BackUpForSync();
       if (this.backups != null && backup == null) {
         return new SyncJoin { Error = "Sync was not turned on: the backup before it failed. " + (this.backups.LastErrorText ?? "") };
       }
+      SyncSettings.Kind = kind;
       SyncSettings.Save(true, folder);
       SyncSettings.BackupNotice = backup;
-      AppLog.Information("Sync turned on with the folder {Folder}; backup {Backup}", folder, backup);
+      AppLog.Information("Sync turned on through {Kind} {Folder}; backup {Backup}", SyncKinds.DisplayName(kind), kind == SyncKinds.Folder ? folder : "", backup);
       this.lastRound = null;
       this.state = SyncState.Syncing;
       Changed?.Invoke();
@@ -312,7 +489,10 @@ namespace MDSHO.ViewModels {
         switch (State) {
           case SyncState.Off: return "Sync is off.";
           case SyncState.Syncing: return "Syncing...";
-          case SyncState.Unreachable: return "Can't reach the folder. Will try again in a minute.";
+          case SyncState.Unreachable:
+            return "Can't reach " + (this.kind == SyncKinds.Folder ? "the folder" : SyncKinds.DisplayName(this.kind)) + ". Will try again in a minute.";
+          case SyncState.OtherKind:
+            return "This sync " + (this.kind == SyncKinds.Folder ? "folder" : "place") + " is used by a " + SyncKinds.DisplayName(this.otherKind) + " sync.";
           case SyncState.NewerPc: return this.newerPc + " has a newer MDSHO. Update this PC to sync with it.";
           default: return "Up to date. Last sync " + LastSyncText() + ".";
         }
@@ -323,7 +503,10 @@ namespace MDSHO.ViewModels {
     public string StatusHint {
       get {
         switch (State) {
-          case SyncState.Unreachable: return SyncSettings.Folder + " is not there (cloud drive not running?). Your changes are kept and sync later.";
+          case SyncState.Unreachable:
+            return this.kind == SyncKinds.Folder ? SyncSettings.Folder + " is not there (cloud drive not running?). Your changes are kept and sync later."
+              : "No connection, or this PC is signed out. Your changes are kept and sync later.";
+          case SyncState.OtherKind: return "Every PC must sync through the same choice. Nothing is read or changed there.";
           case SyncState.NewerPc: return "The other PCs keep syncing.";
           default: return null;
         }

@@ -58,10 +58,12 @@ namespace MDSHO.Helpers {
     /// <summary>Automatic backups. Made on first use.</summary>
     public BackupService Backups {
       get {
-        return this.backups ??= new BackupService(System.TimeProvider.System, System.Environment.MachineName,
-          System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), Data.DataExporter.AppVersion(),
+        // A sync lab profile keeps its backups in its own lab folder, named after the profile.
+        Common.LabOptions lab = Common.LabOptions.Current;
+        return this.backups ??= new BackupService(System.TimeProvider.System, lab.Profile ?? System.Environment.MachineName,
+          lab.DataFolder ?? System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), Data.DataExporter.AppVersion(),
           new DispatcherOneShotTimer(), action => System.Threading.Tasks.Task.Run(action),
-          System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments));
+          lab.DataFolder ?? System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments));
       }
       set { this.backups = value; }
     }

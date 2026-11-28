@@ -16,6 +16,7 @@ signed package. Say when a change wasn't tested locally.
 Every new database column or app setting must be marked Synced or Local in `src/MDSHO.Data/SyncFields.cs` (a test
 enforces it). Order siblings by `SortKey` (see `SortKeys`), never by a position number.
 A change to the sync folder files that an older MDSHO can't read raises `SyncIndex.CurrentFormat`.
+To test sync on one PC, `tools/sync-lab.ps1` runs Debug copies with their own `--profile` (see `docs/building.md`).
 
 ## Git
 
@@ -44,3 +45,5 @@ a build that adds a database version. Keep `docs/building.md` in sync with the w
 ## Secrets
 
 Signing uses the repository secrets `SIDELOAD_PFX_BASE64` and `SIDELOAD_PFX_PASSWORD`. Never ask for or handle them.
+The Google sign-in client secret is never committed: builds read it from the git-ignored `MDSHO.secrets.props` or the
+`GOOGLE_CLIENT_SECRET` variable (see `docs/building.md`); copy that file into a worktree before a local sideload build.

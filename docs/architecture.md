@@ -252,8 +252,32 @@ API: a OneDrive or Google Drive folder gives a cloud copy. The manifest also hol
 ## Sync
 
 Sync (2.0.0) keeps the panels and buttons of several PCs the same through a folder they all reach; there is no server.
+App settings and default colours are not synced: every one is Local in `SyncFields.cs`, so each PC keeps its own.
+From 2.1.0 the place can also be Google Drive or OneDrive, reached over their APIs.
 
-- **Folder** (`src/MDSHO.Data/Sync/SyncFolder.cs`): one subfolder per PC, named by its `DeviceId`; only that PC writes
+- **Store** (`src/MDSHO.Data/Sync/SyncStore.cs`, 2.1.0): the engine does all its file work through `ISyncStore` (the
+  PCs there, read, write a new file, replace the index, list and delete old files). `FolderSyncStore` is the folder as in
+  2.0; `GoogleDriveStore` and `OneDriveStore` (`Sync/Cloud/CloudStores.cs`) replace the index in one content update, so
+  there is no rename step, and keep the item-files-first order. `sync.json` at the root names the kind (`Folder`,
+  `GoogleDrive`, `OneDrive`) and format; the first PC writes it, and a PC of another kind reads and writes nothing
+  (`SyncResult.OtherKind`, the OtherKind state).
+- **Google Drive**: Drive API v3 over `HttpClient`, scope `drive.file`. A folder **MDSHO Sync** in My Drive (the oldest
+  one when two PCs made one at once), one subfolder per PC; files are found by name in their parent, made with a metadata
+  call and filled with one media upload.
+- **OneDrive**: Microsoft Graph in the app folder (`/me/drive/special/approot`), by path; a PUT replaces content,
+  `sync.json` is made with `conflictBehavior=fail`.
+- **HTTP** (`CloudHttp`): the bearer token, one refresh after a 401 (then signed out), and tries again after network
+  errors, 429 and 5xx, as long as Retry-After says or 1, 2, 4... s (at most 30 s, 5 tries); then the place counts as
+  unreachable, like a missing folder.
+- **Sign-in** (`Sync/Cloud/CloudAuth.cs`): OAuth 2.0 for desktop apps with PKCE (S256) in the default browser and a
+  loopback redirect (`LoopbackListener`: Google `http://127.0.0.1:<port>/`, Microsoft `http://localhost:<port>/`, any
+  free port; it also listens on `::1` for localhost). Google asks for `drive.file`, Microsoft for
+  `Files.ReadWrite.AppFolder offline_access` with personal accounts (`consumers`). The refresh token is kept with DPAPI
+  (CurrentUser) in a local setting; `CloudTokenSource` refreshes access tokens and saves a rotated refresh token.
+  Disconnect revokes at Google (Microsoft has no revoke call for it) and forgets it. The client IDs are in
+  `SyncClients`; while they are empty, Connect says the choice is not set up yet.
+
+- **Folder files** (`src/MDSHO.Data/Sync/SyncFolder.cs`): one subfolder per PC, named by its `DeviceId`; only that PC writes
   in it. `index.json` lists the PC's items (`syncId` → hash, change record, `seq`), its deletes and how far it merged
   each other PC (`seen`), with a `check` (SHA-256 of the rest). Item files (`items/<sha256>.json`) and shortcut files
   (`blobs/<sha256>.bin`) are named by the hash of their content and never change; a file whose hash doesn't match is
@@ -275,7 +299,9 @@ Sync (2.0.0) keeps the panels and buttons of several PCs the same through a fold
   change (`SyncEngine.ChangeStamp`), every minute, at exit and on Sync now, each in the background. The exit round and
   the folder check when turning on give up after `WaitLimit` (5 s), so a hanging folder never blocks closing. Turning on makes a
   backup first (`BackupService.BackUpForSync`, never deleted). The app hands a round's result to
-  `AppViewModel.ApplySync`, which opens, closes and rebuilds the panels it changed.
+  `AppViewModel.ApplySync`, which opens, closes and rebuilds the panels it changed. A panel new to this PC is inserted
+  at `SyncOptions.NewPanelPlace` (the app passes `SyncService.CentreOf` the primary screen, like New panel), each next
+  one in the round 30 px right and down; without it, at 100, 100.
 
 ## Review prompt
 

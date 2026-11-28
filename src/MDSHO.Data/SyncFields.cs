@@ -129,13 +129,13 @@ namespace MDSHO.Data {
       L("History", "KeptAt", "each PC keeps its own text history"),
       L("History", "FromPc", "each PC keeps its own text history"),
 
-      // Default colours: settings, synced with the settings (release 3).
-      S("DefaultColors", "Kind"),
-      S("DefaultColors", "BorderColor"),
-      S("DefaultColors", "TitleBackgroundColor"),
-      S("DefaultColors", "TitleTextColor"),
-      S("DefaultColors", "BackgroundColor"),
-      S("DefaultColors", "TextColor"),
+      // Default colours: this PC's settings (only panels and buttons sync).
+      L("DefaultColors", "Kind", "this PC's settings stay here"),
+      L("DefaultColors", "BorderColor", "this PC's settings stay here"),
+      L("DefaultColors", "TitleBackgroundColor", "this PC's settings stay here"),
+      L("DefaultColors", "TitleTextColor", "this PC's settings stay here"),
+      L("DefaultColors", "BackgroundColor", "this PC's settings stay here"),
+      L("DefaultColors", "TextColor", "this PC's settings stay here"),
 
       // App settings: the table is this PC's; each key is decided in Settings below.
       L("AppSettings", "Key", "the table is this PC's; each key is decided in SyncFields.Settings"),
@@ -166,9 +166,9 @@ namespace MDSHO.Data {
 
     /// <summary>Every app setting: the AppSettings keys, and Start with Windows, which Windows keeps.</summary>
     public static readonly IReadOnlyList<SyncSetting> Settings = new List<SyncSetting> {
-      new SyncSetting("WindowTheme", SyncScope.Synced, ""),
-      new SyncSetting("BringToFrontShortcut", SyncScope.Synced, ""),
-      new SyncSetting("RememberScreenSetupPlaces", SyncScope.Synced, ""),
+      new SyncSetting("WindowTheme", SyncScope.Local, "this PC's settings stay here"),
+      new SyncSetting("BringToFrontShortcut", SyncScope.Local, "this PC's settings stay here"),
+      new SyncSetting("RememberScreenSetupPlaces", SyncScope.Local, "this PC's settings stay here"),
       new SyncSetting("TextHistoryKeep", SyncScope.Local, "the text history is this PC's"),
       new SyncSetting("SettingsPage", SyncScope.Local, "the last Settings page used on this PC"),
       new SyncSetting("BackupOn", SyncScope.Local, "each PC backs up its own data"),
@@ -191,6 +191,11 @@ namespace MDSHO.Data {
       new SyncSetting(SyncSettings.SeenKey, SyncScope.Local, "how far this PC merged the others"),
       new SyncSetting(SyncSettings.LastTimeKey, SyncScope.Local, "when this PC last synced"),
       new SyncSetting(SyncSettings.BackupNoticeKey, SyncScope.Local, "the backup made when this PC joined"),
+      new SyncSetting(SyncSettings.KindKey, SyncScope.Local, "each PC picks what it syncs through"),
+      new SyncSetting(SyncSettings.GoogleTokenKey, SyncScope.Local, "a sign-in of this PC, protected by Windows"),
+      new SyncSetting(SyncSettings.OneDriveTokenKey, SyncScope.Local, "a sign-in of this PC, protected by Windows"),
+      new SyncSetting(SyncSettings.GoogleAccountKey, SyncScope.Local, "the account this PC signed in with"),
+      new SyncSetting(SyncSettings.OneDriveAccountKey, SyncScope.Local, "the account this PC signed in with"),
       new SyncSetting("StartWithWindows", SyncScope.Local, "a Windows startup task of this PC's install", InDatabase: false),
     };
 

@@ -12,6 +12,7 @@
 *.bak-v*
 _backup/
 TestResults/
+MDSHO.secrets.props
 # (*.pfx and *.user are ignored further below)
 # --- end MDSHO ---
 ## Ignore Visual Studio temporary files, build results, and

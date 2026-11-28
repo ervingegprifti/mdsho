@@ -304,8 +304,16 @@
                         <TextBlock x:Name="TextSyncOnHint" Style="{StaticResource StyleSettingsHint}"
                                    Text="Panels, groups, buttons, notes, comments and snippets, with their text and colours. Window places and this PC's settings stay here."/>
 
-                        <TextBlock x:Name="TextSyncFolderLabel" Text="Folder" Margin="0,16,0,4" Foreground="{DynamicResource Theme.TextSecondary}"/>
-                        <Grid>
+                        <!--Sync through: Folder shows the folder row, Google Drive and OneDrive the account row (2.1.0).-->
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,4">
+                            <TextBlock x:Name="TextSyncKindLabel" Text="Sync through" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="{DynamicResource Theme.TextSecondary}"/>
+                            <ComboBox x:Name="ComboSyncKind" MinWidth="120" VerticalAlignment="Center" AutomationProperties.Name="Sync through">
+                                <ComboBoxItem Content="Folder" Tag="Folder"/>
+                                <ComboBoxItem Content="Google Drive" Tag="GoogleDrive"/>
+                                <ComboBoxItem Content="OneDrive" Tag="OneDrive"/>
+                            </ComboBox>
+                        </StackPanel>
+                        <Grid x:Name="GridSyncFolder">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -321,6 +329,19 @@
                                     Style="{StaticResource StyleSettingsButton}"
                                     ToolTip="Open the folder in Explorer" AutomationProperties.Name="Open sync folder"
                                     Content="Open"/>
+                        </Grid>
+                        <Grid x:Name="GridSyncAccount" Visibility="Collapsed">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TextSyncAccount" Grid.Column="0" IsReadOnly="True" VerticalContentAlignment="Center" Padding="4,0" Height="26"
+                                     AutomationProperties.Name="Sync account"/>
+                            <Button x:Name="ButtonSyncConnect" Grid.Column="1" Margin="6,0,0,0" Style="{StaticResource StyleSettingsButton}"
+                                    ToolTip="Sign in in your browser" Content="Connect..."/>
+                            <Button x:Name="ButtonSyncDisconnect" Grid.Column="2" Margin="6,0,0,0" Style="{StaticResource StyleSettingsButton}"
+                                    ToolTip="Sign this PC out and forget the sign-in" Content="Disconnect"/>
                         </Grid>
                         <TextBlock x:Name="TextSyncFolderHint" Style="{StaticResource StyleSettingsHint}"
                                    Text="A folder all your PCs can reach: Google Drive or OneDrive for desktop, Dropbox, or a network drive. Pick the same one on each PC."/>

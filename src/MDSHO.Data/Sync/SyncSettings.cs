@@ -21,8 +21,62 @@ namespace MDSHO.Data {
     /// <summary>The last seq of each other PC that this PC merged, as "device=seq" pairs split by ";".</summary>
     public const string SeenKey = "SyncSeen";
 
-    /// <summary>True when sync is on and has a folder.</summary>
-    public static bool IsOn => DataStore.AppSettings.Get(OnKey) == "On" && !string.IsNullOrWhiteSpace(Folder);
+    /// <summary>What this PC syncs through: Folder, GoogleDrive or OneDrive (see <see cref="SyncKinds"/>).</summary>
+    public const string KindKey = "SyncKind";
+
+    /// <summary>The Google Drive refresh token, protected by Windows for this user (DPAPI).</summary>
+    public const string GoogleTokenKey = "SyncGoogleToken";
+    /// <summary>The OneDrive refresh token, protected by Windows for this user (DPAPI).</summary>
+    public const string OneDriveTokenKey = "SyncOneDriveToken";
+    /// <summary>The Google account shown in Settings.</summary>
+    public const string GoogleAccountKey = "SyncGoogleAccount";
+    /// <summary>The Microsoft account shown in Settings.</summary>
+    public const string OneDriveAccountKey = "SyncOneDriveAccount";
+
+    private static string TokenKey(string kind) => kind == SyncKinds.GoogleDrive ? GoogleTokenKey : kind == SyncKinds.OneDrive ? OneDriveTokenKey : null;
+    private static string AccountKey(string kind) => kind == SyncKinds.GoogleDrive ? GoogleAccountKey : kind == SyncKinds.OneDrive ? OneDriveAccountKey : null;
+
+    /// <summary>The refresh token of a cloud kind, or null (none, or not this Windows user's).</summary>
+    public static string RefreshToken(string kind) {
+      string key = TokenKey(kind);
+      string stored = key == null ? null : DataStore.AppSettings.Get(key);
+      return string.IsNullOrEmpty(stored) ? null : Dpapi.Unprotect(stored);
+    }
+
+    /// <summary>Saves (protected) or forgets the refresh token of a cloud kind.</summary>
+    public static void SetRefreshToken(string kind, string token) {
+      string key = TokenKey(kind) ?? throw new ArgumentException("Not a cloud kind: " + kind, nameof(kind));
+      if (string.IsNullOrEmpty(token)) {
+        DataStore.AppSettings.Delete(key);
+      } else {
+        DataStore.AppSettings.Set(key, Dpapi.Protect(token));
+      }
+    }
+
+    /// <summary>The account a cloud kind is connected with ("" when not known), for Settings.</summary>
+    public static string Account(string kind) {
+      string key = AccountKey(kind);
+      return key == null ? "" : DataStore.AppSettings.Get(key) ?? "";
+    }
+
+    /// <summary>Saves or forgets the account of a cloud kind.</summary>
+    public static void SetAccount(string kind, string account) {
+      string key = AccountKey(kind) ?? throw new ArgumentException("Not a cloud kind: " + kind, nameof(kind));
+      if (string.IsNullOrEmpty(account)) {
+        DataStore.AppSettings.Delete(key);
+      } else {
+        DataStore.AppSettings.Set(key, account);
+      }
+    }
+
+    /// <summary>What this PC syncs through; no row means Folder.</summary>
+    public static string Kind {
+      get { return SyncKinds.Parse(DataStore.AppSettings.Get(KindKey)); }
+      set { DataStore.AppSettings.Set(KindKey, SyncKinds.Parse(value)); }
+    }
+
+    /// <summary>True when sync is on with a place: a folder, or Google Drive or OneDrive.</summary>
+    public static bool IsOn => DataStore.AppSettings.Get(OnKey) == "On" && (Kind != SyncKinds.Folder || !string.IsNullOrWhiteSpace(Folder));
 
     /// <summary>The folder, or "".</summary>
     public static string Folder => DataStore.AppSettings.Get(FolderKey) ?? "";

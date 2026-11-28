@@ -104,9 +104,10 @@ namespace MDSHO.Data {
     public const string IndexName = "index.json";
     /// <summary>The index before the last write.</summary>
     public const string PreviousName = "index.prev.json";
-    private const string TempName = "index.tmp";
-    private const string ItemsName = "items";
-    private const string BlobsName = "blobs";
+    /// <summary>The folder of a PC's item files.</summary>
+    public const string ItemsName = "items";
+    /// <summary>The folder of a PC's shortcut files.</summary>
+    public const string BlobsName = "blobs";
     /// <summary>Files no index uses are deleted when they are this old.</summary>
     public static readonly TimeSpan KeepUnused = TimeSpan.FromDays(7);
 
@@ -123,10 +124,11 @@ namespace MDSHO.Data {
     }
 
     /// <summary>The device ids of the other PCs: the other subfolders.</summary>
-    public static IReadOnlyList<string> OtherDevices(string root, string myId) {
-      return Directory.GetDirectories(root).Select(Path.GetFileName)
-        .Where(n => !string.Equals(n, myId, StringComparison.OrdinalIgnoreCase) && !n.StartsWith(".", StringComparison.Ordinal))
-        .OrderBy(n => n, StringComparer.Ordinal).ToList();
+    public static IReadOnlyList<string> OtherDevices(string root, string myId) => OtherDevices(new FolderSyncStore(root), myId);
+
+    /// <summary>The device ids of the other PCs in a sync location.</summary>
+    public static IReadOnlyList<string> OtherDevices(ISyncStore store, string myId) {
+      return store.Devices().Where(n => !string.Equals(n, myId, StringComparison.OrdinalIgnoreCase)).OrderBy(n => n, StringComparer.Ordinal).ToList();
     }
 
     /// <summary>The SHA-256 of the bytes as lower-case hex.</summary>
@@ -135,36 +137,46 @@ namespace MDSHO.Data {
     }
 
     #region INDEX
+    // A PC's folder path as a store and device (the path calls below are the 2.0 API, for a sync folder on disk).
+    private static (ISyncStore Store, string Device) OnDisk(string folder) {
+      string full = Path.GetFullPath(folder).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+      return (new FolderSyncStore(Path.GetDirectoryName(full)), Path.GetFileName(full));
+    }
+
     /// <summary>
     /// Writes the index: index.tmp first, then index.json becomes index.prev.json and index.tmp becomes index.json. The
     /// item and blob files must be written before.
     /// </summary>
     public static void WriteIndex(string folder, SyncIndex index) {
-      Directory.CreateDirectory(folder);
+      (ISyncStore store, string device) = OnDisk(folder);
+      WriteIndex(store, device, index);
+    }
+
+    /// <summary>Writes a PC's index through its store (a folder renames, a cloud replaces the file in one call).</summary>
+    public static void WriteIndex(ISyncStore store, string device, SyncIndex index) {
       index.Format = SyncIndex.CurrentFormat;
       index.Check = CheckOf(index);
-      string tmp = Path.Combine(folder, TempName);
-      string current = Path.Combine(folder, IndexName);
-      string previous = Path.Combine(folder, PreviousName);
-      File.WriteAllBytes(tmp, JsonSerializer.SerializeToUtf8Bytes(index, Json));
-      if (File.Exists(current)) {
-        File.Move(current, previous, overwrite: true);
-      }
-      File.Move(tmp, current, overwrite: true);
+      store.ReplaceIndex(device, JsonSerializer.SerializeToUtf8Bytes(index, Json));
     }
 
     /// <summary>Reads a PC's index: index.json, else index.prev.json when index.json is bad. Never throws for bad files.</summary>
     public static SyncIndexRead ReadIndex(string folder) {
-      string current = Path.Combine(folder, IndexName);
-      string previous = Path.Combine(folder, PreviousName);
-      if (!File.Exists(current) && !File.Exists(previous)) {
+      (ISyncStore store, string device) = OnDisk(folder);
+      return ReadIndex(store, device);
+    }
+
+    /// <summary>Reads a PC's index through its store. Throws only when the store can't be reached.</summary>
+    public static SyncIndexRead ReadIndex(ISyncStore store, string device) {
+      byte[] current = ReadQuietly(store, device, IndexName);
+      byte[] previous = current == null || Parse(current) == null ? ReadQuietly(store, device, PreviousName) : null;
+      if (current == null && previous == null) {
         return new SyncIndexRead { State = SyncIndexState.Missing };
       }
-      SyncIndexRead read = ReadOne(current);
+      SyncIndexRead read = current == null ? null : Parse(current);
       if (read != null) {
         return read;
       }
-      read = ReadOne(previous);
+      read = previous == null ? null : Parse(previous);
       if (read != null) {
         if (read.State == SyncIndexState.Ok) {
           read.State = SyncIndexState.FromPrevious;
@@ -174,19 +186,21 @@ namespace MDSHO.Data {
       return new SyncIndexRead { State = SyncIndexState.Unreadable };
     }
 
-    // One file: null when it is missing or bad.
-    private static SyncIndexRead ReadOne(string path) {
-      byte[] bytes;
+    // A file that is locked or vanishes while read counts as missing; a store that can't be reached still throws.
+    private static byte[] ReadQuietly(ISyncStore store, string device, string path) {
       try {
-        if (!File.Exists(path)) {
-          return null;
-        }
-        bytes = File.ReadAllBytes(path);
+        return store.Read(device, path);
+      } catch (SyncStoreException) {
+        throw;
       } catch (IOException) {
         return null;
       } catch (UnauthorizedAccessException) {
         return null;
       }
+    }
+
+    // One index file: null when it is bad.
+    private static SyncIndexRead Parse(byte[] bytes) {
       try {
         using (JsonDocument doc = JsonDocument.Parse(bytes)) {
           JsonElement rootElement = doc.RootElement;
@@ -235,53 +249,55 @@ namespace MDSHO.Data {
     #region ITEMS AND BLOBS
     /// <summary>Writes an item file (when it is not there yet) and returns its hash.</summary>
     public static string WriteItem(string folder, byte[] content) {
-      return WriteNamed(Path.Combine(folder, ItemsName), ".json", content);
+      (ISyncStore store, string device) = OnDisk(folder);
+      return WriteItem(store, device, content);
     }
+
+    /// <summary>Writes an item file through the store (when it is not there yet) and returns its hash.</summary>
+    public static string WriteItem(ISyncStore store, string device, byte[] content) => WriteNamed(store, device, ItemsName, ".json", content);
 
     /// <summary>The content of an item file, or null when it is missing or its hash does not match (still being copied).</summary>
     public static byte[] ReadItem(string folder, string hash) {
-      return ReadNamed(Path.Combine(folder, ItemsName), ".json", hash);
+      (ISyncStore store, string device) = OnDisk(folder);
+      return ReadItem(store, device, hash);
     }
+
+    /// <summary>The content of an item file through the store, or null when it is missing or not whole yet.</summary>
+    public static byte[] ReadItem(ISyncStore store, string device, string hash) => ReadNamed(store, device, ItemsName, ".json", hash);
 
     /// <summary>Writes a blob file (when it is not there yet) and returns its hash.</summary>
     public static string WriteBlob(string folder, byte[] content) {
-      return WriteNamed(Path.Combine(folder, BlobsName), ".bin", content);
+      (ISyncStore store, string device) = OnDisk(folder);
+      return WriteBlob(store, device, content);
     }
+
+    /// <summary>Writes a blob file through the store (when it is not there yet) and returns its hash.</summary>
+    public static string WriteBlob(ISyncStore store, string device, byte[] content) => WriteNamed(store, device, BlobsName, ".bin", content);
 
     /// <summary>The content of a blob file, or null when it is missing or its hash does not match.</summary>
     public static byte[] ReadBlob(string folder, string hash) {
-      return ReadNamed(Path.Combine(folder, BlobsName), ".bin", hash);
+      (ISyncStore store, string device) = OnDisk(folder);
+      return ReadBlob(store, device, hash);
     }
 
-    private static string WriteNamed(string folder, string ext, byte[] content) {
+    /// <summary>The content of a blob file through the store, or null when it is missing or not whole yet.</summary>
+    public static byte[] ReadBlob(ISyncStore store, string device, string hash) => ReadNamed(store, device, BlobsName, ".bin", hash);
+
+    private static string WriteNamed(ISyncStore store, string device, string folder, string ext, byte[] content) {
       string hash = Hash(content);
-      string path = Path.Combine(folder, hash + ext);
-      if (File.Exists(path) && ReadNamed(folder, ext, hash) != null) {
+      if (ReadNamed(store, device, folder, ext, hash) != null) {
         return hash;
       }
-      Directory.CreateDirectory(folder);
-      string tmp = path + ".tmp";
-      File.WriteAllBytes(tmp, content);
-      File.Move(tmp, path, overwrite: true);
+      store.Write(device, folder + "/" + hash + ext, content);
       return hash;
     }
 
-    private static byte[] ReadNamed(string folder, string ext, string hash) {
+    private static byte[] ReadNamed(ISyncStore store, string device, string folder, string ext, string hash) {
       if (string.IsNullOrEmpty(hash) || hash.Any(c => !Uri.IsHexDigit(c))) {
         return null;
       }
-      try {
-        string path = Path.Combine(folder, hash + ext);
-        if (!File.Exists(path)) {
-          return null;
-        }
-        byte[] bytes = File.ReadAllBytes(path);
-        return Hash(bytes) == hash ? bytes : null;
-      } catch (IOException) {
-        return null;
-      } catch (UnauthorizedAccessException) {
-        return null;
-      }
+      byte[] bytes = ReadQuietly(store, device, folder + "/" + hash + ext);
+      return bytes != null && Hash(bytes) == hash ? bytes : null;
     }
 
     /// <summary>
@@ -289,37 +305,42 @@ namespace MDSHO.Data {
     /// PC may still be reading an older index). Files that can't be deleted are left for the next time.
     /// </summary>
     public static void DeleteUnused(string folder, DateTime utcNow) {
+      (ISyncStore store, string device) = OnDisk(folder);
+      DeleteUnused(store, device, utcNow);
+    }
+
+    /// <summary>Deletes the unused item and blob files of this PC through the store (see the folder overload).</summary>
+    public static void DeleteUnused(ISyncStore store, string device, DateTime utcNow) {
       HashSet<string> items = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
       HashSet<string> blobs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
       foreach (string name in new[] { IndexName, PreviousName }) {
-        SyncIndexRead read = ReadOne(Path.Combine(folder, name));
-        if (read?.Index == null) {
-          if (File.Exists(Path.Combine(folder, name))) {
-            return; // a bad index: don't guess what it uses
-          }
+        byte[] bytes = ReadQuietly(store, device, name);
+        if (bytes == null) {
           continue;
+        }
+        SyncIndexRead read = Parse(bytes);
+        if (read?.Index == null) {
+          return; // a bad index: don't guess what it uses
         }
         items.UnionWith(read.Index.Items.Values.Select(i => i.Hash));
         blobs.UnionWith(read.Index.Blobs);
       }
-      DeleteOld(Path.Combine(folder, ItemsName), ".json", items, utcNow);
-      DeleteOld(Path.Combine(folder, BlobsName), ".bin", blobs, utcNow);
+      DeleteOld(store, device, ItemsName, ".json", items, utcNow);
+      DeleteOld(store, device, BlobsName, ".bin", blobs, utcNow);
     }
 
-    private static void DeleteOld(string folder, string ext, HashSet<string> used, DateTime utcNow) {
-      if (!Directory.Exists(folder)) {
-        return;
-      }
-      foreach (string path in Directory.GetFiles(folder)) {
-        string name = Path.GetFileName(path);
-        string hash = name.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ? name.Substring(0, name.Length - ext.Length) : null;
+    private static void DeleteOld(ISyncStore store, string device, string folder, string ext, HashSet<string> used, DateTime utcNow) {
+      foreach (SyncStoreFile file in store.List(device, folder)) {
+        string hash = file.Name.EndsWith(ext, StringComparison.OrdinalIgnoreCase) ? file.Name.Substring(0, file.Name.Length - ext.Length) : null;
         if (hash != null && used.Contains(hash)) {
           continue;
         }
         try {
-          if (utcNow - File.GetLastWriteTimeUtc(path) >= KeepUnused) {
-            File.Delete(path);
+          if (utcNow - file.ModifiedUtc >= KeepUnused) {
+            store.Delete(device, folder + "/" + file.Name);
           }
+        } catch (SyncStoreException) {
+          throw;
         } catch (IOException) {
         } catch (UnauthorizedAccessException) {
         }

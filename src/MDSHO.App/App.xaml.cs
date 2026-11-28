@@ -63,6 +63,10 @@ namespace MDSHO
         return;
       }
       try {
+        // The sync lab (developers only, never in the MSIX package): --profile runs a copy with its own data folder,
+        // mutex, device name and title. Read before anything touches the data folder.
+        Common.LabOptions.Current = Common.LabOptions.Parse(e.Args, new Infrastructure.PackageIdentity().IsPackaged);
+
         // Events
         UnhandledExceptionsEvents();
 
@@ -126,6 +130,9 @@ namespace MDSHO
         this.notifyIcon = new System.Windows.Forms.NotifyIcon();
         this.notifyIcon.DoubleClick += (s, args) => ShowAboutWindow();
         this.notifyIcon.Icon = MDSHO.Properties.Resources.logo;
+        if (Common.LabOptions.Current.IsLab) {
+          this.notifyIcon.Text = Common.AppConstants.ApplicationName + Common.LabOptions.Current.TitleSuffix;
+        }
         this.notifyIcon.Visible = true;
 
         StartBringPanelsToFront();
@@ -350,7 +357,22 @@ namespace MDSHO
           action => Task.Run(action), AppServices.Current.Backups,
           () => ui.Invoke(() => TextEditWindow.UnsavedTextShortcutIds()),
           result => ui.BeginInvoke(new Action(() => ShowSyncedChanges(result))),
-          (path, target) => ui.BeginInvoke(new Action(() => FixSyncedLink(path, target))));
+          (path, target) => ui.BeginInvoke(new Action(() => FixSyncedLink(path, target))),
+          // Panels from other PCs open in the centre of the primary screen, like New panel (read on the round's thread).
+          newPanelPlace: () => SyncService.CentreOf(AppServices.Current.Screens.PrimaryScreen()));
+        Common.LabOptions lab = Common.LabOptions.Current;
+        if (lab.SyncEvery != null) {
+          AppServices.Current.Sync.CheckDelay = lab.SyncEvery.Value;
+          AppServices.Current.Sync.ReadInterval = lab.SyncEvery.Value;
+        }
+        if (lab.SyncFolder != null && !(AppServices.Current.Sync.IsOn && string.Equals(Data.SyncSettings.Folder, lab.SyncFolder, StringComparison.OrdinalIgnoreCase))) {
+          // A lab profile started with --sync-folder turns sync on to it, the way Settings does (with the backup first).
+          System.IO.Directory.CreateDirectory(lab.SyncFolder);
+          SyncJoin join = AppServices.Current.Sync.TurnOn(lab.SyncFolder);
+          if (!join.Ok) {
+            Common.AppLog.Warning(null, "The lab could not turn sync on: {Error}", join.Error);
+          }
+        }
         AppServices.Current.Sync.Start();
       } catch (Exception ex) {
         Common.AppLog.Error(ex, "Sync could not be started");
@@ -881,7 +903,8 @@ namespace MDSHO
     /// </summary>
     /// <returns>Return true if this is the only running instance, false if another instance already owns the mutex.</returns>
     private bool AcquireSingleInstanceMutex() {
-      this.singleInstanceMutex = new Mutex(false, SingleInstanceMutexName);
+      // A sync lab profile has its own mutex, so it runs beside the normal MDSHO and the other profiles.
+      this.singleInstanceMutex = new Mutex(false, Common.LabOptions.Current.MutexName(SingleInstanceMutexName));
       try {
         this.ownsSingleInstanceMutex = this.singleInstanceMutex.WaitOne(0, false);
       } catch (AbandonedMutexException) {
@@ -942,7 +965,7 @@ namespace MDSHO
         this.restartAfterExit = false;
         try {
           string family = package.FamilyName;
-          Common.RestartCommand command = Common.RestartCommand.Build(family != null, family, Environment.ProcessPath);
+          Common.RestartCommand command = Common.RestartCommand.Build(family != null, family, Environment.ProcessPath, Common.LabOptions.Current.CommandLine);
           if (command != null) {
             shell.Run(command.FileName, command.Arguments);
           }

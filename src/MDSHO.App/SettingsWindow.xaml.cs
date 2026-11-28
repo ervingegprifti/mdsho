@@ -40,7 +40,7 @@ namespace MDSHO {
     public SettingsWindow(DesktopWindowViewModel desktopWindow) {
       InitializeComponent();
       DesktopWindowAppearance a = desktopWindow.Appearance;
-      this.Title = "Settings: " + a.Title;
+      this.Title = "Settings: " + a.Title + Common.LabOptions.Current.TitleSuffix;
 #if DEBUG
       this.Title += " DEBUG";
 #endif
@@ -142,6 +142,30 @@ namespace MDSHO {
       this.TextSyncBackupNotice.Text = notice ?? "";
       this.TextSyncBackupNotice.Visibility = notice == null ? Visibility.Collapsed : Visibility.Visible;
       ShowSyncState(sync);
+      // Sync through: the kind is saved on Apply; Connect and Disconnect act at once.
+      SelectSyncKind(SyncSettings.Kind);
+      ShowSyncKind(sync);
+      this.ComboSyncKind.SelectionChanged += (s, e) => {
+        ShowSyncError(null);
+        ShowSyncKind(sync);
+      };
+      this.ButtonSyncConnect.Click += async (s, e) => {
+        string kind = SelectedSyncKind;
+        ShowSyncError(null);
+        this.ButtonSyncConnect.IsEnabled = false;
+        try {
+          SyncConnect result = await sync.ConnectAsync(kind, url => AppServices.Current.Shell.OpenUrl(url));
+          ShowSyncError(result.Ok ? null : result.Error);
+        } finally {
+          ShowSyncKind(sync);
+        }
+      };
+      this.ButtonSyncDisconnect.Click += async (s, e) => {
+        this.ButtonSyncDisconnect.IsEnabled = false;
+        await sync.DisconnectAsync(SelectedSyncKind);
+        this.CheckSyncOn.IsChecked = sync.IsOn;
+        ShowSyncKind(sync);
+      };
       this.ButtonSyncFolderChange.Click += (s, e) => {
         string chosen = PickSyncFolder(this.TextSyncFolder.Text);
         if (!string.IsNullOrEmpty(chosen)) {
@@ -279,6 +303,18 @@ namespace MDSHO {
         }
         return true;
       }
+      string kind = SelectedSyncKind;
+      if (kind != SyncKinds.Folder) {
+        if (sync.IsOn && SyncSettings.Kind == kind) {
+          return true;
+        }
+        SyncJoin cloud = sync.TurnOn(kind, SyncSettings.Folder);
+        if (!cloud.Ok) {
+          ShowSyncError(cloud.Error);
+          return false;
+        }
+        return true;
+      }
       string folder = this.TextSyncFolder.Text;
       if (string.IsNullOrWhiteSpace(folder)) {
         folder = PickSyncFolder("");
@@ -288,15 +324,41 @@ namespace MDSHO {
         }
         this.TextSyncFolder.Text = folder;
       }
-      if (sync.IsOn && string.Equals(folder, SyncSettings.Folder, System.StringComparison.OrdinalIgnoreCase)) {
+      if (sync.IsOn && SyncSettings.Kind == SyncKinds.Folder && string.Equals(folder, SyncSettings.Folder, System.StringComparison.OrdinalIgnoreCase)) {
         return true;
       }
-      SyncJoin join = sync.TurnOn(folder);
+      SyncJoin join = sync.TurnOn(SyncKinds.Folder, folder);
       if (!join.Ok) {
         ShowSyncError(join.Error);
         return false;
       }
       return true;
+    }
+
+    // The kind chosen in Sync through.
+    private string SelectedSyncKind => (this.ComboSyncKind.SelectedItem as ComboBoxItem)?.Tag as string ?? SyncKinds.Folder;
+
+    private void SelectSyncKind(string kind) {
+      this.ComboSyncKind.SelectedItem = this.ComboSyncKind.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == kind)
+        ?? this.ComboSyncKind.Items[0];
+    }
+
+    // The folder row for Folder, the account row for Google Drive and OneDrive, and the hint for the choice.
+    private void ShowSyncKind(SyncService sync) {
+      string kind = SelectedSyncKind;
+      bool folder = kind == SyncKinds.Folder;
+      this.GridSyncFolder.Visibility = folder ? Visibility.Visible : Visibility.Collapsed;
+      this.GridSyncAccount.Visibility = folder ? Visibility.Collapsed : Visibility.Visible;
+      if (folder) {
+        this.TextSyncFolderHint.Text = "A folder all your PCs can reach: Google Drive or OneDrive for desktop, Dropbox, or a network drive. Pick the same one on each PC.";
+        return;
+      }
+      bool connected = sync.IsConnected(kind);
+      string account = SyncSettings.Account(kind);
+      this.TextSyncAccount.Text = !connected ? "Not connected" : account.Length > 0 ? "Connected: " + account : "Connected";
+      this.ButtonSyncConnect.IsEnabled = true;
+      this.ButtonSyncDisconnect.IsEnabled = connected;
+      this.TextSyncFolderHint.Text = "Every PC must use the same choice: " + SyncKinds.DisplayName(kind) + ", with the same account.";
     }
 
     private void ShowSyncError(string error) {

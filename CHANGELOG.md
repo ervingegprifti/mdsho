@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth part is reserved by the Microsoft Store.
 
+## [2.1.0]
+
+### Added
+
+- **Sync through Google Drive or OneDrive** without their desktop apps: in Settings > Sync, choose **Sync through**,
+  then **Connect...** and sign in in your browser. MDSHO sees only its own files: a "MDSHO Sync" folder in Google Drive,
+  or its app folder in OneDrive. **Disconnect** signs this PC out. Every PC must use the same choice; a PC set to
+  another one says so and changes nothing.
+- The database version stays 28.
+
+## [2.0.1]
+
+### Changed
+
+- A panel that comes from another PC opens in the middle of the main screen, like a new panel; several at once are
+  shifted a little from each other. Database version stays 28.
+
 ## [2.0.0]
 
 ### Added
