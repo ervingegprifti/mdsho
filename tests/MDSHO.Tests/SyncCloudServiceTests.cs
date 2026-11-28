@@ -79,9 +79,9 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void The_real_client_ids_are_still_empty_so_nothing_is_set_up() {
+    public void Google_Drive_is_set_up_when_the_build_has_its_secret() {
       SyncService sync = new SyncService(clock, "2.1.0", new ScreenSetupTests.FakeTimer(), a => a(), backups, null, null);
-      Assert.Equal(!string.IsNullOrEmpty(SyncClients.GoogleClientId), sync.IsSetUp(SyncKinds.GoogleDrive));
+      Assert.Equal(!string.IsNullOrEmpty(SyncClients.GoogleClientSecret), sync.IsSetUp(SyncKinds.GoogleDrive));
       Assert.Equal(!string.IsNullOrEmpty(SyncClients.MicrosoftClientId), sync.IsSetUp(SyncKinds.OneDrive));
       Assert.True(sync.IsSetUp(SyncKinds.Folder));
     }

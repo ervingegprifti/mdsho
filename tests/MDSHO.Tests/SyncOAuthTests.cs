@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -191,15 +192,39 @@ namespace MDSHO.Tests {
       Assert.False(Google("").IsSetUp);
       Assert.False(Microsoft("").IsSetUp);
       Assert.True(Google().IsSetUp);
+      Assert.False(OAuthProviders.Google("google-id", "").IsSetUp); // Google needs its desktop secret too
+      Assert.True(Microsoft().IsSetUp); // Microsoft needs none
       Assert.Throws<CloudSignInException>(() => new OAuthClient(Google(""), new FakeHttp(r => FakeHttp.Status(HttpStatusCode.OK))).SignInAsync(Browser(), CancellationToken.None).GetAwaiter().GetResult());
     }
 
     [Fact]
-    public void The_client_ids_are_empty_until_the_owner_fills_them_in() {
-      // Placeholders in one place; never invented.
-      Assert.NotNull(SyncClients.GoogleClientId);
-      Assert.NotNull(SyncClients.GoogleClientSecret);
+    public void The_Google_client_ID_is_in_the_code() {
+      Assert.Equal("296376837622-nkm0garhkcf4r0ggk1e1dl5otu6r7c94.apps.googleusercontent.com", SyncClients.GoogleClientId);
+      Assert.Equal(SyncClients.GoogleClientId, OAuthProviders.Google().ClientId);
       Assert.NotNull(SyncClients.MicrosoftClientId);
+    }
+
+    [Fact]
+    public void The_Google_secret_comes_from_the_build_not_the_code() {
+      // MDSHO.secrets.props (git-ignored) or the GOOGLE_CLIENT_SECRET variable puts it in the assembly's metadata.
+      string built = typeof(SyncClients).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+        .Cast<System.Reflection.AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == "GoogleClientSecret")?.Value ?? "";
+      Assert.Equal(built, SyncClients.GoogleClientSecret);
+      Assert.Equal(string.IsNullOrEmpty(built) ? null : built, OAuthProviders.Google().ClientSecret);
+    }
+
+    [Fact]
+    public void No_Google_secret_is_in_the_repository() {
+      string root = DocsTests.RepoRoot();
+      string[] skip = { Path.DirectorySeparatorChar + ".git" + Path.DirectorySeparatorChar, Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar,
+        Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, Path.DirectorySeparatorChar + "AppPackages" + Path.DirectorySeparatorChar, Path.DirectorySeparatorChar + ".vs" + Path.DirectorySeparatorChar };
+      string[] found = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
+        .Where(f => !skip.Any(s => f.Contains(s, StringComparison.OrdinalIgnoreCase)))
+        .Where(f => !f.EndsWith("MDSHO.secrets.props", StringComparison.OrdinalIgnoreCase))
+        .Where(f => new FileInfo(f).Length < 2_000_000 && File.ReadAllText(f).Contains("GOCSPX" + "-", StringComparison.Ordinal))
+        .ToArray();
+      Assert.Empty(found);
+      Assert.Contains("MDSHO.secrets.props", File.ReadAllText(Path.Combine(root, ".gitignore")));
     }
 
     [Fact]

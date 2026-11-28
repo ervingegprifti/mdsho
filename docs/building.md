@@ -32,6 +32,22 @@ dotnet test MDSHO.Cli.slnf -c Release
 `MDSHO.Cli.slnf` contains every project except the MSIX packaging project, which the `dotnet` command line can't build.
 Compiler warnings are treated as errors, so a build with warnings fails.
 
+### Google Drive sign-in
+
+Google Drive sync needs Google's client secret, which is not in the repository. To build with it, put a file named
+`MDSHO.secrets.props` in the repository root (git ignores it; copy it into each worktree you build from):
+
+```xml
+<Project>
+  <PropertyGroup>
+    <GoogleClientSecret>the secret</GoogleClientSecret>
+  </PropertyGroup>
+</Project>
+```
+
+Or set the `GOOGLE_CLIENT_SECRET` environment variable. Without either, the build works, but Google Drive shows as not
+set up.
+
 The tests never touch your real MDSHO data: they use temporary databases and open windows off screen.
 
 ## Run from Visual Studio
@@ -192,6 +208,9 @@ Set-up (once): in the repository's **Settings** → **Secrets and variables** �
   [Convert]::ToBase64String([IO.File]::ReadAllBytes("<private folder>\MDSHO-sideload.pfx")) | Set-Clipboard
   ```
 - `SIDELOAD_PFX_PASSWORD`: its password.
+
+Optional: `GOOGLE_CLIENT_SECRET`, the Google sign-in client secret, so Google Drive sync works in the build (see
+[Google Drive sign-in](#google-drive-sign-in)).
 
 To build: **Actions** → **sideload** → **Run workflow**, choose the branch and start it. The workflow:
 

@@ -11,6 +11,8 @@ name: sideload
 # Repository secrets (Settings > Secrets and variables > Actions):
 #   SIDELOAD_PFX_BASE64    the signing certificate (.pfx), base64-encoded
 #   SIDELOAD_PFX_PASSWORD  its password
+#   GOOGLE_CLIENT_SECRET   the Google sign-in client secret for Google Drive sync (optional; without it Google Drive
+#                          shows as not set up in the build)
 # The certificate's subject must equal the Publisher in src/MDSHO.Package/Package.appxmanifest (see docs/building.md).
 
 on:
@@ -26,6 +28,8 @@ concurrency:
 jobs:
   sideload:
     runs-on: windows-latest
+    env:
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
     defaults:
       run:
         shell: pwsh

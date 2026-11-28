@@ -11,6 +11,16 @@
     <PackageReference Include="Microsoft.Data.Sqlite" />
   </ItemGroup>
 
+  <!-- The Google desktop client secret, kept out of the repository: from MDSHO.secrets.props at the checkout root
+       (git-ignored) or the GOOGLE_CLIENT_SECRET variable (the sideload workflow). See docs/building.md. -->
+  <Import Project="..\..\MDSHO.secrets.props" Condition="Exists('..\..\MDSHO.secrets.props')" />
+  <PropertyGroup>
+    <GoogleClientSecret Condition="'$(GoogleClientSecret)' == ''">$(GOOGLE_CLIENT_SECRET)</GoogleClientSecret>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(GoogleClientSecret)' != ''">
+    <AssemblyMetadata Include="GoogleClientSecret" Value="$(GoogleClientSecret)" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\MDSHO.Common\MDSHO.Common.csproj" />
     <ProjectReference Include="..\MDSHO.Core\MDSHO.Core.csproj" />

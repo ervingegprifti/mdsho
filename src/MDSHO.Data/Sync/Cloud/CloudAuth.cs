@@ -14,15 +14,20 @@ using MDSHO.Common;
 namespace MDSHO.Data {
 
   /// <summary>
-  /// The OAuth client IDs of MDSHO's Google and Microsoft app registrations, in one place. Empty until the owner fills
-  /// them in: with an empty ID the choice shows in Settings, but Connect says it is not set up yet. Google's desktop
-  /// client secret is not confidential (Google says so for installed apps); it is kept here too.
+  /// The OAuth clients of MDSHO's Google and Microsoft app registrations, in one place. With an empty ID (or no Google
+  /// secret) the choice shows in Settings, but Connect says it is not set up yet.
   /// </summary>
   public static class SyncClients {
     /// <summary>The Google OAuth client ID (Desktop app type).</summary>
-    public const string GoogleClientId = "";
-    /// <summary>The Google desktop client secret (not a secret for installed apps).</summary>
-    public const string GoogleClientSecret = "";
+    public const string GoogleClientId = "296376837622-nkm0garhkcf4r0ggk1e1dl5otu6r7c94.apps.googleusercontent.com";
+    /// <summary>
+    /// The Google desktop client secret. Kept out of the repository: the build adds it from MDSHO.secrets.props
+    /// (git-ignored) or the GOOGLE_CLIENT_SECRET variable. Empty in builds without it.
+    /// </summary>
+    public static string GoogleClientSecret { get; } = typeof(SyncClients).Assembly
+      .GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+      .Cast<System.Reflection.AssemblyMetadataAttribute>()
+      .FirstOrDefault(a => a.Key == "GoogleClientSecret")?.Value ?? "";
     /// <summary>The Microsoft app (client) ID: a public client with the redirect URI http://localhost.</summary>
     public const string MicrosoftClientId = "";
   }
@@ -47,14 +52,18 @@ namespace MDSHO.Data {
     public string RedirectHost { get; init; }
     /// <summary>More parameters for the sign-in page.</summary>
     public IReadOnlyDictionary<string, string> ExtraAuthorize { get; init; } = new Dictionary<string, string>();
-    /// <summary>True when a client ID is filled in.</summary>
-    public bool IsSetUp => !string.IsNullOrWhiteSpace(ClientId);
+    /// <summary>True when the provider needs a client secret (Google's desktop clients do).</summary>
+    public bool NeedsSecret { get; init; }
+    /// <summary>True when a client ID is filled in, and the secret when it needs one.</summary>
+    public bool IsSetUp => !string.IsNullOrWhiteSpace(ClientId) && (!NeedsSecret || !string.IsNullOrEmpty(ClientSecret));
   }
 
   /// <summary>The two providers.</summary>
   public static class OAuthProviders {
     /// <summary>Google: Drive API scope drive.file only (the files MDSHO makes), offline access for a refresh token.</summary>
-    public static OAuthProvider Google(string clientId = SyncClients.GoogleClientId, string clientSecret = SyncClients.GoogleClientSecret) {
+    /// <param name="clientSecret">Null uses the built-in secret (see SyncClients).</param>
+    public static OAuthProvider Google(string clientId = SyncClients.GoogleClientId, string clientSecret = null) {
+      clientSecret ??= SyncClients.GoogleClientSecret;
       return new OAuthProvider {
         Kind = SyncKinds.GoogleDrive,
         AuthorizeUrl = "https://accounts.google.com/o/oauth2/v2/auth",
@@ -62,6 +71,7 @@ namespace MDSHO.Data {
         RevokeUrl = "https://oauth2.googleapis.com/revoke",
         ClientId = clientId ?? "",
         ClientSecret = string.IsNullOrEmpty(clientSecret) ? null : clientSecret,
+        NeedsSecret = true,
         Scope = "https://www.googleapis.com/auth/drive.file",
         RedirectHost = "127.0.0.1",
         ExtraAuthorize = new Dictionary<string, string> { ["access_type"] = "offline", ["prompt"] = "consent" }

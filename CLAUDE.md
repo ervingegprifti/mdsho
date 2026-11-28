@@ -45,3 +45,5 @@ a build that adds a database version. Keep `docs/building.md` in sync with the w
 ## Secrets
 
 Signing uses the repository secrets `SIDELOAD_PFX_BASE64` and `SIDELOAD_PFX_PASSWORD`. Never ask for or handle them.
+The Google sign-in client secret is never committed: builds read it from the git-ignored `MDSHO.secrets.props` or the
+`GOOGLE_CLIENT_SECRET` variable (see `docs/building.md`); copy that file into a worktree before a local sideload build.
