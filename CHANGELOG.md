@@ -16,6 +16,11 @@ The MSIX package version uses four parts (`Major.Minor.Patch.0`); the fourth par
   another one says so and changes nothing.
 - The database version stays 28.
 
+### Changed
+
+- A panel's title bar has **More options** (•••) just left of Clone: it opens the title menu (Alt+F too), which now
+  starts with **Settings...** and **Colours...** instead of their title bar buttons.
+
 ## [2.0.1]
 
 ### Changed

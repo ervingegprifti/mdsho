@@ -42,6 +42,9 @@ Select a button first, with a click or the arrow keys.
 
 The right-click menu of a button shows these keys next to Rename, Cut, Copy, Paste and Delete.
 
+Alt+F opens the panel's title menu, the same menu as **More options** (•••) in the title bar or a right-click on the
+title. **Settings...** and **Colours...** are at its top.
+
 ## Rename
 
 1. Select a button or group and press F2, or right-click it and choose **Rename**.
