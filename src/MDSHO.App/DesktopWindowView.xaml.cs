@@ -34,6 +34,56 @@ namespace MDSHO {
 			GongSolutions.Wpf.DragDrop.DragDrop.SetDropHandler(this.TreeViewShortcuts, new ShortcutDropHandler(desktopWindow));
 			// A window restored at a docked position starts with square corners.
 			RefreshDocked();
+			// The More options dots follow the icon set (bold with solid icons).
+			ShowMoreIcon();
+			System.ComponentModel.PropertyChangedEventHandler iconsChanged = (s, e) => ShowMoreIcon();
+			desktopWindow.Appearance.PropertyChanged += iconsChanged;
+			this.Closed += (s, e) => desktopWindow.Appearance.PropertyChanged -= iconsChanged;
+		}
+
+		// IconGlyphs.More: three dots in Segoe UI, as on the note title bar; a glyph of the icon font keeps the icon font.
+		private void ShowMoreIcon() {
+			IconGlyphs icons = (this.DataContext as DesktopWindowViewModel)?.Appearance?.Icons;
+			if (icons == null) {
+				return;
+			}
+			Button more = this.ButtonHeaderMore;
+			more.Content = icons.More;
+			if (TextEditWindow.IsIconFontGlyph(icons.More)) {
+				more.ClearValue(FontFamilyProperty);
+				more.ClearValue(FontSizeProperty);
+				more.ClearValue(FontWeightProperty);
+			} else {
+				more.FontFamily = new System.Windows.Media.FontFamily("Segoe UI");
+				more.FontSize = 11;
+				more.FontWeight = icons.SolidIcons ? FontWeights.Bold : FontWeights.Normal;
+			}
+		}
+
+		/// <summary>Opens the title menu (the right-click one) below More options, right edges lined up (the button and Alt+F).</summary>
+		public void OpenMoreMenu() {
+			ContextMenu menu = this.GridHeader.ContextMenu;
+			UpdateHeaderMenuItems();
+			menu.PlacementTarget = this.ButtonHeaderMore;
+			menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Custom;
+			menu.CustomPopupPlacementCallback = (popup, target, offset) => new[] {
+				// Below the button, right edges lined up; above it when there is no room below.
+				new System.Windows.Controls.Primitives.CustomPopupPlacement(new Point(target.Width - popup.Width, target.Height), System.Windows.Controls.Primitives.PopupPrimaryAxis.Horizontal),
+				new System.Windows.Controls.Primitives.CustomPopupPlacement(new Point(target.Width - popup.Width, -popup.Height), System.Windows.Controls.Primitives.PopupPrimaryAxis.Horizontal)
+			};
+			// Once closed, however it closes, a right-click opens it at the mouse again.
+			System.ComponentModel.DependencyPropertyDescriptor isOpen = System.ComponentModel.DependencyPropertyDescriptor.FromProperty(ContextMenu.IsOpenProperty, typeof(ContextMenu));
+			EventHandler closed = null;
+			closed = (s, e) => {
+				if (!menu.IsOpen) {
+					isOpen.RemoveValueChanged(menu, closed);
+					menu.ClearValue(ContextMenu.PlacementTargetProperty);
+					menu.ClearValue(ContextMenu.PlacementProperty);
+					menu.ClearValue(ContextMenu.CustomPopupPlacementCallbackProperty);
+				}
+			};
+			isOpen.AddValueChanged(menu, closed);
+			menu.IsOpen = true;
 		}
 
 		/// <summary>Works out again whether the window is docked to a screen side, which decides rounded or square corners.</summary>
@@ -88,6 +138,8 @@ namespace MDSHO {
 			this.GridHeader.MouseLeftButtonDown += GridHeader_MouseLeftButtonDown;
       this.GridHeader.ContextMenuOpening += GridHeader_ContextMenuOpening;
       // Header MenuItems.
+      this.MenuItemHeaderSettings.Click += (s, e) => ShowSettingsWindow();
+      this.MenuItemHeaderColors.Click += (s, e) => ShowColorsWindow();
       this.MenuItemHeaderCloneThisWindowToAllScreens.Click += MenuItemHeaderCloneThisWindowToAllScreens_Click;
       this.MenuItemHeaderRenameWindowTitle.Click += MenuItemHeaderRenameWindowTitle_Click;
       this.MenuItemHeaderNewWindow.Click += MenuItemHeaderNewWindow_Click;
@@ -105,8 +157,7 @@ namespace MDSHO {
       this.MenuItemHeaderDeleteWindow.Click += MenuItemHeaderDeleteWindow_Click;
       this.MenuItemHeaderExitApplication.Click += MenuItemHeaderExitApplication_Click;
       // Header Controls
-      this.ButtonHeaderSettings.Click += ButtonHeaderSettings_Click;
-      this.ButtonHeaderColors.Click += (s, e) => ShowColorsWindow();
+      this.ButtonHeaderMore.Click += (s, e) => OpenMoreMenu();
       this.ButtonHeaderDockWindowLeft.Click += ButtonHeaderDockWindowLeft_Click;
       this.ButtonHeaderDockWindowRight.Click += ButtonHeaderDockWindowRight_Click;
       this.ButtonHeaderCloneThisWindowToAllScreens.Click += ButtonHeaderCloneThisWindowToAllScreens_Click;
@@ -244,9 +295,6 @@ namespace MDSHO {
       } catch (Exception ex) {
 				ErrorDialog.ShowDialog(ex);
 			}
-		}
-		private void ButtonHeaderSettings_Click(object sender, RoutedEventArgs e) {
-			ShowSettingsWindow();
 		}
 		#endregion CONTROL EVENTS
 
@@ -390,6 +438,9 @@ namespace MDSHO {
 		#region FUNCTIONS
 		/// <summary>The gap between a panel and its Settings or Colours window (DIPs), like a note and its Note colours window.</summary>
 		public const double DialogGap = 20;
+
+		/// <summary>The modifier keys held now; tests replace it.</summary>
+		public static Func<ModifierKeys> KeyboardModifiers = () => Keyboard.Modifiers;
 
 		/// <summary>Shows the Settings or Colours window modally. Tests replace it so no modal window blocks them.</summary>
 		public static Func<Window, bool?> ShowSettingsDialog = w => w.ShowDialog();
@@ -537,8 +588,14 @@ namespace MDSHO {
 				ErrorDialog.ShowDialog(ex);
 			}
 		}
-		/// <summary>Esc sends the panels back after "Bring panels to front". While typing, Esc stays with the edit box.</summary>
+		/// <summary>Alt+F opens the title menu. Esc sends the panels back after "Bring panels to front"; while typing, Esc stays with the edit box.</summary>
 		private void DesktopWindowView_PreviewKeyDown(object sender, KeyEventArgs e) {
+			if (e.Key == Key.System && e.SystemKey == Key.F && KeyboardModifiers() == ModifierKeys.Alt) {
+				// Alt+F opens the title menu, as on the note title bar.
+				e.Handled = true;
+				OpenMoreMenu();
+				return;
+			}
 			if (e.Key != Key.Escape) {
 				return;
 			}

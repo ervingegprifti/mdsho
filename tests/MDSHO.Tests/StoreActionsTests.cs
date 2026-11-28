@@ -191,8 +191,8 @@ namespace MDSHO.Tests {
     }
 
     [Fact]
-    public void Desktop_window_has_the_settings_gear_and_no_rate_or_share_buttons() {
-      Assert.NotNull(NamedElement(typeof(DesktopWindowView), "ButtonHeaderSettings"));
+    public void Desktop_window_has_Settings_in_its_title_menu_and_no_rate_or_share_buttons() {
+      Assert.NotNull(NamedElement(typeof(DesktopWindowView), "MenuItemHeaderSettings"));
       Assert.Null(NamedElement(typeof(DesktopWindowView), "ButtonRateAndReview"));
       Assert.Null(NamedElement(typeof(DesktopWindowView), "ButtonShare"));
     }

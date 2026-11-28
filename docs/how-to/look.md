@@ -11,7 +11,7 @@ This page helps you choose the colours of your panels, the style of the icons an
 
 ## Colour a panel
 
-1. Click **Colours** in the panel's title bar.
+1. Click **More options** (•••) in the panel's title bar and choose **Colours...**.
 2. Pick a part on the left: **Border**, **Title background**, **Title text**, **Background** or **Text**.
 3. Choose a colour in the palette. The panel changes as you pick.
 4. Click **Apply**. Closing the window without Apply puts the old colours back.
